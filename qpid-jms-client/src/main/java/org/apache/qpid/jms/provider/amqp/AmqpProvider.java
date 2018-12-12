@@ -785,7 +785,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
     private void updateTracer() {
         if (isTraceFrames()) {
-            ((TransportImpl) protonTransport).setProtocolTracer(new AmqpProtocolTracer(TRACE_FRAMES, traceFramesPayloadLimit));
+            ((TransportImpl) protonTransport).setProtocolTracer(new AmqpProtocolTracer(TRACE_FRAMES, System.identityHashCode(protonTransport), traceFramesPayloadLimit));
         }
     }
 

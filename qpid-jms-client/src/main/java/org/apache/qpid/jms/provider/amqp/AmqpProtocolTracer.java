@@ -30,25 +30,27 @@ public class AmqpProtocolTracer implements ProtocolTracer {
     public static final int DEFAULT_PAYLOAD_STRING_LIMIT = 1024;
 
     private final Logger logger;
+    private final int transportIdentifier;
     private final int payloadStringLimit;
 
-    public AmqpProtocolTracer(Logger logger) {
-        this(logger, DEFAULT_PAYLOAD_STRING_LIMIT);
+    public AmqpProtocolTracer(Logger logger, int transportIdentifier) {
+        this(logger, transportIdentifier, DEFAULT_PAYLOAD_STRING_LIMIT);
     }
 
-    public AmqpProtocolTracer(Logger logger, int payloadStringLimit) {
+    public AmqpProtocolTracer(Logger logger, int transportIdentifier, int payloadStringLimit) {
         this.logger = logger;
         this.payloadStringLimit = payloadStringLimit;
+        this.transportIdentifier = transportIdentifier;
     }
 
     @Override
     public void receivedFrame(TransportFrame transportFrame) {
-        logger.trace("RECV: {}{}", transportFrame.getBody(), formatPayload(transportFrame));
+        logger.trace("[{}:{}] RECV: {}{}", transportIdentifier, transportFrame.getChannel(), transportFrame.getBody(), formatPayload(transportFrame));
     }
 
     @Override
     public void sentFrame(TransportFrame transportFrame) {
-        logger.trace("SENT: {}{}", transportFrame.getBody(), formatPayload(transportFrame));
+        logger.trace("[{}:{}] SENT: {}{}", transportIdentifier, transportFrame.getChannel(), transportFrame.getBody(), formatPayload(transportFrame));
     }
 
     private String formatPayload(TransportFrame frame) {

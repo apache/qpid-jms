@@ -68,6 +68,8 @@ public class TransportOptionsTest extends QpidJmsTestCase {
     private static final String JAVAX_NET_SSL_TRUST_STORE = "javax.net.ssl.trustStore";
     private static final String JAVAX_NET_SSL_TRUST_STORE_PASSWORD = "javax.net.ssl.trustStorePassword";
 
+    private static final String LOCAL_ADDRESS="localhost";
+    private static final int LOCAL_PORT=30000;
     @Test
     public void testCreate() {
         TransportOptions options = new TransportOptions();
@@ -133,6 +135,8 @@ public class TransportOptionsTest extends QpidJmsTestCase {
         assertEquals(KEYSTORE_TYPE, options.getTrustStoreType());
         assertEquals(KEY_ALIAS, options.getKeyAlias());
         assertEquals(CONTEXT_PROTOCOL, options.getContextProtocol());
+        assertEquals(LOCAL_ADDRESS,options.getLocalAddress());
+        assertEquals(LOCAL_PORT,options.getLocalPort());
         assertEquals(SSL_CONTEXT, options.getSslContextOverride());
         assertArrayEquals(ENABLED_PROTOCOLS,options.getEnabledProtocols());
         assertArrayEquals(DISABLED_PROTOCOLS,options.getDisabledProtocols());
@@ -321,7 +325,8 @@ public class TransportOptionsTest extends QpidJmsTestCase {
         options.setEnabledCipherSuites(ENABLED_CIPHERS);
         options.setDisabledProtocols(DISABLED_PROTOCOLS);
         options.setDisabledCipherSuites(DISABLED_CIPHERS);
-
+        options.setLocalAddress(LOCAL_ADDRESS);
+        options.setLocalPort(LOCAL_PORT);
         return options;
     }
 }

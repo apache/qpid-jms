@@ -88,6 +88,10 @@ public class TransportOptions implements Cloneable {
     private int defaultSslPort = DEFAULT_SSL_PORT;
     private SSLContext sslContextOverride;
 
+    private String localAddress;
+    // 0 means any available port
+    private int localPort=0;
+
     private final Map<String, String> httpHeaders = new HashMap<>();
 
     public TransportOptions() {
@@ -529,6 +533,22 @@ public class TransportOptions implements Cloneable {
         this.useOpenSSL = useOpenSSL;
     }
 
+    public String getLocalAddress() {
+        return localAddress;
+    }
+
+    public void setLocalAddress(String localAddress) {
+        this.localAddress = localAddress;
+    }
+
+    public int getLocalPort() {
+        return localPort;
+    }
+
+    public void setLocalPort(int localPort) {
+        this.localPort = localPort;
+    }
+
     protected TransportOptions copyOptions(TransportOptions copy) {
         copy.setConnectTimeout(getConnectTimeout());
         copy.setReceiveBufferSize(getReceiveBufferSize());
@@ -558,7 +578,8 @@ public class TransportOptions implements Cloneable {
         copy.setDefaultSslPort(getDefaultSslPort());
         copy.setSslContextOverride(getSslContextOverride());
         copy.setUseOpenSSL(isUseOpenSSL());
-
+        copy.setLocalAddress(getLocalAddress());
+        copy.setLocalPort(getLocalPort());
         return copy;
     }
 }

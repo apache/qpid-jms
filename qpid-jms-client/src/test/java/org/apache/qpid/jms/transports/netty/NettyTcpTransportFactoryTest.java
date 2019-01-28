@@ -19,6 +19,7 @@ package org.apache.qpid.jms.transports.netty;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
@@ -41,6 +42,8 @@ public class NettyTcpTransportFactoryTest {
     public static final int CUSTOM_SO_LINGER = Short.MIN_VALUE;
     public static final int CUSTOM_SO_TIMEOUT = 10;
     public static final int CUSTOM_CONNECT_TIMEOUT = 90000;
+    private static final String CUSTOM_LOCAL_ADDRESS = "localhost";
+    private static final int CUSTOM_LOCAL_PORT = 30000;
 
     @Test(timeout = 30000)
     public void testCreateWithDefaultOptions() throws Exception {
@@ -65,6 +68,8 @@ public class NettyTcpTransportFactoryTest {
         assertEquals(TransportOptions.DEFAULT_TCP_KEEP_ALIVE, options.isTcpKeepAlive());
         assertEquals(TransportOptions.DEFAULT_SO_LINGER, options.getSoLinger());
         assertEquals(TransportOptions.DEFAULT_SO_TIMEOUT, options.getSoTimeout());
+        assertNull(options.getLocalAddress());
+        assertEquals(TransportOptions.DEFAULT_LOCAL_PORT, options.getLocalPort());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -116,7 +121,9 @@ public class NettyTcpTransportFactoryTest {
             "transport.tcpNoDelay=" + CUSTOM_TCP_NO_DELAY + "&" +
             "transport.tcpKeepAlive=" + CUSTOM_TCP_KEEP_ALIVE + "&" +
             "transport.soLinger=" + CUSTOM_SO_LINGER + "&" +
-            "transport.soTimeout=" + CUSTOM_SO_TIMEOUT);
+            "transport.soTimeout=" + CUSTOM_SO_TIMEOUT + "&" +
+            "transport.localAddress=" + CUSTOM_LOCAL_ADDRESS + "&" +
+            "transport.localPort=" + CUSTOM_LOCAL_PORT);
 
         NettyTcpTransportFactory factory = new NettyTcpTransportFactory();
 

@@ -81,6 +81,7 @@ import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.apache.qpid.proton.amqp.transaction.TxnCapability;
 import org.apache.qpid.proton.engine.impl.AmqpHeader;
 import org.hamcrest.Matcher;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class ConnectionIntegrationTest extends QpidJmsTestCase {
@@ -862,6 +863,31 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(2000);
+        }
+    }
+
+    @Ignore("Disabled due to requirement of hard coded port")
+    @Test(timeout = 20000)
+    public void testLocalPortOption() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen();
+            // Each connection creates a session for managing temporary destinations etc
+            testPeer.expectBegin();
+
+            int localPort = 5671;
+            String uri = "amqp://localhost:" + testPeer.getServerPort() + "?transport.localPort=" + localPort;
+            ConnectionFactory factory = new JmsConnectionFactory(uri);
+            Connection connection = factory.createConnection();
+            connection.start();
+
+            testPeer.waitForAllHandlersToComplete(2000);
+
+            testPeer.expectClose();
+            connection.close();
+
+            int clientPort = testPeer.getClientSocket().getPort();
+            assertEquals(localPort, clientPort);
         }
     }
 }

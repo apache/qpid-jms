@@ -42,6 +42,8 @@ public class TransportOptionsTest extends QpidJmsTestCase {
     public static final int TEST_SO_TIMEOUT = 10;
     public static final int TEST_CONNECT_TIMEOUT = 90000;
     public static final int TEST_DEFAULT_TCP_PORT = 5682;
+    public static final String LOCAL_ADDRESS = "localhost";
+    public static final int LOCAL_PORT = 30000;
     public static final boolean TEST_USE_EPOLL_VALUE = !TransportOptions.DEFAULT_USE_EPOLL;
     public static final boolean TEST_TRACE_BYTES_VALUE = !TransportOptions.DEFAULT_TRACE_BYTES;
 
@@ -67,6 +69,7 @@ public class TransportOptionsTest extends QpidJmsTestCase {
     private static final String JAVAX_NET_SSL_KEY_STORE_PASSWORD = "javax.net.ssl.keyStorePassword";
     private static final String JAVAX_NET_SSL_TRUST_STORE = "javax.net.ssl.trustStore";
     private static final String JAVAX_NET_SSL_TRUST_STORE_PASSWORD = "javax.net.ssl.trustStorePassword";
+
 
     @Test
     public void testCreate() {
@@ -133,6 +136,8 @@ public class TransportOptionsTest extends QpidJmsTestCase {
         assertEquals(KEYSTORE_TYPE, options.getTrustStoreType());
         assertEquals(KEY_ALIAS, options.getKeyAlias());
         assertEquals(CONTEXT_PROTOCOL, options.getContextProtocol());
+        assertEquals(LOCAL_ADDRESS,options.getLocalAddress());
+        assertEquals(LOCAL_PORT,options.getLocalPort());
         assertEquals(SSL_CONTEXT, options.getSslContextOverride());
         assertArrayEquals(ENABLED_PROTOCOLS,options.getEnabledProtocols());
         assertArrayEquals(DISABLED_PROTOCOLS,options.getDisabledProtocols());
@@ -321,6 +326,8 @@ public class TransportOptionsTest extends QpidJmsTestCase {
         options.setEnabledCipherSuites(ENABLED_CIPHERS);
         options.setDisabledProtocols(DISABLED_PROTOCOLS);
         options.setDisabledCipherSuites(DISABLED_CIPHERS);
+        options.setLocalAddress(LOCAL_ADDRESS);
+        options.setLocalPort(LOCAL_PORT);
 
         return options;
     }

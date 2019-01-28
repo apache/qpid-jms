@@ -461,6 +461,14 @@ public class NettyTcpTransport implements Transport {
         if (options.getTrafficClass() != -1) {
             bootstrap.option(ChannelOption.IP_TOS, options.getTrafficClass());
         }
+
+        if (options.getLocalAddress() != null || options.getLocalPort() != 0) {
+            if(options.getLocalAddress() != null) {
+                bootstrap.localAddress(options.getLocalAddress(), options.getLocalPort());
+            } else {
+                bootstrap.localAddress(options.getLocalPort());
+            }
+        }
     }
 
     private void configureChannel(final Channel channel) throws Exception {

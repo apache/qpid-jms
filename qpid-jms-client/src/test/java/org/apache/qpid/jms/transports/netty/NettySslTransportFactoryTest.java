@@ -47,6 +47,9 @@ public class NettySslTransportFactoryTest {
     public static final int CUSTOM_SO_LINGER = Short.MIN_VALUE;
     public static final int CUSTOM_SO_TIMEOUT = 10;
     public static final int CUSTOM_CONNECT_TIMEOUT = 90000;
+    private static final String CUSTOM_LOCAL_ADDRESS = "localhost";
+    private static final int CUSTOM_LOCAL_PORT = 30000;
+
     public static final String CUSTOM_CONTEXT_PROTOCOL = "TLSv1.2";
     public static final String[] CUSTOM_ENABLED_PROTOCOLS = { "TLSv1.1", "TLSv1.2" };
     public static final String CUSTOM_ENABLED_PROTOCOLS_STRING = "TLSv1.1,TLSv1.2";
@@ -88,6 +91,8 @@ public class NettySslTransportFactoryTest {
         assertEquals(TransportOptions.DEFAULT_TCP_KEEP_ALIVE, options.isTcpKeepAlive());
         assertEquals(TransportOptions.DEFAULT_SO_LINGER, options.getSoLinger());
         assertEquals(TransportOptions.DEFAULT_SO_TIMEOUT, options.getSoTimeout());
+        assertNull(options.getLocalAddress());
+        assertEquals(TransportOptions.DEFAULT_LOCAL_PORT, options.getLocalPort());
 
         assertEquals(TransportOptions.DEFAULT_CONTEXT_PROTOCOL, options.getContextProtocol());
         assertNull(options.getEnabledProtocols());
@@ -127,6 +132,8 @@ public class NettySslTransportFactoryTest {
             "transport.tcpKeepAlive=" + CUSTOM_TCP_KEEP_ALIVE + "&" +
             "transport.soLinger=" + CUSTOM_SO_LINGER + "&" +
             "transport.soTimeout=" + CUSTOM_SO_TIMEOUT + "&" +
+            "transport.localAddress=" + CUSTOM_LOCAL_ADDRESS + "&" +
+            "transport.localPort=" + CUSTOM_LOCAL_PORT + "&" +
             "transport.verifyHost=" + CUSTOM_VERIFY_HOST + "&" +
             "transport.storeType=" + CUSTOM_STORE_TYPE + "&" +
             "transport.trustAll=" + CUSTOM_TRUST_ALL + "&" +
@@ -157,6 +164,8 @@ public class NettySslTransportFactoryTest {
         assertEquals(CUSTOM_TCP_KEEP_ALIVE, options.isTcpKeepAlive());
         assertEquals(CUSTOM_SO_LINGER, options.getSoLinger());
         assertEquals(CUSTOM_SO_TIMEOUT, options.getSoTimeout());
+        assertEquals(CUSTOM_LOCAL_ADDRESS, options.getLocalAddress());
+        assertEquals(CUSTOM_LOCAL_PORT, options.getLocalPort());
 
         assertTrue(options instanceof TransportOptions);
         TransportOptions sslOptions = options;

@@ -48,6 +48,7 @@ public class TransportOptions implements Cloneable {
     public static final List<String> DEFAULT_DISABLED_PROTOCOLS = Collections.unmodifiableList(Arrays.asList(new String[]{"SSLv2Hello", "SSLv3"}));
     public static final int DEFAULT_SSL_PORT = 5671;
     public static final boolean DEFAULT_USE_OPENSSL = false;
+    public static final int DEFAULT_LOCAL_PORT = 0;
 
     private static final String JAVAX_NET_SSL_KEY_STORE = "javax.net.ssl.keyStore";
     private static final String JAVAX_NET_SSL_KEY_STORE_TYPE = "javax.net.ssl.keyStoreType";
@@ -65,6 +66,8 @@ public class TransportOptions implements Cloneable {
     private boolean tcpKeepAlive = DEFAULT_TCP_KEEP_ALIVE;
     private boolean tcpNoDelay = DEFAULT_TCP_NO_DELAY;
     private int defaultTcpPort = DEFAULT_TCP_PORT;
+    private String localAddress;
+    private int localPort = DEFAULT_LOCAL_PORT;
     private boolean useEpoll = DEFAULT_USE_EPOLL;
     private boolean useKQueue = DEFAULT_USE_KQUEUE;
     private boolean traceBytes = DEFAULT_TRACE_BYTES;
@@ -224,6 +227,21 @@ public class TransportOptions implements Cloneable {
         this.defaultTcpPort = defaultTcpPort;
     }
 
+    public String getLocalAddress() {
+        return localAddress;
+    }
+
+    public void setLocalAddress(String localAddress) {
+        this.localAddress = localAddress;
+    }
+
+    public int getLocalPort() {
+        return localPort;
+    }
+
+    public void setLocalPort(int localPort) {
+        this.localPort = localPort;
+    }
 
     /**
      * @return true if the netty epoll transport can be used if available on this platform.
@@ -558,6 +576,8 @@ public class TransportOptions implements Cloneable {
         copy.setDefaultSslPort(getDefaultSslPort());
         copy.setSslContextOverride(getSslContextOverride());
         copy.setUseOpenSSL(isUseOpenSSL());
+        copy.setLocalAddress(getLocalAddress());
+        copy.setLocalPort(getLocalPort());
 
         return copy;
     }

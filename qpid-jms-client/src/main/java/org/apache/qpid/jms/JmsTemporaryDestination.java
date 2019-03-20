@@ -37,7 +37,7 @@ public abstract class JmsTemporaryDestination extends JmsDestination implements 
     }
 
     public JmsTemporaryDestination(String name, boolean topic) {
-        super(name, topic, true);
+        super(name, topic, true, false);
     }
 
     @Override

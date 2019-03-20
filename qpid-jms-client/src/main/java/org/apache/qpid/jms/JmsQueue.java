@@ -24,11 +24,11 @@ import javax.jms.Queue;
 public class JmsQueue extends JmsDestination implements Queue {
 
     public JmsQueue() {
-        super(null, false, false);
+        super(null, false, false, false);
     }
 
     public JmsQueue(String name) {
-        super(name, false, false);
+        super(name, false, false, false);
     }
 
     /**

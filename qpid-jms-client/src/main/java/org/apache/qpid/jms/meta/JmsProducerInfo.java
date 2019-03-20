@@ -23,15 +23,16 @@ public final class JmsProducerInfo extends JmsAbstractResource implements Compar
 
     private final JmsProducerId producerId;
     private final JmsMessageIDBuilder messageIDBuilder;
+    private final boolean durable;
 
     private JmsDestination destination;
     private boolean presettle;
 
     public JmsProducerInfo(JmsProducerId producerId) {
-        this(producerId, JmsMessageIDBuilder.BUILTIN.DEFAULT.createBuilder());
+        this(producerId, JmsMessageIDBuilder.BUILTIN.DEFAULT.createBuilder(), false);
     }
 
-    public JmsProducerInfo(JmsProducerId producerId, JmsMessageIDBuilder messageIDBuilder) {
+    public JmsProducerInfo(JmsProducerId producerId, JmsMessageIDBuilder messageIDBuilder, boolean durable) {
         if (producerId == null) {
             throw new IllegalArgumentException("Producer ID cannot be null");
         }
@@ -42,10 +43,11 @@ public final class JmsProducerInfo extends JmsAbstractResource implements Compar
 
         this.producerId = producerId;
         this.messageIDBuilder = messageIDBuilder;
+        this.durable = durable;
     }
 
     public JmsProducerInfo copy() {
-        JmsProducerInfo info = new JmsProducerInfo(producerId, messageIDBuilder);
+        JmsProducerInfo info = new JmsProducerInfo(producerId, messageIDBuilder, durable);
         copy(info);
         return info;
     }
@@ -66,6 +68,8 @@ public final class JmsProducerInfo extends JmsAbstractResource implements Compar
     public JmsDestination getDestination() {
         return destination;
     }
+
+    public boolean getDurable() {return durable; }
 
     public void setDestination(JmsDestination destination) {
         this.destination = destination;

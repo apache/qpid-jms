@@ -66,7 +66,8 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
         JmsMessageIDBuilder messageIDBuilder =
             session.getMessageIDPolicy().getMessageIDBuilder(session, destination);
 
-        this.producerInfo = new JmsProducerInfo(producerId, messageIDBuilder);
+        boolean isDurable = destination != null ? destination.isDurable() : false;
+        this.producerInfo = new JmsProducerInfo(producerId, messageIDBuilder, isDurable);
         this.producerInfo.setDestination(destination);
         this.producerInfo.setPresettle(session.getPresettlePolicy().isProducerPresttled(session, destination));
 

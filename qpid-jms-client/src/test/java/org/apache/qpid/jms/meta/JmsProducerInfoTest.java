@@ -53,7 +53,7 @@ public class JmsProducerInfoTest {
     }
 
     private JmsProducerInfo createPorducerInfo(JmsProducerId producerId) {
-        return new JmsProducerInfo(producerId, JmsMessageIDBuilder.BUILTIN.DEFAULT.createBuilder());
+        return new JmsProducerInfo(producerId, JmsMessageIDBuilder.BUILTIN.DEFAULT.createBuilder(), false);
     }
 
     @Test
@@ -67,12 +67,12 @@ public class JmsProducerInfoTest {
     @Test
     public void testCreateThrowsOnNullParameters() {
         try {
-            new JmsProducerInfo(null, JmsMessageIDBuilder.BUILTIN.DEFAULT.createBuilder());
+            new JmsProducerInfo(null, JmsMessageIDBuilder.BUILTIN.DEFAULT.createBuilder(), false);
             fail("Should not allow create will null params");
         } catch (IllegalArgumentException ex) {}
 
         try {
-            new JmsProducerInfo(firstId, null);
+            new JmsProducerInfo(firstId, null, false);
             fail("Should not allow create will null params");
         } catch (IllegalArgumentException ex) {}
     }

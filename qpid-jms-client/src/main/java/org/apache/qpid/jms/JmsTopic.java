@@ -28,7 +28,7 @@ public class JmsTopic extends JmsDestination implements Topic {
     }
 
     public JmsTopic(String name) {
-        super(name, true, false);
+        super(name, true, false, false);
     }
 
     /**

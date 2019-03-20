@@ -36,13 +36,15 @@ public abstract class JmsDestination extends JNDIStorable implements Externaliza
     protected transient String address;
     protected transient boolean topic;
     protected transient boolean temporary;
+    protected transient boolean durable;
     protected transient int hashValue;
     protected transient JmsConnection connection;
 
-    protected JmsDestination(String address, boolean topic, boolean temporary) {
+    protected JmsDestination(String address, boolean topic, boolean temporary, boolean durable) {
         this.address = address;
         this.topic = topic;
         this.temporary = temporary;
+        this.durable = durable;
     }
 
     @Override
@@ -73,6 +75,13 @@ public abstract class JmsDestination extends JNDIStorable implements Externaliza
      */
     public boolean isTemporary() {
         return this.temporary;
+    }
+
+    /**
+     * @return the durable
+     */
+    public boolean isDurable() {
+        return this.durable;
     }
 
     /**

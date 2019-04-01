@@ -128,6 +128,16 @@
     </resources>
     <plugins>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <environmentVariables combine.children="append">
+            <!-- Env variable for use with VariableExpansionTest and JmsInitialContextFactoryTest -->
+            <VAR_EXPANSION_TEST_ENV_VAR>TestEnvVariableValue123</VAR_EXPANSION_TEST_ENV_VAR>
+          </environmentVariables>
+        </configuration>
+      </plugin>
+      <plugin>
         <groupId>org.apache.felix</groupId>
         <artifactId>maven-bundle-plugin</artifactId>
         <configuration>

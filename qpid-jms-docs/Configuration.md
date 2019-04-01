@@ -43,11 +43,11 @@ Applications use a JNDI InitialContext, itself obtained from an InitialContextFa
 
 The property syntax used in the properties file or environment Hashtable is as follows:
 
-+   To define a ConnectionFactory, use format: *connectionfactory.lookupName = URI*
-+   To define a Queue, use format: *queue.lookupName = queueName*
-+   To define a Topic use format: *topic.lookupName = topicName*
++   To define a ConnectionFactory, use format: *connectionfactory.&lt;lookup-name&gt; = &lt;connection-uri&gt;*
++   To define a Queue, use format: *queue.&lt;lookup-name&gt; = &lt;queue-name&gt;*
++   To define a Topic use format: *topic.&lt;lookup-name&gt; = &lt;topic-name&gt;*
 
-For more details of the Connection URI, see the next section.
+The property values which which constitute the connection URI, queue name, or topic name can also utilise simple *${variable}* expansion resolved in order from system properties, environment variables, or the properties file / environment Hashtable. For more details of the Connection URI, see the next section.
 
 As an example, consider the following properties used to define a ConnectionFactory, Queue, and Topic:
 

@@ -17,9 +17,11 @@
 package org.apache.qpid.jms.jndi;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeTrue;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -42,6 +44,10 @@ import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.junit.Test;
 
 public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
+
+    // Environment variable name+value for test, configured in Surefire config
+    private static final String TEST_ENV_VARIABLE_NAME = "VAR_EXPANSION_TEST_ENV_VAR";
+    private static final String TEST_ENV_VARIABLE_VALUE = "TestEnvVariableValue123";
 
     private JmsInitialContextFactory factory;
     private Context context;
@@ -449,5 +455,132 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
         } finally {
             f.delete();
         }
+    }
+
+    @Test
+    public void testVariableExpansionUnresolvableVariable() throws Exception {
+        //Check exception is thrown for variable that doesn't resolve
+        String factoryName = "myFactory";
+        String unknownVariable = "unknownVariable";
+        String uri = "amqp://${"+ unknownVariable +"}:1234";
+
+        Hashtable<Object, Object> env = new Hashtable<Object, Object>();
+        env.put("connectionfactory." + factoryName, uri);
+
+        try {
+            createInitialContext(env);
+            fail("Expected to fail due to unresolved variable");
+        } catch (IllegalArgumentException iae) {
+            // Expected
+        }
+
+        String nowKnownHostValue = "nowKnownValue";
+
+        //Now make the variable resolve, check the exact same env+URI now works
+        setTestSystemProperty(unknownVariable, nowKnownHostValue);
+
+        Context ctx = createInitialContext(env);
+
+        Object o = ctx.lookup("myFactory");
+
+        assertNotNull("No object returned", o);
+        assertEquals("Unexpected class type for returned object", JmsConnectionFactory.class, o.getClass());
+
+        assertEquals("Unexpected URI for returned factory", "amqp://" + nowKnownHostValue + ":1234", ((JmsConnectionFactory) o).getRemoteURI());
+    }
+
+    @Test
+    public void testVariableExpansionConnectionFactory() throws Exception {
+        doVariableExpansionConnectionFactoryTestImpl(false);
+    }
+
+    @Test
+    public void testVariableExpansionConnectionFactoryWithEnvVar() throws Exception {
+        doVariableExpansionConnectionFactoryTestImpl(true);
+    }
+
+    private void doVariableExpansionConnectionFactoryTestImpl(boolean useEnvVarForHost) throws NamingException {
+        String factoryName = "myFactory";
+
+        String hostVariableName = useEnvVarForHost ? TEST_ENV_VARIABLE_NAME : "myHostVar";
+        String portVariableName = "myPortVar";
+        String clientIdVariableName = "myClientIDVar";
+        String hostVariableValue = useEnvVarForHost ? TEST_ENV_VARIABLE_VALUE : "myHostValue";
+        String portVariableValue= "1234";
+        String clientIdVariableValue= "myClientIDValue" + getTestName();
+        Object environmentProperty = "connectionfactory." + factoryName;
+
+        if(useEnvVarForHost) {
+            // Verify variable is set (by Surefire config),
+            // prevents spurious failure if not manually configured when run in IDE.
+            assertEquals("Expected to use env variable name", TEST_ENV_VARIABLE_NAME, hostVariableName);
+            assumeTrue("Environment variable not set as required", System.getenv().containsKey(TEST_ENV_VARIABLE_NAME));
+            assertEquals("Environment variable value not as expected", TEST_ENV_VARIABLE_VALUE, System.getenv(TEST_ENV_VARIABLE_NAME));
+        } else {
+            assertNotEquals("Expected to use a different name", TEST_ENV_VARIABLE_NAME, hostVariableName);
+
+            setTestSystemProperty(hostVariableName, hostVariableValue);
+        }
+        setTestSystemProperty(portVariableName, portVariableValue);
+
+        String uri = "amqp://${" + hostVariableName + "}:${" + portVariableName + "}?jms.clientID=${" + clientIdVariableName + "}";
+
+        Hashtable<Object, Object> env = new Hashtable<Object, Object>();
+        env.put(environmentProperty, uri);
+        env.put(clientIdVariableName, clientIdVariableValue);
+
+        Context ctx = createInitialContext(env);
+
+        Object o = ctx.lookup(factoryName);
+
+        assertNotNull("No object returned", o);
+        assertEquals("Unexpected class type for returned object", JmsConnectionFactory.class, o.getClass());
+
+        assertEquals("Unexpected ClientID for returned factory", clientIdVariableValue, ((JmsConnectionFactory) o).getClientID());
+
+        String expectedURI = "amqp://" + hostVariableValue + ":" + portVariableValue;
+        assertEquals("Unexpected URI for returned factory", expectedURI, ((JmsConnectionFactory) o).getRemoteURI());
+    }
+
+    @Test
+    public void testVariableExpansionQueue() throws Exception {
+        String lookupName = "myQueueLookup";
+        String variableName = "myQueueVariable";
+        String variableValue = "myQueueName";
+
+        Hashtable<Object, Object> env = new Hashtable<Object, Object>();
+        env.put("queue." + lookupName, "${" + variableName +"}");
+
+        setTestSystemProperty(variableName, variableValue);
+
+        Context ctx = createInitialContext(env);
+
+        Object o = ctx.lookup(lookupName);
+
+        assertNotNull("No object returned", o);
+        assertEquals("Unexpected class type for returned object", JmsQueue.class, o.getClass());
+
+        assertEquals("Unexpected name for returned queue", variableValue, ((JmsQueue) o).getQueueName());
+    }
+
+    @Test
+    public void testVariableExpansionTopic() throws Exception {
+        String lookupName = "myTopicLookup";
+        String variableName = "myTopicVariable";
+        String variableValue = "myTopicName";
+
+        Hashtable<Object, Object> env = new Hashtable<Object, Object>();
+        env.put("topic." + lookupName, "${" + variableName +"}");
+
+        setTestSystemProperty(variableName, variableValue);
+
+        Context ctx = createInitialContext(env);
+
+        Object o = ctx.lookup(lookupName);
+
+        assertNotNull("No object returned", o);
+        assertEquals("Unexpected class type for returned object", JmsTopic.class, o.getClass());
+
+        assertEquals("Unexpected name for returned queue", variableValue, ((JmsTopic) o).getTopicName());
     }
 }

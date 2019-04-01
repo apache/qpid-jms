@@ -40,6 +40,7 @@ import javax.naming.spi.InitialContextFactory;
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.JmsQueue;
 import org.apache.qpid.jms.JmsTopic;
+import org.apache.qpid.jms.util.VariableExpansion;
 
 public class JmsInitialContextFactory implements InitialContextFactory {
 
@@ -184,7 +185,7 @@ public class JmsInitialContextFactory implements InitialContextFactory {
                     value = String.valueOf(entry.getValue());
                 }
 
-                factories.put(factoryName, value);
+                factories.put(factoryName, expand(value, environment));
             }
         }
 
@@ -206,7 +207,8 @@ public class JmsInitialContextFactory implements InitialContextFactory {
             String key = String.valueOf(entry.getKey());
             if (key.toLowerCase().startsWith(CONNECTION_FACTORY_DEFAULT_KEY_PREFIX)) {
                 String jndiName = key.substring(CONNECTION_FACTORY_DEFAULT_KEY_PREFIX.length());
-                map.put(jndiName, String.valueOf(entry.getValue()));
+                String value = String.valueOf(entry.getValue());
+                map.put(jndiName, expand(value, environment));
             }
         }
 
@@ -224,7 +226,8 @@ public class JmsInitialContextFactory implements InitialContextFactory {
             if (key.toLowerCase().startsWith(CONNECTION_FACTORY_PROPERTY_KEY_PREFIX)) {
                 if(key.substring(CONNECTION_FACTORY_PROPERTY_KEY_PREFIX.length()).startsWith(factoryNameSuffix)) {
                     String propertyName = key.substring(CONNECTION_FACTORY_PROPERTY_KEY_PREFIX.length() + factoryNameSuffix.length());
-                    map.put(propertyName, String.valueOf(entry.getValue()));
+                    String value = String.valueOf(entry.getValue());
+                    map.put(propertyName, expand(value, environment));
                 }
             }
         }
@@ -238,7 +241,8 @@ public class JmsInitialContextFactory implements InitialContextFactory {
             String key = entry.getKey().toString();
             if (key.startsWith(QUEUE_KEY_PREFIX)) {
                 String jndiName = key.substring(QUEUE_KEY_PREFIX.length());
-                bindings.put(jndiName, createQueue(entry.getValue().toString()));
+                String value = expand(entry.getValue().toString(), environment);
+                bindings.put(jndiName, createQueue(value));
             }
         }
     }
@@ -249,7 +253,8 @@ public class JmsInitialContextFactory implements InitialContextFactory {
             String key = entry.getKey().toString();
             if (key.startsWith(TOPIC_KEY_PREFIX)) {
                 String jndiName = key.substring(TOPIC_KEY_PREFIX.length());
-                bindings.put(jndiName, createTopic(entry.getValue().toString()));
+                String value = expand(entry.getValue().toString(), environment);
+                bindings.put(jndiName, createTopic(value));
             }
         }
     }
@@ -283,5 +288,22 @@ public class JmsInitialContextFactory implements InitialContextFactory {
         }
 
         return factory;
+    }
+
+    protected static String expand(String input, Map<Object, Object> environment) {
+        return VariableExpansion.expand(input, variable -> {
+            String resolve = VariableExpansion.SYS_PROP_RESOLVER.resolve(variable);
+            if (resolve == null) {
+                resolve = VariableExpansion.ENV_VAR_RESOLVER.resolve(variable);
+                if (resolve == null) {
+                    Object o = environment.get(variable);
+                    if (o != null) {
+                        resolve = String.valueOf(o);
+                    }
+                }
+            }
+
+            return resolve;
+        });
     }
 }

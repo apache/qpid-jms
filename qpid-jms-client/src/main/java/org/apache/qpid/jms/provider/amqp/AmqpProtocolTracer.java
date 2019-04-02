@@ -17,6 +17,7 @@
 package org.apache.qpid.jms.provider.amqp;
 
 import org.apache.qpid.proton.amqp.Binary;
+import org.apache.qpid.proton.amqp.security.SaslFrameBody;
 import org.apache.qpid.proton.engine.impl.ProtocolTracer;
 import org.apache.qpid.proton.framing.TransportFrame;
 import org.slf4j.Logger;
@@ -52,6 +53,26 @@ public class AmqpProtocolTracer implements ProtocolTracer {
     public void sentFrame(TransportFrame transportFrame) {
         logger.trace("[{}:{}] SENT: {}{}", transportIdentifier, transportFrame.getChannel(), transportFrame.getBody(), formatPayload(transportFrame));
     }
+
+    @Override
+    public void receivedSaslBody(SaslFrameBody saslFrameBody) {
+        logger.trace("[{}:0] RECV: {}", transportIdentifier, saslFrameBody);
+    };
+
+    @Override
+    public void sentSaslBody(SaslFrameBody saslFrameBody) {
+        logger.trace("[{}:0] SENT: {}", transportIdentifier, saslFrameBody);
+    };
+
+    @Override
+    public void receivedHeader(String header) {
+        logger.trace("[{}:0] RECV: {}", transportIdentifier, header);
+    };
+
+    @Override
+    public void sentHeader(String header) {
+        logger.trace("[{}:0] SENT: {}", transportIdentifier, header);
+    };
 
     private String formatPayload(TransportFrame frame) {
         Binary payload = frame.getPayload();

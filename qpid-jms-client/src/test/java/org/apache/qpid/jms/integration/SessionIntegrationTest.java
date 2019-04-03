@@ -77,6 +77,7 @@ import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescri
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.HeaderDescribedType;
 import org.apache.qpid.jms.test.testpeer.matchers.AcceptedMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.ModifiedMatcher;
+import org.apache.qpid.jms.test.testpeer.matchers.ReleasedMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.SourceMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.TargetMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.TransactionalStateMatcher;
@@ -2210,6 +2211,62 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             LOG.info("JmsCompletionListener onException called with message: {} error {}", message, exception);
             errorCount++;
             completed.countDown();
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testRecoveredClientAckSessionWithDurableSubscriber() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer, false, "?jms.clientID=myClientId", null, null, false);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(Session.CLIENT_ACKNOWLEDGE);
+
+            String subscriptionName = "mySubName";
+            String topicName = "myTopic";
+            Topic topic = session.createTopic(topicName);
+
+            int msgCount = 3;
+            testPeer.expectDurableSubscriberAttach(topicName, subscriptionName);
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, new AmqpValueDescribedType("content"), msgCount, false, false,
+                    Matchers.greaterThanOrEqualTo(UnsignedInteger.valueOf(msgCount)), 1, false, true);
+
+            MessageConsumer subscriber = session.createDurableConsumer(topic, subscriptionName);
+
+            TextMessage receivedTextMessage = null;
+            assertNotNull("Expected a message", receivedTextMessage = (TextMessage) subscriber.receive(3000));
+            assertEquals("Unexpected delivery number", 1,  receivedTextMessage.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER) + 1);
+            assertNotNull("Expected a message", receivedTextMessage = (TextMessage) subscriber.receive(3000));
+            assertEquals("Unexpected delivery number", 2,  receivedTextMessage.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER) + 1);
+
+            session.recover();
+
+            assertNotNull("Expected a message", receivedTextMessage = (TextMessage) subscriber.receive(3000));
+            int deliveryNumber = receivedTextMessage.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER) + 1;
+            assertEquals("Unexpected delivery number", 1,  deliveryNumber);
+
+            testPeer.expectDisposition(true, new AcceptedMatcher(), 1, 1);
+
+            receivedTextMessage.acknowledge();
+
+            testPeer.expectDetach(false, true, false);
+            testPeer.expectDisposition(true, new ModifiedMatcher().withDeliveryFailed(equalTo(true)), 2, 2);
+            testPeer.expectDisposition(true, new ReleasedMatcher(), 3, 3);
+
+            subscriber.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+
+            testPeer.expectDurableSubUnsubscribeNullSourceLookup(false, false, subscriptionName, topicName, true);
+            testPeer.expectDetach(true, true, true);
+
+            session.unsubscribe(subscriptionName);
+
+            testPeer.expectClose();
+
+            connection.close();
         }
     }
 }

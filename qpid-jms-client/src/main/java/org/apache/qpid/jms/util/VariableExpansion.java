@@ -122,7 +122,6 @@ public final class VariableExpansion {
             matcher.appendReplacement(result, Matcher.quoteReplacement(resolved));
         } else {
             var = matcher.group(3); // Variable match, no default
-            System.out.println(var);
             if (var != null) {
                 matcher.appendReplacement(result, Matcher.quoteReplacement(resolve(var, resolver, stack)));
             } else {

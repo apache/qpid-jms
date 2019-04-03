@@ -32,7 +32,7 @@ public final class VariableExpansion {
         String resolve(String name);
     }
 
-    private static final Pattern VARIABLE_OR_ESCAPE_PATTERN = Pattern.compile("(?:\\$\\{([^\\}]*)\\})|(?:\\$(\\$))");
+    private static final Pattern VARIABLE_OR_ESCAPE_PATTERN = Pattern.compile("(?:\\$\\{([^\\}]*):-([^\\}]*)\\})|(?:\\$\\{([^\\}]*)\\})|(?:\\$(\\$))");
     private static final String ESCAPE = "$";
 
     private VariableExpansion() {
@@ -68,12 +68,14 @@ public final class VariableExpansion {
      *            the resolver to use
      * @return the expanded output
      *
+     * @throws UnresolvedVariableException
+     *             If a variable without a default can't be expanded because it (or indirectly its value) is not resolvable.
      * @throws IllegalArgumentException
-     *             if an argument can't be expanded, e.g because a variable is not resolvable.
+     *             if an argument can't be expanded due to other issue with the input.
      * @throws NullPointerException
      *             if a resolver is not supplied
      */
-    public static final String expand(String input, Resolver resolver) throws IllegalArgumentException, NullPointerException {
+    public static final String expand(String input, Resolver resolver) throws UnresolvedVariableException, IllegalArgumentException, NullPointerException {
         if(resolver == null) {
             throw new NullPointerException("Resolver must be supplied");
         }
@@ -82,10 +84,10 @@ public final class VariableExpansion {
             return null;
         }
 
-        return expand(input, resolver, new Stack<String>());
+        return expand0(input, resolver, new Stack<String>());
     }
 
-    private static final String expand(String input, Resolver resolver, Stack<String> stack) {
+    private static final String expand0(String input, Resolver resolver, Stack<String> stack) {
         Matcher matcher = VARIABLE_OR_ESCAPE_PATTERN.matcher(input);
 
         StringBuffer result = null;
@@ -94,11 +96,37 @@ public final class VariableExpansion {
                 result = new StringBuffer();
             }
 
-            String var = matcher.group(1); // Variable match
+            processMatch(resolver, stack, matcher, result);
+        }
+
+        if(result == null) {
+            // No matches found, return the original input
+            return input;
+        } else {
+            matcher.appendTail(result);
+
+            return result.toString();
+        }
+    }
+
+    private static void processMatch(Resolver resolver, Stack<String> stack, Matcher matcher, StringBuffer result) {
+        String var = matcher.group(1); // Variable match, with a default
+        if(var != null) {
+            String resolved = null;
+            try {
+                resolved = resolve(var, resolver, stack);
+            } catch(UnresolvedVariableException uve) {
+                resolved = matcher.group(2); // The default
+            }
+
+            matcher.appendReplacement(result, Matcher.quoteReplacement(resolved));
+        } else {
+            var = matcher.group(3); // Variable match, no default
+            System.out.println(var);
             if (var != null) {
                 matcher.appendReplacement(result, Matcher.quoteReplacement(resolve(var, resolver, stack)));
             } else {
-                String esc = matcher.group(2); // Escape matcher
+                String esc = matcher.group(4); // Escape matcher
                 if (ESCAPE.equals(esc)) {
                     matcher.appendReplacement(result, Matcher.quoteReplacement(ESCAPE));
                 } else {
@@ -106,15 +134,6 @@ public final class VariableExpansion {
                 }
             }
         }
-
-        if(result == null) {
-            // No match found, return the original input
-            return input;
-        }
-
-        matcher.appendTail(result);
-
-        return result.toString();
     }
 
     private static final String resolve(String var, Resolver resolver, Stack<String> stack) {
@@ -124,14 +143,27 @@ public final class VariableExpansion {
 
         String result = resolver.resolve(var);
         if (result == null) {
-            throw new IllegalArgumentException("Unable to resolve variable: " + var);
+            throw new UnresolvedVariableException("Unable to resolve variable: " + var);
         }
 
         stack.push(var);
         try {
-            return expand(result, resolver, stack);
+            return expand0(result, resolver, stack);
         } finally {
             stack.pop();
+        }
+    }
+
+    public static final class UnresolvedVariableException extends IllegalArgumentException {
+
+        private static final long serialVersionUID = -4256718043645749788L;
+
+        public UnresolvedVariableException() {
+            super();
+        }
+
+        public UnresolvedVariableException(String s) {
+            super(s);
         }
     }
 }

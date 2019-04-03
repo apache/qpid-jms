@@ -43,6 +43,7 @@ public class VariableExpansionTest extends QpidJmsTestCase {
 
     private static final String TEST_ENV_VARIABLE_NAME_NOT_SET = "VAR_EXPANSION_TEST_ENV_VAR_NOT_SET";
     private static final String ESCAPE = "$";
+    private static final String DEFAULT_DELIMINATOR = ":-";
 
     private String testNamePrefix;
     private String testPropName;
@@ -280,17 +281,13 @@ public class VariableExpansionTest extends QpidJmsTestCase {
     }
 
     @Test
-    public void testExpandFailsToResolve() {
-        doBasicExpansionTestImpl(testVariableForExpansion);
-    }
-
-    private void doBasicExpansionTestImpl(String toExpand) {
+    public void testExpandFailsToResolveThrows() {
         final Resolver mockResolver = Mockito.mock(Resolver.class);
 
         // Check when resolution fails
         Mockito.when(mockResolver.resolve(testPropName)).thenReturn(null);
         try {
-            VariableExpansion.expand(toExpand, mockResolver);
+            VariableExpansion.expand(testVariableForExpansion, mockResolver);
             fail("Should have failed to expand, property not resolve");
         } catch (IllegalArgumentException iae) {
             // Expected
@@ -298,5 +295,74 @@ public class VariableExpansionTest extends QpidJmsTestCase {
 
         Mockito.verify(mockResolver).resolve(testPropName);
         Mockito.verifyNoMoreInteractions(mockResolver);
+    }
+
+    @Test
+    public void testExpandWithUnknownVariableWithDefault() {
+        final Resolver mockResolver = Mockito.mock(Resolver.class);
+
+        Mockito.when(mockResolver.resolve(testPropName)).thenReturn(null);
+        String defaultValue = "defauledValue" + getTestName();
+        String expanded = VariableExpansion.expand("${" + testPropName + DEFAULT_DELIMINATOR + defaultValue + "}", mockResolver);
+
+        Mockito.verify(mockResolver).resolve(testPropName);
+        Mockito.verifyNoMoreInteractions(mockResolver);
+
+        assertEquals("Expanded variable not as expected", defaultValue, expanded);
+    }
+
+    @Test
+    public void testExpandWithVariableIndirectedToAnotherVariableWithDefault() {
+        String propName1 = "propName1";
+        String otherPropWhichDoesntExist = "propWhichDoesntExist";
+        String otherPropDefault = "defaultValue" + getTestName();
+        String propValue1 = "${" + otherPropWhichDoesntExist + DEFAULT_DELIMINATOR + otherPropDefault + "}";
+
+        Map<String,String> propsMap = new HashMap<>();
+        propsMap.put(propName1, propValue1);
+
+        VariableExpansion.MapResolver resolver = new VariableExpansion.MapResolver(propsMap);
+        assertNull(resolver.resolve(otherPropWhichDoesntExist));
+
+        String expanded = VariableExpansion.expand("${" + propName1 + "}", resolver);
+
+        assertEquals("Expanded variable not as expected", otherPropDefault, expanded);
+    }
+
+    @Test
+    public void testExpandWithVariableWithDefaultIndirectedToAnUnknownVariableWithoutDefault() {
+        String propName1 = "propName1";
+        String prop1Default = "defaultValue" + getTestName();
+        String otherPropWhichDoesntExist = "propWhichDoesntExist";
+        String propValue1 = "${" + otherPropWhichDoesntExist + "}";
+
+        Map<String,String> propsMap = new HashMap<>();
+        propsMap.put(propName1, propValue1);
+
+        VariableExpansion.MapResolver resolver = new VariableExpansion.MapResolver(propsMap);
+        assertNull(resolver.resolve(otherPropWhichDoesntExist));
+
+        String expanded = VariableExpansion.expand("${" + propName1 + DEFAULT_DELIMINATOR + prop1Default + "}", resolver);
+
+        assertEquals("Expanded variable not as expected", prop1Default, expanded);
+    }
+
+    @Test
+    public void testExpandRecursiveWithDefaultStillThrows() {
+        String propName1 = "propName1";
+        String defaultValue = "defaultValue" + getTestName();
+        String propName2 = "propName2";
+        String propValue1 = "propValue1-${" + propName2 + "}";
+        String propValue2 = "recursive-${" + propName1 + "}";
+
+        Map<String,String> propsMap = new HashMap<>();
+        propsMap.put(propName1, propValue1);
+        propsMap.put(propName2, propValue2);
+        try {
+            VariableExpansion.expand("${" + propName1 + DEFAULT_DELIMINATOR + defaultValue + "}", new VariableExpansion.MapResolver(propsMap));
+            fail("Expected exception to be thrown");
+        } catch (IllegalArgumentException iae) {
+            // Expected
+        }
     }
 }

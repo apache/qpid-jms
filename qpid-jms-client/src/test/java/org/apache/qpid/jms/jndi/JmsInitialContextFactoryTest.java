@@ -49,6 +49,8 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
     private static final String TEST_ENV_VARIABLE_NAME = "VAR_EXPANSION_TEST_ENV_VAR";
     private static final String TEST_ENV_VARIABLE_VALUE = "TestEnvVariableValue123";
 
+    private static final String DEFAULT_DELIMINATOR = ":-";
+
     private JmsInitialContextFactory factory;
     private Context context;
 
@@ -487,6 +489,37 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
         assertEquals("Unexpected class type for returned object", JmsConnectionFactory.class, o.getClass());
 
         assertEquals("Unexpected URI for returned factory", "amqp://" + nowKnownHostValue + ":1234", ((JmsConnectionFactory) o).getRemoteURI());
+    }
+
+    @Test
+    public void testVariableExpansionUnresolvableVariableWithDefault() throws Exception {
+        // Check exception is not thrown for variable that doesn't resolve when it has a default
+        String factoryName = "myFactory";
+        String unknownVariable = "unknownVariable";
+        String unknownVariableDefault = "default" + getTestName();
+        String uri = "amqp://${"+ unknownVariable + DEFAULT_DELIMINATOR + unknownVariableDefault +"}:1234";
+
+        Hashtable<Object, Object> env = new Hashtable<Object, Object>();
+        env.put("connectionfactory." + factoryName, uri);
+
+        //Verify the default is picked up when the variable doesn't resolve
+        Context ctx = createInitialContext(env);
+        Object o = ctx.lookup("myFactory");
+        assertNotNull("No object returned", o);
+        assertEquals("Unexpected class type for returned object", JmsConnectionFactory.class, o.getClass());
+
+        assertEquals("Unexpected URI for returned factory", "amqp://" + unknownVariableDefault + ":1234", ((JmsConnectionFactory) o).getRemoteURI());
+
+        //Now make the variable resolve, check the exact same env+URI now produces different result
+        String nowSetHostVarValue = "nowSetHostVarValue";
+        setTestSystemProperty(unknownVariable, nowSetHostVarValue);
+
+        ctx = createInitialContext(env);
+        o = ctx.lookup("myFactory");
+        assertNotNull("No object returned", o);
+        assertEquals("Unexpected class type for returned object", JmsConnectionFactory.class, o.getClass());
+
+        assertEquals("Unexpected URI for returned factory", "amqp://" + nowSetHostVarValue + ":1234", ((JmsConnectionFactory) o).getRemoteURI());
     }
 
     @Test

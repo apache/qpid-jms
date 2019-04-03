@@ -47,7 +47,7 @@ The property syntax used in the properties file or environment Hashtable is as f
 +   To define a Queue, use format: *queue.&lt;lookup-name&gt; = &lt;queue-name&gt;*
 +   To define a Topic use format: *topic.&lt;lookup-name&gt; = &lt;topic-name&gt;*
 
-The property values which which constitute the connection URI, queue name, or topic name can also utilise simple *${variable}* expansion resolved in order from system properties, environment variables, or the properties file / environment Hashtable. For more details of the Connection URI, see the next section.
+The property values which which constitute the connection URI, queue name, or topic name can also utilise simple *${variable}* or *${variable:-default}* expansion, with these resolved in order from system properties, environment variables, or the properties file / environment Hashtable. For more details of the Connection URI, see the next section.
 
 As an example, consider the following properties used to define a ConnectionFactory, Queue, and Topic:
 

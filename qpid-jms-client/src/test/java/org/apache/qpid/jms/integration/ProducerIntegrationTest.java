@@ -266,7 +266,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
     /**
      * Test that when a message is sent and the producer is set to send as NON_PERSISTENT
      * the resulting sent message has durable false, in this case due to setting the
-     * header field null (header only being sent due to Priority also being set).
+     * header field false (header is only being sent due to Priority also being set).
      *
      * @throws Exception if an error occurs during the test.
      */
@@ -285,7 +285,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
     /**
      * Test that when a message is sent and the send is passed NON_PERSISTENT delivery mode
      * the resulting sent message has durable false, in this case due to setting the
-     * header field null (header only being sent due to Priority also being set).
+     * header field false (header is only being sent due to Priority also being set).
      *
      * @throws Exception if an error occurs during the test.
      */
@@ -371,7 +371,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
             if(setPriority) {
                 MessageHeaderSectionMatcher headerMatcher = new MessageHeaderSectionMatcher(true);
-                headerMatcher.withDurable(nullValue());
+                headerMatcher.withDurable(equalTo(false));
                 headerMatcher.withPriority(equalTo(UnsignedByte.valueOf(priority)));
 
                 messageMatcher.setHeadersMatcher(headerMatcher);

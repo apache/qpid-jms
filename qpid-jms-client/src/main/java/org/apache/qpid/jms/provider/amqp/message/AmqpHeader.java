@@ -79,7 +79,16 @@ public final class AmqpHeader {
 
         if (!isDefault()) {
             result = new Header();
-            result.setDurable(durable);
+            // As we are now definitely sending a Header, always
+            // populate the durable field explicitly rather than
+            // potentially default it if false.
+            if(Boolean.TRUE.equals(durable)) {
+                result.setDurable(Boolean.TRUE);
+            }
+            else {
+                result.setDurable(Boolean.FALSE);
+            }
+
             result.setPriority(priority);
             result.setFirstAcquirer(firstAcquirer);
             result.setTtl(timeToLive);

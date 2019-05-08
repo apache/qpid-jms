@@ -89,6 +89,33 @@
               </execution>
             </executions>
           </plugin>
+
+          <!-- Calculate checksum for Apache dist area. Overrides the
+               apache parent pom execution configuration, for this module -->
+          <plugin>
+            <groupId>net.nicoulaj.maven.plugins</groupId>
+            <artifactId>checksum-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>source-release-checksum</id>
+                <goals>
+                  <goal>files</goal>
+                </goals>
+                <configuration>
+                  <fileSets>
+                    <fileSet>
+                      <directory>${project.build.directory}</directory>
+                      <includes>
+                        <include>apache-qpid-jms-${project.version}-src.tar.gz</include>
+                        <include>apache-qpid-jms-${project.version}-bin.tar.gz</include>
+                      </includes>
+                    </fileSet>
+                  </fileSets>
+                  <failIfNoFiles>true</failIfNoFiles>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
         </plugins>
       </build>
     </profile>

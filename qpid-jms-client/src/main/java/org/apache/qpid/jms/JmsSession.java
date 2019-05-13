@@ -813,6 +813,9 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
 
     private void send(JmsMessageProducer producer, JmsDestination destination, Message original, int deliveryMode, int priority, long timeToLive, boolean disableMsgId, boolean disableTimestamp, long deliveryDelay, CompletionListener listener) throws JMSException {
         sendLock.lock();
+
+        JmsMessage outbound = null;
+
         try {
             original.setJMSDeliveryMode(deliveryMode);
             original.setJMSPriority(priority);
@@ -843,7 +846,6 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
                 messageId = producer.getMessageIDBuilder().createMessageID(producer.getProducerId().toString(), messageSequence);
             }
 
-            JmsMessage outbound = null;
             if (isJmsMessage) {
                 outbound = (JmsMessage) original;
             } else {
@@ -929,6 +931,10 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
             } else {
                 transactionContext.send(connection, envelope, null);
             }
+        } catch (JMSException jmsEx) {
+            // Ensure that on failure case the message is returned to usable state for another send attempt.
+            outbound.onSendComplete();
+            throw jmsEx;
         } finally {
             sendLock.unlock();
         }

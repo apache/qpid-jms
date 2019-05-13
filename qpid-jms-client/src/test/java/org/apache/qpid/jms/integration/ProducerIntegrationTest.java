@@ -46,6 +46,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.jms.BytesMessage;
@@ -3117,6 +3118,64 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             this.errorCount++;
 
             completed.countDown();
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testFailedSendToOfflineConnectionMessageCanBeResentToNewConnection() throws Exception {
+        try (TestAmqpPeer originalPeer = new TestAmqpPeer();
+             TestAmqpPeer finalPeer = new TestAmqpPeer();) {
+
+            final AtomicBoolean exceptionListenerFired = new AtomicBoolean();
+            final String text = "my-message-body-text";
+
+            //----- Initial connection expectations and failure instructions
+            JmsConnection connection = (JmsConnection) testFixture.establishConnecton(originalPeer);
+            connection.setExceptionListener(new ExceptionListener() {
+                @Override
+                public void onException(JMSException exception) {
+                    LOG.trace("JMS ExceptionListener: ", exception);
+                    exceptionListenerFired.set(true);
+                }
+            });
+
+            originalPeer.expectBegin();
+            originalPeer.expectSenderAttach();
+            originalPeer.dropAfterLastHandler();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            TextMessage message = session.createTextMessage(text);
+            Queue queue = session.createQueue("myQueue");
+
+            // initial producer which will be sent to after connection fails
+            MessageProducer producer = session.createProducer(queue);
+
+            // Await connection drop and then send to trigger failure from closed connection.
+            assertFalse("The ExceptionListener should not have been alerted", exceptionListenerFired.get());
+
+            try {
+                producer.send(message);
+                fail("Should have failed to send to failed connection.");
+            } catch (JMSException jmsEx) {
+            }
+
+            // --- Post Reconnection Expectations of this test
+            connection = (JmsConnection) testFixture.establishConnecton(finalPeer);
+
+            finalPeer.expectBegin();
+            finalPeer.expectSenderAttach();
+            finalPeer.expectTransfer(new TransferPayloadCompositeMatcher(), nullValue(), new Accepted(), true);
+            finalPeer.expectClose();
+
+            // Reconnect to another peer and send the failed message again which should work
+            // without need to reset or otherwise account for past failure.
+            session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            queue = session.createQueue("myQueue");
+            producer = session.createProducer(queue);
+            producer.send(message);
+            connection.close();
+
+            finalPeer.waitForAllHandlersToComplete(1000);
         }
     }
 }

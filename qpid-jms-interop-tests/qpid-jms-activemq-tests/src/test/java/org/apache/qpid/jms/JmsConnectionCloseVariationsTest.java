@@ -18,12 +18,16 @@ package org.apache.qpid.jms;
 
 import javax.jms.Connection;
 
+import org.apache.activemq.junit.ActiveMQTestRunner;
+import org.apache.activemq.junit.Repeat;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  * A test case for Connection close called under different circumstances.
  */
+@RunWith(ActiveMQTestRunner.class)
 public class JmsConnectionCloseVariationsTest extends AmqpTestSupport {
 
     @Test(timeout=60000)
@@ -31,12 +35,10 @@ public class JmsConnectionCloseVariationsTest extends AmqpTestSupport {
         doTestConnectionClosedAfterBrokerStopped();
     }
 
+    @Repeat(repetitions = 25)
     @Test(timeout=90000)
     public void testCloseAfterBrokerStoppedRepeated() throws Exception {
-        for (int i = 0; i < 50; ++i) {
-            doTestConnectionClosedAfterBrokerStopped();
-            restartPrimaryBroker();
-        }
+        doTestConnectionClosedAfterBrokerStopped();
     }
 
     private void doTestConnectionClosedAfterBrokerStopped() throws Exception {
@@ -51,12 +53,10 @@ public class JmsConnectionCloseVariationsTest extends AmqpTestSupport {
         doTestConnectionClosedBeforeBrokerStopped();
     }
 
+    @Repeat(repetitions = 25)
     @Test(timeout=90000)
     public void testCloseBeforeBrokerStoppedRepeated() throws Exception {
-        for (int i = 0; i < 50; ++i) {
-            doTestConnectionClosedBeforeBrokerStopped();
-            restartPrimaryBroker();
-        }
+        doTestConnectionClosedBeforeBrokerStopped();
     }
 
     private void doTestConnectionClosedBeforeBrokerStopped() throws Exception {

@@ -3160,6 +3160,9 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             }
 
             // --- Post Reconnection Expectations of this test
+
+            // Reconnect to another peer and send the message object again which should work
+            // without need to reset the message or otherwise account for past send failure.
             connection = (JmsConnection) testFixture.establishConnecton(finalPeer);
 
             finalPeer.expectBegin();
@@ -3167,8 +3170,6 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             finalPeer.expectTransfer(new TransferPayloadCompositeMatcher(), nullValue(), new Accepted(), true);
             finalPeer.expectClose();
 
-            // Reconnect to another peer and send the failed message again which should work
-            // without need to reset or otherwise account for past failure.
             session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             queue = session.createQueue("myQueue");
             producer = session.createProducer(queue);

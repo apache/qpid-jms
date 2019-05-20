@@ -933,7 +933,9 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
             }
         } catch (JMSException jmsEx) {
             // Ensure that on failure case the message is returned to usable state for another send attempt.
-            outbound.onSendComplete();
+            if(outbound != null) {
+                outbound.onSendComplete();
+            }
             throw jmsEx;
         } finally {
             sendLock.unlock();

@@ -46,7 +46,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.jms.BytesMessage;
@@ -3126,16 +3125,16 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer finalPeer = new TestAmqpPeer();) {
 
-            final AtomicBoolean exceptionListenerFired = new AtomicBoolean();
+            final CountDownLatch connectionFailed = new CountDownLatch(1);
             final String text = "my-message-body-text";
 
             //----- Initial connection expectations and failure instructions
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(originalPeer);
-            connection.setExceptionListener(new ExceptionListener() {
+            connection.addConnectionListener(new JmsDefaultConnectionListener() {
+
                 @Override
-                public void onException(JMSException exception) {
-                    LOG.trace("JMS ExceptionListener: ", exception);
-                    exceptionListenerFired.set(true);
+                public void onConnectionFailure(Throwable error) {
+                    connectionFailed.countDown();
                 }
             });
 
@@ -3150,8 +3149,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             // initial producer which will be sent to after connection fails
             MessageProducer producer = session.createProducer(queue);
 
-            // Await connection drop and then send to trigger failure from closed connection.
-            assertFalse("The ExceptionListener should not have been alerted", exceptionListenerFired.get());
+            assertTrue("Connection should have been remotely closed", connectionFailed.await(10, TimeUnit.SECONDS));
 
             try {
                 producer.send(message);

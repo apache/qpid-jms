@@ -80,7 +80,7 @@
   </issueManagement>
 
   <scm>
-    <connection>scm:git:http://gitbox.apache.org/repos/asf/qpid-jms.git</connection>
+    <connection>scm:git:https://gitbox.apache.org/repos/asf/qpid-jms.git</connection>
     <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/qpid-jms.git</developerConnection>
     <url>https://gitbox.apache.org/repos/asf?p=qpid-jms.git</url>
     <tag>HEAD</tag>

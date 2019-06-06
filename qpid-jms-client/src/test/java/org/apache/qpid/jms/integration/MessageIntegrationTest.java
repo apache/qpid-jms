@@ -2273,15 +2273,28 @@ public class MessageIntegrationTest extends QpidJmsTestCase
 
     @Test(timeout = 20000)
     public void testReceivedMessageWithDeliveryTimeAnnotation() throws Exception {
-        doReceivedMessageDeliveryTimeTestImpl(true);
+        long deliveryTime = System.currentTimeMillis() + 13526;
+        doReceivedMessageDeliveryTimeTestImpl(true, deliveryTime);
+    }
+
+    @Test(timeout = 20000)
+    public void testReceivedMessageWithDeliveryTimeAnnotationTimestampValue() throws Exception {
+        Date deliveryTime = new Date(System.currentTimeMillis() + 13526);
+        doReceivedMessageDeliveryTimeTestImpl(true, deliveryTime);
+    }
+
+    @Test(timeout = 20000)
+    public void testReceivedMessageWithDeliveryTimeAnnotationUnsignedLongValue() throws Exception {
+        UnsignedLong deliveryTime = new UnsignedLong(System.currentTimeMillis() + 13526);
+        doReceivedMessageDeliveryTimeTestImpl(true, deliveryTime);
     }
 
     @Test(timeout = 20000)
     public void testReceivedMessageWithoutDeliveryTimeAnnotation() throws Exception {
-        doReceivedMessageDeliveryTimeTestImpl(false);
+        doReceivedMessageDeliveryTimeTestImpl(false, null);
     }
 
-    private void doReceivedMessageDeliveryTimeTestImpl(boolean setDeliveryTimeAnnotation) throws JMSException, InterruptedException, Exception, IOException {
+    private void doReceivedMessageDeliveryTimeTestImpl(boolean setDeliveryTimeAnnotation, Object annotationValue) throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
@@ -2292,12 +2305,25 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             Queue queue = session.createQueue("myQueue");
 
             final long creationTime = System.currentTimeMillis();
-            final long deliveryTime = creationTime + 13526;
+            final long expectedDeliveryTime;
+            if (setDeliveryTimeAnnotation) {
+                if (annotationValue instanceof Long) {
+                    expectedDeliveryTime = (Long) annotationValue;
+                } else if (annotationValue instanceof Date) {
+                    expectedDeliveryTime = ((Date) annotationValue).getTime();
+                } else if (annotationValue instanceof UnsignedLong) {
+                    expectedDeliveryTime = ((UnsignedLong) annotationValue).longValue();
+                } else {
+                    throw new IllegalArgumentException("Unexpected annotation value");
+                }
+            } else {
+                expectedDeliveryTime = creationTime;
+            }
 
             MessageAnnotationsDescribedType msgAnnotations = null;
             if (setDeliveryTimeAnnotation) {
                 msgAnnotations = new MessageAnnotationsDescribedType();
-                msgAnnotations.setSymbolKeyedAnnotation(AmqpMessageSupport.JMS_DELIVERY_TIME.toString(), deliveryTime);
+                msgAnnotations.setSymbolKeyedAnnotation(AmqpMessageSupport.JMS_DELIVERY_TIME.toString(), annotationValue);
             }
 
             PropertiesDescribedType props = new PropertiesDescribedType();
@@ -2320,7 +2346,6 @@ public class MessageIntegrationTest extends QpidJmsTestCase
 
             assertNotNull("should have recieved a message", receivedMessage);
 
-            long expectedDeliveryTime = setDeliveryTimeAnnotation ? deliveryTime : creationTime;
             assertEquals("Unexpected delivery time", expectedDeliveryTime, receivedMessage.getJMSDeliveryTime());
         }
     }

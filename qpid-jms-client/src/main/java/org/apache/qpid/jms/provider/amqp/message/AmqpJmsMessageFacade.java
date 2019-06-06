@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.jms.JMSException;
+import javax.jms.JMSRuntimeException;
 import javax.jms.MessageFormatException;
 
 import org.apache.qpid.jms.JmsDestination;
@@ -549,8 +550,12 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     @Override
     public long getDeliveryTime() {
         Object deliveryTime = getMessageAnnotation(JMS_DELIVERY_TIME);
-        if (deliveryTime != null) {
-            return (long) deliveryTime;
+        if (deliveryTime instanceof Number) {
+            return ((Number) deliveryTime).longValue();
+        } else if (deliveryTime instanceof Date) {
+            return ((Date) deliveryTime).getTime();
+        } else if (deliveryTime != null) {
+            throw new JMSRuntimeException("Unexpected delivery time annotation type: " + deliveryTime.getClass());
         }
 
         return syntheticDeliveryTime;

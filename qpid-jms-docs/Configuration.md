@@ -86,7 +86,7 @@ The options apply to the behaviour of the JMS objects such as Connection, Sessio
 + **jms.password** The password value used to authenticate the connection
 + **jms.clientID** The ClientID value that is applied to the connection.
 + **jms.forceAsyncSend** Configures whether all Messages sent from a MessageProducer are sent asynchronously or only those Message that qualify such as Messages inside a transaction or non-persistent messages.
-+ **jms.forceSyncSend** Override all asynchronous send conditions and always sends every Message from a MessageProducer synchronously.
++ **jms.forceSyncSend** Override certain asynchronous send conditions and always send messages from a MessageProducer synchronously. Sends using a CompletionListener are not affected and are implicitly always asynchronous.
 + **jms.forceAsyncAcks** Causes all Message acknowledgments to be sent asynchronously.
 + **jms.localMessageExpiry** Controls whether MessageConsumer instances will locally filter expired Messages or deliver them.  By default this value is set to true and expired messages will be filtered.
 + **jms.localMessagePriority** If enabled prefetched messages are reordered locally based on their given Message priority value. Default is false.

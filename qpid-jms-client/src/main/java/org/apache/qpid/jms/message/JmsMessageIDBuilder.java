@@ -16,8 +16,6 @@
  */
 package org.apache.qpid.jms.message;
 
-import java.util.Locale;
-
 import org.apache.qpid.jms.provider.amqp.message.AmqpMessageIdHelper;
 
 /**
@@ -34,11 +32,13 @@ public interface JmsMessageIDBuilder {
 
                     @Override
                     public Object createMessageID(String producerId, long messageSequence) {
-                        String messageId = producerId + "-" + messageSequence;
-                        if (!AmqpMessageIdHelper.hasMessageIdPrefix(messageId)) {
-                            messageId = AmqpMessageIdHelper.JMS_ID_PREFIX + messageId;
+                        final StringBuilder idBuilder = ID_BUILDER.get();
+                        idBuilder.setLength(0);
+                        if (!AmqpMessageIdHelper.hasMessageIdPrefix(producerId)) {
+                            idBuilder.append(AmqpMessageIdHelper.JMS_ID_PREFIX);
                         }
-                        return messageId;
+                        idBuilder.append(producerId).append('-').append(messageSequence);
+                        return idBuilder.toString();
                     }
 
                     @Override
@@ -100,21 +100,9 @@ public interface JmsMessageIDBuilder {
             }
         };
 
-        public abstract JmsMessageIDBuilder createBuilder();
+        private static final ThreadLocal<StringBuilder> ID_BUILDER = ThreadLocal.withInitial(StringBuilder::new);
 
-        /**
-         * Creates a new JmsMessageIDBuilder from the named type (case insensitive).
-         *
-         * @param value
-         *      The name of the builder to create.
-         *
-         * @return a new JmsMessageIDBuilder that matches the named type.
-         *
-         * @throws IllegalArgumentException if the named type is unknown.
-         */
-        public static JmsMessageIDBuilder create(String value) {
-            return valueOf(value.toUpperCase(Locale.ENGLISH)).createBuilder();
-        }
+        public abstract JmsMessageIDBuilder createBuilder();
     }
 
     /**

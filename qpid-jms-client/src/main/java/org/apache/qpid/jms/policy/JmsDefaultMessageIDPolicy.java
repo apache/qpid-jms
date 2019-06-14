@@ -55,16 +55,6 @@ public class JmsDefaultMessageIDPolicy implements JmsMessageIDPolicy {
     }
 
     /**
-     * Sets the type of the Message IDs used to populate the outgoing Messages
-     *
-     * @param type
-     *      The name of the Message type to use when sending a message.
-     */
-    public void setMessageIDType(String type) {
-        this.messageIDBuilder = JmsMessageIDBuilder.BUILTIN.create(type);
-    }
-
-    /**
      * @return the type name of the configured JmsMessageIDBuilder.
      */
     public String getMessageIDType() {

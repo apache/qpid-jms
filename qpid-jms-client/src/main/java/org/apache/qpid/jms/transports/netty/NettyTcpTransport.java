@@ -48,12 +48,6 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.FixedRecvByteBufAllocator;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.channel.epoll.Epoll;
-import io.netty.channel.epoll.EpollEventLoopGroup;
-import io.netty.channel.epoll.EpollSocketChannel;
-import io.netty.channel.kqueue.KQueue;
-import io.netty.channel.kqueue.KQueueEventLoopGroup;
-import io.netty.channel.kqueue.KQueueSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.logging.LoggingHandler;
@@ -138,15 +132,16 @@ public class NettyTcpTransport implements Transport {
             throw new IllegalStateException("A transport listener must be set before connection attempts.");
         }
 
-        boolean useKQueue = getTransportOptions().isUseKQueue() && KQueue.isAvailable();
-        boolean useEpoll = getTransportOptions().isUseEpoll() && Epoll.isAvailable();
+        TransportOptions transportOptions = getTransportOptions();
+        boolean useKQueue = KQueueSupport.isAvailable(transportOptions);
+        boolean useEpoll = EpollSupport.isAvailable(transportOptions);
 
         if (useKQueue) {
             LOG.trace("Netty Transport using KQueue mode");
-            group = new KQueueEventLoopGroup(1, ioThreadfactory);
+            group = KQueueSupport.createGroup(1, ioThreadfactory);
         } else if (useEpoll) {
             LOG.trace("Netty Transport using Epoll mode");
-            group = new EpollEventLoopGroup(1, ioThreadfactory);
+            group = EpollSupport.createGroup(1, ioThreadfactory);
         } else {
             LOG.trace("Netty Transport using NIO mode");
             group = new NioEventLoopGroup(1, ioThreadfactory);
@@ -155,9 +150,9 @@ public class NettyTcpTransport implements Transport {
         bootstrap = new Bootstrap();
         bootstrap.group(group);
         if (useKQueue) {
-            bootstrap.channel(KQueueSocketChannel.class);
+            KQueueSupport.createChannel(bootstrap);
         } else if (useEpoll) {
-            bootstrap.channel(EpollSocketChannel.class);
+            EpollSupport.createChannel(bootstrap);
         } else {
             bootstrap.channel(NioSocketChannel.class);
         }
@@ -177,8 +172,8 @@ public class NettyTcpTransport implements Transport {
             }
         });
 
-        configureNetty(bootstrap, getTransportOptions());
-        getTransportOptions().setSslContextOverride(sslContextOverride);
+        configureNetty(bootstrap, transportOptions);
+        transportOptions.setSslContextOverride(sslContextOverride);
 
         ChannelFuture future = bootstrap.connect(getRemoteHost(), getRemotePort());
         future.addListener(new ChannelFutureListener() {

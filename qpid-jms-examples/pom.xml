@@ -60,4 +60,25 @@
     </plugins>
   </build>
 
+  <profiles>
+    <profile>
+      <id>exclude-native-transport-deps</id>
+      <dependencies>
+        <dependency>
+          <groupId>org.apache.qpid</groupId>
+          <artifactId>qpid-jms-client</artifactId>
+          <exclusions>
+            <exclusion>
+              <groupId>io.netty</groupId>
+              <artifactId>netty-transport-native-epoll</artifactId>
+            </exclusion>
+            <exclusion>
+              <groupId>io.netty</groupId>
+              <artifactId>netty-transport-native-kqueue</artifactId>
+            </exclusion>
+          </exclusions>
+        </dependency>
+      </dependencies>
+    </profile>
+  </profiles>
 </project>

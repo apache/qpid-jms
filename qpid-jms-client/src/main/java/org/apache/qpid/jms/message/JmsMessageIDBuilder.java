@@ -30,15 +30,38 @@ public interface JmsMessageIDBuilder {
         DEFAULT {
             @Override
             public JmsMessageIDBuilder createBuilder() {
+
+                /**
+                 * The default builder is meant to be used as a single instance per producer
+                 * and will yield incorrect results if used across multiple producer instances.
+                 */
                 return new JmsMessageIDBuilder() {
+
+                    private final StringBuilder builder = new StringBuilder();
+                    private int idPrefixLength = -1;
 
                     @Override
                     public Object createMessageID(String producerId, long messageSequence) {
-                        String messageId = producerId + "-" + messageSequence;
-                        if (!AmqpMessageIdHelper.hasMessageIdPrefix(messageId)) {
-                            messageId = AmqpMessageIdHelper.JMS_ID_PREFIX + messageId;
+                        if (idPrefixLength < 0) {
+                            initialize(producerId);
                         }
-                        return messageId;
+
+                        builder.setLength(idPrefixLength);
+                        builder.append(messageSequence);
+
+                        return builder.toString();
+                    }
+
+                    @Override
+                    public JmsMessageIDBuilder initialize(String producerId) {
+                        if (!AmqpMessageIdHelper.hasMessageIdPrefix(producerId)) {
+                            builder.append(AmqpMessageIdHelper.JMS_ID_PREFIX);
+                        }
+                        builder.append(producerId).append("-");
+
+                        idPrefixLength = builder.length();
+
+                        return this;
                     }
 
                     @Override
@@ -113,7 +136,21 @@ public interface JmsMessageIDBuilder {
          * @throws IllegalArgumentException if the named type is unknown.
          */
         public static JmsMessageIDBuilder create(String value) {
-            return valueOf(value.toUpperCase(Locale.ENGLISH)).createBuilder();
+            return validate(value).createBuilder();
+        }
+
+        /**
+         * Validates the value given maps to the built in message ID builders and
+         * return the builder enumeration that it maps to which can later be used
+         * to create builders of that type.
+         *
+         * @param value
+         * 		The name of one of the built in message ID builders.
+         *
+         * @return the enumeration value that maps to the built in builder.
+         */
+        public static BUILTIN validate(String value) {
+            return valueOf(value.toUpperCase(Locale.ENGLISH));
         }
     }
 
@@ -129,5 +166,21 @@ public interface JmsMessageIDBuilder {
      * @return and Object value that will be assigned as the Message ID.
      */
     Object createMessageID(String producerId, long messageSequence);
+
+    /**
+     * Provides an initialization point for Message ID builders in order for them
+     * to be able to better optimize the creation of the ID values depending on the
+     * implementation of the builder.
+     *
+     * For builders that are created in a one per producer fashion this methods is
+     * given the producer Id that the builder will be assigned to which can allow
+     * for caching a custom id encoding etc.
+     *
+     * @param producerId
+     * 		The unique Id of a producer object that will be using the builder.
+     *
+     * @return the builder instance for chaining.
+     */
+    default JmsMessageIDBuilder initialize(String producerId) { return this; }
 
 }

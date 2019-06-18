@@ -26,7 +26,15 @@ import org.apache.qpid.jms.message.JmsMessageIDBuilder;
  */
 public class JmsDefaultMessageIDPolicy implements JmsMessageIDPolicy {
 
-    private JmsMessageIDBuilder messageIDBuilder = JmsMessageIDBuilder.BUILTIN.DEFAULT.createBuilder();
+    /**
+     * A global builder instance to use instead of allocating one on each builder get.
+     */
+    private volatile JmsMessageIDBuilder messageIDBuilder = null;
+
+    /**
+     * The message id builder type that should be used when creating a new builder instance.
+     */
+    private JmsMessageIDBuilder.BUILTIN messageIDBuilderType = JmsMessageIDBuilder.BUILTIN.DEFAULT;
 
     /**
      * Initialize default Message ID builder policy
@@ -42,6 +50,7 @@ public class JmsDefaultMessageIDPolicy implements JmsMessageIDPolicy {
      */
     public JmsDefaultMessageIDPolicy(JmsDefaultMessageIDPolicy source) {
         this.messageIDBuilder = source.messageIDBuilder;
+        this.messageIDBuilderType = source.messageIDBuilderType;
     }
 
     @Override
@@ -51,7 +60,7 @@ public class JmsDefaultMessageIDPolicy implements JmsMessageIDPolicy {
 
     @Override
     public JmsMessageIDBuilder getMessageIDBuilder(JmsSession session, JmsDestination destination) {
-        return messageIDBuilder;
+        return getMessageIDBuilder();
     }
 
     /**
@@ -61,18 +70,26 @@ public class JmsDefaultMessageIDPolicy implements JmsMessageIDPolicy {
      *      The name of the Message type to use when sending a message.
      */
     public void setMessageIDType(String type) {
-        this.messageIDBuilder = JmsMessageIDBuilder.BUILTIN.create(type);
+        this.messageIDBuilderType = JmsMessageIDBuilder.BUILTIN.validate(type);
     }
 
     /**
      * @return the type name of the configured JmsMessageIDBuilder.
      */
     public String getMessageIDType() {
-        return this.messageIDBuilder.toString();
+        return getMessageIDBuilder().toString();
     }
 
     public JmsMessageIDBuilder getMessageIDBuilder() {
-        return messageIDBuilder;
+        JmsMessageIDBuilder builder = this.messageIDBuilder;
+
+        // If the user has not overridden the create a builder on each call behavior
+        // by passing in a single global instance than use the current set type to
+        // create a new builder each time this method is called.
+        if (builder == null) {
+            builder = messageIDBuilderType.createBuilder();
+        }
+        return builder;
     }
 
     public void setMessageIDBuilder(JmsMessageIDBuilder messageIDBuilder) {

@@ -60,7 +60,8 @@
     <maven-idea-plugin-version>2.5</maven-idea-plugin-version>
     <maven-bundle-plugin-version>4.1.0</maven-bundle-plugin-version>
     <findbugs-maven-plugin-version>3.0.2</findbugs-maven-plugin-version>
-    <jacoco-plugin-version>0.8.2</jacoco-plugin-version>
+    <jacoco-plugin-version>0.8.4</jacoco-plugin-version>
+    <surefire.version>2.22.2</surefire.version>
 
     <!-- Test properties -->
     <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>

@@ -148,10 +148,8 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
         // We need to drain the credit if no message(s) arrive to use it.
         final ScheduledFuture<?> future = getSession().schedule(() -> {
             LOG.trace("Consumer {} running scheduled stop", getConsumerId());
-            if (getEndpoint().getRemoteCredit() != 0) {
-                stop(request);
-                session.getProvider().pumpToProtonTransport(request);
-            }
+            stop(request);
+            session.getProvider().pumpToProtonTransport(request);
         }, timeout);
 
         stopRequest = new ScheduledRequest(future, request);

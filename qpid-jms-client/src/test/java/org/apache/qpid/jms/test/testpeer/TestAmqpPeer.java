@@ -298,6 +298,20 @@ public class TestAmqpPeer implements AutoCloseable
     void receiveFrame(int type, int channel, int frameSize, DescribedType describedType, Binary payload)
     {
         Handler handler = getFirstHandler();
+
+        while (handler instanceof FrameHandler && ((FrameHandler) handler).isOptional())
+        {
+            FrameHandler frameHandler = (FrameHandler) handler;
+            if(frameHandler.descriptorMatches(describedType.getDescriptor())){
+                LOGGER.info("Optional frame handler matches the descriptor, proceeding to verify it");
+                break;
+            } else {
+                LOGGER.info("Skipping non-matching optional frame handler, received frame descriptor (" + describedType.getDescriptor() + ") does not match handler: " +  frameHandler);
+                removeFirstHandler();
+                handler = getFirstHandler();
+            }
+        }
+
         if(handler == null)
         {
             Object actualDescriptor = describedType.getDescriptor();
@@ -2686,7 +2700,7 @@ public class TestAmqpPeer implements AutoCloseable
                                                                 final DescribedType content,
                                                                 final int nextIncomingDeliveryId) {
 
-        sendTransferToLastOpenedLinkOnLastOpenedSession(headerDescribedType, messageAnnotationsDescribedType, propertiesDescribedType, appPropertiesDescribedType, content, nextIncomingDeliveryId, false);
+        sendTransferToLastOpenedLinkOnLastOpenedSession(headerDescribedType, messageAnnotationsDescribedType, propertiesDescribedType, appPropertiesDescribedType, content, nextIncomingDeliveryId, null, null, 0);
     }
 
     public void sendTransferToLastOpenedLinkOnLastOpenedSession(final HeaderDescribedType headerDescribedType,
@@ -2695,18 +2709,26 @@ public class TestAmqpPeer implements AutoCloseable
                                                                 final ApplicationPropertiesDescribedType appPropertiesDescribedType,
                                                                 final DescribedType content,
                                                                 final int nextIncomingDeliveryId,
-                                                                final boolean sendSettled) {
+                                                                final String tagAsString,
+                                                                final Boolean more,
+                                                                final int sendDelay) {
         synchronized (_handlersLock) {
             CompositeAmqpPeerRunnable comp = insertCompsiteActionForLastHandler();
 
-            String tagString = "theDeliveryTag" + nextIncomingDeliveryId;
+            String tagString = tagAsString;
+            if(tagString == null) {
+                tagString = "theDeliveryTag" + nextIncomingDeliveryId;
+            }
+
             Binary dtag = new Binary(tagString.getBytes());
 
             final TransferFrame transferResponse = new TransferFrame()
             .setDeliveryId(UnsignedInteger.valueOf(nextIncomingDeliveryId))
             .setDeliveryTag(dtag)
-            .setMessageFormat(UnsignedInteger.ZERO)
-            .setSettled(sendSettled);
+            .setMessageFormat(UnsignedInteger.ZERO);
+            if(more != null) {
+                transferResponse.setMore(more);
+            }
 
             Binary payload = prepareTransferPayload(headerDescribedType, messageAnnotationsDescribedType, propertiesDescribedType, appPropertiesDescribedType, content);
 
@@ -2721,6 +2743,10 @@ public class TestAmqpPeer implements AutoCloseable
                     transferSender.setChannel(_lastInitiatedChannel);
                 }
             });
+
+            if(sendDelay != 0) {
+                transferSender.setSendDelay(sendDelay);
+            }
 
             comp.add(transferSender);
         }
@@ -2775,5 +2801,52 @@ public class TestAmqpPeer implements AutoCloseable
         };
 
         runAfterLastHandler(exitEarly);
+    }
+
+    public void optionalFlow(final boolean drain, final boolean sendDrainFlowResponse,Matcher<UnsignedInteger> creditMatcher)
+    {
+        final FlowMatcher flowMatcher = new FlowMatcher();
+        flowMatcher.setOptional(true);
+
+        Matcher<Boolean> drainMatcher = null;
+        if(drain)
+        {
+            drainMatcher = equalTo(true);
+        }
+        else
+        {
+            drainMatcher = Matchers.anyOf(equalTo(false), nullValue());
+        }
+
+        flowMatcher.withLinkCredit(creditMatcher);
+        flowMatcher.withDrain(drainMatcher);
+
+        if(drain && sendDrainFlowResponse)
+        {
+            final FlowFrame drainResponse = new FlowFrame();
+            drainResponse.setOutgoingWindow(UnsignedInteger.ZERO); //TODO: shouldnt be hard coded
+            drainResponse.setIncomingWindow(UnsignedInteger.valueOf(Integer.MAX_VALUE)); //TODO: shouldnt be hard coded
+            drainResponse.setLinkCredit(UnsignedInteger.ZERO);
+            drainResponse.setDrain(true);
+
+            // The flow frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
+            final FrameSender flowResponseSender = new FrameSender(this, FrameType.AMQP, -1, drainResponse, null);
+            flowResponseSender.setValueProvider(new ValueProvider()
+            {
+                @Override
+                public void setValues()
+                {
+                    flowResponseSender.setChannel(flowMatcher.getActualChannel());
+                    drainResponse.setHandle(flowMatcher.getReceivedHandle());
+                    drainResponse.setDeliveryCount(calculateNewDeliveryCount(flowMatcher));
+                    drainResponse.setNextOutgoingId(calculateNewOutgoingId(flowMatcher, 0));
+                    drainResponse.setNextIncomingId(flowMatcher.getReceivedNextOutgoingId());
+                }
+            });
+
+            flowMatcher.onCompletion(flowResponseSender);
+        }
+
+        addHandler(flowMatcher);
     }
 }

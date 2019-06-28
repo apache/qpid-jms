@@ -42,6 +42,7 @@ import javax.jms.TextMessage;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescribedType;
+import org.apache.qpid.jms.test.testpeer.describedtypes.sections.HeaderDescribedType;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.PropertiesDescribedType;
 import org.apache.qpid.jms.test.testpeer.matchers.AcceptedMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.ModifiedMatcher;
@@ -282,6 +283,68 @@ public class ZeroPrefetchIntegrationTest extends QpidJmsTestCase {
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(3000);
+        }
+    }
+
+    @Test(timeout=20000)
+    public void testZeroPrefetchConsumerReceiveTimedPullWithInFlightArrival() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            // Create a connection with zero prefetch
+            Connection connection = testFixture.establishConnecton(testPeer, "?jms.prefetchPolicy.all=0");
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            // Expected the consumer to attach but NOT send credit
+            testPeer.expectReceiverAttach();
+
+            final MessageConsumer consumer = session.createConsumer(queue);
+
+             String msgContent = "content";
+            // Expect that once receive is called, it flows 1 credit. Give it an initial transfer frame with header only.
+            testPeer.expectLinkFlow(false, equalTo(UnsignedInteger.ONE));
+            testPeer.sendTransferToLastOpenedLinkOnLastOpenedSession(new HeaderDescribedType(), null, null, null, null, 1, "delivery1", true, 0);
+            // Then give it a final transfer with body only, after a delay.
+            testPeer.sendTransferToLastOpenedLinkOnLastOpenedSession(null, null, null, null, new AmqpValueDescribedType(msgContent), 1, "delivery1", false, 30);
+            // Expect it to be accepted. Depending on timing (e.g in slow CI), a draining Flow might arrive first, allowing for that.
+            testPeer.optionalFlow(true, false, equalTo(UnsignedInteger.ONE));
+            testPeer.expectDisposition(true, new AcceptedMatcher(), 1, 1);
+
+            final AtomicReference<Throwable> error = new AtomicReference<>();
+            final CountDownLatch done = new CountDownLatch(1);
+
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            try {
+                executor.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Message m = consumer.receive(20);
+
+                            assertNotNull("Message should have been received", m);
+                            assertTrue(m instanceof TextMessage);
+                            assertEquals("Unexpected message content", msgContent, ((TextMessage) m).getText());
+                        } catch (Throwable t) {
+                            error.set(t);
+                        } finally {
+                            done.countDown();
+                        }
+                    }
+                });
+
+                assertTrue("Consumer receive task did not complete", done.await(4, TimeUnit.SECONDS));
+                assertNull("Consumer receive errored", error.get());
+            } finally {
+                executor.shutdownNow();
+            }
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(2000);
         }
     }
 }

@@ -24,4 +24,10 @@ import org.apache.qpid.proton.amqp.DescribedType;
 interface FrameHandler extends Handler
 {
     void frame(int type, int channel, int frameBodySize, DescribedType describedType, Binary payload, TestAmqpPeer peer);
+
+    boolean descriptorMatches(Object descriptor);
+
+    void setOptional(boolean optionalFrame);
+
+    boolean isOptional();
 }

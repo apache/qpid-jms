@@ -44,6 +44,8 @@ public abstract class AbstractFrameFieldAndPayloadMatchingHandler extends Abstra
 
     private int _expectedFrameSize;
 
+    private boolean _optional;
+
     protected AbstractFrameFieldAndPayloadMatchingHandler(FrameType frameType,
                                                 int channel,
                                                 int frameSize,
@@ -148,10 +150,20 @@ public abstract class AbstractFrameFieldAndPayloadMatchingHandler extends Abstra
     }
 
     @Override
+    public void setOptional(boolean optional) {
+        _optional = optional;
+    }
+
+    @Override
+    public boolean isOptional() {
+        return _optional;
+    }
+
+    @Override
     public String toString()
     {
-        return "AbstractFrameFieldAndPayloadMatchingHandler [_symbolicDescriptor=" + getSymbolicDescriptor()
-                + ", _expectedChannel=" + expectedChannelString()
-                + "]";
+        return "AbstractFrameFieldAndPayloadMatchingHandler [descriptor=" + getSymbolicDescriptor() + "/" + getNumericDescriptor()
+                + ", expectedChannel=" + expectedChannelString()
+                + (_optional ? ", optional=true]" : "]");
     }
 }

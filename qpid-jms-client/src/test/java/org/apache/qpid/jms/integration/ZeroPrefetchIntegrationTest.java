@@ -29,7 +29,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.jms.Connection;
 import javax.jms.Message;
@@ -242,37 +242,42 @@ public class ZeroPrefetchIntegrationTest extends QpidJmsTestCase {
                 testPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.ONE));
             }
 
-            final AtomicBoolean error = new AtomicBoolean(false);
+            final AtomicReference<Throwable> error = new AtomicReference<>();
             final CountDownLatch done = new CountDownLatch(1);
 
             ExecutorService executor = Executors.newSingleThreadExecutor();
-            executor.execute(new Runnable() {
-
-                @Override
-                public void run() {
-                    try {
-                        if (timeout < 0) {
-                            consumer.receiveNoWait();
-                        } else if (timeout == 0) {
-                            consumer.receive();
-                        } else {
-                            consumer.receive(10000);
+            try {
+                executor.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            if (timeout < 0) {
+                                consumer.receiveNoWait();
+                            } else if (timeout == 0) {
+                                consumer.receive();
+                            } else {
+                                consumer.receive(10000);
+                            }
+                        } catch (Throwable t) {
+                            error.set(t);
+                        } finally {
+                            done.countDown();
                         }
-                    } catch (Exception ex) {
-                        error.set(true);
-                    } finally {
-                        done.countDown();
                     }
-                }
-            });
+                });
 
-            testPeer.waitForAllHandlersToComplete(3000);
-            testPeer.expectEnd();
+                testPeer.waitForAllHandlersToComplete(3000);
+                testPeer.expectEnd();
+
+                session.close();
+
+                assertTrue("Consumer did not unblock", done.await(10, TimeUnit.SECONDS));
+                assertNull("Consumer receive errored", error.get());
+            } finally {
+                executor.shutdownNow();
+            }
+
             testPeer.expectClose();
-
-            session.close();
-
-            assertTrue("Consumer did not unblock", done.await(10, TimeUnit.SECONDS));
 
             connection.close();
 

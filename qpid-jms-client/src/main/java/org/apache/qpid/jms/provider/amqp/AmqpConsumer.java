@@ -110,7 +110,29 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
                 request.onSuccess();
             } else {
                 // There are still deliveries to process, wait for them to be.
-                stopRequest = request;
+                if (getDrainTimeout() > 0) {
+                    // If the remote doesn't respond we will close the consumer and break any
+                    // blocked receive or stop calls that are waiting, unless the consumer is
+                    // a participant in a transaction in which case we will just fail the request
+                    // and leave the consumer open since the TX needs it to remain active.
+                    final ScheduledFuture<?> future = getSession().schedule(() -> {
+                        LOG.trace("Consumer {} stop timed out awaiting message processing", getConsumerId());
+                        Exception cause = new JmsOperationTimedOutException("Consumer stop timed out awaiting message processing");
+                        if (session.isTransacted() && session.getTransactionContext().isInTransaction(getConsumerId())) {
+                            stopRequest.onFailure(cause);
+                            stopRequest = null;
+                        } else {
+                            closeResource(session.getProvider(), cause, false);
+                            session.getProvider().pumpToProtonTransport();
+                        }
+                    }, getDrainTimeout());
+
+                    stopRequest = new ScheduledRequest(future, request);
+                } else {
+                    stopRequest = request;
+                }
+
+                LOG.trace("Consumer {} stop awaiting queued delivery processing", getConsumerId());
             }
         } else {
             // TODO: We don't actually want the additional messages that could be sent while
@@ -461,6 +483,10 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
 
     @Override
     public void processDeliveryUpdates(AmqpProvider provider, Delivery delivery) throws IOException {
+        if(delivery.getDefaultDeliveryState() == null){
+            delivery.setDefaultDeliveryState(Released.getInstance());
+        }
+
         if (delivery.isReadable() && !delivery.isPartial()) {
             LOG.trace("{} has incoming Message(s).", this);
             try {
@@ -492,8 +518,6 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     }
 
     private boolean processDelivery(Delivery incoming) throws Exception {
-        incoming.setDefaultDeliveryState(Released.getInstance());
-
         JmsMessage message = null;
         try {
             message = AmqpCodec.decodeMessage(this, getEndpoint().recv()).asJmsMessage();

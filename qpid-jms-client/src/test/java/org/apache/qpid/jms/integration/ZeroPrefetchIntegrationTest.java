@@ -32,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.jms.Connection;
+import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
@@ -40,6 +41,7 @@ import javax.jms.Session;
 import javax.jms.TextMessage;
 
 import org.apache.qpid.jms.test.QpidJmsTestCase;
+import org.apache.qpid.jms.test.Wait;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescribedType;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.HeaderDescribedType;
@@ -340,6 +342,77 @@ public class ZeroPrefetchIntegrationTest extends QpidJmsTestCase {
             } finally {
                 executor.shutdownNow();
             }
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(2000);
+        }
+    }
+
+    @Test(timeout=20000)
+    public void testZeroPrefetchConsumerReceiveTimedPullWithInFlightArrivalTimesOutIfNotCompleted() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            // Create a connection with zero prefetch
+            Connection connection = testFixture.establishConnecton(testPeer, "?jms.prefetchPolicy.all=0&amqp.drainTimeout=75");
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            // Expected the consumer to attach but NOT send credit
+            testPeer.expectReceiverAttach();
+
+            final MessageConsumer consumer = session.createConsumer(queue);
+
+            // Expect that once receive is called, it flows 1 credit. Give it an initial (ie. more=true) transfer frame with header only.
+            testPeer.expectLinkFlow(false, equalTo(UnsignedInteger.ONE));
+            testPeer.sendTransferToLastOpenedLinkOnLastOpenedSession(new HeaderDescribedType(), null, null, null, null, 1, "delivery1", true, 0);
+            // Expect the consumer to be closed when stop times out. Depending on timing (e.g in slow CI), a draining Flow might arrive first, allowing for that.
+            testPeer.optionalFlow(true, false, equalTo(UnsignedInteger.ONE));
+            testPeer.expectDetach(true, true, true);
+            testPeer.expectDispositionThatIsReleasedAndSettled();
+
+            final AtomicReference<Throwable> error = new AtomicReference<>();
+            final CountDownLatch done = new CountDownLatch(1);
+
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            try {
+                executor.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            consumer.receive(20);
+                        } catch (Throwable t) {
+                            error.set(t);
+                        } finally {
+                            done.countDown();
+                        }
+                    }
+                });
+
+                assertTrue("Consumer receive task did not complete", done.await(4, TimeUnit.SECONDS));
+
+                Throwable t = error.get();
+                assertNotNull("Consumer receive did not throw as expected", t);
+                assertTrue("Consumer receive did not throw as expected", t instanceof JMSException);
+            } finally {
+                executor.shutdownNow();
+            }
+
+            assertTrue("Consumer should be closed", Wait.waitFor(new Wait.Condition() {
+                @Override
+                public boolean isSatisfied() throws Exception {
+                    try {
+                        consumer.getMessageSelector();
+                        return false;
+                    } catch (JMSException ex) {
+                        return true;
+                    }
+                }
+            }, 5000, 10));
 
             testPeer.expectClose();
             connection.close();

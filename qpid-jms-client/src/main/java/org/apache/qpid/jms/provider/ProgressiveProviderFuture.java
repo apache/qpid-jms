@@ -16,11 +16,10 @@
  */
 package org.apache.qpid.jms.provider;
 
-import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
-import org.apache.qpid.jms.util.IOExceptionSupport;
+import org.apache.qpid.jms.provider.exceptions.ProviderExceptionSupport;
 
 /**
  * An optimized version of a ProviderFuture that makes use of spin waits and other
@@ -46,7 +45,7 @@ public class ProgressiveProviderFuture extends ProviderFuture {
     }
 
     @Override
-    public boolean sync(long amount, TimeUnit unit) throws IOException {
+    public boolean sync(long amount, TimeUnit unit) throws ProviderException {
         try {
             if (isComplete() || amount == 0) {
                 failOnError();
@@ -108,12 +107,12 @@ public class ProgressiveProviderFuture extends ProviderFuture {
             }
         } catch (InterruptedException e) {
             Thread.interrupted();
-            throw IOExceptionSupport.create(e);
+            throw ProviderExceptionSupport.createOrPassthroughFatal(e);
         }
     }
 
     @Override
-    public void sync() throws IOException {
+    public void sync() throws ProviderException {
         try {
             if (isComplete()) {
                 failOnError();
@@ -161,7 +160,7 @@ public class ProgressiveProviderFuture extends ProviderFuture {
             }
         } catch (InterruptedException e) {
             Thread.interrupted();
-            throw IOExceptionSupport.create(e);
+            throw ProviderExceptionSupport.createOrPassthroughFatal(e);
         }
     }
 }

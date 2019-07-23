@@ -18,7 +18,6 @@ package org.apache.qpid.jms.provider.failover;
 
 import static org.junit.Assert.fail;
 
-import java.io.IOException;
 import java.net.URI;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -34,6 +33,7 @@ import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.JmsDefaultConnectionListener;
 import org.apache.qpid.jms.meta.JmsResource;
 import org.apache.qpid.jms.meta.JmsSessionInfo;
+import org.apache.qpid.jms.provider.exceptions.ProviderIOException;
 import org.apache.qpid.jms.provider.mock.ResourceLifecycleFilter;
 import org.junit.After;
 import org.junit.Before;
@@ -128,7 +128,7 @@ public class FailoverProviderOfflineBehaviorTest extends FailoverProviderTestSup
             public void onLifecycleEvent(JmsResource resource) throws Exception {
                 if (resource instanceof JmsSessionInfo) {
                     mockPeer.shutdownQuietly();
-                    throw new IOException();
+                    throw new ProviderIOException("Failure closing session");
                 }
             }
         });

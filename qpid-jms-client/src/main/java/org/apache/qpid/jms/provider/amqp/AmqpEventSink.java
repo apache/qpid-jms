@@ -16,8 +16,7 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
-import java.io.IOException;
-
+import org.apache.qpid.jms.provider.ProviderException;
 import org.apache.qpid.proton.engine.Delivery;
 
 /**
@@ -32,9 +31,9 @@ public interface AmqpEventSink {
      * @param provider
      *        the AmqpProvider instance for easier access to fire events.
      *
-     * @throws IOException if an error occurs while processing the update.
+     * @throws ProviderException if an error occurs while processing the update.
      */
-    void processRemoteOpen(AmqpProvider provider) throws IOException;
+    void processRemoteOpen(AmqpProvider provider) throws ProviderException;
 
     /**
      * Event handler for remote peer detach of this resource.
@@ -42,9 +41,9 @@ public interface AmqpEventSink {
      * @param provider
      *        the AmqpProvider instance for easier access to fire events.
      *
-     * @throws IOException if an error occurs while processing the update.
+     * @throws ProviderException if an error occurs while processing the update.
      */
-    void processRemoteDetach(AmqpProvider provider) throws IOException;
+    void processRemoteDetach(AmqpProvider provider) throws ProviderException;
 
     /**
      * Event handler for remote peer close of this resource.
@@ -52,9 +51,9 @@ public interface AmqpEventSink {
      * @param provider
      *        the AmqpProvider instance for easier access to fire events.
      *
-     * @throws IOException if an error occurs while processing the update.
+     * @throws ProviderException if an error occurs while processing the update.
      */
-    void processRemoteClose(AmqpProvider provider) throws IOException;
+    void processRemoteClose(AmqpProvider provider) throws ProviderException;
 
     /**
      * Called when the Proton Engine signals an Delivery related event has been triggered
@@ -65,9 +64,9 @@ public interface AmqpEventSink {
      * @param delivery
      *        the Delivery that has an update to its state which needs handled.
      *
-     * @throws IOException if an error occurs while processing the update.
+     * @throws ProviderException if an error occurs while processing the update.
      */
-    void processDeliveryUpdates(AmqpProvider provider, Delivery delivery) throws IOException;
+    void processDeliveryUpdates(AmqpProvider provider, Delivery delivery) throws ProviderException;
 
     /**
      * Called when the Proton Engine signals an Flow related event has been triggered
@@ -76,8 +75,8 @@ public interface AmqpEventSink {
      * @param provider
      *        the AmqpProvider instance for easier access to fire events.
      *
-     * @throws IOException if an error occurs while processing the update.
+     * @throws ProviderException if an error occurs while processing the update.
      */
-    void processFlowUpdates(AmqpProvider provider) throws IOException;
+    void processFlowUpdates(AmqpProvider provider) throws ProviderException;
 
 }

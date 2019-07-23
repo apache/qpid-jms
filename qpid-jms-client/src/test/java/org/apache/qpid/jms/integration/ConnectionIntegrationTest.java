@@ -65,8 +65,8 @@ import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.JmsConnectionRemotelyClosedException;
 import org.apache.qpid.jms.JmsDefaultConnectionListener;
-import org.apache.qpid.jms.provider.ProviderRedirectedException;
 import org.apache.qpid.jms.provider.amqp.AmqpSupport;
+import org.apache.qpid.jms.provider.exceptions.ProviderConnectionRedirectedException;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.Wait;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
@@ -546,9 +546,9 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             assertTrue("Connection should report failure", done.await(5, TimeUnit.SECONDS));
 
             assertTrue(asyncError.get() instanceof JMSException);
-            assertTrue(asyncError.get().getCause() instanceof ProviderRedirectedException);
+            assertTrue(asyncError.get().getCause() instanceof ProviderConnectionRedirectedException);
 
-            ProviderRedirectedException redirect = (ProviderRedirectedException) asyncError.get().getCause();
+            ProviderConnectionRedirectedException redirect = (ProviderConnectionRedirectedException) asyncError.get().getCause();
             URI redirectionURI = redirect.getRedirectionURI();
 
             assertNotNull(redirectionURI);
@@ -653,6 +653,8 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
                 // Expected
                 assertNotNull("Expected exception to have a message", jmse.getMessage());
                 assertTrue("Expected breadcrumb to be present in message", jmse.getMessage().contains(BREAD_CRUMB));
+            } catch (Throwable t) {
+                fail("Caught unexpected exception: " + t);
             }
 
             connection.close();
@@ -689,6 +691,8 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
                 // Expected
                 assertNotNull("Expected exception to have a message", jmse.getMessage());
                 assertTrue("Expected breadcrumb to be present in message", jmse.getMessage().contains(BREAD_CRUMB));
+            } catch (Throwable t) {
+                fail("Caught unexpected exception: " + t);
             }
 
             connection.close();

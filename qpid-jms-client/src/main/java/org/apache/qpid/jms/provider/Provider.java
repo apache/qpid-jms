@@ -16,11 +16,8 @@
  */
 package org.apache.qpid.jms.provider;
 
-import java.io.IOException;
 import java.net.URI;
 import java.util.List;
-
-import javax.jms.JMSException;
 
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsMessageFactory;
@@ -48,19 +45,19 @@ public interface Provider {
      * @param connectionInfo
      * 		The JmsConnectionInfo that contains the properties that define this connection.
      *
-     * @throws IOException if the remote resource can not be contacted.
+     * @throws ProviderException if the remote resource can not be contacted.
      */
-    void connect(JmsConnectionInfo connectionInfo) throws IOException;
+    void connect(JmsConnectionInfo connectionInfo) throws ProviderException;
 
     /**
      * Starts the Provider.  The start method provides a place for the Provider to perform
      * and pre-start configuration checks to ensure that the current state is valid and that
      * all contracts have been met prior to starting.
      *
-     * @throws IOException if an error occurs during start processing.
+     * @throws ProviderException if an error occurs during start processing.
      * @throws IllegalStateException if the Provider is improperly configured.
      */
-    void start() throws IOException, IllegalStateException;
+    void start() throws ProviderException, IllegalStateException;
 
     /**
      * Closes this Provider terminating all connections and canceling any pending
@@ -107,10 +104,9 @@ public interface Provider {
      * @param request
      *        The request object that should be signaled when this operation completes.
      *
-     * @throws IOException if an error occurs or the Provider is already closed.
-     * @throws JMSException if an error occurs due to JMS violation such as bad credentials.
+     * @throws ProviderException if an error occurs or the Provider is already closed.
      */
-    void create(JmsResource resource, AsyncResult request) throws IOException, JMSException;
+    void create(JmsResource resource, AsyncResult request) throws ProviderException;
 
     /**
      * Starts the Provider version of the given JmsResource.
@@ -125,7 +121,7 @@ public interface Provider {
      * once all Connection resources are restored.
      *
      * The provider is required to implement this method and not throw any error other than
-     * an IOException if a communication error occurs.  The start operation is not required to
+     * an ProviderException if a communication error occurs.  The start operation is not required to
      * have any effect on the provider resource but must not throw UnsupportedOperation etc.
      *
      * @param resource
@@ -133,10 +129,9 @@ public interface Provider {
      * @param request
      *        The request object that should be signaled when this operation completes.
      *
-     * @throws IOException if an error occurs or the Provider is already closed.
-     * @throws JMSException if an error occurs due to JMS violation such as already closed resource.
+     * @throws ProviderException if an error occurs or the Provider is already closed.
      */
-    void start(JmsResource resource, AsyncResult request) throws IOException, JMSException;
+    void start(JmsResource resource, AsyncResult request) throws ProviderException;
 
     /**
      * Stops (pauses) the Provider version of the given JmsResource, the resource would then
@@ -152,7 +147,7 @@ public interface Provider {
      * rollback.
      *
      * The provider is required to implement this method and not throw any error other than
-     * an IOException if a communication error occurs.  The stop operation is not required to
+     * an ProviderException if a communication error occurs.  The stop operation is not required to
      * have any effect on the provider resource but must not throw UnsupportedOperation etc.
      *
      * @param resource
@@ -160,10 +155,9 @@ public interface Provider {
      * @param request
      *        The request object that should be signaled when this operation completes.
      *
-     * @throws IOException if an error occurs or the Provider is already closed.
-     * @throws JMSException if an error occurs due to JMS violation such as already closed resource.
+     * @throws ProviderException if an error occurs or the Provider is already closed.
      */
-    void stop(JmsResource resource, AsyncResult request) throws IOException, JMSException;
+    void stop(JmsResource resource, AsyncResult request) throws ProviderException;
 
     /**
      * Instruct the Provider to dispose of a given JmsResource.
@@ -180,10 +174,9 @@ public interface Provider {
      * @param request
      *        The request object that should be signaled when this operation completes.
      *
-     * @throws IOException if an error occurs or the Provider is already closed.
-     * @throws JMSException if an error occurs due to JMS violation such as not authorized.
+     * @throws ProviderException if an error occurs or the Provider is already closed.
      */
-    void destroy(JmsResource resource, AsyncResult request) throws IOException, JMSException;
+    void destroy(JmsResource resource, AsyncResult request) throws ProviderException;
 
     /**
      * Sends the JmsMessage contained in the outbound dispatch envelope.
@@ -193,10 +186,9 @@ public interface Provider {
      * @param request
      *        The request object that should be signaled when this operation completes.
      *
-     * @throws IOException if an error occurs or the Provider is already closed.
-     * @throws JMSException if an error that maps to JMS occurs such as not authorized.
+     * @throws ProviderException if an error occurs or the Provider is already closed.
      */
-    void send(JmsOutboundMessageDispatch envelope, AsyncResult request) throws IOException, JMSException;
+    void send(JmsOutboundMessageDispatch envelope, AsyncResult request) throws ProviderException;
 
     /**
      * Called to acknowledge all messages that have been delivered in a given session.
@@ -212,10 +204,9 @@ public interface Provider {
      * @param request
      *        The request object that should be signaled when this operation completes.
      *
-     * @throws IOException if an error occurs or the Provider is already closed.
-     * @throws JMSException if an error occurs due to JMS violation such as unmatched ack.
+     * @throws ProviderException if an error occurs or the Provider is already closed.
      */
-    void acknowledge(JmsSessionId sessionId, ACK_TYPE ackType, AsyncResult request) throws IOException, JMSException;
+    void acknowledge(JmsSessionId sessionId, ACK_TYPE ackType, AsyncResult request) throws ProviderException;
 
     /**
      * Called to acknowledge a JmsMessage has been delivered, consumed, re-delivered...etc.
@@ -230,11 +221,9 @@ public interface Provider {
      * @param request
      *        The request object that should be signaled when this operation completes.
      *
-     * @throws IOException if an error occurs or the Provider is already closed.
-     * @throws JMSException if an error occurs due to JMS violation such as unmatched ack.
+     * @throws ProviderException if an error occurs or the Provider is already closed.
      */
-    void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType, AsyncResult request)
-        throws IOException, JMSException;
+    void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType, AsyncResult request) throws ProviderException;
 
     /**
      * Called to commit an open transaction, and start a new one if a new transaction info
@@ -255,10 +244,9 @@ public interface Provider {
      * @param request
      *        The request object that should be signaled when this operation completes.
      *
-     * @throws IOException if an error occurs or the Provider is already closed.
-     * @throws JMSException if an error occurs due to JMS violation such not authorized.
+     * @throws ProviderException if an error occurs or the Provider is already closed.
      */
-    void commit(JmsTransactionInfo transactionInfo, JmsTransactionInfo nextTransactionInfo, AsyncResult request) throws IOException, JMSException;
+    void commit(JmsTransactionInfo transactionInfo, JmsTransactionInfo nextTransactionInfo, AsyncResult request) throws ProviderException;
 
     /**
      * Called to roll back an open transaction, and start a new one if a new transaction info
@@ -275,10 +263,9 @@ public interface Provider {
      * @param request
      *        The request object that should be signaled when this operation completes.
      *
-     * @throws IOException if an error occurs or the Provider is already closed.
-     * @throws JMSException if an error occurs due to JMS violation such not authorized.
+     * @throws ProviderException if an error occurs or the Provider is already closed.
      */
-    void rollback(JmsTransactionInfo transactionInfo, JmsTransactionInfo nextTransactionInfo, AsyncResult request) throws IOException, JMSException;
+    void rollback(JmsTransactionInfo transactionInfo, JmsTransactionInfo nextTransactionInfo, AsyncResult request) throws ProviderException;
 
     /**
      * Called to recover all unacknowledged messages for a Session in client Ack mode.
@@ -288,9 +275,9 @@ public interface Provider {
      * @param request
      *        The request object that should be signaled when this operation completes.
      *
-     * @throws IOException if an error occurs or the Provider is already closed.
+     * @throws ProviderException if an error occurs or the Provider is already closed.
      */
-    void recover(JmsSessionId sessionId, AsyncResult request) throws IOException;
+    void recover(JmsSessionId sessionId, AsyncResult request) throws ProviderException;
 
     /**
      * Remove a durable topic subscription by name.
@@ -303,10 +290,9 @@ public interface Provider {
      * @param request
      *        The request object that should be signaled when this operation completes.
      *
-     * @throws IOException if an error occurs or the Provider is already closed.
-     * @throws JMSException if an error occurs due to JMS violation such not authorized.
+     * @throws ProviderException if an error occurs or the Provider is already closed.
      */
-    void unsubscribe(String subscription, AsyncResult request) throws IOException, JMSException;
+    void unsubscribe(String subscription, AsyncResult request) throws ProviderException;
 
     /**
      * Request a remote peer send a Message to this client.  A message pull request is
@@ -326,9 +312,9 @@ public interface Provider {
      * @param request
      *        The request object that should be signaled when this operation completes.
      *
-     * @throws IOException if an error occurs or the Provider is already closed.
+     * @throws ProviderException if an error occurs or the Provider is already closed.
      */
-    void pull(JmsConsumerId consumerId, long timeout, AsyncResult request) throws IOException;
+    void pull(JmsConsumerId consumerId, long timeout, AsyncResult request) throws ProviderException;
 
     /**
      * Gets the Provider specific Message factory for use in the JMS layer when a Session

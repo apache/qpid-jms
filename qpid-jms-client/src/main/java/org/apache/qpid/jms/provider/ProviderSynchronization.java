@@ -25,6 +25,6 @@ public interface ProviderSynchronization {
 
     void onPendingSuccess();
 
-    void onPendingFailure(Throwable cause);
+    void onPendingFailure(ProviderException cause);
 
 }

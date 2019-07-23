@@ -14,17 +14,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.qpid.jms.provider;
+package org.apache.qpid.jms.provider.exceptions;
 
-public class ProviderResourceClosedException extends ProviderException {
+import org.apache.qpid.jms.exceptions.JmsConnectionFailedException;
 
-    private static final long serialVersionUID = 5601827103553513599L;
+public class ProviderFailedException extends ProviderIOException {
 
-    public ProviderResourceClosedException(String message) {
+    private static final long serialVersionUID = 1L;
+
+    public ProviderFailedException(String message) {
         super(message);
     }
 
-    public ProviderResourceClosedException(String message, Throwable cause) {
+    public ProviderFailedException(String message, Throwable cause) {
         super(message, cause);
+    }
+
+    @Override
+    public JmsConnectionFailedException toJMSException() {
+        return new JmsConnectionFailedException(this);
     }
 }

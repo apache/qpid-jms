@@ -16,20 +16,20 @@
  */
 package org.apache.qpid.jms.provider.amqp.builders;
 
-import java.io.IOException;
 import java.util.concurrent.ScheduledFuture;
 
-import org.apache.qpid.jms.JmsOperationTimedOutException;
 import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.meta.JmsResource;
 import org.apache.qpid.jms.meta.JmsResource.ResourceState;
 import org.apache.qpid.jms.provider.AsyncResult;
+import org.apache.qpid.jms.provider.ProviderException;
 import org.apache.qpid.jms.provider.amqp.AmqpEventSink;
 import org.apache.qpid.jms.provider.amqp.AmqpExceptionBuilder;
 import org.apache.qpid.jms.provider.amqp.AmqpProvider;
 import org.apache.qpid.jms.provider.amqp.AmqpResource;
 import org.apache.qpid.jms.provider.amqp.AmqpResourceParent;
 import org.apache.qpid.jms.provider.amqp.AmqpSupport;
+import org.apache.qpid.jms.provider.exceptions.ProviderOperationTimedOutException;
 import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.engine.Endpoint;
 import org.apache.qpid.proton.engine.EndpointState;
@@ -94,7 +94,7 @@ public abstract class AmqpResourceBuilder<TARGET extends AmqpResource, PARENT ex
                 }
 
                 @Override
-                public void onFailure(Throwable result) {
+                public void onFailure(ProviderException result) {
                     handleClosed(provider, result);
                 }
 
@@ -120,27 +120,27 @@ public abstract class AmqpResourceBuilder<TARGET extends AmqpResource, PARENT ex
     //----- Event handlers ---------------------------------------------------//
 
     @Override
-    public void processRemoteOpen(AmqpProvider provider) throws IOException {
+    public void processRemoteOpen(AmqpProvider provider) throws ProviderException {
         handleOpened(provider);
     }
 
     @Override
-    public void processRemoteClose(AmqpProvider provider) throws IOException {
+    public void processRemoteClose(AmqpProvider provider) throws ProviderException {
         handleClosed(provider, null);
     }
 
     @Override
-    public void processRemoteDetach(AmqpProvider provider) throws IOException {
+    public void processRemoteDetach(AmqpProvider provider) throws ProviderException {
         // No implementation needed here for this event.
     }
 
     @Override
-    public void processDeliveryUpdates(AmqpProvider provider, Delivery delivery) throws IOException {
+    public void processDeliveryUpdates(AmqpProvider provider, Delivery delivery) throws ProviderException {
         // No implementation needed here for this event.
     }
 
     @Override
-    public void processFlowUpdates(AmqpProvider provider) throws IOException {
+    public void processFlowUpdates(AmqpProvider provider) throws ProviderException {
         // No implementation needed here for this event.
     }
 
@@ -167,11 +167,11 @@ public abstract class AmqpResourceBuilder<TARGET extends AmqpResource, PARENT ex
         } else {
             // TODO: Perhaps the validate method should thrown an exception so that we
             // can return a specific error message to the create initiator.
-            handleClosed(provider, new IOException("Failed to open requested endpoint"));
+            handleClosed(provider, new ProviderException("Failed to open requested endpoint"));
         }
     }
 
-    protected final void handleClosed(AmqpProvider provider, Throwable cause) {
+    protected final void handleClosed(AmqpProvider provider, ProviderException cause) {
         // If the resource being built is closed during the creation process
         // then this is always an error.
 
@@ -180,13 +180,13 @@ public abstract class AmqpResourceBuilder<TARGET extends AmqpResource, PARENT ex
         // Perform any post processing relating to closure during creation attempt
         afterClosed(getResource(), getResourceInfo());
 
-        Throwable openError;
+        ProviderException openError;
         if (hasRemoteError()) {
-            openError = AmqpSupport.convertToException(parent.getProvider(), getEndpoint(), getEndpoint().getRemoteCondition());
+            openError = getOpenAbortExceptionFromRemote();
         } else if (cause != null) {
             openError = cause;
         } else {
-            openError = getOpenAbortException();
+            openError = getDefaultOpenAbortException();
         }
 
         if (requestTimeoutTask != null) {
@@ -204,8 +204,8 @@ public abstract class AmqpResourceBuilder<TARGET extends AmqpResource, PARENT ex
     }
 
     @Override
-    public Exception createException() {
-        return new JmsOperationTimedOutException("Request to open resource " + getResource() + " timed out");
+    public ProviderException createException() {
+        return new ProviderOperationTimedOutException("Request to open resource " + getResource() + " timed out");
     }
 
     //----- Implementation methods used to customize the build process -------//
@@ -284,8 +284,19 @@ public abstract class AmqpResourceBuilder<TARGET extends AmqpResource, PARENT ex
      *
      * @return an Exception to describes the open failure for this resource.
      */
-    protected Exception getOpenAbortException() {
-        return new IOException("Open failed unexpectedly.");
+    protected ProviderException getDefaultOpenAbortException() {
+        return new ProviderException("Open failed unexpectedly.");
+    }
+
+    /**
+     * When aborting the open operation, this method will attempt to create an
+     * appropriate exception from the remote error condition if one is set and will
+     * revert to creating the default variant if not.
+     *
+     * @return an Exception to describes the open failure for this resource.
+     */
+    protected ProviderException getOpenAbortExceptionFromRemote() {
+        return AmqpSupport.convertToNonFatalException(parent.getProvider(), getEndpoint(), getEndpoint().getRemoteCondition());
     }
 
     /**

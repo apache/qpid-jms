@@ -16,21 +16,20 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
-import java.io.IOException;
 import java.nio.BufferOverflowException;
 import java.util.concurrent.ScheduledFuture;
 
-import javax.jms.IllegalStateException;
-import javax.jms.JMSException;
-import javax.jms.TransactionRolledBackException;
-
-import org.apache.qpid.jms.JmsOperationTimedOutException;
 import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.meta.JmsSessionInfo;
 import org.apache.qpid.jms.meta.JmsTransactionId;
 import org.apache.qpid.jms.provider.AsyncResult;
+import org.apache.qpid.jms.provider.ProviderException;
 import org.apache.qpid.jms.provider.amqp.AmqpTransactionContext.DischargeCompletion;
-import org.apache.qpid.jms.util.IOExceptionSupport;
+import org.apache.qpid.jms.provider.exceptions.ProviderExceptionSupport;
+import org.apache.qpid.jms.provider.exceptions.ProviderIllegalStateException;
+import org.apache.qpid.jms.provider.exceptions.ProviderOperationTimedOutException;
+import org.apache.qpid.jms.provider.exceptions.ProviderTransactionInDoubtException;
+import org.apache.qpid.jms.provider.exceptions.ProviderTransactionRolledBackException;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Rejected;
@@ -64,7 +63,7 @@ public class AmqpTransactionCoordinator extends AmqpAbstractResource<JmsSessionI
     }
 
     @Override
-    public void processDeliveryUpdates(AmqpProvider provider, Delivery delivery) throws IOException {
+    public void processDeliveryUpdates(AmqpProvider provider, Delivery delivery) throws ProviderException {
 
         try {
             if (delivery != null && delivery.remotelySettled()) {
@@ -87,17 +86,15 @@ public class AmqpTransactionCoordinator extends AmqpAbstractResource<JmsSessionI
                 } else if (state instanceof Rejected) {
                     LOG.debug("Last TX request failed: {}", txId);
                     Rejected rejected = (Rejected) state;
-                    Exception cause = AmqpSupport.convertToException(
-                        getParent().getProvider(), getEndpoint(), rejected.getError());
-                    JMSException failureCause = null;
-                    if (COMMIT_MARKER.equals(txId.getProviderContext())){
-                        failureCause = new TransactionRolledBackException(cause.getMessage());
+                    ProviderException cause = AmqpSupport.convertToNonFatalException(getParent().getProvider(), getEndpoint(), rejected.getError());
+                    if (COMMIT_MARKER.equals(txId.getProviderContext()) && !(cause instanceof ProviderTransactionRolledBackException)){
+                        cause = new ProviderTransactionRolledBackException(cause.getMessage(), cause);
                     } else {
-                        failureCause = new JMSException(cause.getMessage());
+                        cause = new ProviderTransactionInDoubtException(cause.getMessage(), cause);
                     }
 
                     txId.setProviderHint(null);
-                    pendingRequest.onFailure(failureCause);
+                    pendingRequest.onFailure(cause);
                 } else {
                     LOG.debug("Last TX request succeeded: {}", txId);
                     pendingRequest.onSuccess();
@@ -113,20 +110,20 @@ public class AmqpTransactionCoordinator extends AmqpAbstractResource<JmsSessionI
             }
 
             super.processDeliveryUpdates(provider, delivery);
-        } catch (Exception e) {
-            throw IOExceptionSupport.create(e);
+        } catch (Throwable e) {
+            throw ProviderExceptionSupport.createNonFatalOrPassthrough(e);
         }
     }
 
-    public void declare(JmsTransactionId txId, AsyncResult request) throws Exception {
+    public void declare(JmsTransactionId txId, AsyncResult request) throws ProviderException {
 
         if (isClosed()) {
-            request.onFailure(new JMSException("Cannot start new transaction: Coordinator remotely closed"));
+            request.onFailure(new ProviderIllegalStateException("Cannot start new transaction: Coordinator remotely closed"));
             return;
         }
 
         if (txId.getProviderHint() != null) {
-            throw new IllegalStateException("Declar called while a TX is still Active.");
+            throw new ProviderIllegalStateException("Declar called while a TX is still Active.");
         }
 
         Message message = Message.Factory.create();
@@ -142,15 +139,15 @@ public class AmqpTransactionCoordinator extends AmqpAbstractResource<JmsSessionI
         sendTxCommand(message);
     }
 
-    public void discharge(JmsTransactionId txId, DischargeCompletion request) throws Exception {
+    public void discharge(JmsTransactionId txId, DischargeCompletion request) throws ProviderException {
 
         if (isClosed()) {
-            Exception failureCause = null;
+            ProviderException failureCause = null;
 
             if (request.isCommit()) {
-                failureCause = new TransactionRolledBackException("Transaction inbout: Coordinator remotely closed");
+                failureCause = new ProviderTransactionRolledBackException("Transaction inbout: Coordinator remotely closed");
             } else {
-                failureCause = new JMSException("Rollback cannot complete: Coordinator remotely closed");
+                failureCause = new ProviderIllegalStateException("Rollback cannot complete: Coordinator remotely closed");
             }
 
             request.onFailure(failureCause);
@@ -158,7 +155,7 @@ public class AmqpTransactionCoordinator extends AmqpAbstractResource<JmsSessionI
         }
 
         if (txId.getProviderHint() == null) {
-            throw new IllegalStateException("Discharge called with no active Transaction.");
+            throw new ProviderIllegalStateException("Discharge called with no active Transaction.");
         }
 
         // Store the context of this action in the transaction ID for later completion.
@@ -182,7 +179,7 @@ public class AmqpTransactionCoordinator extends AmqpAbstractResource<JmsSessionI
     //----- Base class overrides ---------------------------------------------//
 
     @Override
-    public void closeResource(AmqpProvider provider, Throwable cause, boolean localClose) {
+    public void closeResource(AmqpProvider provider, ProviderException cause, boolean localClose) {
 
         // Alert any pending operation that the link failed to complete the pending
         // begin / commit / rollback operation.
@@ -244,13 +241,13 @@ public class AmqpTransactionCoordinator extends AmqpAbstractResource<JmsSessionI
     private ScheduledFuture<?> scheduleTimeoutIfNeeded(String cause, AsyncResult pendingRequest) {
         AmqpProvider provider = getParent().getProvider();
         if (provider.getRequestTimeout() != JmsConnectionInfo.INFINITE) {
-            return provider.scheduleRequestTimeout(pendingRequest, provider.getRequestTimeout(), new JmsOperationTimedOutException(cause));
+            return provider.scheduleRequestTimeout(pendingRequest, provider.getRequestTimeout(), new ProviderOperationTimedOutException(cause));
         } else {
             return null;
         }
     }
 
-    private void sendTxCommand(Message message) throws IOException {
+    private void sendTxCommand(Message message) throws ProviderException {
         int encodedSize = 0;
         byte[] buffer = OUTBOUND_BUFFER;
         while (true) {

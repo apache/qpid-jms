@@ -16,10 +16,8 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
-import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
-import java.security.ProviderException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -35,8 +33,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.jms.JMSException;
-import javax.jms.JMSSecurityRuntimeException;
 import javax.net.ssl.SSLContext;
 
 import org.apache.qpid.jms.JmsConnectionExtensions;
@@ -58,20 +54,26 @@ import org.apache.qpid.jms.meta.JmsTransactionInfo;
 import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.provider.NoOpAsyncResult;
 import org.apache.qpid.jms.provider.Provider;
-import org.apache.qpid.jms.provider.ProviderClosedException;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
-import org.apache.qpid.jms.provider.ProviderFailedException;
+import org.apache.qpid.jms.provider.ProviderException;
 import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.provider.ProviderFutureFactory;
 import org.apache.qpid.jms.provider.ProviderListener;
 import org.apache.qpid.jms.provider.ProviderSynchronization;
 import org.apache.qpid.jms.provider.amqp.builders.AmqpClosedConnectionBuilder;
 import org.apache.qpid.jms.provider.amqp.builders.AmqpConnectionBuilder;
+import org.apache.qpid.jms.provider.exceptions.ProviderClosedException;
+import org.apache.qpid.jms.provider.exceptions.ProviderExceptionSupport;
+import org.apache.qpid.jms.provider.exceptions.ProviderFailedException;
+import org.apache.qpid.jms.provider.exceptions.ProviderIdleTimeoutException;
+import org.apache.qpid.jms.provider.exceptions.ProviderIllegalStateException;
+import org.apache.qpid.jms.provider.exceptions.ProviderOperationTimedOutException;
+import org.apache.qpid.jms.provider.exceptions.ProviderTransactionInDoubtException;
 import org.apache.qpid.jms.sasl.Mechanism;
 import org.apache.qpid.jms.sasl.SaslMechanismFinder;
+import org.apache.qpid.jms.sasl.SaslSecurityRuntimeException;
 import org.apache.qpid.jms.transports.Transport;
 import org.apache.qpid.jms.transports.TransportListener;
-import org.apache.qpid.jms.util.IOExceptionSupport;
 import org.apache.qpid.jms.util.PropertyUtil;
 import org.apache.qpid.jms.util.QpidJMSThreadFactory;
 import org.apache.qpid.proton.engine.Collector;
@@ -168,7 +170,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
     }
 
     @Override
-    public void connect(final JmsConnectionInfo connectionInfo) throws IOException {
+    public void connect(final JmsConnectionInfo connectionInfo) throws ProviderException {
         checkClosedOrFailed();
 
         if (serializer != null) {
@@ -287,12 +289,12 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                 connectRequest.onSuccess();
             }
         } catch (Throwable t) {
-            connectRequest.onFailure(IOExceptionSupport.create(t));
+            connectRequest.onFailure(ProviderExceptionSupport.createOrPassthroughFatal(t));
         }
 
         if (connectionInfo.getConnectTimeout() != JmsConnectionInfo.INFINITE) {
             if (!connectRequest.sync(connectionInfo.getConnectTimeout(), TimeUnit.MILLISECONDS)) {
-                throw new IOException("Timed out while waiting to connect");
+                throw new ProviderOperationTimedOutException("Timed out while waiting to connect");
             }
         } else {
             connectRequest.sync();
@@ -300,7 +302,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
     }
 
     @Override
-    public void start() throws IOException, IllegalStateException {
+    public void start() throws ProviderException, IllegalStateException {
         checkClosedOrFailed();
 
         if (listener == null) {
@@ -375,7 +377,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                 } else {
                     request.sync(getCloseTimeout(), TimeUnit.MILLISECONDS);
                 }
-            } catch (IOException e) {
+            } catch (ProviderException e) {
                 LOG.warn("Error caught while closing Provider: {}", e.getMessage() != null ? e.getMessage() : "<Unknown Error>");
             } finally {
                 if (transport != null) {
@@ -390,7 +392,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
     }
 
     @Override
-    public void create(final JmsResource resource, final AsyncResult request) throws IOException, JMSException {
+    public void create(final JmsResource resource, final AsyncResult request) throws ProviderException {
         checkClosedOrFailed();
         checkConnected();
 
@@ -436,7 +438,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                             }
 
                             @Override
-                            public void onFailure(Throwable result) {
+                            public void onFailure(ProviderException result) {
                                 request.onFailure(result);
                             }
 
@@ -467,13 +469,13 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
                 pumpToProtonTransport(request);
             } catch (Throwable t) {
-                request.onFailure(t);
+                request.onFailure(ProviderExceptionSupport.createNonFatalOrPassthrough(t));
             }
         });
     }
 
     @Override
-    public void start(final JmsResource resource, final AsyncResult request) throws IOException {
+    public void start(final JmsResource resource, final AsyncResult request) throws ProviderException {
         checkClosedOrFailed();
         checkConnected();
 
@@ -493,13 +495,13 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
                 pumpToProtonTransport(request);
             } catch (Throwable t) {
-                request.onFailure(t);
+                request.onFailure(ProviderExceptionSupport.createNonFatalOrPassthrough(t));
             }
         });
     }
 
     @Override
-    public void stop(final JmsResource resource, final AsyncResult request) throws IOException {
+    public void stop(final JmsResource resource, final AsyncResult request) throws ProviderException {
         checkClosedOrFailed();
         checkConnected();
 
@@ -519,13 +521,13 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
                 pumpToProtonTransport(request);
             } catch (Throwable t) {
-                request.onFailure(t);
+                request.onFailure(ProviderExceptionSupport.createNonFatalOrPassthrough(t));
             }
         });
     }
 
     @Override
-    public void destroy(final JmsResource resource, final AsyncResult request) throws IOException {
+    public void destroy(final JmsResource resource, final AsyncResult request) throws ProviderException {
         checkClosedOrFailed();
         checkConnected();
 
@@ -547,7 +549,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                             }
 
                             @Override
-                            public void onFailure(Throwable result) {
+                            public void onFailure(ProviderException result) {
                                 onComplete();
                                 request.onFailure(result);
                             }
@@ -585,7 +587,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                             }
 
                             @Override
-                            public void onFailure(Throwable result) {
+                            public void onFailure(ProviderException result) {
                                 onComplete();
                                 request.onFailure(result);
                             }
@@ -620,13 +622,13 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
                 pumpToProtonTransport(request);
             } catch (Throwable t) {
-                request.onFailure(t);
+                request.onFailure(ProviderExceptionSupport.createNonFatalOrPassthrough(t));
             }
         });
     }
 
     @Override
-    public void send(final JmsOutboundMessageDispatch envelope, final AsyncResult request) throws IOException {
+    public void send(final JmsOutboundMessageDispatch envelope, final AsyncResult request) throws ProviderException {
         checkClosedOrFailed();
         checkConnected();
 
@@ -638,13 +640,13 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                 AmqpProducer producer = (AmqpProducer) producerId.getProviderHint();
                 producer.send(envelope, request);
             } catch (Throwable t) {
-                request.onFailure(t);
+                request.onFailure(ProviderExceptionSupport.createNonFatalOrPassthrough(t));
             }
         });
     }
 
     @Override
-    public void acknowledge(final JmsSessionId sessionId, final ACK_TYPE ackType, final AsyncResult request) throws IOException {
+    public void acknowledge(final JmsSessionId sessionId, final ACK_TYPE ackType, final AsyncResult request) throws ProviderException {
         checkClosedOrFailed();
         checkConnected();
 
@@ -653,17 +655,21 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
             try {
                 checkClosedOrFailed();
                 AmqpSession amqpSession = connection.getSession(sessionId);
-                amqpSession.acknowledge(ackType);
-                pumpToProtonTransport(request);
-                request.onSuccess();
+                if (amqpSession != null) {
+                    amqpSession.acknowledge(ackType);
+                    pumpToProtonTransport(request);
+                    request.onSuccess();
+                } else {
+                    throw new ProviderIllegalStateException("Cannot acknowledge message from session that does not exist.");
+                }
             } catch (Throwable t) {
-                request.onFailure(t);
+                request.onFailure(ProviderExceptionSupport.createNonFatalOrPassthrough(t));
             }
         });
     }
 
     @Override
-    public void acknowledge(final JmsInboundMessageDispatch envelope, final ACK_TYPE ackType, final AsyncResult request) throws IOException {
+    public void acknowledge(final JmsInboundMessageDispatch envelope, final ACK_TYPE ackType, final AsyncResult request) throws ProviderException {
         checkClosedOrFailed();
         checkConnected();
 
@@ -686,13 +692,13 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                     transport.flush();
                 }
             } catch (Throwable t) {
-                request.onFailure(t);
+                request.onFailure(ProviderExceptionSupport.createNonFatalOrPassthrough(t));
             }
         });
     }
 
     @Override
-    public void commit(final JmsTransactionInfo transactionInfo, JmsTransactionInfo nextTransactionId, final AsyncResult request) throws IOException {
+    public void commit(final JmsTransactionInfo transactionInfo, JmsTransactionInfo nextTransactionId, final AsyncResult request) throws ProviderException {
         checkClosedOrFailed();
         checkConnected();
 
@@ -701,16 +707,24 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
             try {
                 checkClosedOrFailed();
                 AmqpSession session = connection.getSession(transactionInfo.getSessionId());
-                session.commit(transactionInfo, nextTransactionId, request);
-                pumpToProtonTransport(request);
+                if (session != null) {
+                    session.commit(transactionInfo, nextTransactionId, request);
+                    pumpToProtonTransport(request);
+                } else {
+                    if (transactionInfo.isInDoubt()) {
+                        throw new ProviderTransactionInDoubtException("Commit of in-doubt transaction failed because no session exists");
+                    } else {
+                        throw new ProviderIllegalStateException("Commit of transaction failed because no session exists");
+                    }
+                }
             } catch (Throwable t) {
-                request.onFailure(t);
+                request.onFailure(ProviderExceptionSupport.createNonFatalOrPassthrough(t));
             }
         });
     }
 
     @Override
-    public void rollback(final JmsTransactionInfo transactionInfo, JmsTransactionInfo nextTransactionId, final AsyncResult request) throws IOException {
+    public void rollback(final JmsTransactionInfo transactionInfo, JmsTransactionInfo nextTransactionId, final AsyncResult request) throws ProviderException {
         checkClosedOrFailed();
         checkConnected();
 
@@ -719,16 +733,24 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
             try {
                 checkClosedOrFailed();
                 AmqpSession session = connection.getSession(transactionInfo.getSessionId());
-                session.rollback(transactionInfo, nextTransactionId, request);
-                pumpToProtonTransport(request);
+                if (session != null) {
+                    session.rollback(transactionInfo, nextTransactionId, request);
+                    pumpToProtonTransport(request);
+                } else {
+                    if (transactionInfo.isInDoubt()) {
+                        throw new ProviderTransactionInDoubtException("Rollback of in-doubt transaction failed because no session exists");
+                    } else {
+                        throw new ProviderIllegalStateException("Rollback of transaction failed because no session exists");
+                    }
+                }
             } catch (Throwable t) {
-                request.onFailure(t);
+                request.onFailure(ProviderExceptionSupport.createNonFatalOrPassthrough(t));
             }
         });
     }
 
     @Override
-    public void recover(final JmsSessionId sessionId, final AsyncResult request) throws IOException {
+    public void recover(final JmsSessionId sessionId, final AsyncResult request) throws ProviderException {
         checkClosedOrFailed();
         checkConnected();
 
@@ -737,17 +759,21 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
             try {
                 checkClosedOrFailed();
                 AmqpSession session = connection.getSession(sessionId);
-                session.recover();
-                pumpToProtonTransport(request);
-                request.onSuccess();
+                if (session != null) {
+                    session.recover();
+                    pumpToProtonTransport(request);
+                    request.onSuccess();
+                } else {
+                    throw new ProviderIllegalStateException("Cannot recover messages from session that does not exist");
+                }
             } catch (Throwable t) {
-                request.onFailure(t);
+                request.onFailure(ProviderExceptionSupport.createNonFatalOrPassthrough(t));
             }
         });
     }
 
     @Override
-    public void unsubscribe(final String subscription, final AsyncResult request) throws IOException {
+    public void unsubscribe(final String subscription, final AsyncResult request) throws ProviderException {
         checkClosedOrFailed();
         checkConnected();
 
@@ -758,13 +784,13 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                 connection.unsubscribe(subscription, request);
                 pumpToProtonTransport(request);
             } catch (Throwable t) {
-                request.onFailure(t);
+                request.onFailure(ProviderExceptionSupport.createNonFatalOrPassthrough(t));
             }
         });
     }
 
     @Override
-    public void pull(final JmsConsumerId consumerId, final long timeout, final AsyncResult request) throws IOException {
+    public void pull(final JmsConsumerId consumerId, final long timeout, final AsyncResult request) throws ProviderException {
         checkClosedOrFailed();
         checkConnected();
 
@@ -776,7 +802,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                 consumer.pull(timeout, request);
                 pumpToProtonTransport(request);
             } catch (Throwable t) {
-                request.onFailure(t);
+                request.onFailure(ProviderExceptionSupport.createNonFatalOrPassthrough(t));
             }
         });
     }
@@ -799,7 +825,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                 }
             } catch (Throwable t) {
                 LOG.warn("Caught problem during task processing: {}", t.getMessage(), t);
-                fireProviderException(t);
+                fireProviderException(ProviderExceptionSupport.createNonFatalOrPassthrough(t));
             }
         });
     }
@@ -825,7 +851,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
             pumpToProtonTransport();
         } catch (Throwable t) {
             LOG.warn("Caught problem during data processing: {}", t.getMessage(), t);
-            fireProviderException(t);
+            fireProviderException(ProviderExceptionSupport.createOrPassthroughFatal(t));
         }
     }
 
@@ -844,7 +870,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                 if (!closed.get()) {
                     // We can't send any more output, so close the transport
                     protonTransport.close_head();
-                    fireProviderException(error);
+                    fireProviderException(ProviderExceptionSupport.createOrPassthroughFatal(error));
                 }
             });
         }
@@ -864,7 +890,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                 if (!closed.get()) {
                     // We can't send any more output, so close the transport
                     protonTransport.close_head();
-                    fireProviderException(new IOException("Transport connection remotely closed."));
+                    fireProviderException(new ProviderFailedException("Transport connection remotely closed."));
                 }
             });
         }
@@ -893,7 +919,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                 org.apache.qpid.proton.engine.Transport t = protonConnection.getTransport();
                 t.close_head();
             } finally {
-                fireProviderException(ex);
+                fireProviderException(ProviderExceptionSupport.createOrPassthroughFatal(ex));
             }
         }
     }
@@ -972,7 +998,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
             try {
                 LOG.warn("Caught problem during update processing: {}", t.getMessage(), t);
             } finally {
-                fireProviderException(t);
+                fireProviderException(ProviderExceptionSupport.createOrPassthroughFatal(t));
             }
         }
     }
@@ -1016,9 +1042,10 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
             if (flush && bytesWritten > 0) {
                 transport.flush();
             }
-        } catch (IOException e) {
-            fireProviderException(e);
-            request.onFailure(e);
+        } catch (Throwable thrown) {
+            ProviderException pex = ProviderExceptionSupport.createOrPassthroughFatal(thrown);
+            fireProviderException(pex);
+            request.onFailure(pex);
             return false;
         }
 
@@ -1044,14 +1071,14 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
         }
     }
 
-    void fireNonFatalProviderException(Exception ex) {
+    void fireNonFatalProviderException(ProviderException ex) {
         ProviderListener listener = this.listener;
         if (listener != null) {
             listener.onProviderException(ex);
         }
     }
 
-    void fireProviderException(Throwable ex) {
+    void fireProviderException(ProviderException ex) {
         if (connectionRequest != null) {
             connectionRequest.onFailure(ex);
             connectionRequest = null;
@@ -1066,11 +1093,11 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
         ProviderListener listener = this.listener;
         if (listener != null) {
-            listener.onConnectionFailure(IOExceptionSupport.create(ex));
+            listener.onConnectionFailure(ProviderExceptionSupport.createNonFatalOrPassthrough(ex));
         }
     }
 
-    void fireResourceClosed(JmsResource resource, Throwable cause) {
+    void fireResourceClosed(JmsResource resource, ProviderException cause) {
         ProviderListener listener = this.listener;
         if (listener != null) {
             listener.onResourceClosed(resource, cause);
@@ -1384,7 +1411,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
      *
      * @return a {@link ScheduledFuture} that can be stored by the caller.
      */
-    public ScheduledFuture<?> scheduleRequestTimeout(final AsyncResult request, long timeout, final Exception error) {
+    public ScheduledFuture<?> scheduleRequestTimeout(final AsyncResult request, long timeout, final ProviderException error) {
         if (timeout != JmsConnectionInfo.INFINITE) {
             return serializer.schedule(() -> {
                 request.onFailure(error);
@@ -1422,7 +1449,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
     //----- Internal implementation ------------------------------------------//
 
-    private void checkClosedOrFailed() throws ProviderClosedException, ProviderFailedException {
+    private void checkClosedOrFailed() throws ProviderException {
         if (closed.get()) {
             throw new ProviderClosedException("This Provider is already closed");
         }
@@ -1432,13 +1459,13 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
         }
     }
 
-    private void checkConnected() throws ProviderClosedException, ProviderFailedException {
+    private void checkConnected() throws ProviderException {
         if (serializer == null) {
-            throw new ProviderException("Transport has not been properly connected.");
+            throw new ProviderClosedException("Transport has not been properly connected.");
         }
     }
 
-    private Mechanism findSaslMechanism(String[] remoteMechanisms) throws JMSSecurityRuntimeException {
+    private Mechanism findSaslMechanism(String[] remoteMechanisms) throws SaslSecurityRuntimeException {
         final String username;
         if (connectionInfo.getExtensionMap().containsKey(JmsConnectionExtensions.USERNAME_OVERRIDE)) {
             username = (String) connectionInfo.getExtensionMap().get(
@@ -1469,7 +1496,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
             mechanism.init(Collections.unmodifiableMap(saslOptions));
         } catch (Exception ex) {
-            throw new RuntimeException("Failed to apply sasl options to mechanism: " + mechanism.getName() + ", reason: " + ex.toString(), ex);
+            throw new SaslSecurityRuntimeException("Failed to apply sasl options to mechanism: " + mechanism.getName() + ", reason: " + ex.toString(), ex);
         }
 
         return mechanism;
@@ -1490,7 +1517,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                 if (protonTransport.isClosed()) {
                     LOG.info("IdleTimeoutCheck closed the transport due to the peer exceeding our requested idle-timeout.");
                     if (pumpSucceeded) {
-                        fireProviderException(new IOException("Transport closed due to the peer exceeding our requested idle-timeout"));
+                        fireProviderException(new ProviderIdleTimeoutException("Transport closed due to the peer exceeding our requested idle-timeout"));
                     }
                 } else {
                     if (deadline != 0) {

@@ -16,7 +16,6 @@
  */
 package org.apache.qpid.jms.provider.mock;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -30,6 +29,7 @@ import javax.jms.Message;
 
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
 import org.apache.qpid.jms.meta.JmsResource;
+import org.apache.qpid.jms.provider.ProviderException;
 
 /**
  * Context shared between all MockProvider instances.
@@ -54,9 +54,9 @@ public class MockRemotePeer {
     private final Map<Destination, List<PendingCompletion>> pendingCompletions =
         new ConcurrentHashMap<Destination, List<PendingCompletion>>();
 
-    public void connect(MockProvider provider) throws IOException {
+    public void connect(MockProvider provider) throws ProviderException {
         if (offline) {
-            throw new IOException();
+            throw new ProviderException("Provider is offline");
         }
 
         if (provider != null) {
@@ -195,7 +195,7 @@ public class MockRemotePeer {
         }
     }
 
-    public void failAllPendingSends(Destination destination, Exception error) {
+    public void failAllPendingSends(Destination destination, ProviderException error) {
         if (pendingCompletions.containsKey(destination)) {
 
             for (List<PendingCompletion> pendingSends : pendingCompletions.values()) {
@@ -232,7 +232,7 @@ public class MockRemotePeer {
         }
     }
 
-    public void failPendingSend(Message message, Exception error) throws JMSException {
+    public void failPendingSend(Message message, ProviderException error) throws JMSException {
         List<PendingCompletion> pendingSends = pendingCompletions.get(message.getJMSDestination());
         Iterator<PendingCompletion> iterator = pendingSends.iterator();
         while (iterator.hasNext()) {
@@ -244,7 +244,7 @@ public class MockRemotePeer {
         }
     }
 
-    public void failPendingSend(JmsOutboundMessageDispatch envelope, Exception error) throws JMSException {
+    public void failPendingSend(JmsOutboundMessageDispatch envelope, ProviderException error) throws JMSException {
         List<PendingCompletion> pendingSends = pendingCompletions.get(envelope.getDestination());
         Iterator<PendingCompletion> iterator = pendingSends.iterator();
         while (iterator.hasNext()) {

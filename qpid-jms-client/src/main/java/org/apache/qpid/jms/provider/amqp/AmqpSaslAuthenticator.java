@@ -16,15 +16,15 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
-import org.apache.qpid.jms.exceptions.JMSSecuritySaslException;
+import java.util.function.Function;
+
+import org.apache.qpid.jms.provider.exceptions.ProviderConnectionSecurityException;
+import org.apache.qpid.jms.provider.exceptions.ProviderConnectionSecuritySaslException;
 import org.apache.qpid.jms.sasl.Mechanism;
+import org.apache.qpid.jms.sasl.SaslSecurityRuntimeException;
 import org.apache.qpid.proton.engine.Sasl;
 import org.apache.qpid.proton.engine.Sasl.SaslOutcome;
 import org.apache.qpid.proton.engine.Transport;
-
-import java.util.function.Function;
-import javax.jms.JMSSecurityException;
-import javax.jms.JMSSecurityRuntimeException;
 
 /**
  * Manage the SASL authentication process
@@ -35,7 +35,7 @@ public class AmqpSaslAuthenticator {
 
     private Mechanism mechanism;
     private boolean complete;
-    private JMSSecurityException failureCause;
+    private ProviderConnectionSecurityException failureCause;
 
     /**
      * Create the authenticator and initialize it.
@@ -51,7 +51,7 @@ public class AmqpSaslAuthenticator {
        return complete;
     }
 
-    public JMSSecurityException getFailureCause() {
+    public ProviderConnectionSecurityException getFailureCause() {
         return failureCause;
     }
 
@@ -71,8 +71,8 @@ public class AmqpSaslAuthenticator {
             if (remoteMechanisms != null && remoteMechanisms.length != 0) {
                 try {
                     mechanism = mechanismFinder.apply(remoteMechanisms);
-                } catch (JMSSecurityRuntimeException jmssre){
-                    recordFailure("Could not find a suitable SASL mechanism. " + jmssre.getMessage(), jmssre);
+                } catch (SaslSecurityRuntimeException ssre){
+                    recordFailure("Could not find a suitable SASL mechanism. " + ssre.getMessage(), ssre);
                     return;
                 }
 
@@ -131,7 +131,7 @@ public class AmqpSaslAuthenticator {
         }
 
         SaslOutcome outcome = sasl.getOutcome();
-        if(outcome.equals(SaslOutcome.PN_SASL_TEMP)) {
+        if (outcome.equals(SaslOutcome.PN_SASL_TEMP)) {
             message.append(", due to temporary system error.");
         }
 
@@ -157,12 +157,7 @@ public class AmqpSaslAuthenticator {
     }
 
     private void recordFailure(String message, Throwable cause, int outcome) {
-        failureCause = new JMSSecuritySaslException(message, outcome);
-        if (cause instanceof Exception) {
-            failureCause.setLinkedException((Exception) cause);
-        }
-        failureCause.initCause(cause);
-
+        failureCause = new ProviderConnectionSecuritySaslException(message, outcome, cause);
         complete = true;
     }
 }

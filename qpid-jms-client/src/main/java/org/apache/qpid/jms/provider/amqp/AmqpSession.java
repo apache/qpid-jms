@@ -35,6 +35,7 @@ import org.apache.qpid.jms.meta.JmsTransactionId;
 import org.apache.qpid.jms.meta.JmsTransactionInfo;
 import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
+import org.apache.qpid.jms.provider.ProviderException;
 import org.apache.qpid.jms.provider.amqp.builders.AmqpConsumerBuilder;
 import org.apache.qpid.jms.provider.amqp.builders.AmqpProducerBuilder;
 import org.apache.qpid.proton.engine.Session;
@@ -232,7 +233,7 @@ public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> i
     }
 
     @Override
-    public void handleResourceClosure(AmqpProvider provider, Throwable error) {
+    public void handleResourceClosure(AmqpProvider provider, ProviderException error) {
         List<AmqpConsumer> consumerList = new ArrayList<>(consumers.values());
         for (AmqpConsumer consumer : consumerList) {
             consumer.handleResourceClosure(provider, error);
@@ -251,7 +252,7 @@ public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> i
      * @param error
      *        The error to forward on to the Provider error event handler.
      */
-    public void reportError(Exception error) {
+    public void reportError(ProviderException error) {
         getConnection().getProvider().fireProviderException(error);
     }
 

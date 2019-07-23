@@ -20,24 +20,23 @@ import static org.apache.qpid.jms.provider.amqp.AmqpSupport.MODIFIED_FAILED;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.MODIFIED_FAILED_UNDELIVERABLE;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.REJECTED;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.ListIterator;
 import java.util.concurrent.ScheduledFuture;
 
 import org.apache.qpid.jms.JmsDestination;
-import org.apache.qpid.jms.JmsOperationTimedOutException;
-import org.apache.qpid.jms.exceptions.JmsExceptionSupport;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsMessage;
 import org.apache.qpid.jms.meta.JmsConsumerId;
 import org.apache.qpid.jms.meta.JmsConsumerInfo;
 import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
+import org.apache.qpid.jms.provider.ProviderException;
 import org.apache.qpid.jms.provider.ProviderListener;
 import org.apache.qpid.jms.provider.WrappedAsyncResult;
 import org.apache.qpid.jms.provider.amqp.message.AmqpCodec;
-import org.apache.qpid.jms.util.IOExceptionSupport;
+import org.apache.qpid.jms.provider.exceptions.ProviderExceptionSupport;
+import org.apache.qpid.jms.provider.exceptions.ProviderOperationTimedOutException;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.Accepted;
 import org.apache.qpid.proton.amqp.messaging.Released;
@@ -117,7 +116,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
                     // and leave the consumer open since the TX needs it to remain active.
                     final ScheduledFuture<?> future = getSession().schedule(() -> {
                         LOG.trace("Consumer {} stop timed out awaiting message processing", getConsumerId());
-                        Exception cause = new JmsOperationTimedOutException("Consumer stop timed out awaiting message processing");
+                        ProviderException cause = new ProviderOperationTimedOutException("Consumer stop timed out awaiting message processing");
                         if (session.isTransacted() && session.getTransactionContext().isInTransaction(getConsumerId())) {
                             stopRequest.onFailure(cause);
                             stopRequest = null;
@@ -150,7 +149,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
                 // and leave the consumer open since the TX needs it to remain active.
                 final ScheduledFuture<?> future = getSession().schedule(() -> {
                     LOG.trace("Consumer {} drain request timed out", getConsumerId());
-                    Exception cause = new JmsOperationTimedOutException("Remote did not respond to a drain request in time");
+                    ProviderException cause = new ProviderOperationTimedOutException("Remote did not respond to a drain request in time");
                     if (session.isTransacted() && session.getTransactionContext().isInTransaction(getConsumerId())) {
                         stopRequest.onFailure(cause);
                         stopRequest = null;
@@ -178,7 +177,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     }
 
     @Override
-    public void processFlowUpdates(AmqpProvider provider) throws IOException {
+    public void processFlowUpdates(AmqpProvider provider) throws ProviderException {
         // Check if we tried to stop and have now run out of credit, and
         // processed all locally queued messages
         if (stopRequest != null) {
@@ -482,7 +481,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     }
 
     @Override
-    public void processDeliveryUpdates(AmqpProvider provider, Delivery delivery) throws IOException {
+    public void processDeliveryUpdates(AmqpProvider provider, Delivery delivery) throws ProviderException {
         if(delivery.getDefaultDeliveryState() == null){
             delivery.setDefaultDeliveryState(Released.getInstance());
         }
@@ -499,7 +498,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
                     }
                 }
             } catch (Exception e) {
-                throw IOExceptionSupport.create(e);
+                throw ProviderExceptionSupport.createNonFatalOrPassthrough(e);
             }
         }
 
@@ -632,7 +631,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     }
 
     @Override
-    public void handleResourceClosure(AmqpProvider provider, Throwable cause) {
+    public void handleResourceClosure(AmqpProvider provider, ProviderException cause) {
         AmqpConnection connection = session.getConnection();
         AmqpSubscriptionTracker subTracker = connection.getSubTracker();
         JmsConsumerInfo consumerInfo = getResourceInfo();
@@ -718,9 +717,9 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     private final class DeferredCloseRequest implements AsyncResult {
 
         @Override
-        public void onFailure(Throwable result) {
+        public void onFailure(ProviderException result) {
             LOG.trace("Failed deferred close of consumer: {} - {}", getConsumerId(), result.getMessage());
-            getParent().getProvider().fireNonFatalProviderException(JmsExceptionSupport.create(result));
+            getParent().getProvider().fireNonFatalProviderException(ProviderExceptionSupport.createNonFatalOrPassthrough(result));
         }
 
         @Override
@@ -747,7 +746,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
         }
 
         @Override
-        public void onFailure(Throwable cause) {
+        public void onFailure(ProviderException cause) {
             sheduledTask.cancel(false);
             origRequest.onFailure(cause);
         }

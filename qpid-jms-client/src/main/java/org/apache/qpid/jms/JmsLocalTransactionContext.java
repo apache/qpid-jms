@@ -30,6 +30,7 @@ import org.apache.qpid.jms.meta.JmsTransactionId;
 import org.apache.qpid.jms.meta.JmsTransactionInfo;
 import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
+import org.apache.qpid.jms.provider.ProviderException;
 import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.provider.ProviderSynchronization;
 import org.slf4j.Logger;
@@ -84,7 +85,7 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
                 }
 
                 @Override
-                public void onPendingFailure(Throwable cause) {
+                public void onPendingFailure(ProviderException cause) {
                     LOG.trace("TX:{} has a failed send.", getTransactionId());
                     participants.put(envelope.getProducerId(), envelope.getProducerId());
                     if (outcome != null) {
@@ -112,7 +113,7 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
                     }
 
                     @Override
-                    public void onPendingFailure(Throwable cause) {
+                    public void onPendingFailure(ProviderException cause) {
                         LOG.trace("TX:{} has failed a acknowledge.", getTransactionId());
                         participants.put(envelope.getConsumerId(), envelope.getConsumerId());
                     }
@@ -144,7 +145,7 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
                 }
 
                 @Override
-                public void onPendingFailure(Throwable cause) {
+                public void onPendingFailure(ProviderException cause) {
                     JmsLocalTransactionContext.this.transactionInfo = transactionInfo;
                     transactionInfo.setInDoubt(true);
                 }
@@ -191,7 +192,7 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
                         }
 
                         @Override
-                        public void onPendingFailure(Throwable cause) {
+                        public void onPendingFailure(ProviderException cause) {
                             reset();
                             JmsLocalTransactionContext.this.transactionInfo = nextTx;
                         }
@@ -269,7 +270,7 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
                     }
 
                     @Override
-                    public void onPendingFailure(Throwable cause) {
+                    public void onPendingFailure(ProviderException cause) {
                         reset();
                         JmsLocalTransactionContext.this.transactionInfo = nextTx;
                     }
@@ -358,7 +359,7 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
                     }
 
                     @Override
-                    public void onPendingFailure(Throwable cause) {
+                    public void onPendingFailure(ProviderException cause) {
                         transactionInfo.setInDoubt(true);
                     }
                 });

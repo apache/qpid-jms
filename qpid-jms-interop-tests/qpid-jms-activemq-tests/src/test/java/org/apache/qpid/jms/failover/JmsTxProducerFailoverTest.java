@@ -55,6 +55,7 @@ public class JmsTxProducerFailoverTest extends AmqpTestSupport {
      * before then should allow Commit to work as expected.
      */
     @Test(timeout=60000)
+    @Repeat(repetitions = 1)
     public void testTxProducerSendAfterFailoverCommits() throws Exception {
         URI brokerURI = new URI(getAmqpFailoverURI());
 
@@ -112,6 +113,7 @@ public class JmsTxProducerFailoverTest extends AmqpTestSupport {
      * will fail and the message are not present on the broker.
      */
     @Test(timeout=60000)
+    @Repeat(repetitions = 1)
     public void testTxProducerSendsThenFailoverCommitFails() throws Exception {
         URI brokerURI = new URI(getAmqpFailoverURI());
 
@@ -151,6 +153,7 @@ public class JmsTxProducerFailoverTest extends AmqpTestSupport {
     }
 
     @Test(timeout=60000)
+    @Repeat(repetitions = 1)
     public void testTxProducerRollbackAfterFailoverGetsNoErrors() throws Exception {
         URI brokerURI = new URI(getAmqpFailoverURI());
 
@@ -186,10 +189,13 @@ public class JmsTxProducerFailoverTest extends AmqpTestSupport {
             session.rollback();
             LOG.info("Transacted rollback after failover ok");
         } catch (JMSException ex) {
+            LOG.warn("Error on rollback not expected: ", ex);
             fail("Session rollback should not have failed: " + ex.getMessage());
         }
 
         assertEquals(0, proxy.getQueueSize());
+
+        LOG.info("Test {} compelted without error as expected:", getTestName());
     }
 
     /*

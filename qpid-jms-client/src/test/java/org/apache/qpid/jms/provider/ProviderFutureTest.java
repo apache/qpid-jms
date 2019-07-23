@@ -21,7 +21,6 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -70,7 +69,7 @@ public class ProviderFutureTest {
         future.onSuccess();
         try {
             future.sync();
-        } catch (IOException cause) {
+        } catch (Exception cause) {
             fail("Should throw an error");
         }
     }
@@ -81,7 +80,7 @@ public class ProviderFutureTest {
 
         try {
             assertFalse(future.sync(1, TimeUnit.SECONDS));
-        } catch (IOException cause) {
+        } catch (Exception cause) {
             fail("Should throw an error");
         }
     }
@@ -89,13 +88,13 @@ public class ProviderFutureTest {
     @Test(timeout = 10000)
     public void testOnFailure() {
         ProviderFuture future = futuresFactory.createFuture();
-        IOException ex = new IOException();
+        ProviderException ex = new ProviderException("Failed");
 
         future.onFailure(ex);
         try {
             future.sync(5, TimeUnit.SECONDS);
             fail("Should throw an error");
-        } catch (IOException cause) {
+        } catch (ProviderException cause) {
             assertSame(cause, ex);
         }
     }
@@ -111,14 +110,14 @@ public class ProviderFutureTest {
             }
 
             @Override
-            public void onPendingFailure(Throwable cause) {
+            public void onPendingFailure(ProviderException cause) {
             }
         });
 
         future.onSuccess();
         try {
             future.sync(5, TimeUnit.SECONDS);
-        } catch (IOException cause) {
+        } catch (ProviderException cause) {
             fail("Should throw an error");
         }
 
@@ -135,18 +134,18 @@ public class ProviderFutureTest {
             }
 
             @Override
-            public void onPendingFailure(Throwable cause) {
+            public void onPendingFailure(ProviderException cause) {
                 syncCalled.set(true);
             }
         });
 
-        IOException ex = new IOException();
+        ProviderException ex = new ProviderException("Failed");
 
         future.onFailure(ex);
         try {
             future.sync(5, TimeUnit.SECONDS);
             fail("Should throw an error");
-        } catch (IOException cause) {
+        } catch (ProviderException cause) {
             assertSame(cause, ex);
         }
 
@@ -156,13 +155,13 @@ public class ProviderFutureTest {
     @Test(timeout = 10000)
     public void testSuccessfulStateIsFixed() {
         ProviderFuture future = futuresFactory.createFuture();
-        IOException ex = new IOException();
+        ProviderException ex = new ProviderException("Failed");
 
         future.onSuccess();
         future.onFailure(ex);
         try {
             future.sync(5, TimeUnit.SECONDS);
-        } catch (IOException cause) {
+        } catch (ProviderException cause) {
             fail("Should throw an error");
         }
     }
@@ -170,14 +169,14 @@ public class ProviderFutureTest {
     @Test(timeout = 10000)
     public void testFailedStateIsFixed() {
         ProviderFuture future = futuresFactory.createFuture();
-        IOException ex = new IOException();
+        ProviderException ex = new ProviderException("Failed");
 
         future.onFailure(ex);
         future.onSuccess();
         try {
             future.sync(5, TimeUnit.SECONDS);
             fail("Should throw an error");
-        } catch (IOException cause) {
+        } catch (ProviderException cause) {
             assertSame(cause, ex);
         }
     }
@@ -197,7 +196,7 @@ public class ProviderFutureTest {
                 try {
                     syncing.countDown();
                     future.sync();
-                } catch (IOException cause) {
+                } catch (Exception cause) {
                     if (cause.getCause() instanceof InterruptedException) {
                         interrupted.set(true);
                     }
@@ -230,7 +229,7 @@ public class ProviderFutureTest {
                 try {
                     syncing.countDown();
                     future.sync(20, TimeUnit.SECONDS);
-                } catch (IOException cause) {
+                } catch (ProviderException cause) {
                     if (cause.getCause() instanceof InterruptedException) {
                         interrupted.set(true);
                     }

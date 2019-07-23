@@ -14,17 +14,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.qpid.jms.provider;
+package org.apache.qpid.jms.provider.exceptions;
 
-public class ProviderClosedException extends ProviderException {
+import javax.jms.JMSSecurityException;
 
-    private static final long serialVersionUID = 1L;
+import org.apache.qpid.jms.provider.ProviderException;
 
-    public ProviderClosedException(String message) {
+/**
+ * Security Exception used to indicate a security violation has occurred that is non-fatal
+ * such as link creation blocked because user does not have access etc.
+ */
+public class ProviderSecurityException extends ProviderException {
+
+    private static final long serialVersionUID = -1895132556606592253L;
+
+    public ProviderSecurityException(String message) {
         super(message);
     }
 
-    public ProviderClosedException(String message, Throwable cause) {
+    public ProviderSecurityException(String message, Throwable cause) {
         super(message, cause);
+    }
+
+    @Override
+    public JMSSecurityException toJMSException() {
+        JMSSecurityException jmsEx = new JMSSecurityException(getMessage());
+        jmsEx.initCause(this);
+        jmsEx.setLinkedException(this);
+        return jmsEx;
     }
 }

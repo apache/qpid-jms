@@ -16,7 +16,6 @@
  */
 package org.apache.qpid.jms.provider.discovery;
 
-import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -24,6 +23,7 @@ import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
+import org.apache.qpid.jms.provider.ProviderException;
 import org.apache.qpid.jms.provider.ProviderWrapper;
 import org.apache.qpid.jms.provider.failover.FailoverProvider;
 import org.apache.qpid.jms.util.QpidJMSThreadFactory;
@@ -62,7 +62,7 @@ public class DiscoveryProvider extends ProviderWrapper<FailoverProvider> impleme
     }
 
     @Override
-    public void start() throws IOException, IllegalStateException {
+    public void start() throws ProviderException, IllegalStateException {
         if (discoveryAgents.isEmpty()) {
             throw new IllegalStateException("No DiscoveryAgent configured.");
         }

@@ -37,9 +37,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.qpid.jms.provider.ProviderException;
 import org.apache.qpid.jms.provider.discovery.DiscoveryAgent;
 import org.apache.qpid.jms.provider.discovery.DiscoveryListener;
 import org.apache.qpid.jms.provider.discovery.multicast.DiscoveryEvent.EventType;
+import org.apache.qpid.jms.provider.exceptions.ProviderExceptionSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -107,7 +109,7 @@ public class MulticastDiscoveryAgent implements DiscoveryAgent, Runnable {
     }
 
     @Override
-    public void start() throws IOException, IllegalStateException {
+    public void start() throws ProviderException, IllegalStateException {
         if (listener == null) {
             throw new IllegalStateException("No DiscoveryListener configured.");
         }
@@ -115,7 +117,7 @@ public class MulticastDiscoveryAgent implements DiscoveryAgent, Runnable {
         if (started.compareAndSet(false, true)) {
 
             if (group == null || group.length() == 0) {
-                throw new IOException("You must specify a group to discover");
+                throw new ProviderException("You must specify a group to discover");
             }
 
             if (discoveryURI == null) {
@@ -150,28 +152,32 @@ public class MulticastDiscoveryAgent implements DiscoveryAgent, Runnable {
             LOG.trace("mcast - network interface = {}", mcNetworkInterface);
             LOG.trace("mcast - join network interface = {}", mcJoinNetworkInterface);
 
-            this.inetAddress = InetAddress.getByName(myHost);
-            this.sockAddress = new InetSocketAddress(this.inetAddress, myPort);
-            mcast = new MulticastSocket(myPort);
-            mcast.setLoopbackMode(loopBackMode);
-            mcast.setTimeToLive(getTimeToLive());
-            if (mcJoinNetworkInterface != null) {
-                mcast.joinGroup(sockAddress, NetworkInterface.getByName(mcJoinNetworkInterface));
-            } else {
+            try {
+                this.inetAddress = InetAddress.getByName(myHost);
+                this.sockAddress = new InetSocketAddress(this.inetAddress, myPort);
+                mcast = new MulticastSocket(myPort);
+                mcast.setLoopbackMode(loopBackMode);
+                mcast.setTimeToLive(getTimeToLive());
+                if (mcJoinNetworkInterface != null) {
+                    mcast.joinGroup(sockAddress, NetworkInterface.getByName(mcJoinNetworkInterface));
+                } else {
+                    if (mcNetworkInterface != null) {
+                        mcast.setNetworkInterface(NetworkInterface.getByName(mcNetworkInterface));
+                    } else {
+                        trySetNetworkInterface(mcast);
+                    }
+                    mcast.joinGroup(inetAddress);
+                }
+                mcast.setSoTimeout((int) keepAliveInterval);
+                if (mcInterface != null) {
+                    mcast.setInterface(InetAddress.getByName(mcInterface));
+                }
+
                 if (mcNetworkInterface != null) {
                     mcast.setNetworkInterface(NetworkInterface.getByName(mcNetworkInterface));
-                } else {
-                    trySetNetworkInterface(mcast);
                 }
-                mcast.joinGroup(inetAddress);
-            }
-            mcast.setSoTimeout((int) keepAliveInterval);
-            if (mcInterface != null) {
-                mcast.setInterface(InetAddress.getByName(mcInterface));
-            }
-
-            if (mcNetworkInterface != null) {
-                mcast.setNetworkInterface(NetworkInterface.getByName(mcNetworkInterface));
+            } catch (IOException e) {
+                throw ProviderExceptionSupport.createOrPassthroughFatal(e);
             }
 
             runner = new Thread(this);

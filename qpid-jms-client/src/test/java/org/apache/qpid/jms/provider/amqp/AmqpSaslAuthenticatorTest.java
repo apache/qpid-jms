@@ -33,11 +33,11 @@ import java.util.Deque;
 import java.util.Map;
 import java.util.function.Function;
 
-import javax.jms.JMSSecurityRuntimeException;
 import javax.security.sasl.SaslException;
 
-import org.apache.qpid.jms.exceptions.JMSSecuritySaslException;
+import org.apache.qpid.jms.provider.exceptions.ProviderConnectionSecuritySaslException;
 import org.apache.qpid.jms.sasl.Mechanism;
+import org.apache.qpid.jms.sasl.SaslSecurityRuntimeException;
 import org.apache.qpid.proton.engine.Sasl;
 import org.apache.qpid.proton.engine.Sasl.SaslOutcome;
 import org.apache.qpid.proton.engine.Sasl.SaslState;
@@ -79,7 +79,7 @@ public class AmqpSaslAuthenticatorTest {
     @Test
     public void testNoSaslMechanismAgreed() throws Exception {
         Function<String[], Mechanism> mechanismFunction = mechanismName -> {
-            throw new JMSSecurityRuntimeException("reasons");
+            throw new SaslSecurityRuntimeException("reasons");
         };
 
         AmqpSaslAuthenticator authenticator = new AmqpSaslAuthenticator(mechanismFunction);
@@ -164,7 +164,7 @@ public class AmqpSaslAuthenticatorTest {
         assertTrue(authenticator.isComplete());
         assertFalse(authenticator.wasSuccessful());
         assertNotNull(authenticator.getFailureCause());
-        assertTrue(authenticator.getFailureCause() instanceof JMSSecuritySaslException);
+        assertTrue(authenticator.getFailureCause() instanceof ProviderConnectionSecuritySaslException);
         assertTrue(authenticator.getFailureCause().getMessage().contains("Client failed to authenticate"));
         assertTrue(authenticator.getFailureCause().getMessage().contains("due to temporary system error"));
     }

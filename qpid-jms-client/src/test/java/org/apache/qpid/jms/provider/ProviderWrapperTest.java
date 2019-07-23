@@ -19,7 +19,6 @@ package org.apache.qpid.jms.provider;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.fail;
 
-import java.io.IOException;
 import java.net.URI;
 
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
@@ -299,7 +298,7 @@ public class ProviderWrapperTest extends QpidJmsTestCase{
         ProviderWrapper<Provider> wrapper = new ProviderWrapper<Provider>(mockProvider);
         JmsOutboundMessageDispatch envelope = Mockito.mock(JmsOutboundMessageDispatch.class);
         ProviderListener listener = Mockito.mock(ProviderListener.class);
-        IOException ex = new IOException();
+        ProviderException ex = new ProviderException("Error");
 
         wrapper.setProviderListener(listener);
         wrapper.onFailedMessageSend(envelope, ex);
@@ -354,7 +353,7 @@ public class ProviderWrapperTest extends QpidJmsTestCase{
         ProviderListener listener = Mockito.mock(ProviderListener.class);
         JmsSessionId sessionId = new JmsSessionId("ID:TEST", 1);
         JmsSessionInfo session = new JmsSessionInfo(sessionId);
-        IOException ex = new IOException();
+        ProviderException ex = new ProviderException("Error");
 
         wrapper.setProviderListener(listener);
         wrapper.onResourceClosed(session, ex);
@@ -367,7 +366,7 @@ public class ProviderWrapperTest extends QpidJmsTestCase{
         Provider mockProvider = Mockito.mock(Provider.class);
         ProviderWrapper<Provider> wrapper = new ProviderWrapper<Provider>(mockProvider);
         ProviderListener listener = Mockito.mock(ProviderListener.class);
-        IOException ex = new IOException();
+        ProviderException ex = new ProviderException("Error");
 
         wrapper.setProviderListener(listener);
         wrapper.onProviderException(ex);
@@ -380,7 +379,7 @@ public class ProviderWrapperTest extends QpidJmsTestCase{
         Provider mockProvider = Mockito.mock(Provider.class);
         ProviderWrapper<Provider> wrapper = new ProviderWrapper<Provider>(mockProvider);
         ProviderListener listener = Mockito.mock(ProviderListener.class);
-        IOException ex = new IOException();
+        ProviderException ex = new ProviderException("Something went wrong");
 
         wrapper.setProviderListener(listener);
         wrapper.onConnectionFailure(ex);

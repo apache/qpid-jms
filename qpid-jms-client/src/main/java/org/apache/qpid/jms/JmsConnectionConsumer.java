@@ -43,6 +43,7 @@ import org.apache.qpid.jms.meta.JmsConsumerInfo;
 import org.apache.qpid.jms.meta.JmsResource.ResourceState;
 import org.apache.qpid.jms.policy.JmsRedeliveryPolicy;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
+import org.apache.qpid.jms.provider.ProviderException;
 import org.apache.qpid.jms.provider.ProviderSynchronization;
 import org.apache.qpid.jms.util.MessageQueue;
 import org.slf4j.Logger;
@@ -97,7 +98,7 @@ public class JmsConnectionConsumer implements ConnectionConsumer, JmsMessageDisp
             }
 
             @Override
-            public void onPendingFailure(Throwable cause) {
+            public void onPendingFailure(ProviderException cause) {
             }
         });
     }

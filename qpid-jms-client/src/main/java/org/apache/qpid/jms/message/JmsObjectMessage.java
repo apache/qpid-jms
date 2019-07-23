@@ -46,7 +46,10 @@ public class JmsObjectMessage extends JmsMessage implements ObjectMessage {
         try {
             this.facade.setObject(newObject);
         } catch (Exception e) {
-            throw new MessageFormatException("Failed to serialize object");
+            MessageFormatException jmsEx = new MessageFormatException("Failed to serialize object:" + e.getMessage());
+            jmsEx.setLinkedException(e);
+            jmsEx.initCause(e);
+            throw jmsEx;
         }
     }
 
@@ -55,7 +58,10 @@ public class JmsObjectMessage extends JmsMessage implements ObjectMessage {
         try {
             return this.facade.getObject();
         } catch (Exception e) {
-            throw new MessageFormatException("Failed to read object");
+            MessageFormatException jmsEx = new MessageFormatException("Failed to read object: " + e.getMessage());
+            jmsEx.setLinkedException(e);
+            jmsEx.initCause(e);
+            throw jmsEx;
         }
     }
 
@@ -74,7 +80,10 @@ public class JmsObjectMessage extends JmsMessage implements ObjectMessage {
         try {
             return (T) getObject();
         } catch (JMSException e) {
-            throw new MessageFormatException("Failed to read Object: " + e.getMessage());
+            MessageFormatException jmsEx = new MessageFormatException("Failed to read object: " + e.getMessage());
+            jmsEx.setLinkedException(e);
+            jmsEx.initCause(e);
+            throw jmsEx;
         }
     }
 

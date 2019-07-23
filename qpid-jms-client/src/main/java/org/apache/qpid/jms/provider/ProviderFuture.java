@@ -16,11 +16,8 @@
  */
 package org.apache.qpid.jms.provider;
 
-import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
-
-import org.apache.qpid.jms.util.IOExceptionSupport;
 
 /**
  * Asynchronous Provider Future class.
@@ -39,7 +36,7 @@ public abstract class ProviderFuture implements AsyncResult {
              AtomicIntegerFieldUpdater.newUpdater(ProviderFuture.class,"state");
 
     private volatile int state = INCOMPLETE;
-    protected Throwable error;
+    protected ProviderException error;
     protected int waiting;
 
     public ProviderFuture() {
@@ -56,7 +53,7 @@ public abstract class ProviderFuture implements AsyncResult {
     }
 
     @Override
-    public void onFailure(Throwable result) {
+    public void onFailure(ProviderException result) {
         if (STATE_FIELD_UPDATER.compareAndSet(this, INCOMPLETE, COMPLETING)) {
             error = result;
             if (synchronization != null) {
@@ -93,9 +90,9 @@ public abstract class ProviderFuture implements AsyncResult {
     /**
      * Waits for a response to some Provider requested operation.
      *
-     * @throws IOException if an error occurs while waiting for the response.
+     * @throws ProviderException if an error occurs while waiting for the response.
      */
-    public abstract void sync() throws IOException;
+    public abstract void sync() throws ProviderException;
 
     /**
      * Timed wait for a response to a Provider operation.
@@ -108,14 +105,14 @@ public abstract class ProviderFuture implements AsyncResult {
      * @return true if the operation succeeded and false if the waiting time elapsed while
      * 	       waiting for the operation to complete.
      *
-     * @throws IOException if an error occurs while waiting for the response.
+     * @throws ProviderException if an error occurs while waiting for the response.
      */
-    public abstract boolean sync(long amount, TimeUnit unit) throws IOException;
+    public abstract boolean sync(long amount, TimeUnit unit) throws ProviderException;
 
-    protected void failOnError() throws IOException {
-        Throwable cause = error;
+    protected void failOnError() throws ProviderException {
+        ProviderException cause = error;
         if (cause != null) {
-            throw IOExceptionSupport.create(cause);
+            throw cause;
         }
     }
 }

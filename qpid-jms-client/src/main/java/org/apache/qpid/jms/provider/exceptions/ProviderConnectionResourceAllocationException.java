@@ -14,31 +14,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.qpid.jms.provider;
+package org.apache.qpid.jms.provider.exceptions;
 
-import java.io.IOException;
-import java.net.URI;
+import javax.jms.ResourceAllocationException;
 
-/**
- * {@link IOException} derivative that defines that the remote peer has requested that this
- * connection be redirected to some alternative peer.
- */
-public class ProviderRedirectedException extends ProviderException {
+public class ProviderConnectionResourceAllocationException extends ProviderConnectionRemotelyClosedException {
 
-    private static final long serialVersionUID = 5872211116061710369L;
+    private static final long serialVersionUID = 1L;
 
-    private final URI redirect;
-
-    public ProviderRedirectedException(String reason, URI redirect) {
-        super(reason);
-
-        this.redirect = redirect;
+    public ProviderConnectionResourceAllocationException(String message) {
+        super(message);
     }
 
-    /**
-     * @return the URI that represents the redirection.
-     */
-    public URI getRedirectionURI() {
-        return redirect;
+    public ProviderConnectionResourceAllocationException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    @Override
+    public ResourceAllocationException toJMSException() {
+        ResourceAllocationException jmsEx = new ResourceAllocationException(getMessage());
+        jmsEx.initCause(this);
+        jmsEx.setLinkedException(this);
+        return jmsEx;
     }
 }

@@ -16,9 +16,9 @@
  */
 package org.apache.qpid.jms.provider;
 
-import java.io.IOException;
+import javax.jms.JMSException;
 
-public class ProviderException extends IOException {
+public class ProviderException extends Exception {
 
     private static final long serialVersionUID = -5094579928657311571L;
 
@@ -28,5 +28,12 @@ public class ProviderException extends IOException {
 
     public ProviderException(String message, Throwable cause) {
         super(message, cause);
+    }
+
+    public JMSException toJMSException() {
+        final JMSException jmsEx = new JMSException(getMessage());
+        jmsEx.initCause(this);
+        jmsEx.setLinkedException(this);
+        return jmsEx;
     }
 }

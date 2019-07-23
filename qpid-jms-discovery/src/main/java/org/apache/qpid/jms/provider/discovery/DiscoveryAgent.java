@@ -16,8 +16,9 @@
  */
 package org.apache.qpid.jms.provider.discovery;
 
-import java.io.IOException;
 import java.util.concurrent.ScheduledExecutorService;
+
+import org.apache.qpid.jms.provider.ProviderException;
 
 /**
  * Interface for all agents used to detect instances of remote peers on the network.
@@ -54,10 +55,10 @@ public interface DiscoveryAgent {
     /**
      * Starts the agent after which new remote peers can start to be found.
      *
-     * @throws IOException if an IO error occurs while starting the agent.
+     * @throws ProviderException if an IO error occurs while starting the agent.
      * @throws IllegalStateException if the agent is not properly configured.
      */
-    void start() throws IOException, IllegalStateException;
+    void start() throws ProviderException, IllegalStateException;
 
     /**
      * Stops the agent after which no new remote peers will be found.  This

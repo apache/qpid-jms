@@ -91,6 +91,7 @@ import org.apache.qpid.jms.policy.JmsPresettlePolicy;
 import org.apache.qpid.jms.policy.JmsRedeliveryPolicy;
 import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
+import org.apache.qpid.jms.provider.ProviderException;
 import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.provider.ProviderSynchronization;
 import org.apache.qpid.jms.selector.SelectorParser;
@@ -162,7 +163,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
             }
 
             @Override
-            public void onPendingFailure(Throwable cause) {
+            public void onPendingFailure(ProviderException cause) {
             }
         });
 
@@ -180,7 +181,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
                     }
 
                     @Override
-                    public void onPendingFailure(Throwable cause) {
+                    public void onPendingFailure(ProviderException cause) {
                         connection.removeSession(sessionInfo);
                     }
                 });
@@ -327,20 +328,37 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
 
     protected void shutdown(Throwable cause) throws JMSException {
         if (closed.compareAndSet(false, true)) {
+            JMSException shutdownError = null;
+
             try {
                 sessionInfo.setState(ResourceState.CLOSED);
                 setFailureCause(cause);
-                stop();
 
-                for (JmsMessageConsumer consumer : new ArrayList<JmsMessageConsumer>(this.consumers.values())) {
-                    consumer.shutdown(cause);
+                try {
+                    stop();
+
+                    for (JmsMessageConsumer consumer : new ArrayList<JmsMessageConsumer>(this.consumers.values())) {
+                        consumer.shutdown(cause);
+                    }
+
+                    for (JmsMessageProducer producer : new ArrayList<JmsMessageProducer>(this.producers.values())) {
+                        producer.shutdown(cause);
+                    }
+                } catch (JMSException jmsEx) {
+                    shutdownError = jmsEx;
                 }
 
-                for (JmsMessageProducer producer : new ArrayList<JmsMessageProducer>(this.producers.values())) {
-                    producer.shutdown(cause);
+                boolean inDoubt = transactionContext.isInDoubt();
+                try {
+                    transactionContext.shutdown();
+                } catch (JMSException jmsEx) {
+                    if (!inDoubt) {
+                        LOG.warn("Rollback of active transaction failed due to error: ", jmsEx);
+                        shutdownError = shutdownError == null ? jmsEx : shutdownError;
+                    } else {
+                        LOG.trace("Rollback of indoubt transaction failed due to error: ", jmsEx);
+                    }
                 }
-
-                transactionContext.shutdown();
 
                 // Ensure that no asynchronous completion sends remain blocked after close.
                 synchronized (sessionInfo) {
@@ -356,6 +374,16 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
                     getCompletionExecutor().awaitTermination(connection.getCloseTimeout(), TimeUnit.MILLISECONDS);
                 } catch (InterruptedException e) {
                     LOG.trace("Session close awaiting send completions was interrupted");
+                }
+
+                if (shutdownError != null) {
+                    throw shutdownError;
+                }
+            } catch (Throwable e) {
+                if (shutdownError != null) {
+                    throw shutdownError;
+                } else {
+                    throw JmsExceptionSupport.create(e);
                 }
             } finally {
                 connection.removeSession(sessionInfo);
@@ -923,7 +951,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
                     }
 
                     @Override
-                    public void onPendingFailure(Throwable cause) {
+                    public void onPendingFailure(ProviderException cause) {
                         // Provider has rejected the send request so we will throw the
                         // exception that is to follow so no completion will be needed.
                     }

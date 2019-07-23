@@ -16,7 +16,6 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -24,16 +23,19 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 
-import javax.jms.IllegalStateException;
-import javax.jms.JMSException;
-
-import org.apache.qpid.jms.JmsSendTimedOutException;
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
 import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.meta.JmsProducerInfo;
 import org.apache.qpid.jms.provider.AsyncResult;
+import org.apache.qpid.jms.provider.ProviderException;
 import org.apache.qpid.jms.provider.amqp.message.AmqpReadableBuffer;
-import org.apache.qpid.jms.util.IOExceptionSupport;
+import org.apache.qpid.jms.provider.exceptions.ProviderDeliveryModifiedException;
+import org.apache.qpid.jms.provider.exceptions.ProviderDeliveryReleasedException;
+import org.apache.qpid.jms.provider.exceptions.ProviderExceptionSupport;
+import org.apache.qpid.jms.provider.exceptions.ProviderIllegalStateException;
+import org.apache.qpid.jms.provider.exceptions.ProviderSendTimedOutException;
+import org.apache.qpid.jms.provider.exceptions.ProviderUnsupportedOperationException;
+import org.apache.qpid.proton.amqp.messaging.Modified;
 import org.apache.qpid.proton.amqp.messaging.Rejected;
 import org.apache.qpid.proton.amqp.transaction.TransactionalState;
 import org.apache.qpid.proton.amqp.transport.DeliveryState;
@@ -84,14 +86,14 @@ public class AmqpFixedProducer extends AmqpProducer {
     }
 
     @Override
-    public void send(JmsOutboundMessageDispatch envelope, AsyncResult request) throws IOException, JMSException {
+    public void send(JmsOutboundMessageDispatch envelope, AsyncResult request) throws ProviderException {
         if (isClosed()) {
-            request.onFailure(new IllegalStateException("The MessageProducer is closed"));
+            request.onFailure(new ProviderIllegalStateException("The MessageProducer is closed"));
         }
 
         if (!delayedDeliverySupported && envelope.getMessage().getFacade().isDeliveryTimeTransmitted()) {
             // Don't allow sends with delay if the remote has not said it can handle them
-            request.onFailure(new JMSException("Remote does not support delayed message delivery"));
+            request.onFailure(new ProviderUnsupportedOperationException("Remote does not support delayed message delivery"));
         } else if (getEndpoint().getCredit() <= 0) {
             LOG.trace("Holding Message send until credit is available.");
 
@@ -115,7 +117,7 @@ public class AmqpFixedProducer extends AmqpProducer {
         }
     }
 
-    private void doSend(JmsOutboundMessageDispatch envelope, InFlightSend send) throws IOException, JMSException {
+    private void doSend(JmsOutboundMessageDispatch envelope, InFlightSend send) throws ProviderException {
         LOG.trace("Producer sending message: {}", envelope);
 
         boolean presettle = envelope.isPresettle() || isPresettle();
@@ -168,12 +170,16 @@ public class AmqpFixedProducer extends AmqpProducer {
                 send.getOriginalRequest().onSuccess();
             }
 
-            provider.getTransport().flush();
+            try {
+                provider.getTransport().flush();
+            } catch (Throwable ex) {
+                throw ProviderExceptionSupport.createOrPassthroughFatal(ex);
+            }
         }
     }
 
     @Override
-    public void processFlowUpdates(AmqpProvider provider) throws IOException {
+    public void processFlowUpdates(AmqpProvider provider) throws ProviderException {
         if (!blocked.isEmpty() && getEndpoint().getCredit() > 0) {
             Iterator<InFlightSend> blockedSends = blocked.values().iterator();
             while (getEndpoint().getCredit() > 0 && blockedSends.hasNext()) {
@@ -188,8 +194,6 @@ public class AmqpFixedProducer extends AmqpProducer {
                     }
 
                     doSend(held.getEnvelope(), held);
-                } catch (JMSException e) {
-                    throw IOExceptionSupport.create(e);
                 } finally {
                     blockedSends.remove();
                 }
@@ -205,7 +209,7 @@ public class AmqpFixedProducer extends AmqpProducer {
     }
 
     @Override
-    public void processDeliveryUpdates(AmqpProvider provider, Delivery delivery) throws IOException {
+    public void processDeliveryUpdates(AmqpProvider provider, Delivery delivery) throws ProviderException {
         DeliveryState state = delivery.getRemoteState();
         if (state != null) {
             InFlightSend send = (InFlightSend) delivery.getContext();
@@ -222,7 +226,7 @@ public class AmqpFixedProducer extends AmqpProducer {
     }
 
     private void applyDeliveryStateUpdate(InFlightSend send, Delivery delivery, DeliveryState state) {
-        Exception deliveryError = null;
+        ProviderException deliveryError = null;
         if (state == null) {
             return;
         }
@@ -243,15 +247,16 @@ public class AmqpFixedProducer extends AmqpProducer {
                     remoteError = getEndpoint().getRemoteCondition();
                 }
 
-                deliveryError = AmqpSupport.convertToException(getParent().getProvider(), getEndpoint(), remoteError);
+                deliveryError = AmqpSupport.convertToNonFatalException(getParent().getProvider(), getEndpoint(), remoteError);
                 break;
             case Released:
                 LOG.trace("Outcome of delivery was released: {}", delivery);
-                deliveryError = new JMSException("Delivery failed: released by receiver");
+                deliveryError = new ProviderDeliveryReleasedException("Delivery failed: released by receiver");
                 break;
             case Modified:
                 LOG.trace("Outcome of delivery was modified: {}", delivery);
-                deliveryError = new JMSException("Delivery failed: failure at remote");
+                Modified modified = (Modified) state;
+                deliveryError = new ProviderDeliveryModifiedException("Delivery failed: failure at remote", modified);
                 break;
             default:
                 LOG.warn("Message send updated with unsupported state: {}", state);
@@ -286,10 +291,10 @@ public class AmqpFixedProducer extends AmqpProducer {
     }
 
     @Override
-    public void handleResourceClosure(AmqpProvider provider, Throwable error) {
+    public void handleResourceClosure(AmqpProvider provider, ProviderException error) {
         if (error == null) {
             // TODO: create/use a more specific/appropriate exception type?
-            error = new JMSException("Producer closed remotely before message transfer result was notified");
+            error = new ProviderException("Producer closed remotely before message transfer result was notified");
         }
 
         Collection<InFlightSend> inflightSends = new ArrayList<InFlightSend>(sent.values());
@@ -327,16 +332,16 @@ public class AmqpFixedProducer extends AmqpProducer {
         }
 
         @Override
-        public void onFailure(Throwable cause) {
+        public void onFailure(ProviderException cause) {
             handleSendCompletion(false);
 
             if (request.isComplete()) {
                 // Asynchronous sends can still be awaiting a completion in which case we
                 // send to them otherwise send to the listener to be reported.
                 if (envelope.isCompletionRequired()) {
-                    getParent().getProvider().getProviderListener().onFailedMessageSend(envelope, cause);
+                    getParent().getProvider().getProviderListener().onFailedMessageSend(envelope, ProviderExceptionSupport.createNonFatalOrPassthrough(cause));
                 } else {
-                    getParent().getProvider().fireNonFatalProviderException(IOExceptionSupport.create(cause));
+                    getParent().getProvider().fireNonFatalProviderException(ProviderExceptionSupport.createNonFatalOrPassthrough(cause));
                 }
             } else {
                 request.onFailure(cause);
@@ -414,11 +419,11 @@ public class AmqpFixedProducer extends AmqpProducer {
         }
 
         @Override
-        public Exception createException() {
+        public ProviderException createException() {
             if (delivery == null) {
-                return new JmsSendTimedOutException("Timed out waiting for credit to send Message", envelope.getMessage());
+                return new ProviderSendTimedOutException("Timed out waiting for credit to send Message", envelope.getMessage());
             } else {
-                return new JmsSendTimedOutException("Timed out waiting for disposition of sent Message", envelope.getMessage());
+                return new ProviderSendTimedOutException("Timed out waiting for disposition of sent Message", envelope.getMessage());
             }
         }
     }

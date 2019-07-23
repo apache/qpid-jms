@@ -21,13 +21,13 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.qpid.jms.provider.ProviderRedirectedException;
+import org.apache.qpid.jms.provider.ProviderException;
+import org.apache.qpid.jms.provider.exceptions.ProviderConnectionRedirectedException;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.transport.AmqpError;
 import org.apache.qpid.proton.amqp.transport.ErrorCondition;
@@ -58,9 +58,9 @@ public class AmqpSupportTest {
         Exception result = AmqpSupport.createRedirectException(mockProvider, error, message, condition);
 
         assertNotNull(result);
-        assertTrue(result instanceof ProviderRedirectedException);
+        assertTrue(result instanceof ProviderConnectionRedirectedException);
 
-        ProviderRedirectedException pre = (ProviderRedirectedException) result;
+        ProviderConnectionRedirectedException pre = (ProviderConnectionRedirectedException) result;
 
         URI redirection = pre.getRedirectionURI();
 
@@ -83,8 +83,8 @@ public class AmqpSupportTest {
         Exception result = AmqpSupport.createRedirectException(mockProvider, error, message, condition);
 
         assertNotNull(result);
-        assertFalse(result instanceof ProviderRedirectedException);
-        assertTrue(result instanceof IOException);
+        assertFalse(result instanceof ProviderConnectionRedirectedException);
+        assertTrue(result instanceof ProviderException);
     }
 
     @Test
@@ -108,8 +108,8 @@ public class AmqpSupportTest {
         Exception result = AmqpSupport.createRedirectException(mockProvider, error, message, condition);
 
         assertNotNull(result);
-        assertFalse(result instanceof ProviderRedirectedException);
-        assertTrue(result instanceof IOException);
+        assertFalse(result instanceof ProviderConnectionRedirectedException);
+        assertTrue(result instanceof ProviderException);
     }
 
     @Test
@@ -134,8 +134,8 @@ public class AmqpSupportTest {
         Exception result = AmqpSupport.createRedirectException(mockProvider, error, message, condition);
 
         assertNotNull(result);
-        assertFalse(result instanceof ProviderRedirectedException);
-        assertTrue(result instanceof IOException);
+        assertFalse(result instanceof ProviderConnectionRedirectedException);
+        assertTrue(result instanceof ProviderException);
     }
 
     @Test
@@ -160,7 +160,7 @@ public class AmqpSupportTest {
         Exception result = AmqpSupport.createRedirectException(mockProvider, error, message, condition);
 
         assertNotNull(result);
-        assertFalse(result instanceof ProviderRedirectedException);
-        assertTrue(result instanceof IOException);
+        assertFalse(result instanceof ProviderConnectionRedirectedException);
+        assertTrue(result instanceof ProviderException);
     }
 }

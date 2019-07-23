@@ -34,10 +34,11 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.apache.qpid.jms.util.URISupport;
+import org.apache.qpid.jms.provider.ProviderException;
 import org.apache.qpid.jms.provider.discovery.DiscoveryAgent;
 import org.apache.qpid.jms.provider.discovery.DiscoveryListener;
 import org.apache.qpid.jms.util.ThreadPoolUtils;
+import org.apache.qpid.jms.util.URISupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -85,7 +86,7 @@ public class FileWatcherDiscoveryAgent implements DiscoveryAgent {
     }
 
     @Override
-    public void start() throws IOException, IllegalStateException {
+    public void start() throws ProviderException, IllegalStateException {
         if (listener == null) {
             throw new IllegalStateException("No DiscoveryListener configured.");
         }

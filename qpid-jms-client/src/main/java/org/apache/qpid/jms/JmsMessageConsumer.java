@@ -18,7 +18,6 @@ package org.apache.qpid.jms;
 
 import static org.apache.qpid.jms.message.JmsMessageSupport.lookupAckTypeForDisposition;
 
-import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
@@ -44,6 +43,7 @@ import org.apache.qpid.jms.policy.JmsPrefetchPolicy;
 import org.apache.qpid.jms.policy.JmsRedeliveryPolicy;
 import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
+import org.apache.qpid.jms.provider.ProviderException;
 import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.provider.ProviderSynchronization;
 import org.apache.qpid.jms.util.FifoMessageQueue;
@@ -124,7 +124,7 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
             }
 
             @Override
-            public void onPendingFailure(Throwable cause) {
+            public void onPendingFailure(ProviderException cause) {
             }
         });
 
@@ -664,11 +664,11 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
             try {
                 provider.create(consumerInfo, request);
                 request.sync();
-            } catch (IOException ioe) {
+            } catch (ProviderException poe) {
                 if (connection.isCloseLinksThatFailOnReconnect()) {
-                    session.consumerClosed(consumerInfo, ioe);
+                    session.consumerClosed(consumerInfo, poe);
                 } else {
-                    throw ioe;
+                    throw poe;
                 }
             }
         }

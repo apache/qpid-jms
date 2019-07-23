@@ -16,7 +16,6 @@
  */
 package org.apache.qpid.jms.provider;
 
-import java.io.IOException;
 import java.net.URI;
 
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
@@ -55,7 +54,7 @@ public interface ProviderListener {
      * @param cause
      *      the exception that describes the cause of the failed send.
      */
-    void onFailedMessageSend(JmsOutboundMessageDispatch envelope, Throwable cause);
+    void onFailedMessageSend(JmsOutboundMessageDispatch envelope, ProviderException cause);
 
     /**
      * Called from a fault tolerant Provider instance to signal that the underlying
@@ -131,7 +130,7 @@ public interface ProviderListener {
      * @param ex
      *        The exception that indicates the cause of this Provider failure.
      */
-    void onConnectionFailure(IOException ex);
+    void onConnectionFailure(ProviderException ex);
 
     /**
      * Called to indicate that a currently active resource has been closed
@@ -144,7 +143,7 @@ public interface ProviderListener {
      * @param cause
      *        optional exception object that indicates the cause of the close.
      */
-    void onResourceClosed(JmsResource resource, Throwable cause);
+    void onResourceClosed(JmsResource resource, ProviderException cause);
 
     /**
      * Called to indicate that a some client operation caused or received an
@@ -153,6 +152,6 @@ public interface ProviderListener {
      * @param cause
      *        the exception object that is being reported to the listener.
      */
-    void onProviderException(Exception cause);
+    void onProviderException(ProviderException cause);
 
 }

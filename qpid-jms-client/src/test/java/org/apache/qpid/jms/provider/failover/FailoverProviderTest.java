@@ -23,7 +23,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -418,7 +417,7 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
     }
 
     @Test(timeout=10000)
-    public void testTimeoutsSetFromConnectionInfo() throws IOException, JMSException {
+    public void testTimeoutsSetFromConnectionInfo() throws Exception {
         final long CONNECT_TIMEOUT = TimeUnit.SECONDS.toMillis(4);
         final long CLOSE_TIMEOUT = TimeUnit.SECONDS.toMillis(5);
         final long SEND_TIMEOUT = TimeUnit.SECONDS.toMillis(6);

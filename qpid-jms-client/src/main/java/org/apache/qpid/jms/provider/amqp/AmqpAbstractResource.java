@@ -16,14 +16,14 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
-import java.io.IOException;
 import java.util.concurrent.ScheduledFuture;
 
-import org.apache.qpid.jms.JmsOperationTimedOutException;
 import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.meta.JmsResource;
 import org.apache.qpid.jms.meta.JmsResource.ResourceState;
 import org.apache.qpid.jms.provider.AsyncResult;
+import org.apache.qpid.jms.provider.ProviderException;
+import org.apache.qpid.jms.provider.exceptions.ProviderOperationTimedOutException;
 import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.engine.Endpoint;
 import org.apache.qpid.proton.engine.EndpointState;
@@ -123,7 +123,7 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
                     }
 
                     @Override
-                    public void onFailure(Throwable result) {
+                    public void onFailure(ProviderException result) {
                         closeResource(getParent().getProvider(), result, false);
                     }
 
@@ -132,13 +132,13 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
                         return closeRequest != null ? closeRequest.isComplete() : true;
                     }
 
-                }, closeTimeout, new JmsOperationTimedOutException("Timed Out Waiting for close response: " + this));
+                }, closeTimeout, new ProviderOperationTimedOutException("Timed Out Waiting for close response: " + this));
         }
 
         closeOrDetachEndpoint();
     }
 
-    public void closeResource(AmqpProvider provider, Throwable cause, boolean remotelyClosed) {
+    public void closeResource(AmqpProvider provider, ProviderException cause, boolean remotelyClosed) {
         if (parent != null) {
             parent.removeChildResource(this);
         }
@@ -187,7 +187,7 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
         }
     }
 
-    public void handleResourceClosure(AmqpProvider provider, Throwable error) {
+    public void handleResourceClosure(AmqpProvider provider, ProviderException error) {
         // Nothing do be done here, subclasses can override as needed.
     }
 
@@ -245,33 +245,35 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
     //----- AmqpResource implementation --------------------------------------//
 
     @Override
-    public final void processRemoteOpen(AmqpProvider provider) throws IOException {
+    public final void processRemoteOpen(AmqpProvider provider) throws ProviderException {
         // Open is handled by the resource builder
     }
 
     @Override
-    public void processRemoteDetach(AmqpProvider provider) throws IOException {
+    public void processRemoteDetach(AmqpProvider provider) throws ProviderException {
         processRemoteClose(provider);
     }
 
     @Override
-    public void processRemoteClose(AmqpProvider provider) throws IOException {
+    public void processRemoteClose(AmqpProvider provider) throws ProviderException {
         getResourceInfo().setState(ResourceState.REMOTELY_CLOSED);
 
         if (isAwaitingClose()) {
             closeResource(provider, null, true); // Close was expected so ignore any endpoint errors.
         } else {
-            closeResource(provider, AmqpSupport.convertToException(provider, getEndpoint(), getEndpoint().getRemoteCondition()), true);
+            // For resources other than the Connection layer a remote close is not fatal, the client
+            // can conceivably continue on or opt to close down on its own.
+            closeResource(provider, AmqpSupport.convertToNonFatalException(provider, getEndpoint(), getEndpoint().getRemoteCondition()), true);
         }
     }
 
     @Override
-    public void processDeliveryUpdates(AmqpProvider provider, Delivery delivery) throws IOException {
+    public void processDeliveryUpdates(AmqpProvider provider, Delivery delivery) throws ProviderException {
         // Nothing do be done here, subclasses can override as needed.
     }
 
     @Override
-    public void processFlowUpdates(AmqpProvider provider) throws IOException {
+    public void processFlowUpdates(AmqpProvider provider) throws ProviderException {
         // Nothing do be done here, subclasses can override as needed.
     }
 }

@@ -18,6 +18,8 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
+import org.apache.qpid.jms.provider.ProviderException;
+
 /**
  * Used to provide a source for an exception based on some event such as
  * operation timed out, etc.
@@ -29,6 +31,6 @@ public interface AmqpExceptionBuilder {
      *
      * @return a new Exception instance that describes a failure condition.
      */
-    Exception createException();
+    ProviderException createException();
 
 }

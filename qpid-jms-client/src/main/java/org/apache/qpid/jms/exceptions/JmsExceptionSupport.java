@@ -40,6 +40,8 @@ import javax.jms.TransactionInProgressRuntimeException;
 import javax.jms.TransactionRolledBackException;
 import javax.jms.TransactionRolledBackRuntimeException;
 
+import org.apache.qpid.jms.provider.ProviderException;
+
 /**
  * Exception support class.
  *
@@ -74,6 +76,8 @@ public final class JmsExceptionSupport {
 
         if (cause.getCause() instanceof JMSException) {
             return (JMSException) cause.getCause();
+        } else if (cause instanceof ProviderException) {
+            return ((ProviderException) cause).toJMSException();
         }
 
         if (message == null || message.isEmpty()) {

@@ -136,7 +136,7 @@ public class JmsStreamMessage extends JmsMessage implements StreamMessage {
         if (value instanceof Character) {
             result = (Character) value;
         } else if (value == null) {
-                throw new NullPointerException("Cannot convert NULL value to char.");
+            throw new NullPointerException("Cannot convert NULL value to char.");
         } else {
             throw new MessageFormatException(
                 "stream value: " + value.getClass().getSimpleName() + " cannot be converted to a boolean.");

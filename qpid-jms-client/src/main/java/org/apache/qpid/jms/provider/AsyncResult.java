@@ -28,7 +28,7 @@ public interface AsyncResult {
      * @param result
      *        The error that resulted in this asynchronous operation failing.
      */
-    void onFailure(Throwable result);
+    void onFailure(ProviderException result);
 
     /**
      * If the operation succeeds the resulting value produced is set to null and

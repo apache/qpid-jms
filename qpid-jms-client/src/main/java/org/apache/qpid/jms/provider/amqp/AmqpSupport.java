@@ -16,19 +16,19 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
-import java.io.IOException;
 import java.util.Map;
 
-import javax.jms.InvalidClientIDException;
-import javax.jms.InvalidDestinationException;
-import javax.jms.JMSException;
-import javax.jms.JMSSecurityException;
-import javax.jms.ResourceAllocationException;
-import javax.jms.TransactionRolledBackException;
-
-import org.apache.qpid.jms.JmsConnectionRemotelyClosedException;
-import org.apache.qpid.jms.JmsResourceNotFoundException;
-import org.apache.qpid.jms.provider.ProviderRedirectedException;
+import org.apache.qpid.jms.provider.ProviderException;
+import org.apache.qpid.jms.provider.exceptions.ProviderConnectionRedirectedException;
+import org.apache.qpid.jms.provider.exceptions.ProviderConnectionRemotelyClosedException;
+import org.apache.qpid.jms.provider.exceptions.ProviderConnectionResourceAllocationException;
+import org.apache.qpid.jms.provider.exceptions.ProviderConnectionResourceNotFoundException;
+import org.apache.qpid.jms.provider.exceptions.ProviderConnectionSecurityException;
+import org.apache.qpid.jms.provider.exceptions.ProviderInvalidClientIDException;
+import org.apache.qpid.jms.provider.exceptions.ProviderInvalidDestinationException;
+import org.apache.qpid.jms.provider.exceptions.ProviderResourceAllocationException;
+import org.apache.qpid.jms.provider.exceptions.ProviderSecurityException;
+import org.apache.qpid.jms.provider.exceptions.ProviderTransactionRolledBackException;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.Modified;
 import org.apache.qpid.proton.amqp.messaging.Rejected;
@@ -36,7 +36,6 @@ import org.apache.qpid.proton.amqp.transaction.TransactionErrors;
 import org.apache.qpid.proton.amqp.transport.AmqpError;
 import org.apache.qpid.proton.amqp.transport.ConnectionError;
 import org.apache.qpid.proton.amqp.transport.ErrorCondition;
-import org.apache.qpid.proton.engine.Connection;
 import org.apache.qpid.proton.engine.Endpoint;
 
 public class AmqpSupport {
@@ -103,7 +102,7 @@ public class AmqpSupport {
 
     /**
      * Given an ErrorCondition instance create a new Exception that best matches
-     * the error type.
+     * the error type that indicates the connection creation failed for some reason.
      *
      * @param provider
      * 		the AMQP provider instance that originates this exception
@@ -114,60 +113,75 @@ public class AmqpSupport {
      *
      * @return a new Exception instance that best matches the ErrorCondition value.
      */
-    public static Exception convertToException(AmqpProvider provider, Endpoint endpoint, ErrorCondition errorCondition) {
-        return convertToException(provider, endpoint, errorCondition, null);
-    }
-
-    /**
-     * Given an ErrorCondition instance create a new Exception that best matches
-     * the error type.
-     *
-     * @param provider
-     * 		the AMQP provider instance that originates this exception
-     * @param endpoint
-     *      The target of the error.
-     * @param errorCondition
-     *      The ErrorCondition returned from the remote peer.
-     * @param defaultException
-     *      The default exception to throw if no error information is provided from the remote.
-     *
-     * @return a new Exception instance that best matches the ErrorCondition value.
-     */
-    public static Exception convertToException(AmqpProvider provider, Endpoint endpoint, ErrorCondition errorCondition, Exception defaultException) {
-        Exception remoteError = defaultException;
+    public static ProviderConnectionRemotelyClosedException convertToConnectionClosedException(AmqpProvider provider, Endpoint endpoint, ErrorCondition errorCondition) {
+        ProviderConnectionRemotelyClosedException remoteError = null;
 
         if (errorCondition != null && errorCondition.getCondition() != null) {
             Symbol error = errorCondition.getCondition();
             String message = extractErrorMessage(errorCondition);
 
             if (error.equals(AmqpError.UNAUTHORIZED_ACCESS)) {
-                remoteError = new JMSSecurityException(message);
+                remoteError = new ProviderConnectionSecurityException(message);
             } else if (error.equals(AmqpError.RESOURCE_LIMIT_EXCEEDED)) {
-                remoteError = new ResourceAllocationException(message);
+                remoteError = new ProviderConnectionResourceAllocationException(message);
             } else if (error.equals(ConnectionError.CONNECTION_FORCED)) {
-                remoteError = new JmsConnectionRemotelyClosedException(message);
+                remoteError = new ProviderConnectionRemotelyClosedException(message);
             } else if (error.equals(AmqpError.NOT_FOUND)) {
-                if (endpoint instanceof Connection) {
-                    remoteError = new JmsResourceNotFoundException(message);
-                } else {
-                    remoteError = new InvalidDestinationException(message);
-                }
-            } else if (error.equals(TransactionErrors.TRANSACTION_ROLLBACK)) {
-                remoteError = new TransactionRolledBackException(message);
+                remoteError = new ProviderConnectionResourceNotFoundException(message);
             } else if (error.equals(ConnectionError.REDIRECT)) {
                 remoteError = createRedirectException(provider, error, message, errorCondition);
             } else if (error.equals(AmqpError.INVALID_FIELD)) {
                 Map<?, ?> info = errorCondition.getInfo();
                 if (info != null && CONTAINER_ID.equals(info.get(INVALID_FIELD))) {
-                    remoteError = new InvalidClientIDException(message);
+                    remoteError = new ProviderInvalidClientIDException(message);
                 } else {
-                    remoteError = new JMSException(message);
+                    remoteError = new ProviderConnectionRemotelyClosedException(message);
                 }
             } else {
-                remoteError = new JMSException(message);
+                remoteError = new ProviderConnectionRemotelyClosedException(message);
             }
         } else if (remoteError == null) {
-            remoteError = new JMSException("Unknown error from remote peer");
+            remoteError = new ProviderConnectionRemotelyClosedException("Unknown error from remote peer");
+        }
+
+        return remoteError;
+    }
+
+    /**
+     * Given an ErrorCondition instance create a new Exception that best matches
+     * the error type that indicates a non-fatal error usually at the link level
+     * such as link closed remotely or link create failed due to security access
+     * issues.
+     *
+     * @param provider
+     * 		the AMQP provider instance that originates this exception
+     * @param endpoint
+     *      The target of the error.
+     * @param errorCondition
+     *      The ErrorCondition returned from the remote peer.
+     *
+     * @return a new Exception instance that best matches the ErrorCondition value.
+     */
+    public static ProviderException convertToNonFatalException(AmqpProvider provider, Endpoint endpoint, ErrorCondition errorCondition) {
+        ProviderException remoteError = null;
+
+        if (errorCondition != null && errorCondition.getCondition() != null) {
+            Symbol error = errorCondition.getCondition();
+            String message = extractErrorMessage(errorCondition);
+
+            if (error.equals(AmqpError.UNAUTHORIZED_ACCESS)) {
+                remoteError = new ProviderSecurityException(message);
+            } else if (error.equals(AmqpError.RESOURCE_LIMIT_EXCEEDED)) {
+                remoteError = new ProviderResourceAllocationException(message);
+            } else if (error.equals(AmqpError.NOT_FOUND)) {
+                remoteError = new ProviderInvalidDestinationException(message);
+            } else if (error.equals(TransactionErrors.TRANSACTION_ROLLBACK)) {
+                remoteError = new ProviderTransactionRolledBackException(message);
+            } else {
+                remoteError = new ProviderException(message);
+            }
+        } else if (remoteError == null) {
+            remoteError = new ProviderException("Unknown error from remote peer");
         }
 
         return remoteError;
@@ -213,20 +227,20 @@ public class AmqpSupport {
      *
      * @return an Exception that captures the details of the redirection error.
      */
-    public static Exception createRedirectException(AmqpProvider provider, Symbol error, String message, ErrorCondition condition) {
-        Exception result = null;
+    public static ProviderConnectionRemotelyClosedException createRedirectException(AmqpProvider provider, Symbol error, String message, ErrorCondition condition) {
+        ProviderConnectionRemotelyClosedException result = null;
         Map<?, ?> info = condition.getInfo();
 
         if (info == null) {
-            result = new IOException(message + " : Redirection information not set.");
+            result = new ProviderConnectionRemotelyClosedException(message + " : Redirection information not set.");
         } else {
             @SuppressWarnings("unchecked")
             AmqpRedirect redirect = new AmqpRedirect((Map<Symbol, Object>) info, provider);
 
             try {
-                result = new ProviderRedirectedException(message, redirect.validate().toURI());
+                result = new ProviderConnectionRedirectedException(message, redirect.validate().toURI());
             } catch (Exception ex) {
-                result = new IOException(message + " : " + ex.getMessage());
+                result = new ProviderConnectionRemotelyClosedException(message + " : " + ex.getMessage());
             }
         }
 

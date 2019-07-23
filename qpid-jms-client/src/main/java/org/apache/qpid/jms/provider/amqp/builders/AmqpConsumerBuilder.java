@@ -28,11 +28,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import javax.jms.InvalidDestinationException;
 import javax.jms.JMSRuntimeException;
 
 import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.meta.JmsConsumerInfo;
+import org.apache.qpid.jms.provider.ProviderException;
 import org.apache.qpid.jms.provider.amqp.AmqpConnection;
 import org.apache.qpid.jms.provider.amqp.AmqpConsumer;
 import org.apache.qpid.jms.provider.amqp.AmqpProvider;
@@ -42,6 +42,8 @@ import org.apache.qpid.jms.provider.amqp.AmqpSupport;
 import org.apache.qpid.jms.provider.amqp.filters.AmqpJmsNoLocalType;
 import org.apache.qpid.jms.provider.amqp.filters.AmqpJmsSelectorType;
 import org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper;
+import org.apache.qpid.jms.provider.exceptions.ProviderInvalidDestinationException;
+import org.apache.qpid.jms.provider.exceptions.ProviderUnsupportedOperationException;
 import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.Accepted;
@@ -110,7 +112,7 @@ public class AmqpConsumerBuilder extends AmqpResourceBuilder<AmqpConsumer, AmqpS
             receiverLinkName = subTracker.reserveNextSubscriptionLinkName(subscriptionName, resourceInfo);
         }
 
-        if(receiverLinkName == null) {
+        if (receiverLinkName == null) {
             receiverLinkName = "qpid-jms:receiver:" + resourceInfo.getId() + ":" + address;
         }
 
@@ -133,21 +135,21 @@ public class AmqpConsumerBuilder extends AmqpResourceBuilder<AmqpConsumer, AmqpS
 
     @Override
     protected void afterOpened() {
-        if(validateSharedSubsLinkCapability) {
+        if (validateSharedSubsLinkCapability) {
             Symbol[] remoteOfferedCapabilities = endpoint.getRemoteOfferedCapabilities();
 
             boolean supported = false;
-            if(remoteOfferedCapabilities != null) {
+            if (remoteOfferedCapabilities != null) {
                 List<Symbol> list = Arrays.asList(remoteOfferedCapabilities);
                 if (list.contains(SHARED_SUBS)) {
                     supported = true;
                 }
             }
 
-            if(!supported) {
+            if (!supported) {
                 sharedSubsNotSupported = true;
 
-                if(resourceInfo.isDurable()) {
+                if (resourceInfo.isDurable()) {
                     endpoint.detach();
                 } else {
                     endpoint.close();
@@ -176,18 +178,18 @@ public class AmqpConsumerBuilder extends AmqpResourceBuilder<AmqpConsumer, AmqpS
     }
 
     @Override
-    protected Exception getOpenAbortException() {
-        if(sharedSubsNotSupported) {
-            return new JMSRuntimeException("Remote peer does not support shared subscriptions");
+    protected ProviderException getDefaultOpenAbortException() {
+        if (sharedSubsNotSupported) {
+            return new ProviderUnsupportedOperationException("Remote peer does not support shared subscriptions");
         }
 
         // Verify the attach response contained a non-null Source
         org.apache.qpid.proton.amqp.transport.Source source = endpoint.getRemoteSource();
         if (source != null) {
-            return super.getOpenAbortException();
+            return super.getDefaultOpenAbortException();
         } else {
             // No link terminus was created, the peer has detach/closed us, create IDE.
-            return new InvalidDestinationException("Link creation was refused");
+            return new ProviderInvalidDestinationException("Link creation was refused");
         }
     }
 
@@ -222,11 +224,11 @@ public class AmqpConsumerBuilder extends AmqpResourceBuilder<AmqpConsumer, AmqpS
         LinkedList<Symbol> capabilities = new LinkedList<>();
 
         Symbol typeCapability =  AmqpDestinationHelper.toTypeCapability(resourceInfo.getDestination());
-        if(typeCapability != null){
+        if (typeCapability != null){
             capabilities.add(typeCapability);
         }
 
-        if(resourceInfo.isShared()) {
+        if (resourceInfo.isShared()) {
             capabilities.add(AmqpSupport.SHARED);
 
             if(!resourceInfo.isExplicitClientID()) {
@@ -234,7 +236,7 @@ public class AmqpConsumerBuilder extends AmqpResourceBuilder<AmqpConsumer, AmqpS
             }
         }
 
-        if(!capabilities.isEmpty()) {
+        if (!capabilities.isEmpty()) {
             Symbol[] capArray = capabilities.toArray(new Symbol[capabilities.size()]);
             source.setCapabilities(capArray);
         }

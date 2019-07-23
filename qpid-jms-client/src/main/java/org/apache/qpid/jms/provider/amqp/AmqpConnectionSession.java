@@ -16,19 +16,19 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.jms.InvalidDestinationException;
-
 import org.apache.qpid.jms.meta.JmsSessionInfo;
 import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.provider.NoOpAsyncResult;
+import org.apache.qpid.jms.provider.ProviderException;
 import org.apache.qpid.jms.provider.WrappedAsyncResult;
 import org.apache.qpid.jms.provider.amqp.builders.AmqpResourceBuilder;
+import org.apache.qpid.jms.provider.exceptions.ProviderExceptionSupport;
+import org.apache.qpid.jms.provider.exceptions.ProviderInvalidDestinationException;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.Target;
 import org.apache.qpid.proton.amqp.transport.ReceiverSettleMode;
@@ -99,7 +99,7 @@ public class AmqpConnectionSession extends AmqpSession {
     }
 
     @Override
-    public void handleResourceClosure(AmqpProvider provider, Throwable cause) {
+    public void handleResourceClosure(AmqpProvider provider, ProviderException cause) {
         List<AsyncResult> pending = new ArrayList<>(pendingUnsubs.values());
         for (AsyncResult unsubscribeRequest : pending) {
             unsubscribeRequest.onFailure(cause);
@@ -115,12 +115,12 @@ public class AmqpConnectionSession extends AmqpSession {
         }
 
         @Override
-        public void processRemoteClose(AmqpProvider provider) throws IOException {
+        public void processRemoteClose(AmqpProvider provider) throws ProviderException {
             // For unsubscribe we care if the remote signaled an error on the close since
             // that would indicate that the unsubscribe did not succeed and we want to throw
             // that from the unsubscribe call.
             if (getEndpoint().getRemoteCondition().getCondition() != null) {
-                closeResource(provider, AmqpSupport.convertToException(provider, getEndpoint(), getEndpoint().getRemoteCondition()), true);
+                closeResource(provider, AmqpSupport.convertToNonFatalException(provider, getEndpoint(), getEndpoint().getRemoteCondition()), true);
             } else {
                 closeResource(provider, null, true);
             }
@@ -191,16 +191,17 @@ public class AmqpConnectionSession extends AmqpSession {
                 subscriber.close(getWrappedRequest());
             } else {
                 subscriber.close(NoOpAsyncResult.INSTANCE);
-                getWrappedRequest().onFailure(new InvalidDestinationException("Cannot remove a subscription that does not exist"));
+                getWrappedRequest().onFailure(
+                    new ProviderInvalidDestinationException("Cannot remove a subscription that does not exist"));
             }
         }
 
         @Override
-        public void onFailure(Throwable cause) {
+        public void onFailure(ProviderException cause) {
             DurableSubscriptionReattach subscriber = subscriberBuilder.getResource();
             LOG.trace("Failed to reattach to subscription '{}' using link name '{}'", subscriptionName, subscriber.getLinkName());
             pendingUnsubs.remove(subscriptionName);
-            subscriber.closeResource(getProvider(), cause, false);
+            subscriber.closeResource(getProvider(), ProviderExceptionSupport.createNonFatalOrPassthrough(cause), false);
             super.onFailure(cause);
         }
     }

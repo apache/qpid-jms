@@ -16,7 +16,6 @@
  */
 package org.apache.qpid.jms;
 
-import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -36,6 +35,7 @@ import org.apache.qpid.jms.meta.JmsProducerId;
 import org.apache.qpid.jms.meta.JmsProducerInfo;
 import org.apache.qpid.jms.meta.JmsResource.ResourceState;
 import org.apache.qpid.jms.provider.Provider;
+import org.apache.qpid.jms.provider.ProviderException;
 import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.provider.ProviderSynchronization;
 
@@ -78,7 +78,7 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
             }
 
             @Override
-            public void onPendingFailure(Throwable cause) {
+            public void onPendingFailure(ProviderException cause) {
             }
         });
     }
@@ -366,11 +366,11 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
             try {
                 provider.create(producerInfo, request);
                 request.sync();
-            } catch (IOException ioe) {
+            } catch (ProviderException poe) {
                 if (connection.isCloseLinksThatFailOnReconnect()) {
-                    session.producerClosed(producerInfo, ioe);
+                    session.producerClosed(producerInfo, poe);
                 } else {
-                    throw ioe;
+                    throw poe;
                 }
             }
         }

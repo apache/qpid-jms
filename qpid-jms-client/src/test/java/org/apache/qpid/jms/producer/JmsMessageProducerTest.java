@@ -48,6 +48,7 @@ import org.apache.qpid.jms.JmsQueue;
 import org.apache.qpid.jms.JmsSession;
 import org.apache.qpid.jms.JmsTopic;
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
+import org.apache.qpid.jms.provider.ProviderException;
 import org.apache.qpid.jms.provider.mock.MockRemotePeer;
 import org.apache.qpid.jms.test.Wait;
 import org.junit.After;
@@ -557,7 +558,7 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
                 return remotePoor.getPendingCompletions(destination).size() == MESSAGE_COUNT;
             }
         }));
-        remotePoor.failAllPendingSends(destination, new JMSException("Could not send message"));
+        remotePoor.failAllPendingSends(destination, new ProviderException("Could not send message"));
 
         assertTrue("Not all completions triggered", Wait.waitFor(new Wait.Condition() {
 
@@ -604,7 +605,7 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
 
         for (JmsOutboundMessageDispatch envelope : pending) {
             LOG.info("Trigger failure of message: {}", envelope.getMessage().getJMSMessageID());
-            remotePoor.failPendingSend(envelope, new JMSException("Failed to send message"));
+            remotePoor.failPendingSend(envelope, new ProviderException("Failed to send message"));
         }
 
         assertTrue("Not all failures triggered", Wait.waitFor(new Wait.Condition() {
@@ -657,7 +658,7 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
                 remotePoor.completePendingSend(envelope);
             } else {
                 LOG.info("Trigger failure of message: {}", envelope.getMessage().getJMSMessageID());
-                remotePoor.failPendingSend(envelope, new JMSException("Failed to send message"));
+                remotePoor.failPendingSend(envelope, new ProviderException("Failed to send message"));
             }
         }
 
@@ -768,7 +769,7 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
             }
         }));
 
-        remotePoor.failAllPendingSends(destination, new JMSException("Could not send message"));
+        remotePoor.failAllPendingSends(destination, new ProviderException("Could not send message"));
 
         assertTrue("Completion never got expected ISE", done.await(10, TimeUnit.SECONDS));
 

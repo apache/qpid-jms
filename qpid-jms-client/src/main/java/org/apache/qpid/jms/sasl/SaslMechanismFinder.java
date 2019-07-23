@@ -23,8 +23,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import javax.jms.JMSSecurityRuntimeException;
-
 import org.apache.qpid.jms.util.FactoryFinder;
 import org.apache.qpid.jms.util.ResourceNotFoundException;
 import org.slf4j.Logger;
@@ -53,7 +51,7 @@ public class SaslMechanismFinder {
      * found.
      *
      * @param username
-     *        the username, or null if there is none
+     *        the user name, or null if there is none
      * @param password
      *        the password, or null if there is none
      * @param localPrincipal
@@ -66,9 +64,10 @@ public class SaslMechanismFinder {
      *        list of mechanism names that are supported by the remote peer.
      *
      * @return the best matching Mechanism for the supported remote set.
-     * @throws JMSSecurityRuntimeException if no matching mechanism can be identified
+     *
+     * @throws SaslSecurityRuntimeException if no matching mechanism can be identified
      */
-    public static Mechanism findMatchingMechanism(String username, String password, Principal localPrincipal, Set<String> mechRestrictions, String... remoteMechanisms) throws JMSSecurityRuntimeException {
+    public static Mechanism findMatchingMechanism(String username, String password, Principal localPrincipal, Set<String> mechRestrictions, String... remoteMechanisms) throws SaslSecurityRuntimeException {
 
         Mechanism match = null;
         List<Mechanism> found = new ArrayList<Mechanism>();
@@ -80,10 +79,10 @@ public class SaslMechanismFinder {
                 Mechanism mech = factory.createMechanism();
 
                 boolean mechConfigured = mechRestrictions != null && mechRestrictions.contains(remoteMechanism);
-                if(mechRestrictions != null && !mechConfigured) {
+                if (mechRestrictions != null && !mechConfigured) {
                     LOG.debug("Skipping {} mechanism because it is not in the configured mechanisms restriction set", remoteMechanism);
-                } else if(mech.isApplicable(username, password, localPrincipal)) {
-                    if(mech.isEnabledByDefault() || mechConfigured) {
+                } else if (mech.isApplicable(username, password, localPrincipal)) {
+                    if (mech.isEnabledByDefault() || mechConfigured) {
                         found.add(mech);
                     } else {
                         LOG.debug("Skipping {} mechanism as it must be explicitly enabled in the configured sasl mechanisms", mech);
@@ -100,7 +99,8 @@ public class SaslMechanismFinder {
             Collections.sort(found);
             match = found.get(found.size() - 1);
         } else {
-            throw new JMSSecurityRuntimeException("No supported mechanism, or none usable with the available credentials. Server offered: " + remoteMechanismNames);
+            throw new SaslSecurityRuntimeException(
+                "No supported mechanism, or none usable with the available credentials. Server offered: " + remoteMechanismNames);
         }
 
         LOG.info("Best match for SASL auth was: {}", match);

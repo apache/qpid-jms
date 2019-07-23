@@ -37,8 +37,8 @@ import javax.jms.JMSException;
 
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.JmsOperationTimedOutException;
-import org.apache.qpid.jms.provider.ProviderRedirectedException;
 import org.apache.qpid.jms.provider.amqp.AmqpSupport;
+import org.apache.qpid.jms.provider.exceptions.ProviderConnectionRedirectedException;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.basictypes.AmqpError;
@@ -85,7 +85,7 @@ public class FailedConnectionsIntegrationTest extends QpidJmsTestCase {
             } catch (JmsOperationTimedOutException jmsEx) {
                 // Expected
             } catch (Exception ex) {
-                fail("Should have thrown JMSException: " + ex);
+                fail("Should have thrown JmsOperationTimedOutException: " + ex);
             }
 
             testPeer.waitForAllHandlersToComplete(1000);
@@ -204,8 +204,8 @@ public class FailedConnectionsIntegrationTest extends QpidJmsTestCase {
                 establishAnonymousConnecton(testPeer, true);
                 fail("Should have thrown JMSException");
             } catch (JMSException jmsex) {
-                assertTrue(jmsex.getCause() instanceof ProviderRedirectedException);
-                ProviderRedirectedException redirectEx = (ProviderRedirectedException) jmsex.getCause();
+                assertTrue(jmsex.getCause() instanceof ProviderConnectionRedirectedException);
+                ProviderConnectionRedirectedException redirectEx = (ProviderConnectionRedirectedException) jmsex.getCause();
 
                 URI redirectionURI = redirectEx.getRedirectionURI();
 

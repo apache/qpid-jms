@@ -16,7 +16,6 @@
  */
 package org.apache.qpid.jms.provider.mock;
 
-import java.io.IOException;
 import java.net.URI;
 import java.util.Collections;
 import java.util.List;
@@ -26,8 +25,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import javax.jms.JMSException;
 
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsMessageFactory;
@@ -40,13 +37,16 @@ import org.apache.qpid.jms.meta.JmsSessionId;
 import org.apache.qpid.jms.meta.JmsTransactionInfo;
 import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.provider.Provider;
-import org.apache.qpid.jms.provider.ProviderClosedException;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
+import org.apache.qpid.jms.provider.ProviderException;
 import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.provider.ProviderFutureFactory;
 import org.apache.qpid.jms.provider.ProviderListener;
 import org.apache.qpid.jms.provider.ProviderSynchronization;
 import org.apache.qpid.jms.provider.amqp.AmqpProvider;
+import org.apache.qpid.jms.provider.exceptions.ProviderClosedException;
+import org.apache.qpid.jms.provider.exceptions.ProviderExceptionSupport;
+import org.apache.qpid.jms.provider.exceptions.ProviderIOException;
 import org.apache.qpid.jms.util.ThreadPoolUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -101,13 +101,13 @@ public class MockProvider implements Provider {
     }
 
     @Override
-    public void connect(JmsConnectionInfo connectionInfo) throws IOException {
+    public void connect(JmsConnectionInfo connectionInfo) throws ProviderException {
         checkClosed();
 
         stats.recordConnectAttempt();
 
         if (configuration.isFailOnConnect()) {
-            throw new IOException("Failed to connect to: " + remoteURI);
+            throw new ProviderIOException("Failed to connect to: " + remoteURI);
         }
 
         if (context != null) {
@@ -116,7 +116,7 @@ public class MockProvider implements Provider {
     }
 
     @Override
-    public void start() throws IOException, IllegalStateException {
+    public void start() throws ProviderException, IllegalStateException {
         checkClosed();
 
         if (listener == null) {
@@ -124,7 +124,7 @@ public class MockProvider implements Provider {
         }
 
         if (configuration.isFailOnStart()) {
-            throw new IOException();
+            throw new ProviderException("Error");
         }
     }
 
@@ -145,13 +145,13 @@ public class MockProvider implements Provider {
                         }
 
                         if (configuration.isFailOnClose()) {
-                            request.onFailure(new RuntimeException());
+                            request.onFailure(new ProviderIOException("Failed on close"));
                         } else {
                             request.onSuccess();
                         }
-                    } catch (Exception e) {
+                    } catch (Throwable e) {
                         LOG.debug("Caught exception while closing the MockProvider");
-                        request.onFailure(e);
+                        request.onFailure(ProviderExceptionSupport.createOrPassthroughFatal(e));
                     }
                 }
             });
@@ -162,7 +162,7 @@ public class MockProvider implements Provider {
                 } else {
                     request.sync(closeTimeout, TimeUnit.MILLISECONDS);
                 }
-            } catch (IOException e) {
+            } catch (Exception e) {
                 LOG.warn("Error caught while closing Provider: ", e.getMessage());
             } finally {
                 ThreadPoolUtils.shutdownGraceful(serializer);
@@ -181,7 +181,7 @@ public class MockProvider implements Provider {
     }
 
     @Override
-    public void create(final JmsResource resource, final AsyncResult request) throws IOException, JMSException {
+    public void create(final JmsResource resource, final AsyncResult request) throws ProviderException {
         checkClosed();
         serializer.execute(new Runnable() {
 
@@ -202,15 +202,15 @@ public class MockProvider implements Provider {
                     }
 
                     request.onSuccess();
-                } catch (Exception error) {
-                    request.onFailure(error);
+                } catch (Throwable error) {
+                    request.onFailure(ProviderExceptionSupport.createNonFatalOrPassthrough(error));
                 }
             }
         });
     }
 
     @Override
-    public void start(final JmsResource resource, final AsyncResult request) throws IOException, JMSException {
+    public void start(final JmsResource resource, final AsyncResult request) throws ProviderException {
         checkClosed();
         serializer.execute(new Runnable() {
 
@@ -226,14 +226,14 @@ public class MockProvider implements Provider {
 
                     request.onSuccess();
                 } catch (Exception error) {
-                    request.onFailure(error);
+                    request.onFailure(ProviderExceptionSupport.createNonFatalOrPassthrough(error));
                 }
             }
         });
     }
 
     @Override
-    public void stop(final JmsResource resource, final AsyncResult request) throws IOException, JMSException {
+    public void stop(final JmsResource resource, final AsyncResult request) throws ProviderException {
         checkClosed();
         serializer.execute(new Runnable() {
 
@@ -248,15 +248,15 @@ public class MockProvider implements Provider {
 
                     stats.recordStopResourceCall(resource);
                     request.onSuccess();
-                } catch (Exception error) {
-                    request.onFailure(error);
+                } catch (Throwable error) {
+                    request.onFailure(ProviderExceptionSupport.createNonFatalOrPassthrough(error));
                 }
             }
         });
     }
 
     @Override
-    public void destroy(final JmsResource resource, final AsyncResult request) throws IOException, JMSException {
+    public void destroy(final JmsResource resource, final AsyncResult request) throws ProviderException {
         checkClosed();
         serializer.execute(new Runnable() {
 
@@ -271,15 +271,15 @@ public class MockProvider implements Provider {
                     }
 
                     request.onSuccess();
-                } catch (Exception error) {
-                    request.onFailure(error);
+                } catch (Throwable error) {
+                    request.onFailure(ProviderExceptionSupport.createNonFatalOrPassthrough(error));
                 }
             }
         });
     }
 
     @Override
-    public void send(final JmsOutboundMessageDispatch envelope, final AsyncResult request) throws IOException, JMSException {
+    public void send(final JmsOutboundMessageDispatch envelope, final AsyncResult request) throws ProviderException {
         checkClosed();
         serializer.execute(new Runnable() {
 
@@ -306,15 +306,15 @@ public class MockProvider implements Provider {
                             }
                         }
                     }
-                } catch (Exception error) {
-                    request.onFailure(error);
+                } catch (Throwable error) {
+                    request.onFailure(ProviderExceptionSupport.createNonFatalOrPassthrough(error));
                 }
             }
         });
     }
 
     @Override
-    public void acknowledge(final JmsSessionId sessionId, final ACK_TYPE ackType, final AsyncResult request) throws IOException, JMSException {
+    public void acknowledge(final JmsSessionId sessionId, final ACK_TYPE ackType, final AsyncResult request) throws ProviderException {
         checkClosed();
         serializer.execute(new Runnable() {
 
@@ -324,15 +324,15 @@ public class MockProvider implements Provider {
                     checkClosed();
                     stats.recoordSessionAcknowledgeCall();
                     request.onSuccess();
-                } catch (Exception error) {
-                    request.onFailure(error);
+                } catch (Throwable error) {
+                    request.onFailure(ProviderExceptionSupport.createNonFatalOrPassthrough(error));
                 }
             }
         });
     }
 
     @Override
-    public void acknowledge(final JmsInboundMessageDispatch envelope, final ACK_TYPE ackType, final AsyncResult request) throws IOException, JMSException {
+    public void acknowledge(final JmsInboundMessageDispatch envelope, final ACK_TYPE ackType, final AsyncResult request) throws ProviderException {
         checkClosed();
         serializer.execute(new Runnable() {
 
@@ -342,15 +342,15 @@ public class MockProvider implements Provider {
                     checkClosed();
                     stats.recoordAcknowledgeCall();
                     request.onSuccess();
-                } catch (Exception error) {
-                    request.onFailure(error);
+                } catch (Throwable error) {
+                    request.onFailure(ProviderExceptionSupport.createNonFatalOrPassthrough(error));
                 }
             }
         });
     }
 
     @Override
-    public void commit(final JmsTransactionInfo transactionInfo, final JmsTransactionInfo nextTransactionInfo, final AsyncResult request) throws IOException, JMSException {
+    public void commit(final JmsTransactionInfo transactionInfo, final JmsTransactionInfo nextTransactionInfo, final AsyncResult request) throws ProviderException {
         checkClosed();
         serializer.execute(new Runnable() {
 
@@ -360,15 +360,15 @@ public class MockProvider implements Provider {
                     checkClosed();
                     stats.recordCommitCall();
                     request.onSuccess();
-                } catch (Exception error) {
-                    request.onFailure(error);
+                } catch (Throwable error) {
+                    request.onFailure(ProviderExceptionSupport.createNonFatalOrPassthrough(error));
                 }
             }
         });
     }
 
     @Override
-    public void rollback(final JmsTransactionInfo transactionInfo, final JmsTransactionInfo nextTransactionInfo, final AsyncResult request) throws IOException, JMSException {
+    public void rollback(final JmsTransactionInfo transactionInfo, final JmsTransactionInfo nextTransactionInfo, final AsyncResult request) throws ProviderException {
         checkClosed();
         serializer.execute(new Runnable() {
 
@@ -378,15 +378,15 @@ public class MockProvider implements Provider {
                     checkClosed();
                     stats.recordRollbackCall();
                     request.onSuccess();
-                } catch (Exception error) {
-                    request.onFailure(error);
+                } catch (Throwable error) {
+                    request.onFailure(ProviderExceptionSupport.createNonFatalOrPassthrough(error));
                 }
             }
         });
     }
 
     @Override
-    public void recover(final JmsSessionId sessionId, final AsyncResult request) throws IOException {
+    public void recover(final JmsSessionId sessionId, final AsyncResult request) throws ProviderException {
         checkClosed();
         serializer.execute(new Runnable() {
 
@@ -396,15 +396,15 @@ public class MockProvider implements Provider {
                     checkClosed();
                     stats.recordRecoverCall();
                     request.onSuccess();
-                } catch (Exception error) {
-                    request.onFailure(error);
+                } catch (Throwable error) {
+                    request.onFailure(ProviderExceptionSupport.createNonFatalOrPassthrough(error));
                 }
             }
         });
     }
 
     @Override
-    public void unsubscribe(final String subscription, final AsyncResult request) throws IOException, JMSException {
+    public void unsubscribe(final String subscription, final AsyncResult request) throws ProviderException {
         checkClosed();
         serializer.execute(new Runnable() {
 
@@ -414,15 +414,15 @@ public class MockProvider implements Provider {
                     checkClosed();
                     stats.recordUnsubscribeCall();
                     request.onSuccess();
-                } catch (Exception error) {
-                    request.onFailure(error);
+                } catch (Throwable error) {
+                    request.onFailure(ProviderExceptionSupport.createNonFatalOrPassthrough(error));
                 }
             }
         });
     }
 
     @Override
-    public void pull(final JmsConsumerId consumerId, final long timeout, final AsyncResult request) throws IOException {
+    public void pull(final JmsConsumerId consumerId, final long timeout, final AsyncResult request) throws ProviderException {
         checkClosed();
         serializer.execute(new Runnable() {
 
@@ -432,8 +432,8 @@ public class MockProvider implements Provider {
                     checkClosed();
                     stats.recordPullCall();
                     request.onSuccess();
-                } catch (Exception error) {
-                    request.onFailure(error);
+                } catch (Throwable error) {
+                    request.onFailure(ProviderExceptionSupport.createNonFatalOrPassthrough(error));
                 }
             }
         });
@@ -447,7 +447,7 @@ public class MockProvider implements Provider {
             @Override
             public void run() {
                 if (!closed.get()) {
-                    listener.onConnectionFailure(new IOException("Connection lost"));
+                    listener.onConnectionFailure(new ProviderIOException("Connection lost"));
                 }
             }
         });

@@ -14,17 +14,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.qpid.jms.provider;
+package org.apache.qpid.jms.provider.exceptions;
 
-public class ProviderFailedException extends ProviderException {
+import java.io.IOException;
+import java.net.URI;
 
-    private static final long serialVersionUID = 1L;
+/**
+ * {@link IOException} derivative that defines that the remote peer has requested that this
+ * connection be redirected to some alternative peer.
+ */
+public class ProviderConnectionRedirectedException extends ProviderConnectionRemotelyClosedException {
 
-    public ProviderFailedException(String message) {
-        super(message);
+    private static final long serialVersionUID = 5872211116061710369L;
+
+    private final URI redirect;
+
+    public ProviderConnectionRedirectedException(String reason, URI redirect) {
+        super(reason);
+
+        this.redirect = redirect;
     }
 
-    public ProviderFailedException(String message, Throwable cause) {
-        super(message, cause);
+    /**
+     * @return the URI that represents the redirection.
+     */
+    public URI getRedirectionURI() {
+        return redirect;
     }
 }

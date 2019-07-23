@@ -32,10 +32,12 @@ import javax.jms.Session;
 import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.meta.JmsSessionInfo;
 import org.apache.qpid.jms.provider.AsyncResult;
+import org.apache.qpid.jms.provider.ProviderException;
 import org.apache.qpid.jms.provider.amqp.AmqpConnection;
 import org.apache.qpid.jms.provider.amqp.AmqpProvider;
 import org.apache.qpid.jms.provider.amqp.AmqpRedirect;
 import org.apache.qpid.jms.provider.amqp.AmqpSupport;
+import org.apache.qpid.jms.provider.exceptions.ProviderConnectionRemotelyClosedException;
 import org.apache.qpid.jms.util.MetaDataSupport;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.engine.Connection;
@@ -83,7 +85,7 @@ public class AmqpConnectionBuilder extends AmqpResourceBuilder<AmqpConnection, A
                     }
 
                     @Override
-                    public void onFailure(Throwable result) {
+                    public void onFailure(ProviderException result) {
                         LOG.debug("AMQP Connection Session failed to open.");
                         request.onFailure(result);
                     }
@@ -91,7 +93,7 @@ public class AmqpConnectionBuilder extends AmqpResourceBuilder<AmqpConnection, A
             }
 
             @Override
-            public void onFailure(Throwable result) {
+            public void onFailure(ProviderException result) {
                 request.onFailure(result);
             }
 
@@ -149,6 +151,16 @@ public class AmqpConnectionBuilder extends AmqpResourceBuilder<AmqpConnection, A
                 }
             }
         }
+    }
+
+    @Override
+    protected ProviderException getOpenAbortExceptionFromRemote() {
+        return AmqpSupport.convertToConnectionClosedException(parent.getProvider(), getEndpoint(), getEndpoint().getRemoteCondition());
+    }
+
+    @Override
+    protected ProviderException getDefaultOpenAbortException() {
+        return new ProviderConnectionRemotelyClosedException("Open failed unexpectedly.");
     }
 
     @Override

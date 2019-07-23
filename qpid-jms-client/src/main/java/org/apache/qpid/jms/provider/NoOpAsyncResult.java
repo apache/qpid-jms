@@ -24,7 +24,7 @@ public class NoOpAsyncResult implements AsyncResult {
     public final static NoOpAsyncResult INSTANCE = new NoOpAsyncResult();
 
     @Override
-    public void onFailure(Throwable result) {
+    public void onFailure(ProviderException result) {
 
     }
 

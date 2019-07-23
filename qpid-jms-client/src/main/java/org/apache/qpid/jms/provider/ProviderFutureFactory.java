@@ -119,7 +119,7 @@ public abstract class ProviderFutureFactory {
             return new ConservativeProviderFuture() {
 
                 @Override
-                public void onFailure(Throwable t) {
+                public void onFailure(ProviderException t) {
                     this.onSuccess();
                 }
             };
@@ -143,7 +143,7 @@ public abstract class ProviderFutureFactory {
             return new BalancedProviderFuture() {
 
                 @Override
-                public void onFailure(Throwable t) {
+                public void onFailure(ProviderException t) {
                     this.onSuccess();
                 }
             };
@@ -167,7 +167,7 @@ public abstract class ProviderFutureFactory {
             return new ProgressiveProviderFuture() {
 
                 @Override
-                public void onFailure(Throwable t) {
+                public void onFailure(ProviderException t) {
                     this.onSuccess();
                 }
             };

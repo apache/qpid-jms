@@ -18,8 +18,6 @@ package org.apache.qpid.jms.provider;
 
 import static org.junit.Assert.assertTrue;
 
-import java.io.IOException;
-
 import org.junit.Test;
 
 public class NoOpAsyncResultTest {
@@ -36,7 +34,7 @@ public class NoOpAsyncResultTest {
 
         assertTrue(result.isComplete());
         result.onSuccess();
-        result.onFailure(new IOException());
+        result.onFailure(new ProviderException("Error"));
         assertTrue(result.isComplete());
     }
 
@@ -45,7 +43,7 @@ public class NoOpAsyncResultTest {
         NoOpAsyncResult result = new NoOpAsyncResult();
 
         assertTrue(result.isComplete());
-        result.onFailure(new IOException());
+        result.onFailure(new ProviderException("Error"));
         result.onSuccess();
         assertTrue(result.isComplete());
     }

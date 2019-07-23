@@ -16,7 +16,6 @@
  */
 package org.apache.qpid.jms.provider;
 
-import java.io.IOException;
 import java.net.URI;
 
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
@@ -37,7 +36,7 @@ public class DefaultProviderListener implements ProviderListener {
     }
 
     @Override
-    public void onFailedMessageSend(JmsOutboundMessageDispatch envelope, Throwable cause) {
+    public void onFailedMessageSend(JmsOutboundMessageDispatch envelope, ProviderException cause) {
     }
 
     @Override
@@ -49,7 +48,7 @@ public class DefaultProviderListener implements ProviderListener {
     }
 
     @Override
-    public void onConnectionFailure(IOException ex) {
+    public void onConnectionFailure(ProviderException ex) {
     }
 
     @Override
@@ -65,10 +64,10 @@ public class DefaultProviderListener implements ProviderListener {
     }
 
     @Override
-    public void onResourceClosed(JmsResource resource, Throwable cause) {
+    public void onResourceClosed(JmsResource resource, ProviderException cause) {
     }
 
     @Override
-    public void onProviderException(Exception cause) {
+    public void onProviderException(ProviderException cause) {
     }
 }

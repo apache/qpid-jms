@@ -16,12 +16,8 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-
-import javax.jms.IllegalStateException;
-import javax.jms.TransactionRolledBackException;
 
 import org.apache.qpid.jms.meta.JmsConsumerId;
 import org.apache.qpid.jms.meta.JmsProducerId;
@@ -29,7 +25,10 @@ import org.apache.qpid.jms.meta.JmsSessionInfo;
 import org.apache.qpid.jms.meta.JmsTransactionId;
 import org.apache.qpid.jms.meta.JmsTransactionInfo;
 import org.apache.qpid.jms.provider.AsyncResult;
+import org.apache.qpid.jms.provider.ProviderException;
 import org.apache.qpid.jms.provider.amqp.builders.AmqpTransactionCoordinatorBuilder;
+import org.apache.qpid.jms.provider.exceptions.ProviderIllegalStateException;
+import org.apache.qpid.jms.provider.exceptions.ProviderTransactionRolledBackException;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.Accepted;
 import org.apache.qpid.proton.amqp.transaction.TransactionalState;
@@ -67,9 +66,9 @@ public class AmqpTransactionContext implements AmqpResourceParent {
         this.session = session;
     }
 
-    public void begin(final JmsTransactionId txId, final AsyncResult request) throws Exception {
+    public void begin(final JmsTransactionId txId, final AsyncResult request) throws ProviderException {
         if (current != null) {
-            throw new IOException("Begin called while a TX is still Active.");
+            throw new ProviderIllegalStateException("Begin called while a TX is still Active.");
         }
 
         final AsyncResult declareCompletion = new AsyncResult() {
@@ -86,7 +85,7 @@ public class AmqpTransactionContext implements AmqpResourceParent {
             }
 
             @Override
-            public void onFailure(Throwable result) {
+            public void onFailure(ProviderException result) {
                 current = null;
                 cachedAcceptedState = null;
                 cachedTransactedState = null;
@@ -108,13 +107,13 @@ public class AmqpTransactionContext implements AmqpResourceParent {
                 public void onSuccess() {
                     try {
                         coordinator.declare(txId, declareCompletion);
-                    } catch (Exception e) {
+                    } catch (ProviderException e) {
                         request.onFailure(e);
                     }
                 }
 
                 @Override
-                public void onFailure(Throwable result) {
+                public void onFailure(ProviderException result) {
                     request.onFailure(result);
                 }
 
@@ -128,14 +127,14 @@ public class AmqpTransactionContext implements AmqpResourceParent {
         }
     }
 
-    public void commit(final JmsTransactionInfo transactionInfo, JmsTransactionInfo nextTransactionInfo, final AsyncResult request) throws Exception {
+    public void commit(final JmsTransactionInfo transactionInfo, JmsTransactionInfo nextTransactionInfo, final AsyncResult request) throws ProviderException {
         if (!transactionInfo.getId().equals(current)) {
             if (!transactionInfo.isInDoubt() && current == null) {
-                throw new IllegalStateException("Commit called with no active Transaction.");
+                throw new ProviderIllegalStateException("Commit called with no active Transaction.");
             } else if (!transactionInfo.isInDoubt() && current != null) {
-                throw new IllegalStateException("Attempt to Commit a transaction other than the current one");
+                throw new ProviderIllegalStateException("Attempt to Commit a transaction other than the current one");
             } else {
-                throw new TransactionRolledBackException("Transaction in doubt and cannot be committed.");
+                throw new ProviderTransactionRolledBackException("Transaction in doubt and cannot be committed.");
             }
         }
 
@@ -159,12 +158,12 @@ public class AmqpTransactionContext implements AmqpResourceParent {
         }
     }
 
-    public void rollback(JmsTransactionInfo transactionInfo, JmsTransactionInfo nextTransactionInfo, final AsyncResult request) throws Exception {
+    public void rollback(JmsTransactionInfo transactionInfo, JmsTransactionInfo nextTransactionInfo, final AsyncResult request) throws ProviderException {
         if (!transactionInfo.getId().equals(current)) {
             if (!transactionInfo.isInDoubt() && current == null) {
-                throw new IllegalStateException("Rollback called with no active Transaction.");
+                throw new ProviderIllegalStateException("Rollback called with no active Transaction.");
             } else if (!transactionInfo.isInDoubt() && current != null) {
-                throw new IllegalStateException("Attempt to rollback a transaction other than the current one");
+                throw new ProviderIllegalStateException("Attempt to rollback a transaction other than the current one");
             } else {
                 request.onSuccess();
                 return;
@@ -300,14 +299,14 @@ public class AmqpTransactionContext implements AmqpResourceParent {
     private abstract class Completion implements AsyncResult {
 
         protected boolean complete;
-        protected Throwable failure;
+        protected ProviderException failure;
 
         @Override
         public boolean isComplete() {
             return complete;
         }
 
-        public Throwable getFailureCause() {
+        public ProviderException getFailureCause() {
             return failure;
         }
     }
@@ -321,7 +320,7 @@ public class AmqpTransactionContext implements AmqpResourceParent {
         }
 
         @Override
-        public void onFailure(Throwable result) {
+        public void onFailure(ProviderException result) {
             complete = true;
             failure = result;
             parent.onDeclareFailure(result);
@@ -365,7 +364,7 @@ public class AmqpTransactionContext implements AmqpResourceParent {
         }
 
         @Override
-        public void onFailure(Throwable result) {
+        public void onFailure(ProviderException result) {
             complete = true;
             failure = result;
             onDischargeFailure(result);
@@ -405,7 +404,7 @@ public class AmqpTransactionContext implements AmqpResourceParent {
             }
         }
 
-        public void onDeclareFailure(Throwable failure) {
+        public void onDeclareFailure(ProviderException failure) {
             // If the discharge has not completed yet we wait until it does
             // so we end up with the correct result.
             if (isComplete()) {
@@ -417,7 +416,7 @@ public class AmqpTransactionContext implements AmqpResourceParent {
             }
         }
 
-        public void onDischargeFailure(Throwable failure) {
+        public void onDischargeFailure(ProviderException failure) {
             cleanup();
 
             // If the declare already returned a result we can proceed otherwise

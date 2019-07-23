@@ -16,16 +16,14 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
-import java.io.IOException;
 import java.util.Map;
-
-import javax.jms.JMSException;
 
 import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
 import org.apache.qpid.jms.meta.JmsProducerId;
 import org.apache.qpid.jms.meta.JmsProducerInfo;
 import org.apache.qpid.jms.provider.AsyncResult;
+import org.apache.qpid.jms.provider.ProviderException;
 import org.apache.qpid.jms.provider.WrappedAsyncResult;
 import org.apache.qpid.jms.provider.amqp.builders.AmqpProducerBuilder;
 import org.apache.qpid.jms.util.IdGenerator;
@@ -69,7 +67,7 @@ public class AmqpAnonymousFallbackProducer extends AmqpProducer {
     }
 
     @Override
-    public void send(JmsOutboundMessageDispatch envelope, AsyncResult request) throws IOException, JMSException {
+    public void send(JmsOutboundMessageDispatch envelope, AsyncResult request) throws ProviderException {
         LOG.trace("Started send chain for anonymous producer: {}", getProducerId());
 
         // Force sends marked as asynchronous to be sent synchronous so that the temporary
@@ -155,7 +153,7 @@ public class AmqpAnonymousFallbackProducer extends AmqpProducer {
          * producer a failure will trigger the original send request to fail.
          */
         @Override
-        public void onFailure(Throwable result) {
+        public void onFailure(ProviderException result) {
             LOG.debug("Send failed during {} step in chain: {}", this.getClass().getName(), getProducerId());
             super.onFailure(result);
         }
@@ -179,7 +177,7 @@ public class AmqpAnonymousFallbackProducer extends AmqpProducer {
             AnonymousSendCompleteRequest send = new AnonymousSendCompleteRequest(this);
             try {
                 getProducer().send(envelope, send);
-            } catch (Exception e) {
+            } catch (ProviderException e) {
                 super.onFailure(e);
             }
         }
@@ -201,7 +199,7 @@ public class AmqpAnonymousFallbackProducer extends AmqpProducer {
         }
 
         @Override
-        public void onFailure(Throwable result) {
+        public void onFailure(ProviderException result) {
             LOG.trace("Send phase of anonymous send failed: {} ", getProducerId());
             if (!connection.isAnonymousProducerCache()) {
                 AnonymousCloseRequest close = new AnonymousCloseRequest(this);
@@ -258,7 +256,7 @@ public class AmqpAnonymousFallbackProducer extends AmqpProducer {
         }
 
         @Override
-        public void onFailure(Throwable result) {
+        public void onFailure(ProviderException result) {
             AmqpAnonymousFallbackProducer.this.connection.getProvider().fireProviderException(result);
         }
 

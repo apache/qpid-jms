@@ -20,7 +20,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
-import java.io.IOException;
 import java.util.Collections;
 
 import org.junit.Test;
@@ -63,7 +62,7 @@ public class WrappedAsyncResultTest {
 
         assertFalse(future.isComplete());
         assertFalse(wrapped.isComplete());
-        wrapped.onFailure(new IOException());
+        wrapped.onFailure(new ProviderException("Error"));
         assertTrue(wrapped.isComplete());
         assertTrue(future.isComplete());
     }

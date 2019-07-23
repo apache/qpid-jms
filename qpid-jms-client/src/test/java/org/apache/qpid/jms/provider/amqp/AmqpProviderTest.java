@@ -23,10 +23,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.security.ProviderException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -38,6 +36,7 @@ import org.apache.qpid.jms.meta.JmsResource;
 import org.apache.qpid.jms.meta.JmsResourceId;
 import org.apache.qpid.jms.meta.JmsResourceVistor;
 import org.apache.qpid.jms.provider.DefaultProviderListener;
+import org.apache.qpid.jms.provider.ProviderException;
 import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
@@ -318,18 +317,18 @@ public class AmqpProviderTest extends QpidJmsTestCase {
             try {
                 provider.start();
                 fail("Should have thrown an IOException when closed.");
-            } catch (IOException ex) {}
+            } catch (Exception ex) {}
 
             try {
                 provider.connect(connectionInfo);
                 fail("Should have thrown an IOException when closed.");
-            } catch (IOException ex) {}
+            } catch (Exception ex) {}
 
             ProviderFuture request = provider.newProviderFuture();
             try {
                 provider.unsubscribe("subscription-name", request);
                 fail("Should have thrown an IOException when closed.");
-            } catch (IOException ex) {}
+            } catch (Exception ex) {}
 
             provider.close();
 
@@ -444,7 +443,7 @@ public class AmqpProviderTest extends QpidJmsTestCase {
             try {
                 request.sync();
                 fail("Request should have failed");
-            } catch (IOException e) {
+            } catch (Exception e) {
                 // Expected
             }
 

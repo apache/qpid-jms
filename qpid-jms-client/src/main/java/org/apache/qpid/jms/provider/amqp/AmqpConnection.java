@@ -16,7 +16,6 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
-import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,8 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-
-import javax.jms.JMSException;
 
 import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.JmsTemporaryDestination;
@@ -35,10 +32,10 @@ import org.apache.qpid.jms.meta.JmsSessionId;
 import org.apache.qpid.jms.meta.JmsSessionInfo;
 import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.provider.ProviderException;
-import org.apache.qpid.jms.provider.ProviderResourceClosedException;
 import org.apache.qpid.jms.provider.amqp.builders.AmqpSessionBuilder;
 import org.apache.qpid.jms.provider.amqp.builders.AmqpTemporaryDestinationBuilder;
 import org.apache.qpid.jms.provider.amqp.message.AmqpJmsMessageFactory;
+import org.apache.qpid.jms.provider.exceptions.ProviderConnectionRemotelyClosedException;
 import org.apache.qpid.proton.engine.Connection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,8 +86,8 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
 
     public void unsubscribe(String subscriptionName, AsyncResult request) {
         // Check if there is an active (i.e open subscriber) shared or exclusive durable subscription using this name
-        if(subTracker.isActiveDurableSub(subscriptionName)) {
-            request.onFailure(new JMSException("Can't remove an active durable subscription: " + subscriptionName));
+        if (subTracker.isActiveDurableSub(subscriptionName)) {
+            request.onFailure(new ProviderException("Can't remove an active durable subscription: " + subscriptionName));
             return;
         }
 
@@ -124,7 +121,7 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
     }
 
     @Override
-    public void handleResourceClosure(AmqpProvider provider, Throwable cause) {
+    public void handleResourceClosure(AmqpProvider provider, ProviderException cause) {
         if (connectionSession != null) {
             connectionSession.handleResourceClosure(getProvider(), cause);
         }
@@ -141,17 +138,15 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
     }
 
     @Override
-    public void processRemoteClose(AmqpProvider provider) throws IOException {
+    public void processRemoteClose(AmqpProvider provider) throws ProviderException {
         getResourceInfo().setState(ResourceState.REMOTELY_CLOSED);
 
         if (isAwaitingClose()) {
             closeResource(provider, null, true); // Close was expected so ignore any endpoint errors.
         } else {
-            Exception cause = AmqpSupport.convertToException(provider, getEndpoint(), getEndpoint().getRemoteCondition());
-
-            if (!(cause instanceof ProviderException)) {
-                cause = new ProviderResourceClosedException(cause.getMessage(), cause);
-            }
+            // This will create a fatal level exception that stops the provider possibly triggering reconnect
+            ProviderConnectionRemotelyClosedException cause = AmqpSupport.convertToConnectionClosedException(
+                provider, getEndpoint(), getEndpoint().getRemoteCondition());
 
             closeResource(provider, cause, true);
         }

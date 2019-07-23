@@ -18,7 +18,6 @@ package org.apache.qpid.jms.session;
 
 import static org.junit.Assert.assertTrue;
 
-import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import javax.jms.ExceptionListener;
@@ -27,6 +26,7 @@ import javax.jms.Queue;
 import javax.jms.Session;
 
 import org.apache.qpid.jms.JmsConnection;
+import org.apache.qpid.jms.provider.ProviderException;
 import org.apache.qpid.jms.test.Wait;
 
 
@@ -50,7 +50,7 @@ public class JmsSessionFailedTest extends JmsSessionClosedTest {
         sender = session.createProducer(destination);
         receiver = session.createConsumer(destination);
         connection.start();
-        providerListener.onConnectionFailure(new IOException());
+        providerListener.onConnectionFailure(new ProviderException("Something went wrong"));
 
         final JmsConnection jmsConnection = connection;
         assertTrue(Wait.waitFor(new Wait.Condition() {

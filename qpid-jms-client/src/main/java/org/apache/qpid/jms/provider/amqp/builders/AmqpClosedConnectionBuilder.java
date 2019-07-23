@@ -54,5 +54,4 @@ public class AmqpClosedConnectionBuilder extends AmqpConnectionBuilder {
     protected boolean isClosePending() {
         return true;
     }
-
 }

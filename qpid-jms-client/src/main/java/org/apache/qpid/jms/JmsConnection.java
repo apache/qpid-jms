@@ -16,7 +16,6 @@
  */
 package org.apache.qpid.jms;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Map;
@@ -104,7 +103,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
     private final AtomicBoolean closed = new AtomicBoolean();
     private final AtomicBoolean closing = new AtomicBoolean();
     private final AtomicBoolean started = new AtomicBoolean();
-    private final AtomicReference<IOException> failureCause = new AtomicReference<>();
+    private final AtomicReference<Exception> failureCause = new AtomicReference<>();
     private final JmsConnectionInfo connectionInfo;
     private final ThreadPoolExecutor executor;
 
@@ -1226,7 +1225,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
     }
 
     @Override
-    public void onFailedMessageSend(JmsOutboundMessageDispatch envelope, Throwable cause) {
+    public void onFailedMessageSend(JmsOutboundMessageDispatch envelope, ProviderException cause) {
         JmsSession session = sessions.get(envelope.getProducerId().getParentId());
         if (session != null) {
             session.onFailedMessageSend(envelope, cause);
@@ -1347,7 +1346,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
     }
 
     @Override
-    public void onConnectionFailure(final IOException ex) {
+    public void onConnectionFailure(final ProviderException ex) {
         providerFailed(ex);
 
         // Signal that connection dropped we need to mark transactions as
@@ -1406,7 +1405,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
     }
 
     @Override
-    public void onResourceClosed(final JmsResource resource, final Throwable cause) {
+    public void onResourceClosed(final JmsResource resource, final ProviderException cause) {
         // Closure of the Connection itself is notified via onConnectionFailure
 
         // Run on the connection executor to free the provider to go do more work and avoid
@@ -1509,7 +1508,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
     }
 
     @Override
-    public void onProviderException(final Exception cause) {
+    public void onProviderException(final ProviderException cause) {
         // Report this to any registered exception listener, let the receiver
         // decide if it should be fatal.
         onAsyncException(cause);
@@ -1542,7 +1541,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         }
     }
 
-    protected void providerFailed(IOException cause) {
+    protected void providerFailed(ProviderException cause) {
         failureCause.compareAndSet(null, cause);
     }
 }

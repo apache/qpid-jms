@@ -16,11 +16,8 @@
  */
 package org.apache.qpid.jms.provider;
 
-import java.io.IOException;
 import java.net.URI;
 import java.util.List;
-
-import javax.jms.JMSException;
 
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsMessageFactory;
@@ -53,12 +50,12 @@ public class ProviderWrapper<E extends Provider> implements Provider, ProviderLi
     }
 
     @Override
-    public void connect(JmsConnectionInfo connectionInfo) throws IOException {
+    public void connect(JmsConnectionInfo connectionInfo) throws ProviderException {
         next.connect(connectionInfo);
     }
 
     @Override
-    public void start() throws IOException, IllegalStateException {
+    public void start() throws ProviderException, IllegalStateException {
         if (this.listener == null) {
             throw new IllegalStateException("Cannot start with null ProviderListener");
         }
@@ -81,62 +78,62 @@ public class ProviderWrapper<E extends Provider> implements Provider, ProviderLi
     }
 
     @Override
-    public void create(JmsResource resource, AsyncResult request) throws IOException, JMSException, UnsupportedOperationException {
+    public void create(JmsResource resource, AsyncResult request) throws ProviderException {
         next.create(resource, request);
     }
 
     @Override
-    public void start(JmsResource resource, AsyncResult request) throws IOException, JMSException {
+    public void start(JmsResource resource, AsyncResult request) throws ProviderException {
         next.start(resource, request);
     }
 
     @Override
-    public void stop(JmsResource resource, AsyncResult request) throws IOException, JMSException {
+    public void stop(JmsResource resource, AsyncResult request) throws ProviderException {
         next.stop(resource, request);
     }
 
     @Override
-    public void destroy(JmsResource resourceId, AsyncResult request) throws IOException, JMSException, UnsupportedOperationException {
+    public void destroy(JmsResource resourceId, AsyncResult request) throws ProviderException {
         next.destroy(resourceId, request);
     }
 
     @Override
-    public void send(JmsOutboundMessageDispatch envelope, AsyncResult request) throws IOException, JMSException {
+    public void send(JmsOutboundMessageDispatch envelope, AsyncResult request) throws ProviderException {
         next.send(envelope, request);
     }
 
     @Override
-    public void acknowledge(JmsSessionId sessionId, ACK_TYPE ackType, AsyncResult request) throws IOException, JMSException {
+    public void acknowledge(JmsSessionId sessionId, ACK_TYPE ackType, AsyncResult request) throws ProviderException {
         next.acknowledge(sessionId, ackType, request);
     }
 
     @Override
-    public void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType, AsyncResult request) throws IOException, JMSException {
+    public void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType, AsyncResult request) throws ProviderException {
         next.acknowledge(envelope, ackType, request);
     }
 
     @Override
-    public void commit(JmsTransactionInfo transactionInfo, JmsTransactionInfo nextTransactionInfo, AsyncResult request) throws IOException, JMSException, UnsupportedOperationException {
+    public void commit(JmsTransactionInfo transactionInfo, JmsTransactionInfo nextTransactionInfo, AsyncResult request) throws ProviderException {
         next.commit(transactionInfo, nextTransactionInfo, request);
     }
 
     @Override
-    public void rollback(JmsTransactionInfo transactionInfo, JmsTransactionInfo nextTransactionInfo, AsyncResult request) throws IOException, JMSException, UnsupportedOperationException {
+    public void rollback(JmsTransactionInfo transactionInfo, JmsTransactionInfo nextTransactionInfo, AsyncResult request) throws ProviderException {
         next.rollback(transactionInfo, nextTransactionInfo, request);
     }
 
     @Override
-    public void recover(JmsSessionId sessionId, AsyncResult request) throws IOException, UnsupportedOperationException {
+    public void recover(JmsSessionId sessionId, AsyncResult request) throws ProviderException {
         next.recover(sessionId, request);
     }
 
     @Override
-    public void unsubscribe(String subscription, AsyncResult request) throws IOException, JMSException, UnsupportedOperationException {
+    public void unsubscribe(String subscription, AsyncResult request) throws ProviderException {
         next.unsubscribe(subscription, request);
     }
 
     @Override
-    public void pull(JmsConsumerId consumerId, long timeout, AsyncResult request) throws IOException, UnsupportedOperationException {
+    public void pull(JmsConsumerId consumerId, long timeout, AsyncResult request) throws ProviderException {
         next.pull(consumerId, timeout, request);
     }
 
@@ -176,7 +173,7 @@ public class ProviderWrapper<E extends Provider> implements Provider, ProviderLi
     }
 
     @Override
-    public void onFailedMessageSend(JmsOutboundMessageDispatch envelope, Throwable cause) {
+    public void onFailedMessageSend(JmsOutboundMessageDispatch envelope, ProviderException cause) {
         listener.onFailedMessageSend(envelope, cause);
     }
 
@@ -206,17 +203,17 @@ public class ProviderWrapper<E extends Provider> implements Provider, ProviderLi
     }
 
     @Override
-    public void onConnectionFailure(IOException ex) {
+    public void onConnectionFailure(ProviderException ex) {
         listener.onConnectionFailure(ex);
     }
 
     @Override
-    public void onResourceClosed(JmsResource resource, Throwable cause) {
+    public void onResourceClosed(JmsResource resource, ProviderException cause) {
         listener.onResourceClosed(resource, cause);
     }
 
     @Override
-    public void onProviderException(Exception cause) {
+    public void onProviderException(ProviderException cause) {
         listener.onProviderException(cause);
     }
 

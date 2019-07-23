@@ -21,11 +21,10 @@ import static org.apache.qpid.jms.provider.amqp.AmqpSupport.DELAYED_DELIVERY;
 import java.util.Arrays;
 import java.util.List;
 
-import javax.jms.InvalidDestinationException;
-
 import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.meta.JmsProducerInfo;
 import org.apache.qpid.jms.provider.AsyncResult;
+import org.apache.qpid.jms.provider.ProviderException;
 import org.apache.qpid.jms.provider.amqp.AmqpAnonymousFallbackProducer;
 import org.apache.qpid.jms.provider.amqp.AmqpConnection;
 import org.apache.qpid.jms.provider.amqp.AmqpFixedProducer;
@@ -33,6 +32,7 @@ import org.apache.qpid.jms.provider.amqp.AmqpProducer;
 import org.apache.qpid.jms.provider.amqp.AmqpSession;
 import org.apache.qpid.jms.provider.amqp.AmqpSupport;
 import org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper;
+import org.apache.qpid.jms.provider.exceptions.ProviderInvalidDestinationException;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.Accepted;
 import org.apache.qpid.proton.amqp.messaging.Modified;
@@ -141,14 +141,14 @@ public class AmqpProducerBuilder extends AmqpResourceBuilder<AmqpProducer, AmqpS
     }
 
     @Override
-    protected Exception getOpenAbortException() {
+    protected ProviderException getDefaultOpenAbortException() {
         // Verify the attach response contained a non-null target
         org.apache.qpid.proton.amqp.transport.Target target = getEndpoint().getRemoteTarget();
         if (target != null) {
-            return super.getOpenAbortException();
+            return super.getDefaultOpenAbortException();
         } else {
             // No link terminus was created, the peer has detach/closed us, create IDE.
-            return new InvalidDestinationException("Link creation was refused");
+            return new ProviderInvalidDestinationException("Link creation was refused");
         }
     }
 }

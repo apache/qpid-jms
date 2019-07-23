@@ -16,7 +16,6 @@
  */
 package org.apache.qpid.jms.provider.failover;
 
-import java.io.IOException;
 import java.net.URI;
 import java.util.Collections;
 
@@ -28,6 +27,7 @@ import org.apache.qpid.jms.meta.JmsSessionInfo;
 import org.apache.qpid.jms.meta.JmsTransactionId;
 import org.apache.qpid.jms.meta.JmsTransactionInfo;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
+import org.apache.qpid.jms.provider.ProviderException;
 import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.provider.ProviderFutureFactory;
 import org.junit.Before;
@@ -63,59 +63,59 @@ public class FailoverProviderClosedTest extends FailoverProviderTestSupport {
         provider.close();
     }
 
-    @Test(timeout=30000, expected=IOException.class)
+    @Test(timeout=30000, expected=ProviderException.class)
     public void testConnect() throws Exception {
         provider.connect(connection);
     }
 
-    @Test(timeout=30000, expected=IOException.class)
+    @Test(timeout=30000, expected=ProviderException.class)
     public void testStart() throws Exception {
         provider.start();
     }
 
-    @Test(timeout=30000, expected=IOException.class)
+    @Test(timeout=30000, expected=ProviderException.class)
     public void testCreateResource() throws Exception {
         ProviderFuture request = futuresFactory.createFuture();
         provider.create(connection, request);
     }
 
-    @Test(timeout=30000, expected=IOException.class)
+    @Test(timeout=30000, expected=ProviderException.class)
     public void testStartResource() throws Exception {
         ProviderFuture request = futuresFactory.createFuture();
         provider.start(session, request);
     }
 
-    @Test(timeout=30000, expected=IOException.class)
+    @Test(timeout=30000, expected=ProviderException.class)
     public void testStopResource() throws Exception {
         ProviderFuture request = futuresFactory.createFuture();
         provider.stop(session, request);
     }
 
-    @Test(timeout=30000, expected=IOException.class)
+    @Test(timeout=30000, expected=ProviderException.class)
     public void testDestroyResource() throws Exception {
         ProviderFuture request = futuresFactory.createFuture();
         provider.destroy(session, request);
     }
 
-    @Test(timeout=30000, expected=IOException.class)
+    @Test(timeout=30000, expected=ProviderException.class)
     public void testSend() throws Exception {
         ProviderFuture request = futuresFactory.createFuture();
         provider.send(new JmsOutboundMessageDispatch(), request);
     }
 
-    @Test(timeout=30000, expected=IOException.class)
+    @Test(timeout=30000, expected=ProviderException.class)
     public void testSessionAcknowledge() throws Exception {
         ProviderFuture request = futuresFactory.createFuture();
         provider.acknowledge(session.getId(), ACK_TYPE.ACCEPTED, request);
     }
 
-    @Test(timeout=30000, expected=IOException.class)
+    @Test(timeout=30000, expected=ProviderException.class)
     public void testAcknowledgeMessage() throws Exception {
         ProviderFuture request = futuresFactory.createFuture();
         provider.acknowledge(new JmsInboundMessageDispatch(1), ACK_TYPE.ACCEPTED, request);
     }
 
-    @Test(timeout=30000, expected=IOException.class)
+    @Test(timeout=30000, expected=ProviderException.class)
     public void testCommit() throws Exception {
         ProviderFuture request = futuresFactory.createFuture();
         JmsTransactionId txId = new JmsTransactionId(connection.getId(), 1);
@@ -123,7 +123,7 @@ public class FailoverProviderClosedTest extends FailoverProviderTestSupport {
         provider.commit(txInfo, null, request);
     }
 
-    @Test(timeout=30000, expected=IOException.class)
+    @Test(timeout=30000, expected=ProviderException.class)
     public void testRollback() throws Exception {
         ProviderFuture request = futuresFactory.createFuture();
         JmsTransactionId txId = new JmsTransactionId(connection.getId(), 1);
@@ -131,19 +131,19 @@ public class FailoverProviderClosedTest extends FailoverProviderTestSupport {
         provider.rollback(txInfo, null, request);
     }
 
-    @Test(timeout=30000, expected=IOException.class)
+    @Test(timeout=30000, expected=ProviderException.class)
     public void testRecover() throws Exception {
         ProviderFuture request = futuresFactory.createFuture();
         provider.recover(session.getId(), request);
     }
 
-    @Test(timeout=30000, expected=IOException.class)
+    @Test(timeout=30000, expected=ProviderException.class)
     public void testUnsubscribe() throws Exception {
         ProviderFuture request = futuresFactory.createFuture();
         provider.unsubscribe("subscription-name", request);
     }
 
-    @Test(timeout=30000, expected=IOException.class)
+    @Test(timeout=30000, expected=ProviderException.class)
     public void testMessagePull() throws Exception {
         ProviderFuture request = futuresFactory.createFuture();
         provider.pull(consumer.getId(), 1, request);

@@ -16,17 +16,16 @@
  */
 package org.apache.qpid.jms.exceptions;
 
-import java.io.IOException;
-
 import javax.jms.IllegalStateException;
 
 /**
  * An exception thrown when attempt is made to use a connection when the connection has been closed.
  */
 public class JmsConnectionClosedException extends IllegalStateException {
+
     private static final long serialVersionUID = -7975982446284065025L;
 
-    public JmsConnectionClosedException(IOException cause) {
+    public JmsConnectionClosedException(Exception cause) {
         super("The JMS connection has been closed: " + extractMessage(cause));
         initCause(cause);
         setLinkedException(cause);
@@ -36,7 +35,7 @@ public class JmsConnectionClosedException extends IllegalStateException {
         super("The JMS connection has been closed", "AlreadyClosed");
     }
 
-    private static String extractMessage(IOException cause) {
+    private static String extractMessage(Exception cause) {
         String m = cause.getMessage();
         if (m == null || m.length() == 0) {
             m = cause.toString();

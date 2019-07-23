@@ -16,14 +16,11 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
-import java.io.IOException;
-
-import javax.jms.JMSException;
-
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
 import org.apache.qpid.jms.meta.JmsProducerId;
 import org.apache.qpid.jms.meta.JmsProducerInfo;
 import org.apache.qpid.jms.provider.AsyncResult;
+import org.apache.qpid.jms.provider.ProviderException;
 import org.apache.qpid.proton.engine.Sender;
 
 /**
@@ -55,10 +52,9 @@ public abstract class AmqpProducer extends AmqpAbstractResource<JmsProducerInfo,
      * @param request
      *        The AsyncRequest that will be notified on send success or failure.
      *
-     * @throws IOException if an error occurs sending the message
-     * @throws JMSException if an error occurs while preparing the message for send.
+     * @throws ProviderException if an error occurs sending the message
      */
-    public abstract void send(JmsOutboundMessageDispatch envelope, AsyncResult request) throws IOException, JMSException;
+    public abstract void send(JmsOutboundMessageDispatch envelope, AsyncResult request) throws ProviderException;
 
     /**
      * @return true if this is an anonymous producer or false if fixed to a given destination.

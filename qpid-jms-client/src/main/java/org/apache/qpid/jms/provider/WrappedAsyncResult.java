@@ -38,7 +38,7 @@ public abstract class WrappedAsyncResult implements AsyncResult {
     }
 
     @Override
-    public void onFailure(Throwable result) {
+    public void onFailure(ProviderException result) {
         wrapped.onFailure(result);
     }
 

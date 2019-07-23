@@ -16,7 +16,9 @@
  */
 package org.apache.qpid.jms.provider.failover;
 
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.DELAYED_DELIVERY;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
@@ -84,6 +86,7 @@ import org.apache.qpid.jms.test.testpeer.describedtypes.Released;
 import org.apache.qpid.jms.test.testpeer.describedtypes.TransactionalState;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescribedType;
 import org.apache.qpid.jms.test.testpeer.matchers.SourceMatcher;
+import org.apache.qpid.jms.test.testpeer.matchers.TargetMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.TransactionalStateMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageAnnotationsSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageHeaderSectionMatcher;
@@ -98,6 +101,7 @@ import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedByte;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
+import org.hamcrest.Matcher;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Test;
@@ -423,7 +427,12 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
                     }
                 }
             });
-            connection.start();
+
+            try {
+                connection.start();
+            } catch (Exception ex) {
+                fail("Should not have thrown an Exception: " + ex);
+            }
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
@@ -596,7 +605,6 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 20000)
     public void testFailoverHandlesConnectErrorNotFound() throws Exception {
-
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer finalPeer = new TestAmqpPeer();) {
 
@@ -1556,12 +1564,12 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             Topic dest = session.createTopic(topicName);
 
             //Expect a link to a topic node, which we will then refuse
-            SourceMatcher targetMatcher = new SourceMatcher();
-            targetMatcher.withAddress(equalTo(topicName));
-            targetMatcher.withDynamic(equalTo(false));
-            targetMatcher.withDurable(equalTo(TerminusDurability.NONE));
+            SourceMatcher sourceMatcher = new SourceMatcher();
+            sourceMatcher.withAddress(equalTo(topicName));
+            sourceMatcher.withDynamic(equalTo(false));
+            sourceMatcher.withDurable(equalTo(TerminusDurability.NONE));
 
-            testPeer.expectReceiverAttach(notNullValue(), targetMatcher, true, deferAttachResponseWrite);
+            testPeer.expectReceiverAttach(notNullValue(), sourceMatcher, true, deferAttachResponseWrite);
             //Expect the detach response to the test peer closing the consumer link after refusal.
             testPeer.expectDetach(true, false, false);
 
@@ -1569,6 +1577,57 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
                 //Create a consumer, expect it to throw exception due to the link-refusal
                 session.createConsumer(dest);
                 fail("Consumer creation should have failed when link was refused");
+            } catch(InvalidDestinationException ide) {
+                LOG.info("Test caught expected error: {}", ide.getMessage());
+            }
+
+            // Shut it down
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testCreateProducerFailsWhenLinkRefusedAndAttachResponseWriteIsNotDeferred() throws Exception {
+        doCreateProducerFailsWhenLinkRefusedTestImpl(false);
+    }
+
+    @Test(timeout = 20000)
+    public void testCreateProducerFailsWhenLinkRefusedAndAttachResponseWriteIsDeferred() throws Exception {
+        doCreateProducerFailsWhenLinkRefusedTestImpl(true);
+    }
+
+    private void doCreateProducerFailsWhenLinkRefusedTestImpl(boolean deferAttachResponseWrite) throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen();
+            testPeer.expectBegin();
+
+            Connection connection = establishAnonymousConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            String topicName = "myTopic";
+            Topic dest = session.createTopic(topicName);
+
+            // Expect a link to a topic node, which we will then refuse
+            TargetMatcher targetMatcher = new TargetMatcher();
+            targetMatcher.withAddress(equalTo(topicName));
+            targetMatcher.withDynamic(equalTo(false));
+            targetMatcher.withDurable(equalTo(TerminusDurability.NONE));
+
+            testPeer.expectSenderAttach(notNullValue(), targetMatcher, true, deferAttachResponseWrite);
+            // Expect the detach response to the test peer closing the producer link after refusal.
+            testPeer.expectDetach(true, false, false);
+
+            try {
+                // Create a producer, expect it to throw exception due to the link-refusal
+                session.createProducer(dest);
+                fail("Producer creation should have failed when link was refused");
             } catch(InvalidDestinationException ide) {
                 LOG.info("Test caught expected error: {}", ide.getMessage());
             }
@@ -3535,6 +3594,287 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             connection.close();
 
             finalPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testPassthroughCreateTemporaryQueueFailsWhenLinkRefusedAndAttachResponseWriteIsNotDeferred() throws Exception {
+        doCreateTemporaryDestinationFailsWhenLinkRefusedTestImpl(false, false);
+    }
+
+    @Test(timeout = 20000)
+    public void testPassthroughCreateTemporaryQueueFailsWhenLinkRefusedAndAttachResponseWriteIsDeferred() throws Exception {
+        doCreateTemporaryDestinationFailsWhenLinkRefusedTestImpl(false, true);
+    }
+
+    @Test(timeout = 20000)
+    public void testPassthroughCreateTemporaryTopicFailsWhenLinkRefusedAndAttachResponseWriteIsNotDeferred() throws Exception {
+        doCreateTemporaryDestinationFailsWhenLinkRefusedTestImpl(true, false);
+    }
+
+    @Test(timeout = 20000)
+    public void testPassthroughCreateTemporaryTopicFailsWhenLinkRefusedAndAttachResponseWriteIsDeferred() throws Exception {
+        doCreateTemporaryDestinationFailsWhenLinkRefusedTestImpl(true, true);
+    }
+
+    private void doCreateTemporaryDestinationFailsWhenLinkRefusedTestImpl(boolean topic, boolean deferAttachResponseWrite) throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            JmsConnection connection = establishAnonymousConnecton(testPeer);
+
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen();
+            testPeer.expectBegin();
+            testPeer.expectBegin();
+
+            connection.start();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            try {
+                if (topic) {
+                    testPeer.expectAndRefuseTempTopicCreationAttach(AmqpError.UNAUTHORIZED_ACCESS, "Not Authorized to create temp topics.", false);
+                    //Expect the detach response to the test peer after refusal.
+                    testPeer.expectDetach(true, false, false);
+
+                    session.createTemporaryTopic();
+                } else {
+                    testPeer.expectAndRefuseTempQueueCreationAttach(AmqpError.UNAUTHORIZED_ACCESS, "Not Authorized to create temp queues.", false);
+                    //Expect the detach response to the test peer after refusal.
+                    testPeer.expectDetach(true, false, false);
+
+                    session.createTemporaryQueue();
+                }
+                fail("Should have thrown security exception");
+            } catch (JMSSecurityException jmsse) {
+            }
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testPassthroughRemotelyCloseProducer() throws Exception {
+        final String BREAD_CRUMB = "ErrorMessageBreadCrumb";
+
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            final CountDownLatch producerClosed = new CountDownLatch(1);
+            JmsConnection connection = establishAnonymousConnecton(testPeer);
+            connection.addConnectionListener(new JmsDefaultConnectionListener() {
+                @Override
+                public void onProducerClosed(MessageProducer producer, Throwable exception) {
+                    producerClosed.countDown();
+                }
+            });
+
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen();
+            testPeer.expectBegin();
+            testPeer.expectBegin();
+
+            connection.start();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            // Create a producer, then remotely end it afterwards.
+            testPeer.expectSenderAttach();
+            testPeer.remotelyDetachLastOpenedLinkOnLastOpenedSession(true, true, AmqpError.RESOURCE_DELETED, BREAD_CRUMB);
+
+            Queue queue = session.createQueue("myQueue");
+            final MessageProducer producer = session.createProducer(queue);
+
+            // Verify the producer gets marked closed
+            testPeer.waitForAllHandlersToComplete(1000);
+            assertTrue("producer never closed.", Wait.waitFor(new Wait.Condition() {
+                @Override
+                public boolean isSatisfied() throws Exception {
+                    try {
+                        producer.getDestination();
+                    } catch (Exception ex) {
+                        if (ex instanceof IllegalStateException && ex.getCause() != null) {
+                            String message = ex.getCause().getMessage();
+                            if (message.contains(AmqpError.RESOURCE_DELETED.toString()) &&
+                                message.contains(BREAD_CRUMB)) {
+                                return true;
+                            }
+                        }
+
+                        LOG.debug("Caught unexpected exception: {}", ex);
+                    }
+
+                    return false;
+                }
+            }, 10000, 10));
+
+            assertTrue("Producer closed callback didn't trigger", producerClosed.await(10, TimeUnit.SECONDS));
+
+            // Try closing it explicitly, should effectively no-op in client.
+            // The test peer will throw during close if it sends anything.
+            producer.close();
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testPassthroughOfSendFailsWhenDelayedDeliveryIsNotSupported() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            // DO NOT add capability to indicate server support for DELAYED-DELIVERY
+            JmsConnection connection = establishAnonymousConnecton(testPeer);
+
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen();
+            testPeer.expectBegin();
+            testPeer.expectBegin();
+
+            connection.start();
+
+            Matcher<Symbol[]> desiredCapabilitiesMatcher = arrayContaining(new Symbol[] { DELAYED_DELIVERY });
+            Symbol[] offeredCapabilities = null;
+            testPeer.expectSenderAttach(notNullValue(), notNullValue(), false, false, false, false, 0, 1, null, null, desiredCapabilitiesMatcher, offeredCapabilities);
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            String topicName = "myTopic";
+            Topic dest = session.createTopic(topicName);
+
+            MessageProducer producer = session.createProducer(dest);
+            producer.setDeliveryDelay(5000);
+
+            // Producer should fail to send when message has delivery delay since remote
+            // did not report that it supports that option.
+            Message message = session.createMessage();
+            try {
+                producer.send(message);
+                fail("Send should fail");
+            } catch (JMSException jmsEx) {
+                LOG.debug("Caught expected error from failed send.");
+            }
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testPassthroughOfSendTimesOutWhenNoDispostionArrives() throws Exception {
+        try(TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            JmsConnection connection = establishAnonymousConnecton(testPeer);
+
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen();
+            testPeer.expectBegin();
+            testPeer.expectBegin();
+
+            connection.setSendTimeout(500);
+            connection.start();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            String queueName = "myQueue";
+            Queue queue = session.createQueue(queueName);
+
+            Message message = session.createTextMessage("text");
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+
+            // Expect the producer to attach and grant it some credit, it should send
+            // a transfer which we will not send any response for which should cause the
+            // send operation to time out.
+            testPeer.expectSenderAttach();
+            testPeer.expectTransferButDoNotRespond(messageMatcher);
+            testPeer.expectClose();
+
+            MessageProducer producer = session.createProducer(queue);
+
+            try {
+                producer.send(message);
+                fail("Send should time out.");
+            } catch (JmsSendTimedOutException jmsEx) {
+                LOG.info("Caught expected error: {}", jmsEx.getMessage());
+            } catch (Throwable error) {
+                fail("Send should time out, but got: " + error.getMessage());
+            }
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout=20000)
+    public void testPassthroughOfRollbackErrorCoordinatorClosedOnCommit() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            JmsConnection connection = establishAnonymousConnecton(testPeer);
+
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen();
+            testPeer.expectBegin();
+            testPeer.expectBegin();
+            testPeer.expectCoordinatorAttach();
+
+            connection.start();
+
+            Binary txnId1 = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
+            Binary txnId2 = new Binary(new byte[]{ (byte) 1, (byte) 2, (byte) 3, (byte) 4});
+
+            testPeer.expectDeclare(txnId1);
+            testPeer.remotelyCloseLastCoordinatorLinkOnDischarge(txnId1, false, true, txnId2);
+            testPeer.expectCoordinatorAttach();
+            testPeer.expectDeclare(txnId2);
+            testPeer.expectDischarge(txnId2, true);
+
+            Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+
+            try {
+                session.commit();
+                fail("Transaction should have rolled back");
+            } catch (TransactionRolledBackException ex) {
+                LOG.info("Caught expected TransactionRolledBackException");
+            }
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout=20000)
+    public void testPassthroughOfSessionCreateFailsOnDeclareTimeout() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            JmsConnection connection = establishAnonymousConnecton(testPeer);
+
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen();
+            testPeer.expectBegin();
+            testPeer.expectBegin();
+            testPeer.expectCoordinatorAttach();
+            testPeer.expectDeclareButDoNotRespond();
+            // Expect the AMQP session to be closed due to the JMS session creation failure.
+            testPeer.expectEnd();
+
+            connection.setRequestTimeout(500);
+            connection.start();
+
+            try {
+                connection.createSession(true, Session.SESSION_TRANSACTED);
+                fail("Should have timed out waiting for declare.");
+            } catch (JmsOperationTimedOutException jmsEx) {
+            } catch (Throwable error) {
+                fail("Should have caught an timed out exception:");
+                LOG.error("Caught -> ", error);
+            }
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
         }
     }
 

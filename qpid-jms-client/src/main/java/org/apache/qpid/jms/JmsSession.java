@@ -376,6 +376,14 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
                     LOG.trace("Session close awaiting send completions was interrupted");
                 }
 
+                try {
+                    if (getSessionMode() == Session.CLIENT_ACKNOWLEDGE) {
+                        acknowledge(ACK_TYPE.MODIFIED_FAILED);
+                    }
+                } catch (Exception e) {
+                    LOG.trace("Exception during session shutdown cleanup acknowledgement", e);
+                }
+
                 if (shutdownError != null) {
                     throw shutdownError;
                 }

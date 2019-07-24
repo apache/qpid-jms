@@ -73,12 +73,14 @@ public class AmqpAcknowledgementsIntegrationTest extends QpidJmsTestCase {
 
             testPeer.expectReceiverAttach();
             testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, new AmqpValueDescribedType(null), 1);
-            testPeer.expectEnd();
 
             MessageConsumer messageConsumer = session.createConsumer(queue);
 
             Message receivedMessage = messageConsumer.receive(6000);
             assertNotNull("Message was not recieved", receivedMessage);
+
+            testPeer.expectDisposition(true, new ModifiedMatcher().withDeliveryFailed(equalTo(true)), 1, 1);
+            testPeer.expectEnd();
 
             session.close();
 

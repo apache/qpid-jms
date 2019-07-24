@@ -1756,6 +1756,89 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout=20000)
+    public void testConsumerWithDeferredCloseAcksDeliveryFailedAsSessionClosed() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            final int DEFAULT_PREFETCH = 100;
+
+            // Set to fixed known value to reduce breakage if defaults are changed.
+            Connection connection = testFixture.establishConnecton(testPeer, "jms.prefetchPolicy.all=" + DEFAULT_PREFETCH);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+            Queue queue = session.createQueue(getTestName());
+
+            int messageCount = 5;
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, new AmqpValueDescribedType("content"), messageCount);
+
+            final CountDownLatch expected = new CountDownLatch(messageCount);
+            ((JmsConnection) connection).addConnectionListener(new JmsDefaultConnectionListener() {
+                @Override
+                public void onInboundMessage(JmsInboundMessageDispatch envelope) {
+                    expected.countDown();
+                }
+            });
+
+            MessageConsumer consumer = session.createConsumer(queue);
+
+            int consumeCount = 3;
+            Message receivedMessage = null;
+
+            for (int i = 1; i <= consumeCount; i++) {
+                receivedMessage = consumer.receive(3000);
+
+                assertNotNull(receivedMessage);
+                assertTrue(receivedMessage instanceof TextMessage);
+            }
+
+            // Ensure all the messages arrived so that the matching below is deterministic
+            assertTrue("Expected transfers didnt occur: " + expected.getCount(), expected.await(5, TimeUnit.SECONDS));
+
+            // Expect the client to then drain off all credit from the link.
+            testPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.valueOf(DEFAULT_PREFETCH - messageCount)));
+
+            // Expect the prefetched messages to be released for dispatch elsewhere.
+            testPeer.expectDisposition(true, new ReleasedMatcher(), 4, 4);
+            testPeer.expectDisposition(true, new ReleasedMatcher(), 5, 5);
+
+            // Close should be deferred as these messages were delivered but not acknowledged.
+            consumer.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
+
+            // Should not be able to consume from the consumer once closed.
+            try {
+                consumer.receive();
+                fail("Should throw as this consumer is closed.");
+            } catch (IllegalStateException ise) {}
+
+            try {
+                consumer.receive(100);
+                fail("Should throw as this consumer is closed.");
+            } catch (IllegalStateException ise) {}
+
+            try {
+                consumer.receiveNoWait();
+                fail("Should throw as this consumer is closed.");
+            } catch (IllegalStateException ise) {}
+
+            // Now the delivered messages should be acknowledged as session shuts down.
+            testPeer.expectDisposition(true, new ModifiedMatcher().withDeliveryFailed(equalTo(true)), 1, 1);
+            testPeer.expectDisposition(true, new ModifiedMatcher().withDeliveryFailed(equalTo(true)), 2, 2);
+            testPeer.expectDisposition(true, new ModifiedMatcher().withDeliveryFailed(equalTo(true)), 3, 3);
+            testPeer.expectDetach(true, true, true);
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
+        }
+    }
+
+    @Test(timeout=20000)
     public void testDeferredCloseTimeoutAlertsExceptionListener() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             final CountDownLatch errorLatch = new CountDownLatch(1);
@@ -1835,7 +1918,7 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
             assertNotNull(receivedMessage);
             assertTrue(receivedMessage instanceof TextMessage);
 
-            testPeer.waitForAllHandlersToComplete(3000);
+            testPeer.expectDisposition(true, new ModifiedMatcher().withDeliveryFailed(equalTo(true)), 1, 1);
             testPeer.expectEnd();
 
             session.close();

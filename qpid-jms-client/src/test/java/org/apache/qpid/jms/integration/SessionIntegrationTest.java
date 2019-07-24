@@ -2269,4 +2269,55 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             connection.close();
         }
     }
+
+    @Test(timeout = 20000)
+    public void testCloseSessionWithWithUnackedClientAckMessages() throws Exception {
+        doCloseWithWithUnackedClientAckMessagesTestImpl(true);
+    }
+
+    @Test(timeout = 20000)
+    public void testCloseConnectionWithUnackedClientAckMessages() throws Exception {
+        doCloseWithWithUnackedClientAckMessagesTestImpl(false);
+    }
+
+    private void doCloseWithWithUnackedClientAckMessagesTestImpl(boolean closeSession) throws JMSException, Exception, IOException {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer, false, "?jms.clientID=myClientId", null, null, false);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(Session.CLIENT_ACKNOWLEDGE);
+
+            String subscriptionName = "mySubName";
+            String topicName = "myTopic";
+            Topic topic = session.createTopic(topicName);
+
+            int msgCount = 2;
+            testPeer.expectDurableSubscriberAttach(topicName, subscriptionName);
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, new AmqpValueDescribedType("content"), msgCount, false, false,
+                    Matchers.greaterThanOrEqualTo(UnsignedInteger.valueOf(msgCount)), 1, false, true);
+
+            MessageConsumer subscriber = session.createDurableConsumer(topic, subscriptionName);
+
+            TextMessage receivedTextMessage = null;
+            assertNotNull("Expected a message", receivedTextMessage = (TextMessage) subscriber.receive(3000));
+            assertEquals("Unexpected delivery number", 1,  receivedTextMessage.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER) + 1);
+            assertNotNull("Expected a message", receivedTextMessage = (TextMessage) subscriber.receive(3000));
+            assertEquals("Unexpected delivery number", 2,  receivedTextMessage.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER) + 1);
+
+            testPeer.expectDisposition(true, new ModifiedMatcher().withDeliveryFailed(equalTo(true)), 1, 1);
+            testPeer.expectDisposition(true, new ModifiedMatcher().withDeliveryFailed(equalTo(true)), 2, 2);
+
+            if(closeSession) {
+                testPeer.expectEnd();
+
+                session.close();
+            }
+
+            testPeer.expectClose();
+
+            connection.close();
+        }
+    }
 }

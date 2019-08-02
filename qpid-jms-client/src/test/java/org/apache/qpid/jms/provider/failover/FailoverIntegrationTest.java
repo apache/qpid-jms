@@ -3619,13 +3619,13 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
     private void doCreateTemporaryDestinationFailsWhenLinkRefusedTestImpl(boolean topic, boolean deferAttachResponseWrite) throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            JmsConnection connection = establishAnonymousConnecton(testPeer);
 
             testPeer.expectSaslAnonymous();
             testPeer.expectOpen();
             testPeer.expectBegin();
             testPeer.expectBegin();
 
+            JmsConnection connection = establishAnonymousConnecton(testPeer);
             connection.start();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -3661,6 +3661,12 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             final CountDownLatch producerClosed = new CountDownLatch(1);
+
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen();
+            testPeer.expectBegin();
+            testPeer.expectBegin();
+
             JmsConnection connection = establishAnonymousConnecton(testPeer);
             connection.addConnectionListener(new JmsDefaultConnectionListener() {
                 @Override
@@ -3668,12 +3674,6 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
                     producerClosed.countDown();
                 }
             });
-
-            testPeer.expectSaslAnonymous();
-            testPeer.expectOpen();
-            testPeer.expectBegin();
-            testPeer.expectBegin();
-
             connection.start();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -3723,15 +3723,19 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 20000)
     public void testPassthroughOfSendFailsWhenDelayedDeliveryIsNotSupported() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            // DO NOT add capability to indicate server support for DELAYED-DELIVERY
-            JmsConnection connection = establishAnonymousConnecton(testPeer);
+        try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
+
+            final String testPeerURI = createPeerURI(testPeer);
+            LOG.info("Original peer is at: {}", testPeerURI);
 
             testPeer.expectSaslAnonymous();
             testPeer.expectOpen();
             testPeer.expectBegin();
             testPeer.expectBegin();
 
+            // DO NOT add capability to indicate server support for DELAYED-DELIVERY so that
+            // send fails and we can see if the error passes through the failover provider
+            JmsConnection connection = establishAnonymousConnecton(testPeer);
             connection.start();
 
             Matcher<Symbol[]> desiredCapabilitiesMatcher = arrayContaining(new Symbol[] { DELAYED_DELIVERY });
@@ -3765,14 +3769,17 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 20000)
     public void testPassthroughOfSendTimesOutWhenNoDispostionArrives() throws Exception {
-        try(TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            JmsConnection connection = establishAnonymousConnecton(testPeer);
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+
+            final String testPeerURI = createPeerURI(testPeer);
+            LOG.info("Original peer is at: {}", testPeerURI);
 
             testPeer.expectSaslAnonymous();
             testPeer.expectOpen();
             testPeer.expectBegin();
             testPeer.expectBegin();
 
+            JmsConnection connection = establishAnonymousConnecton(testPeer);
             connection.setSendTimeout(500);
             connection.start();
 
@@ -3810,7 +3817,9 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
     @Test(timeout=20000)
     public void testPassthroughOfRollbackErrorCoordinatorClosedOnCommit() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            JmsConnection connection = establishAnonymousConnecton(testPeer);
+
+            final String testPeerURI = createPeerURI(testPeer);
+            LOG.info("Original peer is at: {}", testPeerURI);
 
             testPeer.expectSaslAnonymous();
             testPeer.expectOpen();
@@ -3818,6 +3827,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             testPeer.expectBegin();
             testPeer.expectCoordinatorAttach();
 
+            JmsConnection connection = establishAnonymousConnecton(testPeer);
             connection.start();
 
             Binary txnId1 = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
@@ -3848,7 +3858,9 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
     @Test(timeout=20000)
     public void testPassthroughOfSessionCreateFailsOnDeclareTimeout() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            JmsConnection connection = establishAnonymousConnecton(testPeer);
+
+            final String testPeerURI = createPeerURI(testPeer);
+            LOG.info("Original peer is at: {}", testPeerURI);
 
             testPeer.expectSaslAnonymous();
             testPeer.expectOpen();
@@ -3859,6 +3871,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             // Expect the AMQP session to be closed due to the JMS session creation failure.
             testPeer.expectEnd();
 
+            JmsConnection connection = establishAnonymousConnecton(testPeer);
             connection.setRequestTimeout(500);
             connection.start();
 

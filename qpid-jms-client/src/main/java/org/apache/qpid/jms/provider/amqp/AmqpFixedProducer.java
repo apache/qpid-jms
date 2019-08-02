@@ -63,8 +63,6 @@ public class AmqpFixedProducer extends AmqpProducer {
     private final Map<Object, InFlightSend> sent = new LinkedHashMap<Object, InFlightSend>();
     private final Map<Object, InFlightSend> blocked = new LinkedHashMap<Object, InFlightSend>();
 
-    private AsyncResult sendCompletionWatcher;
-
     private final AmqpConnection connection;
 
     public AmqpFixedProducer(AmqpSession session, JmsProducerInfo info, Sender sender) {
@@ -403,13 +401,6 @@ public class AmqpFixedProducer extends AmqpProducer {
 
             // Put the message back to usable state following send complete
             envelope.getMessage().onSendComplete();
-
-            // Signal the watcher that all pending sends have completed if one is registered
-            // and both the in-flight sends and blocked sends have completed.
-            if (sendCompletionWatcher != null && sent.isEmpty() && blocked.isEmpty()) {
-                sendCompletionWatcher.onSuccess();
-                sendCompletionWatcher = null;
-            }
 
             // Once the pending sends queue is drained and all in-flight sends have been
             // settled we can propagate the close request.

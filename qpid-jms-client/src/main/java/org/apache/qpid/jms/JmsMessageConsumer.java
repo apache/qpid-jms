@@ -69,7 +69,6 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
     protected final MessageQueue messageQueue;
     protected final Lock lock = new ReentrantLock();
     protected final Lock dispatchLock = new ReentrantLock();
-    protected final AtomicBoolean suspendedConnection = new AtomicBoolean();
     protected final AtomicReference<Throwable> failureCause = new AtomicReference<>();
     protected final MessageDeliverTask deliveryTask = new MessageDeliverTask();
 

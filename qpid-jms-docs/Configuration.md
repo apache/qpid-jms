@@ -104,6 +104,7 @@ The options apply to the behaviour of the JMS objects such as Connection, Sessio
 + **jms.populateJMSXUserID** Controls whether a MessageProducer will populate the JMSXUserID value for each sent message using the authenticated username from the connection.  This value defaults to false and the JMSXUserID for all sent message will not be populated.
 + **jms.awaitClientID** Controls whether a Connection with no ClientID configured in the URI will wait for a ClientID being set programatically (or the connection being used otherwise to signal none can be set) before sending the AMQP connection Open. Defaults to true.
 + **jms.useDaemonThread** Controls whether a Connection will use a daemon thread for its executor. Defaults to false to ensure a non-daemon thread is present by default.
++ **jms.tracing** Sets the type name of a tracing provider to use for the connection(s) created by the factory. Supported values are "opentracing" and "noop". Default is unset, effectively noop.
 
 The Prefetch Policy controls how many messages the remote peer can send to the client and be held in a prefetch buffer for each consumer instance.
 
@@ -288,6 +289,48 @@ When debugging some issues, it may sometimes be useful to enable additional prot
 
 + Set the environment variable (not Java system property) *PN_TRACE_FRM* to *true*, which will cause Proton to emit frame logging to stdout.
 + Add the option *amqp.traceFrames=true* to your connection URI to have the client add a protocol tracer to Proton, and configure the *org.apache.qpid.jms.provider.amqp.FRAMES* Logger to *TRACE* level to include the output in your logs.
+
+## Tracing
+
+The client can perform distributed tracing of message production and consumption using an [OpenTracing](https://opentracing.io/) implementation.
+
+When tracing is enabled, upon producing messages a Span is created for the AMQP delivery process, with the delivery outcome logged on it upon completion. When consuming messages, an active Span is created while the onMessage method of a MessageListener is called. For synchronous receive calls, a Span is created and finished internally while returning a Message. This is also the case for any messages expired before delivery or which exceed the configured redelivery policy.
+
+There are two ways of enabling this support:
+
+1.  Configure the client via URI option to utilise the *GlobalTracer* independently set by the application.
+
+    The tracing implementation can be enabled using the *jms.tracing* URI option:
+
+        amqp://localhost:5672?jms.tracing=opentracing
+
+    The application must create a Tracer and register it as the GlobalTracer. An overview of doing this would be:
+
+        io.opentracing.Tracer tracer = ...;
+        io.opentracing.util.GlobalTracer.registerIfAbsent(tracer);
+
+    If no registration is performed, the GlobalTracer acts as a no-op Tracer.
+
+2.  Set a JmsTracer instance to use directly on the JmsConnectionFactory object.
+
+        io.opentracing.Tracer tracer = ...;
+        org.apache.qpid.jms.tracing.JmsTracer jmsTracer =
+                org.apache.qpid.jms.tracing.opentracing.OpenTracingTracerFactory.create(tracer);
+
+        JmsConnectionFactory connectionFactory = ...;
+        connectionFactory.setTracer(jmsTracer);
+
+    This method of enabling tracing overrides the URI configuration option if also set.
+
+In order to perform tracing a suitable OpenTracing implementation must be provided by the application (along with the io.opentracing:opentracing-api and io.opentracing:opentracing-util dependencies, should the tracing implementation not provide them).
+
+An example distributed tracing system would be [Jaeger](https://www.jaegertracing.io/). The related application dependency to utilise it would be:
+
+    <dependency>
+      <groupId>io.jaegertracing</groupId>
+      <artifactId>jaeger-client</artifactId>
+      <version>${jaeger-version}</version>
+    </dependency>
 
 ## Extended Session Acknowledgement modes
 

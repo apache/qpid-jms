@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
 
 import javax.jms.JMSException;
 
@@ -373,5 +374,39 @@ public class JmsTestMessageFacade implements JmsMessageFacade {
     @Override
     public Object encodeMessage() {
         return this;
+    }
+
+    @Override
+    public Object getTracingContext(String key) {
+        return null;
+    }
+
+    @Override
+    public Object setTracingContext(String key, Object value) {
+        return null;
+    }
+
+    @Override
+    public Object getTracingAnnotation(String key) {
+        return null;
+    }
+
+    @Override
+    public Object setTracingAnnotation(String key, Object value) {
+        return null;
+    }
+
+    @Override
+    public void filterTracingAnnotations(BiConsumer<String, Object> filter) {
+    }
+
+    @Override
+    public Object removeTracingAnnotation(String key) {
+        return null;
+    }
+
+    @Override
+    public Object removeTracingContext(String key) {
+        return null;
     }
 }

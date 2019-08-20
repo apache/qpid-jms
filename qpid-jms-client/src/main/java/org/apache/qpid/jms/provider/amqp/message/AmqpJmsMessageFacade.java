@@ -27,6 +27,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
 
 import javax.jms.JMSException;
 import javax.jms.JMSRuntimeException;
@@ -38,6 +39,7 @@ import org.apache.qpid.jms.message.JmsMessage;
 import org.apache.qpid.jms.message.facade.JmsMessageFacade;
 import org.apache.qpid.jms.provider.amqp.AmqpConnection;
 import org.apache.qpid.jms.provider.amqp.AmqpConsumer;
+import org.apache.qpid.jms.tracing.JmsTracer;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
@@ -228,6 +230,9 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         }
 
         header.setTimeToLive(ttl);
+
+        JmsTracer tracer = connection.getResourceInfo().getTracer();
+        tracer.initSend(this, getToAddress());
     }
 
     @Override
@@ -292,6 +297,10 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         if (footerMap != null && !footerMap.isEmpty()) {
             target.lazyCreateFooter();
             target.footerMap.putAll(footerMap);
+        }
+
+        if (tracingContext != null && !tracingContext.isEmpty()) {
+            target.lazyCreateTracingContext().putAll(tracingContext);
         }
     }
 
@@ -902,6 +911,73 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     @Override
     public ByteBuf encodeMessage() {
         return AmqpCodec.encodeMessage(this);
+    }
+
+    //----- TracableMessage implementation
+
+    private Map<String, Object> tracingContext;
+
+    private Map<String, Object> lazyCreateTracingContext() {
+        if (tracingContext == null) {
+            tracingContext = new HashMap<>();
+        }
+        return tracingContext;
+    }
+
+    @Override
+    public Object getTracingContext(String key) {
+        if(tracingContext == null) {
+            return null;
+        }
+
+        return tracingContext.get(key);
+    }
+
+    @Override
+    public Object setTracingContext(String key, Object value) {
+        return lazyCreateTracingContext().put(key, value);
+    }
+
+    @Override
+    public Object removeTracingContext(String key) {
+        if(tracingContext == null) {
+            return null;
+        }
+
+        return tracingContext.remove(key);
+    }
+
+    @Override
+    public Object getTracingAnnotation(String key) {
+        if (messageAnnotationsMap != null && !messageAnnotationsMap.isEmpty()) {
+            return messageAnnotationsMap.get(Symbol.valueOf(key));
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public Object setTracingAnnotation(String key, Object value) {
+        lazyCreateMessageAnnotations();
+        return messageAnnotationsMap.put(Symbol.valueOf(key), value);
+    }
+
+    @Override
+    public Object removeTracingAnnotation(String key) {
+        if (messageAnnotationsMap != null && !messageAnnotationsMap.isEmpty()) {
+            return messageAnnotationsMap.remove(Symbol.valueOf(key));
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public void filterTracingAnnotations(BiConsumer<String, Object> filter) {
+        if (messageAnnotationsMap != null && !messageAnnotationsMap.isEmpty()) {
+            messageAnnotationsMap.forEach((key, value) -> {
+                filter.accept(key.toString(), value);
+            });
+        }
     }
 
     //----- Access to AMQP Message Values ------------------------------------//

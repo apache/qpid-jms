@@ -2194,6 +2194,10 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         source.setProperty("APP-Prop-1", "APP-Prop-1-Value");
         source.setProperty("APP-Prop-2", "APP-Prop-2-Value");
 
+        source.setTracingContext("Tracing-Key", "Tracing-Detail");
+
+        // ------------------------------------
+
         AmqpJmsMessageFacade copy = source.copy();
 
         assertSame(source.getConnection(), copy.getConnection());
@@ -2215,7 +2219,6 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         assertEquals(source.getUserId(), copy.getUserId());
         assertEquals(source.getDeliveryTime(), copy.getDeliveryTime());
 
-
         // There should be two since none of the extended options were set
         assertEquals(2, copy.getPropertyNames().size());
 
@@ -2224,6 +2227,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         assertEquals("APP-Prop-1-Value", copy.getProperty("APP-Prop-1"));
         assertEquals("APP-Prop-2-Value", copy.getProperty("APP-Prop-2"));
+
+        assertEquals("Tracing-Detail", copy.getTracingContext("Tracing-Key"));
 
         Footer copiedFooter = copy.getFooter();
         DeliveryAnnotations copiedDeliveryAnnotations = copy.getDeliveryAnnotations();

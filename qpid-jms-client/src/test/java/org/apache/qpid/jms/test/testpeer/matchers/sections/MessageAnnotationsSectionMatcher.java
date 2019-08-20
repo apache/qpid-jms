@@ -71,5 +71,13 @@ public class MessageAnnotationsSectionMatcher extends MessageMapSectionMatcher
             return false;
         }
     }
+
+    public Object getReceivedAnnotation(Symbol key)
+    {
+        Map<Object, Object> receivedFields = super.getReceivedFields();
+
+        return receivedFields.get(key);
+    }
+
 }
 

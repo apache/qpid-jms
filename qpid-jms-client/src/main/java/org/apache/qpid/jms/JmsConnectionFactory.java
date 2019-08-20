@@ -52,6 +52,9 @@ import org.apache.qpid.jms.policy.JmsPresettlePolicy;
 import org.apache.qpid.jms.policy.JmsRedeliveryPolicy;
 import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.provider.ProviderFactory;
+import org.apache.qpid.jms.tracing.JmsNoOpTracer;
+import org.apache.qpid.jms.tracing.JmsTracer;
+import org.apache.qpid.jms.tracing.JmsTracerFactory;
 import org.apache.qpid.jms.util.IdGenerator;
 import org.apache.qpid.jms.util.PropertyUtil;
 import org.apache.qpid.jms.util.URISupport;
@@ -103,6 +106,8 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     private IdGenerator connectionIdGenerator;
     private String connectionIDPrefix;
     private ExceptionListener exceptionListener;
+    private String tracing;
+    private JmsTracer tracer;
 
     private JmsPrefetchPolicy prefetchPolicy = new JmsDefaultPrefetchPolicy();
     private JmsRedeliveryPolicy redeliveryPolicy = new JmsDefaultRedeliveryPolicy();
@@ -246,6 +251,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     }
 
     protected JmsConnectionInfo configureConnectionInfo(String username, String password) throws JMSException {
+        JmsTracer implicitTracer = JmsNoOpTracer.INSTANCE;
         try {
             Map<String, String> properties = PropertyUtil.getProperties(this);
             // Pull out the clientID prop, we need to act differently according to
@@ -269,6 +275,13 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
             connectionInfo.setDeserializationPolicy(deserializationPolicy.copy());
             connectionInfo.getExtensionMap().putAll(extensionMap);
 
+            if(tracer != null) {
+                connectionInfo.setTracer(tracer);
+            } else if(tracing != null) {
+                implicitTracer = JmsTracerFactory.create(remoteURI, tracing);
+                connectionInfo.setTracer(implicitTracer);
+            }
+
             // Set properties to make additional configuration changes
             PropertyUtil.setProperties(connectionInfo, properties);
 
@@ -287,6 +300,10 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
 
             return connectionInfo;
         } catch (Exception e) {
+            try {
+                implicitTracer.close();
+            } catch (Throwable ignored) {}
+
             throw JmsExceptionSupport.create(e);
         }
     }
@@ -916,7 +933,6 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
         this.useDaemonThread = useDaemonThread;
     }
 
-
     /**
      * @return whether links that fail to be created during failover reconnect are closed or not.
      */
@@ -963,6 +979,52 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
         } else {
             extensionMap.put(extensionKey, extension);
         }
+    }
+
+    /**
+     * Sets the type name for a tracing provider to use for the connection(s) created using the factory.
+     *
+     * @param tracing
+     *            The tracing provider type name to set
+     */
+    public void setTracing(String tracing) {
+        this.tracing = tracing;
+    }
+
+    public String getTracing() {
+        return tracing;
+    }
+
+    /**
+     * Explicitly sets a tracer instance for use by the connection(s) created from the factory.
+     *
+     * Using this method overrides any implicit creation of a tracer due to use of either URI configuration option
+     * or the {@link JmsConnectionFactory#setTracing(String)} method.
+     *
+     * The provided tracer will have its close method called when a created connection/context is closed,
+     * so if a tracer is to be used across multiple such connections created by this factory then the close
+     * method should handle that appropriately, e.g no-op and have the application and/or underlying tracing
+     * implementation cleanup at shutdown. If no Connection/JMSContext object is returned from a creation
+     * attempt due to an exception being thrown, the tracer provided will not have its close method called
+     * and the application or underlying tracing implementation is responsible for any cleanup required.
+     *
+     * @param tracer
+     *            The tracer to set
+     */
+    public void setTracer(JmsTracer tracer) {
+        this.tracer = tracer;
+    }
+
+    /**
+     * Gets any tracer previously set explicitly on the connection factory using {@link #setTracer(JmsTracer)}.
+     *
+     * Does not return any tracer created implicitly due to use of either URI configuration option
+     * or the {@link JmsConnectionFactory#setTracing(String)} method.
+     *
+     * @return the tracer previously set, or null if none was set.
+     */
+    public JmsTracer getTracer() {
+        return tracer;
     }
 
     //----- Static Methods ---------------------------------------------------//

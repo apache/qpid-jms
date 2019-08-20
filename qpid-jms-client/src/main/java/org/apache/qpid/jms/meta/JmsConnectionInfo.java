@@ -19,6 +19,7 @@ package org.apache.qpid.jms.meta;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.EnumMap;
+import java.util.Objects;
 import java.util.function.BiFunction;
 
 import javax.jms.Connection;
@@ -35,6 +36,8 @@ import org.apache.qpid.jms.policy.JmsMessageIDPolicy;
 import org.apache.qpid.jms.policy.JmsPrefetchPolicy;
 import org.apache.qpid.jms.policy.JmsPresettlePolicy;
 import org.apache.qpid.jms.policy.JmsRedeliveryPolicy;
+import org.apache.qpid.jms.tracing.JmsNoOpTracer;
+import org.apache.qpid.jms.tracing.JmsTracer;
 
 /**
  * Meta object that contains the JmsConnection identification and configuration
@@ -84,6 +87,7 @@ public final class JmsConnectionInfo extends JmsAbstractResource implements Comp
     private JmsDeserializationPolicy deserializationPolicy;
 
     private volatile byte[] encodedUserId;
+    private JmsTracer tracer = JmsNoOpTracer.INSTANCE;
 
     public JmsConnectionInfo(JmsConnectionId connectionId) {
         if (connectionId == null) {
@@ -428,5 +432,14 @@ public final class JmsConnectionInfo extends JmsAbstractResource implements Comp
     @Override
     public void visit(JmsResourceVistor vistor) throws Exception {
         vistor.processConnectionInfo(this);
+    }
+
+    public void setTracer(JmsTracer tracer) {
+        Objects.requireNonNull(tracer);
+        this.tracer = tracer;
+    }
+
+    public JmsTracer getTracer() {
+        return tracer;
     }
 }

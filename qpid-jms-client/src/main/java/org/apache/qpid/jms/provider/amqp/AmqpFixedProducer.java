@@ -35,6 +35,7 @@ import org.apache.qpid.jms.provider.exceptions.ProviderExceptionSupport;
 import org.apache.qpid.jms.provider.exceptions.ProviderIllegalStateException;
 import org.apache.qpid.jms.provider.exceptions.ProviderSendTimedOutException;
 import org.apache.qpid.jms.provider.exceptions.ProviderUnsupportedOperationException;
+import org.apache.qpid.jms.tracing.JmsTracer;
 import org.apache.qpid.proton.amqp.messaging.Modified;
 import org.apache.qpid.proton.amqp.messaging.Rejected;
 import org.apache.qpid.proton.amqp.transaction.TransactionalState;
@@ -64,11 +65,14 @@ public class AmqpFixedProducer extends AmqpProducer {
     private final Map<Object, InFlightSend> blocked = new LinkedHashMap<Object, InFlightSend>();
 
     private final AmqpConnection connection;
+    private final JmsTracer tracer;
 
     public AmqpFixedProducer(AmqpSession session, JmsProducerInfo info, Sender sender) {
         super(session, info, sender);
 
         connection = session.getConnection();
+        tracer = connection.getResourceInfo().getTracer();
+
         delayedDeliverySupported = connection.getProperties().isDelayedDeliverySupported();
     }
 
@@ -316,7 +320,7 @@ public class AmqpFixedProducer extends AmqpProducer {
 
     //----- Class used to manage held sends ----------------------------------//
 
-    private class InFlightSend implements AsyncResult, AmqpExceptionBuilder {
+    private final class InFlightSend implements AsyncResult, AmqpExceptionBuilder {
 
         private final JmsOutboundMessageDispatch envelope;
         private final AsyncResult request;
@@ -397,6 +401,14 @@ public class AmqpFixedProducer extends AmqpProducer {
                 tagGenerator.returnTag(delivery.getTag());
             } else {
                 blocked.remove(envelope.getMessageId());
+            }
+
+            // Null delivery means that we never had credit to send so no delivery was created to carry the message.
+            if (delivery != null) {
+                DeliveryState remoteState = delivery.getRemoteState();
+                tracer.completeSend(envelope.getMessage().getFacade(), remoteState == null ? null : remoteState.getType().name());
+            } else {
+                tracer.completeSend(envelope.getMessage().getFacade(), null);
             }
 
             // Put the message back to usable state following send complete

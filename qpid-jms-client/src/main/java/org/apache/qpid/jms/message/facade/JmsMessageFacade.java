@@ -21,6 +21,7 @@ import java.util.Set;
 import javax.jms.JMSException;
 
 import org.apache.qpid.jms.JmsDestination;
+import org.apache.qpid.jms.tracing.TraceableMessage;
 
 /**
  * The Message Facade interface defines the required mapping between a Provider's
@@ -28,7 +29,7 @@ import org.apache.qpid.jms.JmsDestination;
  * interface and offer direct access to its message types without the need to
  * copy to / from a more generic JMS message instance.
  */
-public interface JmsMessageFacade {
+public interface JmsMessageFacade extends TraceableMessage {
 
     /**
      * Returns the property names for this Message instance. The Set returned may be
@@ -96,7 +97,7 @@ public interface JmsMessageFacade {
      * Called before a message is dispatched to its intended consumer to allow for
      * any necessary processing of message data such as setting read-only state etc.
      *
-     * @throws JMSException if an error occurs while preparing the message for send.
+     * @throws JMSException if an error occurs while preparing the message for dispatch.
      */
     void onDispatch() throws JMSException;
 
@@ -123,14 +124,14 @@ public interface JmsMessageFacade {
     JmsMessageFacade copy() throws JMSException;
 
     /**
-     * Gets the timestamp assigned to the message when it was sent.
+     * Gets the time stamp assigned to the message when it was sent.
      *
-     * @return the message timestamp value.
+     * @return the message time stamp value.
      */
     long getTimestamp();
 
     /**
-     * Sets the timestamp value of this message.
+     * Sets the time stamp value of this message.
      *
      * @param timestamp
      *        the time that the message was sent by the provider.

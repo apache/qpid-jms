@@ -44,6 +44,9 @@
     <slf4j-version>1.7.25</slf4j-version>
     <geronimo.jms.2.spec.version>1.0-alpha-2</geronimo.jms.2.spec.version>
 
+    <!-- 'Provided'/Test Dependency Versions for this Project -->
+    <opentracing-version>0.33.0</opentracing-version>
+
     <!-- Test Dependency Versions for this Project -->
     <netty-tcnative-version>2.0.25.Final</netty-tcnative-version>
     <activemq-version>5.15.9</activemq-version>
@@ -162,11 +165,18 @@
         <artifactId>netty-codec-http</artifactId>
         <version>${netty-version}</version>
       </dependency>
-      <!--  Testing only Uber Jar inclusion -->
+      <!--  Provided dependencies -->
       <dependency>
-         <groupId>io.netty</groupId>
-         <artifactId>netty-tcnative-boringssl-static</artifactId>
-         <version>${netty-tcnative-version}</version>
+        <groupId>io.opentracing</groupId>
+        <artifactId>opentracing-api</artifactId>
+        <version>${opentracing-version}</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>io.opentracing</groupId>
+        <artifactId>opentracing-util</artifactId>
+        <version>${opentracing-version}</version>
+        <scope>provided</scope>
       </dependency>
       <!-- Logging impl dependency, e.g for the tests or examples -->
       <dependency>
@@ -175,6 +185,18 @@
         <version>${slf4j-version}</version>
       </dependency>
       <!-- Test dependencies -->
+      <dependency>
+        <groupId>io.opentracing</groupId>
+        <artifactId>opentracing-mock</artifactId>
+        <version>${opentracing-version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>io.netty</groupId>
+         <artifactId>netty-tcnative-boringssl-static</artifactId>
+         <version>${netty-tcnative-version}</version>
+         <scope>test</scope>
+      </dependency>
       <dependency>
         <groupId>junit</groupId>
         <artifactId>junit</artifactId>

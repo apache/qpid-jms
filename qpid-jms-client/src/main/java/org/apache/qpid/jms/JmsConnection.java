@@ -81,6 +81,7 @@ import org.apache.qpid.jms.provider.ProviderException;
 import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.provider.ProviderListener;
 import org.apache.qpid.jms.provider.ProviderSynchronization;
+import org.apache.qpid.jms.tracing.JmsTracer;
 import org.apache.qpid.jms.util.FifoMessageQueue;
 import org.apache.qpid.jms.util.MessageQueue;
 import org.apache.qpid.jms.util.PriorityMessageQueue;
@@ -243,6 +244,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
                 started.set(false);
                 closing.set(false);
                 closed.set(true);
+                connectionInfo.getTracer().close();
             }
         } catch (Exception e) {
             throw JmsExceptionSupport.create(e);
@@ -1172,6 +1174,10 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
 
     public void setCloseLinksThatFailOnReconnect(boolean closeLinksThatFailOnReconnect) {
         connectionInfo.setCloseLinksThatFailOnReconnect(closeLinksThatFailOnReconnect);
+    }
+
+    JmsTracer getTracer() {
+        return connectionInfo.getTracer();
     }
 
     //----- Async event handlers ---------------------------------------------//

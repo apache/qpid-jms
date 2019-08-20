@@ -46,6 +46,9 @@ import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.apache.qpid.jms.provider.ProviderException;
 import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.provider.ProviderSynchronization;
+import org.apache.qpid.jms.tracing.JmsTracer;
+import org.apache.qpid.jms.tracing.JmsTracer.DeliveryOutcome;
+import org.apache.qpid.jms.tracing.TraceableMessage;
 import org.apache.qpid.jms.util.FifoMessageQueue;
 import org.apache.qpid.jms.util.MessageQueue;
 import org.apache.qpid.jms.util.PriorityMessageQueue;
@@ -71,6 +74,8 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
     protected final Lock dispatchLock = new ReentrantLock();
     protected final AtomicReference<Throwable> failureCause = new AtomicReference<>();
     protected final MessageDeliverTask deliveryTask = new MessageDeliverTask();
+    protected final JmsTracer tracer;
+    protected final String address;
 
     protected JmsMessageConsumer(JmsConsumerId consumerId, JmsSession session, JmsDestination destination,
                                  String selector, boolean noLocal) throws JMSException {
@@ -81,6 +86,8 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
                                  String name, String selector, boolean noLocal) throws JMSException {
         this.session = session;
         this.connection = session.getConnection();
+        this.tracer = connection.getTracer();
+        this.address = destination.getAddress();
         this.acknowledgementMode = isBrowser() ? Session.AUTO_ACKNOWLEDGE : session.acknowledgementMode();
 
         if (destination.isTemporary()) {
@@ -330,9 +337,17 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
                             // closed until future pulls were performed.
                         }
                     }
-                } else if (consumeExpiredMessage(envelope)) {
+
+                    continue;
+                }
+
+                TraceableMessage facade = envelope.getMessage().getFacade();
+
+                if (consumeExpiredMessage(envelope)) {
                     LOG.trace("{} filtered expired message: {}", getConsumerId(), envelope);
                     doAckExpired(envelope);
+                    tracer.syncReceive(facade, address, DeliveryOutcome.EXPIRED);
+
                     if (timeout > 0) {
                         timeout = Math.max(deadline - System.currentTimeMillis(), 0);
                     }
@@ -340,6 +355,8 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
                 } else if (session.redeliveryExceeded(envelope)) {
                     LOG.debug("{} filtered message with excessive redelivery count: {}", getConsumerId(), envelope);
                     applyRedeliveryPolicyOutcome(envelope);
+                    tracer.syncReceive(facade, address, DeliveryOutcome.REDELIVERIES_EXCEEDED);
+
                     if (timeout > 0) {
                         timeout = Math.max(deadline - System.currentTimeMillis(), 0);
                     }
@@ -348,6 +365,9 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
                     if (LOG.isTraceEnabled()) {
                         LOG.trace(getConsumerId() + " received message: " + envelope);
                     }
+
+                    tracer.syncReceive(facade, address, DeliveryOutcome.DELIVERED);
+
                     return envelope;
                 }
             }
@@ -725,15 +745,21 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
                     return false;
                 }
 
-                JmsMessage copy = null;
+                TraceableMessage facade = envelope.getMessage().getFacade();
 
                 if (consumeExpiredMessage(envelope)) {
                     LOG.trace("{} filtered expired message: {}", getConsumerId(), envelope);
                     doAckExpired(envelope);
+                    tracer.asyncDeliveryInit(facade, address);
+                    tracer.asyncDeliveryComplete(facade, DeliveryOutcome.EXPIRED, null);
                 } else if (session.redeliveryExceeded(envelope)) {
                     LOG.trace("{} filtered message with excessive redelivery count: {}", getConsumerId(), envelope);
                     applyRedeliveryPolicyOutcome(envelope);
+                    tracer.asyncDeliveryInit(facade, address);
+                    tracer.asyncDeliveryComplete(facade, DeliveryOutcome.REDELIVERIES_EXCEEDED, null);
                 } else {
+                    final JmsMessage copy;
+
                     boolean deliveryFailed = false;
                     boolean autoAckOrDupsOk = acknowledgementMode == Session.AUTO_ACKNOWLEDGE ||
                                               acknowledgementMode == Session.DUPS_OK_ACKNOWLEDGE;
@@ -745,9 +771,16 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
                     session.clearSessionRecovered();
 
                     try {
+                        tracer.asyncDeliveryInit(facade, address);
+
                         messageListener.onMessage(copy);
                     } catch (RuntimeException rte) {
                         deliveryFailed = true;
+                        tracer.asyncDeliveryComplete(facade, DeliveryOutcome.APPLICATION_ERROR, rte);
+                    } finally {
+                        if(!deliveryFailed) {
+                            tracer.asyncDeliveryComplete(facade, DeliveryOutcome.DELIVERED, null);
+                        }
                     }
 
                     if (autoAckOrDupsOk && !session.isSessionRecovered()) {

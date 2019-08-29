@@ -19,15 +19,13 @@ package org.apache.qpid.jms.transports.netty;
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
-import java.io.IOException;
-import java.net.ServerSocket;
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
@@ -79,13 +77,14 @@ public abstract class NettyServer implements AutoCloseable {
 
     static final int PORT = Integer.parseInt(System.getProperty("port", "8007"));
     static final String WEBSOCKET_PATH = "/";
+    static final int SERVER_CHOOSES_PORT = 0;
 
     private EventLoopGroup bossGroup;
     private EventLoopGroup workerGroup;
     private Channel serverChannel;
     private final TransportOptions options;
     private final boolean secure;
-    private int serverPort;
+    private int serverPort = SERVER_CHOOSES_PORT;
     private final boolean needClientAuth;
     private final boolean webSocketServer;
     private int maxFrameSize = NettyTcpTransport.DEFAULT_MAX_FRAME_SIZE;
@@ -190,10 +189,13 @@ public abstract class NettyServer implements AutoCloseable {
     }
 
     public void start() throws Exception {
+        start(serverPort);
+    }
 
+    public void start(int listenOn) throws Exception {
         if (started.compareAndSet(false, true)) {
 
-            // Configure the server.
+            // Basic server configuration with NIO only options.
             bossGroup = new NioEventLoopGroup(1);
             workerGroup = new NioEventLoopGroup();
 
@@ -227,8 +229,11 @@ public abstract class NettyServer implements AutoCloseable {
                 }
             });
 
-            // Start the server.
-            serverChannel = server.bind(getServerPort()).sync().channel();
+            // Start the server using specified port.  If value is zero the server
+            // will select a free port and so we update the server port value after
+            // in order to reflect the correct value.
+            serverChannel = server.bind(listenOn).sync().channel();
+            serverPort = ((InetSocketAddress) serverChannel.localAddress()).getPort();
         }
     }
 
@@ -260,22 +265,10 @@ public abstract class NettyServer implements AutoCloseable {
     }
 
     public int getServerPort() {
-        if (serverPort == 0) {
-            ServerSocket ss = null;
-            try {
-                ss = ServerSocketFactory.getDefault().createServerSocket(0);
-                serverPort = ss.getLocalPort();
-            } catch (IOException e) { // revert back to default
-                serverPort = PORT;
-            } finally {
-                try {
-                    if (ss != null ) {
-                        ss.close();
-                    }
-                } catch (IOException e) { // ignore
-                }
-            }
+        if (!started.get()) {
+            throw new IllegalStateException("Cannot get server port of non-started server");
         }
+
         return serverPort;
     }
 

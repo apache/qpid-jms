@@ -75,7 +75,6 @@ public abstract class NettyServer implements AutoCloseable {
 
     private static final Logger LOG = LoggerFactory.getLogger(NettyServer.class);
 
-    static final int PORT = Integer.parseInt(System.getProperty("port", "8007"));
     static final String WEBSOCKET_PATH = "/";
     static final int SERVER_CHOOSES_PORT = 0;
 

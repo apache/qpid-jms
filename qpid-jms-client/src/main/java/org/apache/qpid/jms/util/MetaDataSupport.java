@@ -56,8 +56,7 @@ public class MetaDataSupport {
             InputStream in = null;
             String path = MetaDataSupport.class.getPackage().getName().replace(".", "/");
             if ((in = MetaDataSupport.class.getResourceAsStream("/" + path + "/version.txt")) != null) {
-                try {
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.US_ASCII));
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.US_ASCII))) {
                     version = reader.readLine();
                     Pattern pattern = Pattern.compile("(\\d+)\\.(\\d+).*");
                     Matcher m = pattern.matcher(version);
@@ -65,7 +64,6 @@ public class MetaDataSupport {
                         major = Integer.parseInt(m.group(1));
                         minor = Integer.parseInt(m.group(2));
                     }
-                    reader.close();
                 } catch(Throwable err) {
                     LOG.trace("Problem generating fallback version details", err);
                 }

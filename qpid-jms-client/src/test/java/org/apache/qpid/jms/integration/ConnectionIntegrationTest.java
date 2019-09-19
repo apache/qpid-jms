@@ -75,6 +75,8 @@ import org.apache.qpid.jms.test.testpeer.basictypes.ConnectionError;
 import org.apache.qpid.jms.test.testpeer.matchers.CoordinatorMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompositeMatcher;
 import org.apache.qpid.jms.util.MetaDataSupport;
+import org.apache.qpid.jms.util.QpidJMSTestRunner;
+import org.apache.qpid.jms.util.Repeat;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
@@ -83,7 +85,9 @@ import org.apache.qpid.proton.engine.impl.AmqpHeader;
 import org.hamcrest.Matcher;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+@RunWith(QpidJMSTestRunner.class)
 public class ConnectionIntegrationTest extends QpidJmsTestCase {
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
 
@@ -322,6 +326,39 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             } catch (JMSException jmse) {
                 // Expected
             }
+
+            testPeer.waitForAllHandlersToComplete(3000);
+
+            connection.close();
+        }
+    }
+
+    @Repeat(repetitions = 1)
+    @Test(timeout = 20000)
+    public void testRemotelyDropConnectionDuringSessionCreationTransacted() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen();
+            testPeer.expectBegin();
+
+            ConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + testPeer.getServerPort() + "?jms.clientID=foo");
+            Connection connection = factory.createConnection();
+
+            CountDownLatch exceptionListenerFired = new CountDownLatch(1);
+            connection.setExceptionListener(ex -> exceptionListenerFired.countDown());
+
+            // Expect the begin, then drop connection without without a close frame before the tx-coordinator setup.
+            testPeer.expectBegin();
+            testPeer.dropAfterLastHandler();
+
+            try {
+                connection.createSession(true, Session.SESSION_TRANSACTED);
+                fail("Expected exception to be thrown");
+            } catch (JMSException jmse) {
+                // Expected
+            }
+
+            assertTrue("Exception listener did not fire", exceptionListenerFired.await(5, TimeUnit.SECONDS));
 
             testPeer.waitForAllHandlersToComplete(3000);
 

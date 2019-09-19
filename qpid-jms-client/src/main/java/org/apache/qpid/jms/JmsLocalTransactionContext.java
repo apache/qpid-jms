@@ -251,6 +251,10 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
     private void doRollback(boolean startNewTx) throws JMSException {
         lock.writeLock().lock();
         try {
+            if(transactionInfo == null) {
+                return;
+            }
+
             LOG.debug("Rollback: {}", transactionInfo.getId());
             JmsTransactionId oldTransactionId = transactionInfo.getId();
             final JmsTransactionInfo nextTx;
@@ -331,7 +335,9 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
     public void onConnectionInterrupted() {
         lock.writeLock().tryLock();
         try {
-            transactionInfo.setInDoubt(true);
+            if(transactionInfo != null) {
+                transactionInfo.setInDoubt(true);
+            }
         } finally {
             if (lock.writeLock().isHeldByCurrentThread()) {
                 lock.writeLock().unlock();

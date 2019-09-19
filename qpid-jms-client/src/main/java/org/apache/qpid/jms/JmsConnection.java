@@ -1358,7 +1358,11 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         // Signal that connection dropped we need to mark transactions as
         // failed, deliver failure events to asynchronous send completions etc.
         for (JmsSession session : sessions.values()) {
-            session.onConnectionInterrupted();
+            try {
+                session.onConnectionInterrupted();
+            } catch (Throwable t) {
+                LOG.warn("Exception while marking session interrupted", t);
+            }
         }
 
         onProviderException(ex);

@@ -1642,6 +1642,15 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout=20000)
     public void testTxRecreatedAfterConnectionFailsOver() throws Exception {
+        doTxRecreatedAfterConnectionFailsOver(true);
+    }
+
+    @Test(timeout=20000)
+    public void testTxRecreatedAfterConnectionFailsOver2() throws Exception {
+        doTxRecreatedAfterConnectionFailsOver(false);
+    }
+
+    private void doTxRecreatedAfterConnectionFailsOver(boolean dropAfterCoordinator) throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer finalPeer = new TestAmqpPeer();) {
 
@@ -1682,12 +1691,15 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             assertTrue("Should connect to original peer", originalConnected.await(5, TimeUnit.SECONDS));
 
             originalPeer.expectBegin();
-            originalPeer.expectCoordinatorAttach();
 
-            // First expect an unsettled 'declare' transfer to the txn coordinator, and
-            // reply with a Declared disposition state containing the txnId.
             Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
-            originalPeer.expectDeclare(txnId);
+            if(dropAfterCoordinator) {
+                originalPeer.expectCoordinatorAttach();
+
+                // First expect an unsettled 'declare' transfer to the txn coordinator, and
+                // reply with a Declared disposition state containing the txnId.
+                originalPeer.expectDeclare(txnId);
+            }
 
             originalPeer.dropAfterLastHandler();
 

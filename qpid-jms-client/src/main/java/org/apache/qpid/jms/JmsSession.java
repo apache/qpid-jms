@@ -1485,6 +1485,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
                     try {
                         completion.signalCompletion();
                     } catch (Throwable error) {
+                        LOG.error("Failure while performing completion for send: {}", completion.envelope, error);
                     } finally {
                         LOG.trace("Signaled completion of send: {}", completion.envelope);
                     }
@@ -1526,8 +1527,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
                         }
                         completion.signalCompletion();
                     } catch (Throwable error) {
-                        LOG.trace("Failed while performing send completion: {}", envelope);
-                        // TODO - What now?
+                        LOG.error("Failure while performing completion for send: {}", envelope, error);
                     }
 
                     // Signal any trailing completions that have been marked complete
@@ -1539,8 +1539,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
                             try {
                                 completion.signalCompletion();
                             } catch (Throwable error) {
-                                LOG.trace("Failed while performing send completion: {}", envelope);
-                                // TODO - What now?
+                                LOG.error("Failure while performing completion for send: {}", envelope, error);
                             } finally {
                                 pending.remove();
                             }
@@ -1564,8 +1563,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
                     }
                 }
             } catch (Exception ex) {
-                LOG.debug("Send completion task encounted unexpected error: {}", ex.getMessage());
-                // TODO - What now
+                LOG.error("Async completion task encountered unexpected failure", ex);
             }
         }
     }
@@ -1597,12 +1595,21 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         }
 
         public void signalCompletion() {
-            envelope.getMessage().onSendComplete();  // Ensure message is returned as readable.
+            JmsMessage message = envelope.getMessage();
+            message.onSendComplete();  // Ensure message is returned as readable.
 
             if (failureCause == null) {
-                listener.onCompletion(envelope.getMessage());
+                try {
+                    listener.onCompletion(message);
+                } catch (Exception ex) {
+                    LOG.trace("CompletionListener threw exception from onCompletion for send {}", envelope, ex);
+                }
             } else {
-                listener.onException(envelope.getMessage(), failureCause);
+                try {
+                    listener.onException(message, failureCause);
+                } catch (Exception ex) {
+                    LOG.trace("CompletionListener threw exception from onException for send {}", envelope, ex);
+                }
             }
         }
 

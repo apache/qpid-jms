@@ -59,10 +59,6 @@ public class AmqpAnonymousFallbackProducer extends AmqpProducer {
     public void send(JmsOutboundMessageDispatch envelope, AsyncResult request) throws ProviderException {
         LOG.trace("Started send chain for anonymous producer: {}", getProducerId());
 
-        // Force sends marked as asynchronous to be sent synchronous so that the temporary
-        // producer instance can handle failures and perform necessary completion work on
-        // the send.
-        envelope.setSendAsync(false);
 
         // Create a new ProducerInfo for the short lived producer that's created to perform the
         // send to the given AMQP target.
@@ -74,7 +70,12 @@ public class AmqpAnonymousFallbackProducer extends AmqpProducer {
         // it will trigger the open event which will in turn trigger the send event.
         // The created producer will be closed immediately after the delivery has been acknowledged.
         AmqpProducerBuilder builder = new AmqpProducerBuilder(session, info);
-        builder.buildResource(new AnonymousSendRequest(request, builder, envelope));
+        builder.buildResource(new AnonymousSendRequest(request, builder, envelope, envelope.isCompletionRequired()));
+
+        // Force sends to be sent synchronous so that the temporary producer instance can handle
+        // the failures and perform necessary completion work on the send.
+        envelope.setSendAsync(false);
+        envelope.setCompletionRequired(false);
 
         getParent().getProvider().pumpToProtonTransport(request);
     }
@@ -108,10 +109,12 @@ public class AmqpAnonymousFallbackProducer extends AmqpProducer {
     private abstract class AnonymousRequest extends WrappedAsyncResult {
 
         protected final JmsOutboundMessageDispatch envelope;
+        private final boolean completionRequired;
 
-        public AnonymousRequest(AsyncResult sendResult, JmsOutboundMessageDispatch envelope) {
+        public AnonymousRequest(AsyncResult sendResult, JmsOutboundMessageDispatch envelope, boolean completionRequired) {
             super(sendResult);
             this.envelope = envelope;
+            this.completionRequired = completionRequired;
         }
 
         /**
@@ -124,6 +127,10 @@ public class AmqpAnonymousFallbackProducer extends AmqpProducer {
             super.onFailure(result);
         }
 
+        public boolean isCompletionRequired() {
+            return completionRequired;
+        }
+
         public abstract AmqpProducer getProducer();
     }
 
@@ -131,8 +138,8 @@ public class AmqpAnonymousFallbackProducer extends AmqpProducer {
 
         private final AmqpProducerBuilder producerBuilder;
 
-        public AnonymousSendRequest(AsyncResult sendResult, AmqpProducerBuilder producerBuilder, JmsOutboundMessageDispatch envelope) {
-            super(sendResult, envelope);
+        public AnonymousSendRequest(AsyncResult sendResult, AmqpProducerBuilder producerBuilder, JmsOutboundMessageDispatch envelope, boolean completionRequired) {
+            super(sendResult, envelope, completionRequired);
 
             this.producerBuilder = producerBuilder;
         }
@@ -159,7 +166,7 @@ public class AmqpAnonymousFallbackProducer extends AmqpProducer {
         private final AmqpProducer producer;
 
         public AnonymousSendCompleteRequest(AnonymousSendRequest open) {
-            super(open.getWrappedRequest(), open.envelope);
+            super(open.getWrappedRequest(), open.envelope, open.isCompletionRequired());
 
             this.producer = open.getProducer();
         }
@@ -190,7 +197,7 @@ public class AmqpAnonymousFallbackProducer extends AmqpProducer {
         private final AmqpProducer producer;
 
         public AnonymousCloseRequest(AnonymousSendCompleteRequest sendComplete) {
-            super(sendComplete.getWrappedRequest(), sendComplete.envelope);
+            super(sendComplete.getWrappedRequest(), sendComplete.envelope, sendComplete.isCompletionRequired());
 
             this.producer = sendComplete.getProducer();
         }
@@ -199,6 +206,9 @@ public class AmqpAnonymousFallbackProducer extends AmqpProducer {
         public void onSuccess() {
             LOG.trace("Close phase of anonymous send complete: {} ", getProducerId());
             super.onSuccess();
+            if (isCompletionRequired()) {
+                getParent().getProvider().getProviderListener().onCompletedMessageSend(envelope);
+            }
         }
 
         @Override

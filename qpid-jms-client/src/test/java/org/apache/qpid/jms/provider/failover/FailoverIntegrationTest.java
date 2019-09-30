@@ -3609,6 +3609,67 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
+    @Repeat(repetitions = 1)
+    @Test(timeout = 20000)
+    public void testFailoverHandlesAnonymousFallbackWaitingForClose() throws Exception {
+        try (TestAmqpPeer originalPeer = new TestAmqpPeer();
+             TestAmqpPeer finalPeer = new TestAmqpPeer();) {
+
+            // DO NOT add capability to indicate server support for ANONYMOUS-RELAY
+
+            // Create a peer to connect to, then one to reconnect to
+            final String originalURI = createPeerURI(originalPeer);
+            final String finalURI = createPeerURI(finalPeer);
+
+            LOG.info("Original peer is at: {}", originalURI);
+            LOG.info("Final peer is at: {}", finalURI);
+
+            originalPeer.expectSaslAnonymous();
+            originalPeer.expectOpen();
+            originalPeer.expectBegin();
+            originalPeer.expectBegin();
+            originalPeer.expectSenderAttach();
+            originalPeer.expectTransfer(new TransferPayloadCompositeMatcher());
+            // Ensure that sender detach is not answered so that next send must wait for close
+            originalPeer.expectDetach(true, false, false);
+            originalPeer.dropAfterLastHandler(20);  // Wait for sender to get into wait state
+
+            // --- Post Failover Expectations of sender --- //
+            finalPeer.expectSaslAnonymous();
+            finalPeer.expectOpen();
+            finalPeer.expectBegin();
+            finalPeer.expectBegin();
+            finalPeer.expectSenderAttach();
+            finalPeer.expectTransfer(new TransferPayloadCompositeMatcher());
+            finalPeer.expectDetach(true, true, true);
+            finalPeer.expectClose();
+
+            final JmsConnection connection = establishAnonymousConnecton(
+                    "failover.initialReconnectDelay=25" +
+                    "&failover.nested.amqp.anonymousFallbackCacheSize=0" +
+                    "&failover.nested.amqp.anonymousFallbackCacheTimeout=0",
+                    originalPeer, finalPeer);
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            MessageProducer producer = session.createProducer(null);
+
+            // Send 2 messages
+            String text = "myMessage";
+
+            TextMessage message = session.createTextMessage(text);
+
+            producer.send(queue, message);
+            producer.send(queue, message);
+
+            producer.close();
+            connection.close();
+
+            finalPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
     @Test(timeout = 20000)
     public void testPassthroughCreateTemporaryQueueFailsWhenLinkRefusedAndAttachResponseWriteIsNotDeferred() throws Exception {
         doCreateTemporaryDestinationFailsWhenLinkRefusedTestImpl(false, false);

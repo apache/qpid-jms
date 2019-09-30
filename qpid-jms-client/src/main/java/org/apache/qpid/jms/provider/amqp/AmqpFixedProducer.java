@@ -295,8 +295,13 @@ public class AmqpFixedProducer extends AmqpProducer {
     @Override
     public void handleResourceClosure(AmqpProvider provider, ProviderException error) {
         if (error == null) {
-            // TODO: create/use a more specific/appropriate exception type?
-            error = new ProviderException("Producer closed remotely before message transfer result was notified");
+            // In case close was expected but remote did provide error context we propagate that to the outstanding
+            // sends that will be failed in order to provide more specific context to the send failure.
+            if (getEndpoint().getRemoteCondition() != null) {
+                error = AmqpSupport.convertToNonFatalException(provider, getEndpoint(), getEndpoint().getRemoteCondition());
+            } else {
+                error = new ProviderException("Producer closed remotely before message transfer result was notified");
+            }
         }
 
         Collection<InFlightSend> inflightSends = new ArrayList<InFlightSend>(sent.values());

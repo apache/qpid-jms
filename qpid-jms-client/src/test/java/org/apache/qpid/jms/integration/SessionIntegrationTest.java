@@ -1079,21 +1079,25 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
+    @Repeat(repetitions = 1)
     @Test(timeout = 20000)
     public void testCreateAnonymousProducerTargetContainsQueueCapabilityWhenAnonymousRelayNodeIsNotSupported() throws Exception {
         doCreateAnonymousProducerTargetContainsCapabilityWhenAnonymousRelayNodeIsNotSupportedTestImpl(Queue.class);
     }
 
+    @Repeat(repetitions = 1)
     @Test(timeout = 20000)
     public void testCreateAnonymousProducerTargetContainsTopicCapabilityWhenAnonymousRelayNodeIsNotSupported() throws Exception {
         doCreateAnonymousProducerTargetContainsCapabilityWhenAnonymousRelayNodeIsNotSupportedTestImpl(Topic.class);
     }
 
+    @Repeat(repetitions = 1)
     @Test(timeout = 20000)
     public void testCreateAnonymousProducerTargetContainsTempQueueCapabilityWhenAnonymousRelayNodeIsNotSupported() throws Exception {
         doCreateAnonymousProducerTargetContainsCapabilityWhenAnonymousRelayNodeIsNotSupportedTestImpl(TemporaryQueue.class);
     }
 
+    @Repeat(repetitions = 1)
     @Test(timeout = 20000)
     public void testCreateAnonymousProducerTargetContainsTempTopicCapabilityWhenAnonymousRelayNodeIsNotSupported() throws Exception {
         doCreateAnonymousProducerTargetContainsCapabilityWhenAnonymousRelayNodeIsNotSupportedTestImpl(TemporaryQueue.class);
@@ -1505,7 +1509,10 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
             // DO NOT add capability to indicate server support for ANONYMOUS-RELAY
 
-            Connection connection = testFixture.establishConnecton(testPeer);
+            // Configure for a known state such that no fallback producers are cached.
+            Connection connection = testFixture.establishConnecton(testPeer,
+                "?amqp.anonymousFallbackCacheSize=0&amqp.anonymousFallbackCacheTimeout=0");
+
             connection.start();
 
             testPeer.expectBegin();
@@ -1547,6 +1554,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             testPeer.expectDetach(true, true, true);
 
             producer.send(dest, message);
+            producer.close();
 
             testPeer.expectClose();
             connection.close();

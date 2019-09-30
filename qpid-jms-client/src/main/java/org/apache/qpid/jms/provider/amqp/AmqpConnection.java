@@ -44,6 +44,8 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpConnection.class);
 
+    // TODO - URI configuration
+
     private AmqpSubscriptionTracker subTracker = new AmqpSubscriptionTracker();
 
     private final AmqpJmsMessageFactory amqpMessageFactory;
@@ -218,6 +220,20 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
     }
 
     /**
+     * @return the configured max number of cached anonymous fallback producers to keep.
+     */
+    public int getAnonymousProducerCacheSize() {
+        return getProvider().getAnonymousFallbackCacheSize();
+    }
+
+    /**
+     * @return The configured time before a cache anonymous producer link is close due to inactivity.
+     */
+    public int getAnonymousProducerCacheTimeout() {
+        return getProvider().getAnonymousFallbackCacheTimeout();
+    }
+
+    /**
      * @return the AMQP based JmsMessageFactory for this Connection.
      */
     public AmqpJmsMessageFactory getAmqpMessageFactory() {
@@ -256,6 +272,27 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
         }
 
         return getProvider().getScheduler().schedule(task, delay, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * Allows a connection resource to schedule a task for future execution which will start after the
+     * given delay and then repeat with a fixed delay between the end of one execution of the task and
+     * the beginning of the next execution.
+     *
+     * @param task
+     *      The Runnable task to be executed after the given delay.
+     * @param delay
+     *      The delay in milliseconds to schedule the given task for execution.
+     *
+     * @return a ScheduledFuture instance that can be used to cancel the task.
+     */
+    public ScheduledFuture<?> scheduleWithFixedDelay(final Runnable task, long delay) {
+        if (task == null) {
+            LOG.trace("Resource attempted to schedule a null task.");
+            return null;
+        }
+
+        return getProvider().getScheduler().scheduleWithFixedDelay(task, delay, delay, TimeUnit.MILLISECONDS);
     }
 
     @Override

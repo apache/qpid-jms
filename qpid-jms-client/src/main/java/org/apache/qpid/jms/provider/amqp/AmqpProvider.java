@@ -119,6 +119,8 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
     private static final NoOpAsyncResult NOOP_REQUEST = new NoOpAsyncResult();
 
     private static final int DEFAULT_MAX_WRITE_BYTES_BEFORE_FLUSH = 128 * 1024;
+    private static final int DEFAULT_ANONYMOUS_FALLBACK_CACHE_TIMEOUT = 30000;
+    private static final int DEFAULT_ANONYMOUS_FALLBACK_CACHE_SIZE = 1;
 
     private volatile ProviderListener listener;
     private volatile AmqpConnection connection;
@@ -137,6 +139,8 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
     private long sessionOutoingWindow = -1; // Use proton default
     private int maxFrameSize = DEFAULT_MAX_FRAME_SIZE;
     private int maxWriteBytesBeforeFlush = DEFAULT_MAX_WRITE_BYTES_BEFORE_FLUSH;
+    private int anonymousFallbackCacheTimeout = DEFAULT_ANONYMOUS_FALLBACK_CACHE_TIMEOUT;
+    private int anonymousFallbackCacheSize = DEFAULT_ANONYMOUS_FALLBACK_CACHE_SIZE;
 
     private boolean allowNonSecureRedirects;
 
@@ -1269,6 +1273,43 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
      */
     public void setMaxWriteBytesBeforeFlush(int maxWriteBytesBeforeFlush) {
         this.maxWriteBytesBeforeFlush = maxWriteBytesBeforeFlush;
+    }
+
+    /**
+     * @return the configured max number of cached anonymous fallback producers to keep.
+     */
+    public int getAnonymousFallbackCacheSize() {
+        return anonymousFallbackCacheSize;
+    }
+
+    /**
+     * Sets the number of anonymous fallback producers to keep open in a cache in order to improve
+     * overall performance of anonymous fallback producer sends.
+     *
+     * @param size
+     * 		The number of fallback producers to cache.
+     */
+    public void setAnonymousFallbackCacheSize(int size) {
+        this.anonymousFallbackCacheSize = size;
+    }
+
+    /**
+     * @return The configured time before a cache anonymous producer link is close due to inactivity.
+     */
+    public int getAnonymousFallbackCacheTimeout() {
+        return anonymousFallbackCacheTimeout;
+    }
+
+    /**
+     * Sets the timeout used to close cached anonymous producers that have not sent any messages in that
+     * time period.  The value is set in milliseconds with a value less that or equal to zero resulting in
+     * no timeout being applied.
+     *
+     * @param timeout
+     * 		Time in milliseconds that a cache anonymous producer can be idle before being close.
+     */
+    public void setAnonymousFallbackCacheTimeout(int timeout) {
+        this.anonymousFallbackCacheTimeout = timeout;
     }
 
     /**

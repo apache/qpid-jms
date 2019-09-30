@@ -209,6 +209,8 @@ These options apply to the behaviour of certain AMQP functionality.
 + **amqp.maxFrameSize** The connection max-frame-size value in bytes. Default is 1048576.
 + **amqp.drainTimeout** The time in milliseconds that the client will wait for a response from the remote when a consumer drain request is made. If no response is seen in the allotted timeout period the link will be considered failed and the associated consumer will be closed. Default is 60000.
 + **amqp.allowNonSecureRedirects** Controls whether an AMQP connection will allow for a redirect to an alternative host over a connection that is not secure when the existing connection is secure, e.g. redirecting an SSL connection to a raw TCP connection.  This value defaults to false.
+**amqp.anonymousFallbackCacheSize** Controls the number of underlying per-destination fallback sending links that are cached for an anonymous producer to improve performance of sending when a peer doesn't offer support for the anonymous relay. By default only one sender link is cached which means that sending to multiple destinations will cause the cached sender to be closed and new sender to be opened each time the destination changes. Increasing the cache size can reduce the amount of times the cache swapping occurs.  Setting the cache size to zero results in the sender links being closed after each send operation.
+**amqp.anonymousFallbackCacheTimeout** Controls how long in milliseconds an underlying per-destination fallback sender link can remain in an anonymous producers cache when inactive before it is automatically closed.  The default is 30000 milliseconds (30 seconds) and can be set to zero to disable the timeouts.
 
 ### Failover Configuration options
 

@@ -25,6 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
@@ -92,6 +93,7 @@ public abstract class NettyServer implements AutoCloseable {
     private volatile SslHandler sslHandler;
     private volatile HandshakeComplete handshakeComplete;
     private final CountDownLatch handshakeCompletion = new CountDownLatch(1);
+    private final AtomicInteger channelActiveCount = new AtomicInteger();
 
     private final AtomicBoolean started = new AtomicBoolean();
 
@@ -154,7 +156,7 @@ public abstract class NettyServer implements AutoCloseable {
         return handshakeComplete;
     }
 
-    protected URI getConnectionURI() throws Exception {
+    public URI getConnectionURI() throws Exception {
         if (!started.get()) {
             throw new IllegalStateException("Cannot get URI of non-started server");
         }
@@ -326,6 +328,8 @@ public abstract class NettyServer implements AutoCloseable {
                     }
                 });
             }
+
+            channelActiveCount.incrementAndGet();
         }
 
         @Override
@@ -382,5 +386,9 @@ public abstract class NettyServer implements AutoCloseable {
 
     protected SslHandler getSslHandler() {
         return sslHandler;
+    }
+
+    public int getChannelActiveCount() {
+        return channelActiveCount.get();
     }
 }

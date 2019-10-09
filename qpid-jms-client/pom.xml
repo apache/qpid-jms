@@ -88,6 +88,11 @@
       <artifactId>opentracing-util</artifactId>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-handler-proxy</artifactId>
+      <scope>provided</scope>
+    </dependency>
 
     <!-- =================================== -->
     <!-- Testing Dependencies                -->

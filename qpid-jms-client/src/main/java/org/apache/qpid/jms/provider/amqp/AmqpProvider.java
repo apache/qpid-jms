@@ -32,6 +32,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 import javax.net.ssl.SSLContext;
 
@@ -202,6 +203,14 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                     JmsConnectionExtensions.SSL_CONTEXT).apply(connectionInfo.getConnection(), transport.getRemoteLocation());
         } else {
             sslContextOverride = null;
+        }
+
+        if (connectionInfo.getExtensionMap().containsKey(JmsConnectionExtensions.PROXY_HANDLER_SUPPLIER)) {
+            Supplier<?> proxyHandlerSupplier = (Supplier<?>) connectionInfo.getExtensionMap().get(
+                    JmsConnectionExtensions.PROXY_HANDLER_SUPPLIER).apply(connectionInfo.getConnection(), transport.getRemoteLocation());
+            if (proxyHandlerSupplier != null) {
+                transport.getTransportOptions().setProxyHandlerSupplier(proxyHandlerSupplier);
+            }
         }
 
         if (connectionInfo.getExtensionMap().containsKey(JmsConnectionExtensions.HTTP_HEADERS_OVERRIDE)) {

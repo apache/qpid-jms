@@ -23,12 +23,17 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
+import org.apache.qpid.jms.test.Wait;
+import org.apache.qpid.jms.test.proxy.TestProxy;
 import org.apache.qpid.jms.transports.Transport;
 import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.transports.TransportOptions;
@@ -38,6 +43,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.netty.handler.proxy.HttpProxyHandler;
+import io.netty.handler.proxy.ProxyHandler;
+import io.netty.handler.proxy.Socks5ProxyHandler;
 
 /**
  * Test basic functionality of the Netty based TCP Transport ruuing in secure mode (SSL).
@@ -238,25 +247,44 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
 
     @Test(timeout = 60 * 1000)
     public void testConnectToServerVerifyHost() throws Exception {
-        doConnectToServerVerifyHostTestImpl(true);
+        doConnectToServerVerifyHostTestImpl(true, null);
     }
 
     @Test(timeout = 60 * 1000)
     public void testConnectToServerNoVerifyHost() throws Exception {
-        doConnectToServerVerifyHostTestImpl(false);
+        doConnectToServerVerifyHostTestImpl(false, null);
     }
 
-    private void doConnectToServerVerifyHostTestImpl(boolean verifyHost) throws Exception, URISyntaxException, IOException, InterruptedException {
+    @Test(timeout = 60 * 1000)
+    public void testConnectViaSocksProxyToServerVerifyHost() throws Exception {
+        doConnectToServerVerifyHostTestImpl(true, TestProxy.ProxyType.SOCKS5);
+    }
+
+    @Test(timeout = 60 * 1000)
+    public void testConnectViaSocksProxyToServerNoVerifyHost() throws Exception {
+        doConnectToServerVerifyHostTestImpl(false, TestProxy.ProxyType.SOCKS5);
+    }
+
+    protected void doConnectToServerVerifyHostTestImpl(boolean verifyHost, TestProxy.ProxyType proxyType) throws Exception {
         TransportOptions serverOptions = createServerOptions();
         serverOptions.setKeyStoreLocation(SERVER_WRONG_HOST_KEYSTORE);
 
+        TestProxy testProxy = null;
         try (NettyEchoServer server = createEchoServer(serverOptions)) {
+            if (proxyType != null) {
+                testProxy = new TestProxy(proxyType);
+                testProxy.start();
+            }
             server.start();
 
             int port = server.getServerPort();
             URI serverLocation = new URI("tcp://localhost:" + port);
 
             TransportOptions clientOptions = createClientOptionsIsVerify(verifyHost);
+
+            if (proxyType != null) {
+                configureProxyHandlerSupplier(proxyType, testProxy, clientOptions);
+            }
 
             if (verifyHost) {
                 assertTrue("Expected verifyHost to be true", clientOptions.isVerifyHost());
@@ -286,6 +314,38 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
             }
 
             transport.close();
+
+            if (proxyType != null) {
+                assertEquals(1, testProxy.getSuccessCount());
+            }
+            assertTrue(Wait.waitFor(new Wait.Condition() {
+                @Override
+                public boolean isSatisfied() throws Exception {
+                    return server.getChannelActiveCount() == 1;
+                }
+            }, 10_000, 10));
+        } finally {
+            if (testProxy != null) {
+                testProxy.close();
+            }
+        }
+    }
+
+    protected void configureProxyHandlerSupplier(TestProxy.ProxyType proxyType, TestProxy testProxy, TransportOptions clientOptions) {
+        if (proxyType == TestProxy.ProxyType.SOCKS5) {
+            SocketAddress proxyAddress = new InetSocketAddress("localhost", testProxy.getPort());
+            Supplier<ProxyHandler> proxyHandlerFactory = () -> {
+                return new Socks5ProxyHandler(proxyAddress);
+            };
+            clientOptions.setProxyHandlerSupplier(proxyHandlerFactory);
+        } else if (proxyType == TestProxy.ProxyType.HTTP) {
+            SocketAddress proxyAddress = new InetSocketAddress("localhost", testProxy.getPort());
+            Supplier<ProxyHandler> proxyHandlerFactory = () -> {
+                return new HttpProxyHandler(proxyAddress);
+            };
+            clientOptions.setProxyHandlerSupplier(proxyHandlerFactory);
+        } else {
+            throw new IllegalArgumentException("Unknown proxy type:" + proxyType);
         }
     }
 

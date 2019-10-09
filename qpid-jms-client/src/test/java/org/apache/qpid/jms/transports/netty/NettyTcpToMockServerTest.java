@@ -41,7 +41,6 @@ import org.apache.qpid.jms.JmsConnectionExtensions;
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.transports.TransportOptions;
-import org.apache.qpid.jms.transports.netty.NettySimpleAmqpServer.ConnectionIntercepter;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.transport.ConnectionError;
 import org.apache.qpid.proton.amqp.transport.ErrorCondition;
@@ -159,38 +158,31 @@ public class NettyTcpToMockServerTest extends QpidJmsTestCase {
 
             final CountDownLatch redirectComplete = new CountDownLatch(1);
 
-            server.setConnectionIntercepter(new ConnectionIntercepter() {
+            server.setConnectionIntercepter((protonConnection) -> {
 
-                @Override
-                public ErrorCondition interceptConnectionAttempt(org.apache.qpid.proton.engine.Connection connection) {
-                    ErrorCondition redirection = new ErrorCondition(ConnectionError.REDIRECT,
-                        "Server redirecting connection.");
+                ErrorCondition redirection = new ErrorCondition(ConnectionError.REDIRECT,
+                    "Server redirecting connection.");
 
-                    URI serverURI = null;
-                    try {
-                        serverURI = redirect.getConnectionURI();
-                    } catch (Exception e) {
-                        new RuntimeException();
-                    }
-
-                    // Create standard redirection condition
-                    Map<Symbol, Object> infoMap = new HashMap<Symbol, Object> ();
-                    infoMap.put(OPEN_HOSTNAME, serverURI.getHost());
-                    infoMap.put(NETWORK_HOST, serverURI.getHost());
-                    infoMap.put(PORT, serverURI.getPort());
-                    redirection.setInfo(infoMap);
-
-                    return redirection;
+                URI serverURI = null;
+                try {
+                    serverURI = redirect.getConnectionURI();
+                } catch (Exception e) {
+                    new RuntimeException();
                 }
+
+                // Create standard redirection condition
+                Map<Symbol, Object> infoMap = new HashMap<Symbol, Object> ();
+                infoMap.put(OPEN_HOSTNAME, serverURI.getHost());
+                infoMap.put(NETWORK_HOST, serverURI.getHost());
+                infoMap.put(PORT, serverURI.getPort());
+                redirection.setInfo(infoMap);
+
+                return redirection;
             });
 
-            redirect.setConnectionIntercepter(new ConnectionIntercepter() {
-
-                @Override
-                public ErrorCondition interceptConnectionAttempt(org.apache.qpid.proton.engine.Connection connection) {
-                    redirectComplete.countDown();
-                    return null;
-                }
+            redirect.setConnectionIntercepter((protonConnection) -> {
+                redirectComplete.countDown();
+                return null;
             });
 
             server.start();
@@ -234,40 +226,33 @@ public class NettyTcpToMockServerTest extends QpidJmsTestCase {
             primary.setWebSocketPath("/primary");
             redirect.setWebSocketPath("/redirect");
 
-            primary.setConnectionIntercepter(new ConnectionIntercepter() {
+            primary.setConnectionIntercepter((protonConnection) -> {
 
-                @Override
-                public ErrorCondition interceptConnectionAttempt(org.apache.qpid.proton.engine.Connection connection) {
-                    ErrorCondition redirection = new ErrorCondition(ConnectionError.REDIRECT,
-                        "Server redirecting connection.");
+                ErrorCondition redirection = new ErrorCondition(ConnectionError.REDIRECT,
+                    "Server redirecting connection.");
 
-                    URI serverURI = null;
-                    try {
-                        serverURI = redirect.getConnectionURI();
-                    } catch (Exception e) {
-                        new RuntimeException();
-                    }
-
-                    // Create standard redirection condition
-                    Map<Symbol, Object> infoMap = new HashMap<Symbol, Object> ();
-                    infoMap.put(OPEN_HOSTNAME, serverURI.getHost());
-                    infoMap.put(NETWORK_HOST, serverURI.getHost());
-                    infoMap.put(PORT, serverURI.getPort());
-                    infoMap.put(PATH, redirect.getWebSocketPath());
-                    infoMap.put(SCHEME, redirect.isSecureServer() ? "wss" : "ws");
-                    redirection.setInfo(infoMap);
-
-                    return redirection;
+                URI serverURI = null;
+                try {
+                    serverURI = redirect.getConnectionURI();
+                } catch (Exception e) {
+                    new RuntimeException();
                 }
+
+                // Create standard redirection condition
+                Map<Symbol, Object> infoMap = new HashMap<Symbol, Object> ();
+                infoMap.put(OPEN_HOSTNAME, serverURI.getHost());
+                infoMap.put(NETWORK_HOST, serverURI.getHost());
+                infoMap.put(PORT, serverURI.getPort());
+                infoMap.put(PATH, redirect.getWebSocketPath());
+                infoMap.put(SCHEME, redirect.isSecureServer() ? "wss" : "ws");
+                redirection.setInfo(infoMap);
+
+                return redirection;
             });
 
-            redirect.setConnectionIntercepter(new ConnectionIntercepter() {
-
-                @Override
-                public ErrorCondition interceptConnectionAttempt(org.apache.qpid.proton.engine.Connection connection) {
-                    redirectComplete.countDown();
-                    return null;
-                }
+            redirect.setConnectionIntercepter((protonConnection) -> {
+                redirectComplete.countDown();
+                return null;
             });
 
             primary.start();

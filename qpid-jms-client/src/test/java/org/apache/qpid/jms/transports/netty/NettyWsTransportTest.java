@@ -23,11 +23,16 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 import org.apache.qpid.jms.test.Wait;
+import org.apache.qpid.jms.test.proxy.TestProxy;
+import org.apache.qpid.jms.test.proxy.TestProxy.ProxyType;
 import org.apache.qpid.jms.transports.Transport;
 import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.transports.TransportOptions;
@@ -40,6 +45,8 @@ import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler.HandshakeComplete;
+import io.netty.handler.proxy.HttpProxyHandler;
+import io.netty.handler.proxy.ProxyHandler;
 
 /**
  * Test the Netty based WebSocket Transport
@@ -384,6 +391,50 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
         }
 
         assertTrue(!transportClosed);  // Normal shutdown does not trigger the event.
+        assertTrue(exceptions.isEmpty());
+        assertTrue(data.isEmpty());
+    }
+
+    @Test(timeout = 60000)
+    public void testConnectViaHttpProxy() throws Exception {
+        try (TestProxy testProxy = new TestProxy(ProxyType.HTTP);
+             NettyEchoServer server = createEchoServer(createServerOptions())) {
+            testProxy.start();
+            server.start();
+
+            int port = server.getServerPort();
+            URI serverLocation = new URI("tcp://localhost:" + port);
+
+            TransportOptions clientOptions = createClientOptions();
+            SocketAddress proxyAddress = new InetSocketAddress("localhost", testProxy.getPort());
+            Supplier<ProxyHandler> proxyHandlerFactory = () -> {
+                return new HttpProxyHandler(proxyAddress);
+            };
+            clientOptions.setProxyHandlerSupplier(proxyHandlerFactory);
+
+            Transport transport = createTransport(serverLocation, testListener, clientOptions);
+            try {
+                transport.connect(null, null);
+                LOG.info("Connected to server:{} as expected.", serverLocation);
+            } catch (Exception e) {
+                fail("Should have connected to the server at " + serverLocation + " but got exception: " + e);
+            }
+
+            assertTrue(transport.isConnected());
+            assertEquals(serverLocation, transport.getRemoteLocation());
+
+            transport.close();
+
+            assertEquals(1, testProxy.getSuccessCount());
+            assertTrue(Wait.waitFor(new Wait.Condition() {
+                @Override
+                public boolean isSatisfied() throws Exception {
+                    return server.getChannelActiveCount() == 1;
+                }
+            }, 10_000, 10));
+        }
+
+        assertTrue(!transportClosed); // Normal shutdown does not trigger the event.
         assertTrue(exceptions.isEmpty());
         assertTrue(data.isEmpty());
     }

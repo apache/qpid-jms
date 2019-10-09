@@ -22,11 +22,15 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
+import java.util.function.Supplier;
+
 import javax.net.ssl.SSLContext;
 
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.junit.Test;
 import org.mockito.Mockito;
+
+import io.netty.handler.proxy.ProxyHandler;
 
 /**
  * Test for class TransportOptions
@@ -64,12 +68,12 @@ public class TransportOptionsTest extends QpidJmsTestCase {
     private static final String[] DISABLED_CIPHERS = new String[] {"CIPHER_C"};
 
     private static final SSLContext SSL_CONTEXT = Mockito.mock(SSLContext.class);
+    private static final Supplier<ProxyHandler> PROXY_HANDLER_SUPPLIER = () -> Mockito.mock(ProxyHandler.class);
 
     private static final String JAVAX_NET_SSL_KEY_STORE = "javax.net.ssl.keyStore";
     private static final String JAVAX_NET_SSL_KEY_STORE_PASSWORD = "javax.net.ssl.keyStorePassword";
     private static final String JAVAX_NET_SSL_TRUST_STORE = "javax.net.ssl.trustStore";
     private static final String JAVAX_NET_SSL_TRUST_STORE_PASSWORD = "javax.net.ssl.trustStorePassword";
-
 
     @Test
     public void testCreate() {
@@ -93,6 +97,7 @@ public class TransportOptionsTest extends QpidJmsTestCase {
         assertNull(options.getTrustStorePassword());
         assertNull(options.getKeyAlias());
         assertNull(options.getSslContextOverride());
+        assertNull(options.getProxyHandlerSupplier());
     }
 
     @Test
@@ -139,6 +144,7 @@ public class TransportOptionsTest extends QpidJmsTestCase {
         assertEquals(LOCAL_ADDRESS,options.getLocalAddress());
         assertEquals(LOCAL_PORT,options.getLocalPort());
         assertEquals(SSL_CONTEXT, options.getSslContextOverride());
+        assertEquals(PROXY_HANDLER_SUPPLIER, options.getProxyHandlerSupplier());
         assertArrayEquals(ENABLED_PROTOCOLS,options.getEnabledProtocols());
         assertArrayEquals(DISABLED_PROTOCOLS,options.getDisabledProtocols());
         assertArrayEquals(ENABLED_CIPHERS,options.getEnabledCipherSuites());
@@ -220,6 +226,7 @@ public class TransportOptionsTest extends QpidJmsTestCase {
         assertEquals(KEY_ALIAS, options.getKeyAlias());
         assertEquals(CONTEXT_PROTOCOL, options.getContextProtocol());
         assertEquals(SSL_CONTEXT, options.getSslContextOverride());
+        assertEquals(PROXY_HANDLER_SUPPLIER, options.getProxyHandlerSupplier());
         assertArrayEquals(ENABLED_PROTOCOLS,options.getEnabledProtocols());
         assertArrayEquals(DISABLED_PROTOCOLS,options.getDisabledProtocols());
         assertArrayEquals(ENABLED_CIPHERS,options.getEnabledCipherSuites());
@@ -253,6 +260,7 @@ public class TransportOptionsTest extends QpidJmsTestCase {
         options.setConnectTimeout(TEST_CONNECT_TIMEOUT);
         options.setDefaultSslPort(TEST_DEFAULT_SSL_PORT);
         options.setSslContextOverride(SSL_CONTEXT);
+        options.setProxyHandlerSupplier(PROXY_HANDLER_SUPPLIER);
 
         return options;
     }
@@ -328,6 +336,7 @@ public class TransportOptionsTest extends QpidJmsTestCase {
         options.setDisabledCipherSuites(DISABLED_CIPHERS);
         options.setLocalAddress(LOCAL_ADDRESS);
         options.setLocalPort(LOCAL_PORT);
+        options.setProxyHandlerSupplier(PROXY_HANDLER_SUPPLIER);
 
         return options;
     }

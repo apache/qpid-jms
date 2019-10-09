@@ -18,8 +18,10 @@ package org.apache.qpid.jms.transports.netty;
 
 import java.net.URI;
 
+import org.apache.qpid.jms.test.proxy.TestProxy;
 import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.transports.TransportOptions;
+import org.junit.Test;
 
 /**
  * Test the NettyWsTransport with channel level security enabled.
@@ -38,5 +40,15 @@ public class NettyWssTransportTest extends NettySslTransportTest {
         } else {
             return new NettyWsTransport(listener, serverLocation, options, true);
         }
+    }
+
+    @Test(timeout = 60 * 1000)
+    public void testConnectViaHttpProxyToServerVerifyHost() throws Exception {
+        doConnectToServerVerifyHostTestImpl(true, TestProxy.ProxyType.HTTP);
+    }
+
+    @Test(timeout = 60 * 1000)
+    public void testConnectViaHttpProxyToServerNoVerifyHost() throws Exception {
+        doConnectToServerVerifyHostTestImpl(false, TestProxy.ProxyType.HTTP);
     }
 }

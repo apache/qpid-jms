@@ -37,6 +37,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 
 import org.apache.qpid.jms.transports.TransportOptions;
 import org.apache.qpid.jms.util.IdGenerator;
@@ -284,7 +285,7 @@ public class NettySimpleAmqpServer extends NettyServer {
             protonConnection.open();
 
             if (connectionIntercepter != null) {
-                failure = connectionIntercepter.interceptConnectionAttempt(connection);
+                failure = connectionIntercepter.apply(connection);
             }
 
             if (failure == null) {
@@ -496,9 +497,11 @@ public class NettySimpleAmqpServer extends NettyServer {
         this.connectionIntercepter = connectionIntercepter;
     }
 
-    public interface ConnectionIntercepter {
+    @FunctionalInterface
+    public interface ConnectionIntercepter extends Function<Connection, ErrorCondition> {
 
-        ErrorCondition interceptConnectionAttempt(Connection connection);
+        @Override
+        ErrorCondition apply(Connection connection);
 
     }
 

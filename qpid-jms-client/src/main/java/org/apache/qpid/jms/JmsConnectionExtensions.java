@@ -19,6 +19,7 @@ package org.apache.qpid.jms;
 import java.net.URI;
 import java.util.Map;
 import java.util.function.BiFunction;
+import java.util.function.Supplier;
 
 import javax.jms.Connection;
 import javax.net.ssl.SSLContext;
@@ -103,7 +104,26 @@ public enum JmsConnectionExtensions {
      *   </li>
      * </ul>
      */
-    HTTP_HEADERS_OVERRIDE("httpHeaders");
+    HTTP_HEADERS_OVERRIDE("httpHeaders"),
+
+    /**
+     * Allows a user to inject a custom proxy handler supplier used when creating a transport
+     * for the connection.
+     * <p>
+     * For example, for Netty based transports if a supplier was returned it would provide
+     * one of Nettys proxy handlers such as HttpProxyHandler, Socks4ProxyHandler, or
+     * Socks5ProxyHandler created with appropriate login configuration etc.
+     * <p>
+     * If the function returns a {@link Supplier}, it must supply a proxy handler when requested.
+     * <p>
+     * The extension function takes the form of a BiFunction defined as the following:
+     * <ul>
+     *   <li>
+     *     {@link BiFunction}&lt;{@link Connection}, {@link URI}, {@link Supplier}&gt;
+     *   </li>
+     * </ul>
+     */
+    PROXY_HANDLER_SUPPLIER("proxyHandlerSupplier");
 
     private final String extensionKey;
 

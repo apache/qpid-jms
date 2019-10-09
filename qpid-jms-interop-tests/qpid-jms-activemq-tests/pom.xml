@@ -125,6 +125,11 @@
       <version>${activemq-version}</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-handler-proxy</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>

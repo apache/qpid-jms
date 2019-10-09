@@ -32,8 +32,9 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpObjectAggregator;
+import io.netty.handler.codec.http.HttpRequestEncoder;
+import io.netty.handler.codec.http.HttpResponseDecoder;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.ContinuationWebSocketFrame;
@@ -116,7 +117,17 @@ public class NettyWsTransport extends NettyTcpTransport {
 
     @Override
     protected void addAdditionalHandlers(ChannelPipeline pipeline) {
-        pipeline.addLast(new HttpClientCodec());
+        /*
+         * If we use a HttpClientCodec here instead of the HttpRequestEncoder and the HttpResponseDecoder
+         * and there is a HttpProxyHandler in the pipeline, that ProxyHandler will add another HttpClientCodec
+         * for communication with the proxy. When the WebSocketClientHandshaker tries to exchange the codecs in 
+         * the pipeline, it will mix up the two HttpRequestEncoders in the pipeline and exchange the wrong one.
+         * HttpReqestEncoder and HttpResponseDecoder has precedence over the HttpClientCodec, so the 
+         * WebSocketClientHandshaker will remove these handlers inserted here and will leave the HttpClientCodec
+         * added by the HttpProxyHandler alone.
+         */
+        pipeline.addLast(new HttpResponseDecoder());
+        pipeline.addLast(new HttpRequestEncoder());
         pipeline.addLast(new HttpObjectAggregator(8192));
     }
 

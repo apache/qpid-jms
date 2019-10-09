@@ -27,14 +27,18 @@ import static org.junit.Assume.assumeTrue;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.Wait;
+import org.apache.qpid.jms.test.proxy.TestProxy;
 import org.apache.qpid.jms.transports.Transport;
 import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.transports.TransportOptions;
@@ -53,6 +57,8 @@ import io.netty.channel.epoll.Epoll;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.kqueue.KQueue;
 import io.netty.channel.kqueue.KQueueEventLoopGroup;
+import io.netty.handler.proxy.ProxyHandler;
+import io.netty.handler.proxy.Socks5ProxyHandler;
 import io.netty.util.ResourceLeakDetector;
 import io.netty.util.ResourceLeakDetector.Level;
 
@@ -615,6 +621,44 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
     @Test(timeout = 60 * 1000)
     public void testConnectToServerWithEpollDisabled() throws Exception {
         doTestEpollSupport(false);
+    }
+
+    @Test(timeout = 60 * 1000)
+    public void testConnectToServerViaProxy() throws Exception {
+        try (TestProxy testProxy = new TestProxy(); NettyEchoServer server = createEchoServer(createServerOptions())) {
+            testProxy.start();
+            server.start();
+
+            int port = server.getServerPort();
+            URI serverLocation = new URI("tcp://localhost:" + port);
+
+            TransportOptions clientOptions = createClientOptions();
+            SocketAddress proxyAddress = new InetSocketAddress("localhost", testProxy.getPort());
+            Supplier<ProxyHandler> proxyHandlerFactory = () -> {
+                return new Socks5ProxyHandler(proxyAddress);
+            };
+            clientOptions.setProxyHandlerSupplier(proxyHandlerFactory);
+
+            Transport transport = createTransport(serverLocation, testListener, clientOptions);
+            try {
+                transport.connect(null, null);
+                LOG.info("Connected to server:{} as expected.", serverLocation);
+            } catch (Exception e) {
+                fail("Should have connected to the server at " + serverLocation + " but got exception: " + e);
+            }
+
+            assertTrue(transport.isConnected());
+            assertEquals(serverLocation, transport.getRemoteLocation());
+
+            transport.close();
+
+            // Additional close should not fail or cause other problems.
+            transport.close();
+        }
+
+        assertTrue(!transportClosed); // Normal shutdown does not trigger the event.
+        assertTrue(exceptions.isEmpty());
+        assertTrue(data.isEmpty());
     }
 
     private void doTestEpollSupport(boolean useEpoll) throws Exception {

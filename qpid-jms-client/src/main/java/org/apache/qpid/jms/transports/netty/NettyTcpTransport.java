@@ -19,11 +19,13 @@ package org.apache.qpid.jms.transports.netty;
 import java.io.IOException;
 import java.net.URI;
 import java.security.Principal;
+import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 
 import javax.net.ssl.SSLContext;
 
@@ -51,7 +53,9 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.proxy.ProxyHandler;
 import io.netty.handler.ssl.SslHandler;
+import io.netty.resolver.NoopAddressResolverGroup;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
@@ -464,9 +468,21 @@ public class NettyTcpTransport implements Transport {
                 bootstrap.localAddress(options.getLocalPort());
             }
         }
+        if (options.getProxyHandlerSupplier() != null) {
+            // in case we have a proxy we do not want to resolve the address by ourselves but leave this to the proxy
+            bootstrap.resolver(NoopAddressResolverGroup.INSTANCE);
+        }
     }
 
     private void configureChannel(final Channel channel) throws Exception {
+        if (options.getProxyHandlerSupplier() != null) {
+            Supplier<ProxyHandler> proxyHandlerSupplier = options.getProxyHandlerSupplier();
+
+            ProxyHandler proxyHandler = proxyHandlerSupplier.get();
+            Objects.requireNonNull("No proxy handler was returned by the supplier");
+
+            channel.pipeline().addFirst(proxyHandler);
+        }
         if (isSecure()) {
             final SslHandler sslHandler;
             try {

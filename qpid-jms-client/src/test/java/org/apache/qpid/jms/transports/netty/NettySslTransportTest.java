@@ -23,12 +23,16 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
+import org.apache.qpid.jms.test.proxy.TestProxy;
 import org.apache.qpid.jms.transports.Transport;
 import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.transports.TransportOptions;
@@ -38,6 +42,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.netty.handler.proxy.HttpProxyHandler;
+import io.netty.handler.proxy.ProxyHandler;
+import io.netty.handler.proxy.Socks5ProxyHandler;
 
 /**
  * Test basic functionality of the Netty based TCP Transport ruuing in secure mode (SSL).
@@ -62,6 +70,8 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
     public static final String CLIENT2_DN = "O=Client2,CN=client2";
 
     public static final String KEYSTORE_TYPE = "jks";
+
+    protected enum ProxyType {NONE, SOCKS5, HTTP};
 
     @Override
     @Test(timeout = 60 * 1000)
@@ -238,19 +248,34 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
 
     @Test(timeout = 60 * 1000)
     public void testConnectToServerVerifyHost() throws Exception {
-        doConnectToServerVerifyHostTestImpl(true);
+        doConnectToServerVerifyHostTestImpl(true, ProxyType.NONE);
     }
 
     @Test(timeout = 60 * 1000)
     public void testConnectToServerNoVerifyHost() throws Exception {
-        doConnectToServerVerifyHostTestImpl(false);
+        doConnectToServerVerifyHostTestImpl(false, ProxyType.NONE);
     }
 
-    private void doConnectToServerVerifyHostTestImpl(boolean verifyHost) throws Exception, URISyntaxException, IOException, InterruptedException {
+    @Test(timeout = 60 * 1000)
+    public void testConnectViaSocksProxyToServerVerifyHost() throws Exception {
+        doConnectToServerVerifyHostTestImpl(true, ProxyType.SOCKS5);
+    }
+
+    @Test(timeout = 60 * 1000)
+    public void testConnectViaSocksProxyToServerNoVerifyHost() throws Exception {
+        doConnectToServerVerifyHostTestImpl(false, ProxyType.SOCKS5);
+    }
+
+    protected void doConnectToServerVerifyHostTestImpl(boolean verifyHost, ProxyType proxyType) throws Exception, URISyntaxException, IOException, InterruptedException {
         TransportOptions serverOptions = createServerOptions();
         serverOptions.setKeyStoreLocation(SERVER_WRONG_HOST_KEYSTORE);
 
+        TestProxy testProxy = null;
         try (NettyEchoServer server = createEchoServer(serverOptions)) {
+            if (proxyType != ProxyType.NONE) {
+                testProxy = new TestProxy();
+                testProxy.start();
+            }
             server.start();
 
             int port = server.getServerPort();
@@ -258,6 +283,19 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
 
             TransportOptions clientOptions = createClientOptionsIsVerify(verifyHost);
 
+            if (proxyType == ProxyType.SOCKS5) {
+                SocketAddress proxyAddress = new InetSocketAddress("localhost", testProxy.getPort());
+                Supplier<ProxyHandler> proxyHandlerFactory = () -> {
+                    return new Socks5ProxyHandler(proxyAddress);
+                };
+                clientOptions.setProxyHandlerSupplier(proxyHandlerFactory);
+            } else if (proxyType == ProxyType.HTTP) {
+                SocketAddress proxyAddress = new InetSocketAddress("localhost", testProxy.getPort());
+                Supplier<ProxyHandler> proxyHandlerFactory = () -> {
+                    return new HttpProxyHandler(proxyAddress);
+                };
+                clientOptions.setProxyHandlerSupplier(proxyHandlerFactory);                
+            }
             if (verifyHost) {
                 assertTrue("Expected verifyHost to be true", clientOptions.isVerifyHost());
             } else {
@@ -286,6 +324,13 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
             }
 
             transport.close();
+            if (proxyType != ProxyType.NONE) {
+                assertEquals(1, testProxy.getSuccessCount());
+            }
+        } finally {
+            if (testProxy != null) {
+                testProxy.close();
+            }
         }
     }
 

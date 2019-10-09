@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import javax.net.ssl.SSLContext;
 
@@ -90,6 +91,7 @@ public class TransportOptions implements Cloneable {
     private String keyAlias;
     private int defaultSslPort = DEFAULT_SSL_PORT;
     private SSLContext sslContextOverride;
+    private Supplier<?> proxyHandlerSupplier;
 
     private final Map<String, String> httpHeaders = new HashMap<>();
 
@@ -527,6 +529,15 @@ public class TransportOptions implements Cloneable {
         return sslContextOverride;
     }
 
+    @SuppressWarnings("unchecked")
+    public <T> Supplier<T> getProxyHandlerSupplier() {
+        return (Supplier<T>) proxyHandlerSupplier;
+    }
+
+    public <T> void setProxyHandlerSupplier(Supplier<T> proxyHandlerFactory) {
+        this.proxyHandlerSupplier = proxyHandlerFactory;
+    }
+
     // TODO - Expose headers ( ? getWSHeaders : getAuthHeaders ...
     public Map<String, String> getHttpHeaders() {
         return httpHeaders;
@@ -575,6 +586,7 @@ public class TransportOptions implements Cloneable {
         copy.setContextProtocol(getContextProtocol());
         copy.setDefaultSslPort(getDefaultSslPort());
         copy.setSslContextOverride(getSslContextOverride());
+        copy.setProxyHandlerSupplier(getProxyHandlerSupplier());
         copy.setUseOpenSSL(isUseOpenSSL());
         copy.setLocalAddress(getLocalAddress());
         copy.setLocalPort(getLocalPort());

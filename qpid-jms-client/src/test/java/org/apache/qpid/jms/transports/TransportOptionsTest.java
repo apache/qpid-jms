@@ -30,6 +30,8 @@ import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import io.netty.handler.proxy.ProxyHandler;
+
 /**
  * Test for class TransportOptions
  */
@@ -66,7 +68,7 @@ public class TransportOptionsTest extends QpidJmsTestCase {
     private static final String[] DISABLED_CIPHERS = new String[] {"CIPHER_C"};
 
     private static final SSLContext SSL_CONTEXT = Mockito.mock(SSLContext.class);
-    private static final Supplier<String> PROXY_HANDLER_SUPPLIER = () -> "replaces a proxy";
+    private static final Supplier<ProxyHandler> PROXY_HANDLER_SUPPLIER = () -> Mockito.mock(ProxyHandler.class);
 
     private static final String JAVAX_NET_SSL_KEY_STORE = "javax.net.ssl.keyStore";
     private static final String JAVAX_NET_SSL_KEY_STORE_PASSWORD = "javax.net.ssl.keyStorePassword";

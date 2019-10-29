@@ -16,15 +16,11 @@
  */
 package org.apache.qpid.jms;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.net.ServerSocket;
-import java.net.SocketAddress;
 import java.net.URI;
-import java.util.function.Supplier;
 
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLContext;
@@ -32,7 +28,6 @@ import javax.net.ssl.SSLContext;
 import org.apache.activemq.broker.BrokerService;
 import org.apache.activemq.broker.SslContext;
 import org.apache.activemq.broker.TransportConnector;
-import org.apache.qpid.jms.test.proxy.TestProxy;
 import org.apache.qpid.jms.transports.TransportOptions;
 import org.apache.qpid.jms.transports.TransportSupport;
 import org.junit.After;
@@ -40,10 +35,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import io.netty.handler.proxy.HttpProxyHandler;
-import io.netty.handler.proxy.ProxyHandler;
-import io.netty.handler.proxy.Socks5ProxyHandler;
 
 /**
  * Test connections can be established to remote peers via secure WebSockets
@@ -104,46 +95,6 @@ public class JmsWSSConnectionTest {
         assertNotNull(connection);
         connection.start();
         connection.close();
-    }
-
-    @Test(timeout=30000)
-    public void testCreateConnectionViaSocksProxyAndStart() throws Exception {
-        try (TestProxy testProxy = new TestProxy()) {
-            testProxy.start();
-            JmsConnectionFactory factory = new JmsConnectionFactory(getConnectionURI(true));
-            factory.setExtension(JmsConnectionExtensions.PROXY_HANDLER_SUPPLIER.toString(), (connection, remote) -> {
-                SocketAddress proxyAddress = new InetSocketAddress("localhost", testProxy.getPort());
-                Supplier<ProxyHandler> proxyHandlerFactory = () -> {
-                    return new Socks5ProxyHandler(proxyAddress);
-                };
-                return proxyHandlerFactory;
-            });
-            JmsConnection connection = (JmsConnection) factory.createConnection();
-            assertNotNull(connection);
-            connection.start();
-            connection.close();
-            assertEquals(1, testProxy.getSuccessCount());
-        }
-    }
-
-    @Test(timeout=30000)
-    public void testCreateConnectionViaHttpProxyAndStart() throws Exception {
-        try (TestProxy testProxy = new TestProxy()) {
-            testProxy.start();
-            JmsConnectionFactory factory = new JmsConnectionFactory(getConnectionURI(true));
-            factory.setExtension(JmsConnectionExtensions.PROXY_HANDLER_SUPPLIER.toString(), (connection, remote) -> {
-                SocketAddress proxyAddress = new InetSocketAddress("localhost", testProxy.getPort());
-                Supplier<ProxyHandler> proxyHandlerFactory = () -> {
-                    return new HttpProxyHandler(proxyAddress);
-                };
-                return proxyHandlerFactory;
-            });
-            JmsConnection connection = (JmsConnection) factory.createConnection();
-            assertNotNull(connection);
-            connection.start();
-            connection.close();
-            assertEquals(1, testProxy.getSuccessCount());
-        }
     }
 
     protected String getConnectionURI(boolean verifyHost) throws Exception {

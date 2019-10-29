@@ -19,6 +19,7 @@ package org.apache.qpid.jms;
 import java.net.URI;
 import java.util.Map;
 import java.util.function.BiFunction;
+import java.util.function.Supplier;
 
 import javax.jms.Connection;
 import javax.net.ssl.SSLContext;

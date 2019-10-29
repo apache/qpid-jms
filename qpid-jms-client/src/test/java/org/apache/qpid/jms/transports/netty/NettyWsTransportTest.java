@@ -32,6 +32,7 @@ import java.util.function.Supplier;
 
 import org.apache.qpid.jms.test.Wait;
 import org.apache.qpid.jms.test.proxy.TestProxy;
+import org.apache.qpid.jms.test.proxy.TestProxy.ProxyType;
 import org.apache.qpid.jms.transports.Transport;
 import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.transports.TransportOptions;
@@ -396,7 +397,8 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
 
     @Test(timeout = 60000)
     public void testConnectViaHttpProxy() throws Exception {
-        try (TestProxy testProxy = new TestProxy(); NettyEchoServer server = createEchoServer(createServerOptions())) {
+        try (TestProxy testProxy = new TestProxy(ProxyType.HTTP);
+             NettyEchoServer server = createEchoServer(createServerOptions())) {
             testProxy.start();
             server.start();
 
@@ -422,6 +424,14 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
             assertEquals(serverLocation, transport.getRemoteLocation());
 
             transport.close();
+
+            assertEquals(1, testProxy.getSuccessCount());
+            assertTrue(Wait.waitFor(new Wait.Condition() {
+                @Override
+                public boolean isSatisfied() throws Exception {
+                    return server.getChannelActiveCount() == 1;
+                }
+            }, 10_000, 10));
         }
 
         assertTrue(!transportClosed); // Normal shutdown does not trigger the event.

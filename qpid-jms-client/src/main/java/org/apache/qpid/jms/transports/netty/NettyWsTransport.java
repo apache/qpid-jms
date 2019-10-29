@@ -120,9 +120,9 @@ public class NettyWsTransport extends NettyTcpTransport {
         /*
          * If we use a HttpClientCodec here instead of the HttpRequestEncoder and the HttpResponseDecoder
          * and there is a HttpProxyHandler in the pipeline, that ProxyHandler will add another HttpClientCodec
-         * for communication with the proxy. When the WebSocketClientHandshaker tries to exchange the codecs in 
+         * for communication with the proxy. When the WebSocketClientHandshaker tries to exchange the codecs in
          * the pipeline, it will mix up the two HttpRequestEncoders in the pipeline and exchange the wrong one.
-         * HttpReqestEncoder and HttpResponseDecoder has precedence over the HttpClientCodec, so the 
+         * HttpReqestEncoder and HttpResponseDecoder has precedence over the HttpClientCodec, so the
          * WebSocketClientHandshaker will remove these handlers inserted here and will leave the HttpClientCodec
          * added by the HttpProxyHandler alone.
          */

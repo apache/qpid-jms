@@ -479,7 +479,7 @@ public class NettyTcpTransport implements Transport {
             Supplier<ProxyHandler> proxyHandlerSupplier = options.getProxyHandlerSupplier();
 
             ProxyHandler proxyHandler = proxyHandlerSupplier.get();
-            Objects.requireNonNull("No proxy handler was returned by the supplier");
+            Objects.requireNonNull(proxyHandler, "No proxy handler was returned by the supplier");
 
             channel.pipeline().addFirst(proxyHandler);
         }

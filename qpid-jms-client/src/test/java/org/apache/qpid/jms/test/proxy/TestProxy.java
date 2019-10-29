@@ -19,6 +19,7 @@ package org.apache.qpid.jms.test.proxy;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
@@ -26,6 +27,7 @@ import java.nio.channels.Channel;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.CompletionHandler;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -43,6 +45,17 @@ public class TestProxy implements AutoCloseable {
     private ProxyReadHandler readHandler = new ProxyReadHandler();
     private ProxyWriteHandler writeHandler = new ProxyWriteHandler();
     private int port;
+    private final ProxyType type;
+
+    public enum ProxyType {
+        SOCKS5, HTTP
+    }
+
+    public TestProxy(ProxyType type) throws IOException {
+        Objects.requireNonNull(type, "Proxy type must be given");
+
+        this.type = type;
+    }
 
     public int getPort() {
         return port;
@@ -52,31 +65,25 @@ public class TestProxy implements AutoCloseable {
         return connectCount.get();
     }
 
-    public void resetCounter() {
-        connectCount.set(0);
-    }
-
-    public void start() {
-        try {
-            serverSocketChannel = AsynchronousServerSocketChannel.open();
-            serverSocketChannel.bind(new InetSocketAddress(0));
-            port = ((InetSocketAddress) serverSocketChannel.getLocalAddress()).getPort();
-            LOG.info("Bound listen socket to port {}, waiting for clients...", port);
-            serverSocketChannel.accept(null, new ServerConnectionHandler());
-        } catch (IOException e) {
-            LOG.error("Cannot bind socket", e);
-        }
+    public void start() throws IOException {
+        serverSocketChannel = AsynchronousServerSocketChannel.open();
+        serverSocketChannel.bind(new InetSocketAddress(0));
+        port = ((InetSocketAddress) serverSocketChannel.getLocalAddress()).getPort();
+        LOG.info("Bound listen socket to port {}, waiting for clients...", port);
+        serverSocketChannel.accept(null, new ServerConnectionHandler());
     }
 
     @Override
     public void close() {
         LOG.info("stopping proxy server");
         // Close Server Socket
-        try {
-            LOG.info("Terminating Connection");
-            serverSocketChannel.close();
-        } catch (Exception e) {
-            LOG.error("Cannot close server socket ", e);
+        if(serverSocketChannel != null) {
+            try {
+                LOG.info("Terminating server socket");
+                serverSocketChannel.close();
+            } catch (Exception e) {
+                LOG.error("Cannot close server socket ", e);
+            }
         }
     }
 
@@ -89,16 +96,35 @@ public class TestProxy implements AutoCloseable {
                 attachment.handshakePhase = HandshakePhase.HTTP;
             }
         }
-        switch (attachment.handshakePhase) {
-        case SOCKS5_1:
-            return processSocks5Handshake1(attachment);
-        case SOCKS5_2:
-            return processSocks5Handshake2(attachment);
-        case HTTP:
-            return processHttpHandshake(attachment);
-        default:
-            LOG.error("wrong handshake phase");
+
+        if(!assertExpectedHandshakeType(attachment.handshakePhase)) {
+            LOG.error("Unexpected handshake phase '" + attachment.handshakePhase + "' for proxy of type: " + type);
             return false;
+        }
+
+        switch (attachment.handshakePhase) {
+            case SOCKS5_1:
+                return processSocks5Handshake1(attachment);
+            case SOCKS5_2:
+                return processSocks5Handshake2(attachment);
+            case HTTP:
+                return processHttpHandshake(attachment);
+            default:
+                LOG.error("wrong handshake phase");
+                return false;
+        }
+    }
+
+    private boolean assertExpectedHandshakeType(HandshakePhase handshakePhase) {
+        switch (handshakePhase) {
+            case SOCKS5_1:
+            case SOCKS5_2:
+                return type == ProxyType.SOCKS5;
+            case HTTP:
+                return type == ProxyType.HTTP;
+            default:
+                LOG.error("Unknown handshake phase type:" + handshakePhase);
+                return false;
         }
     }
 
@@ -180,7 +206,7 @@ public class TestProxy implements AutoCloseable {
         // write back the client response
         attachment.buffer.rewind();
         attachment.buffer.put(1, (byte) 0x0);
-        attachment.handshakePhase = HandshakePhase.CONNECTED; // handshake done                    
+        attachment.handshakePhase = HandshakePhase.CONNECTED; // handshake done
         return true;
     }
 
@@ -191,6 +217,14 @@ public class TestProxy implements AutoCloseable {
     private boolean connectToServer(String hostname, int port, ProxyConnectionState attachment) {
         try {
             AsynchronousSocketChannel serverChannel = AsynchronousSocketChannel.open();
+            try {
+                serverChannel.setOption(StandardSocketOptions.TCP_NODELAY, true);
+            } catch (IOException e) {
+                LOG.error("Failed to set TCP_NODELAY before connect, closing channel", e);
+                closeChannel(serverChannel);
+                return false;
+            }
+
             SocketAddress serverAddr = new InetSocketAddress(hostname, port);
             Future<Void> connectResult = serverChannel.connect(serverAddr);
             connectResult.get(TIMEOUT_IN_S, TimeUnit.SECONDS);
@@ -246,6 +280,14 @@ public class TestProxy implements AutoCloseable {
             clientState.buffer = ByteBuffer.allocate(4096);
             clientState.handshakePhase = HandshakePhase.INITIAL;
 
+            try {
+                clientChannel.setOption(StandardSocketOptions.TCP_NODELAY, true);
+            } catch (IOException e) {
+                LOG.error("Failed to set TCP_NODELAY after accept, closing channel", e);
+                closeChannel(clientChannel);
+                return;
+            }
+
             // read from readChannel
             clientChannel.read(clientState.buffer, TIMEOUT_IN_S, TimeUnit.SECONDS, clientState, readHandler);
         }
@@ -265,12 +307,14 @@ public class TestProxy implements AutoCloseable {
         public void completed(Integer result, ProxyConnectionState attachment) {
             // connection closed
             if (result == -1) {
-                LOG.info("read connection closed");
+                LOG.info("read connection closed ({})", attachment.readChannel);
                 closeChannel(attachment.readChannel);
                 return;
             }
-            LOG.info("read {} bytes", result);
+            LOG.info("read {} bytes (from {})", result, attachment.readChannel);
+
             attachment.buffer.flip();
+
             if (isInHandshake(attachment)) {
                 if (processHandshakeMessages(attachment)) {
                     attachment.readChannel.write(attachment.buffer, TIMEOUT_IN_S, TimeUnit.SECONDS, attachment, writeHandler);

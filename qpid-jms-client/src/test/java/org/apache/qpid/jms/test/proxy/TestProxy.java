@@ -77,7 +77,7 @@ public class TestProxy implements AutoCloseable {
     public void close() {
         LOG.info("stopping proxy server");
         // Close Server Socket
-        if(serverSocketChannel != null) {
+        if (serverSocketChannel != null) {
             try {
                 LOG.info("Terminating server socket");
                 serverSocketChannel.close();
@@ -97,34 +97,34 @@ public class TestProxy implements AutoCloseable {
             }
         }
 
-        if(!assertExpectedHandshakeType(attachment.handshakePhase)) {
+        if (!assertExpectedHandshakeType(attachment.handshakePhase)) {
             LOG.error("Unexpected handshake phase '" + attachment.handshakePhase + "' for proxy of type: " + type);
             return false;
         }
 
         switch (attachment.handshakePhase) {
-            case SOCKS5_1:
-                return processSocks5Handshake1(attachment);
-            case SOCKS5_2:
-                return processSocks5Handshake2(attachment);
-            case HTTP:
-                return processHttpHandshake(attachment);
-            default:
-                LOG.error("wrong handshake phase");
-                return false;
+        case SOCKS5_1:
+            return processSocks5Handshake1(attachment);
+        case SOCKS5_2:
+            return processSocks5Handshake2(attachment);
+        case HTTP:
+            return processHttpHandshake(attachment);
+        default:
+            LOG.error("wrong handshake phase");
+            return false;
         }
     }
 
     private boolean assertExpectedHandshakeType(HandshakePhase handshakePhase) {
         switch (handshakePhase) {
-            case SOCKS5_1:
-            case SOCKS5_2:
-                return type == ProxyType.SOCKS5;
-            case HTTP:
-                return type == ProxyType.HTTP;
-            default:
-                LOG.error("Unknown handshake phase type:" + handshakePhase);
-                return false;
+        case SOCKS5_1:
+        case SOCKS5_2:
+            return type == ProxyType.SOCKS5;
+        case HTTP:
+            return type == ProxyType.HTTP;
+        default:
+            LOG.error("Unknown handshake phase type:" + handshakePhase);
+            return false;
         }
     }
 
@@ -257,6 +257,17 @@ public class TestProxy implements AutoCloseable {
         }
     }
 
+    private void shutdownOutput(AsynchronousSocketChannel channel) {
+        if (channel != null && channel.isOpen()) {
+            try {
+                LOG.info("shutdown output for ({})", channel);
+                channel.shutdownOutput();
+            } catch (IOException e) {
+                LOG.error("cannot shutdown output to ({})", channel, e);
+            }
+        }
+    }
+
     private static class ProxyConnectionState {
         AsynchronousSocketChannel readChannel;
         AsynchronousSocketChannel writeChannel;
@@ -307,8 +318,9 @@ public class TestProxy implements AutoCloseable {
         public void completed(Integer result, ProxyConnectionState attachment) {
             // connection closed
             if (result == -1) {
-                LOG.info("read connection closed ({})", attachment.readChannel);
+                LOG.info("read connection reached end of file ({})", attachment.readChannel);
                 closeChannel(attachment.readChannel);
+                shutdownOutput(attachment.writeChannel);
                 return;
             }
             LOG.info("read {} bytes (from {})", result, attachment.readChannel);

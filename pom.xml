@@ -52,9 +52,9 @@
     <activemq-version>5.15.9</activemq-version>
     <junit-version>4.12</junit-version>
     <fuse-joram-tests-version>1.0</fuse-joram-tests-version>
-    <jetty-version>9.4.19.v20190610</jetty-version>
-    <mockito-version>2.28.2</mockito-version>
-    <hamcrest-version>2.1</hamcrest-version>
+    <jetty-version>9.4.22.v20191022</jetty-version>
+    <mockito-version>3.1.0</mockito-version>
+    <hamcrest-version>2.2</hamcrest-version>
     <hadoop-minikdc-version>2.9.0</hadoop-minikdc-version>
 
     <!-- Maven Plugin Versions for this Project -->

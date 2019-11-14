@@ -87,7 +87,7 @@ public class NettySimpleAmqpServer extends NettyServer {
     private ConnectionIntercepter connectionIntercepter;
 
     public NettySimpleAmqpServer(TransportOptions options, boolean secure) {
-        this(options, false, false);
+        this(options, secure, false);
     }
 
     public NettySimpleAmqpServer(TransportOptions options, boolean secure, boolean needClientAuth) {

@@ -46,6 +46,7 @@ import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.transports.TransportOptions;
 import org.apache.qpid.jms.transports.TransportSupport;
+import org.apache.qpid.jms.transports.netty.NettySimpleAmqpServer;
 import org.junit.Test;
 
 import io.netty.handler.ssl.OpenSsl;
@@ -493,6 +494,30 @@ public class SslIntegrationTest extends QpidJmsTestCase {
         // Set properties and expect connection as Client1
         setSslSystemPropertiesForCurrentTest(CLIENT_PKCS12_KEYSTORE, CUSTOM_STORE_TYPE_PKCS12, PASSWORD, CLIENT_PKCS12_TRUSTSTORE, CUSTOM_STORE_TYPE_PKCS12, PASSWORD);
         doConfigureStoresWithSslSystemPropertiesTestImpl(CLIENT_DN, true);
+    }
+
+    @Test(timeout = 30000)
+    public void testNonSslConnectionFailsToSslServer() throws Exception {
+        TransportOptions serverOptions = new TransportOptions();
+        serverOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
+        serverOptions.setKeyStorePassword(PASSWORD);
+        serverOptions.setVerifyHost(false);
+
+        try (NettySimpleAmqpServer server = new NettySimpleAmqpServer(serverOptions, true)) {
+            server.start();
+
+            JmsConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + server.getServerPort() + "?jms.connectTimeout=25");
+
+            try {
+                factory.createConnection();
+                fail("should not have connected");
+            }
+            catch (JMSException jmse) {
+                String message = jmse.getMessage();
+                assertNotNull(message);
+                assertTrue("Unexpected message: " + message, message.contains("Timed out while waiting to connect"));
+            }
+        }
     }
 
     private void setSslSystemPropertiesForCurrentTest(String keystore, String keystorePassword, String truststore, String truststorePassword) {

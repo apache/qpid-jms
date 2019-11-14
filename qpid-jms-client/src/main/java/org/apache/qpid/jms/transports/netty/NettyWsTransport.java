@@ -19,6 +19,7 @@ package org.apache.qpid.jms.transports.netty;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.transports.TransportOptions;
@@ -45,6 +46,7 @@ import io.netty.handler.codec.http.websocketx.WebSocketClientHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketClientHandshakerFactory;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketVersion;
+import io.netty.util.concurrent.ScheduledFuture;
 
 /**
  * Netty based WebSockets Transport that wraps and extends the TCP Transport.
@@ -53,6 +55,7 @@ public class NettyWsTransport extends NettyTcpTransport {
 
     private static final Logger LOG = LoggerFactory.getLogger(NettyWsTransport.class);
     private static final String AMQP_SUB_PROTOCOL = "amqp";
+    private ScheduledFuture<?> handshakeTimeoutFuture;
 
     /**
      * Create a new transport instance
@@ -65,7 +68,7 @@ public class NettyWsTransport extends NettyTcpTransport {
      * 		  should the transport enable an SSL layer.
      */
     public NettyWsTransport(URI remoteLocation, TransportOptions options, boolean secure) {
-        super(null, remoteLocation, options, secure);
+        this(null, remoteLocation, options, secure);
     }
 
     /**
@@ -136,6 +139,16 @@ public class NettyWsTransport extends NettyTcpTransport {
         LOG.trace("Channel has become active, awaiting WebSocket handshake! Channel is {}", channel);
     }
 
+    protected void handleChannelInactive(Channel channel) throws Exception {
+        try {
+            if (handshakeTimeoutFuture != null) {
+                handshakeTimeoutFuture.cancel(false);
+            }
+        } finally {
+            super.handleChannelInactive(channel);
+        }
+    }
+
     //----- Handle connection events -----------------------------------------//
 
     private class NettyWebSocketTransportHandler extends NettyDefaultHandler<Object> {
@@ -158,6 +171,13 @@ public class NettyWsTransport extends NettyTcpTransport {
         public void channelActive(ChannelHandlerContext context) throws Exception {
             handshaker.handshake(context.channel());
 
+            handshakeTimeoutFuture = context.executor().schedule(()-> {
+                LOG.trace("WebSocket handshake timed out! Channel is {}", context.channel());
+                if (!handshaker.isHandshakeComplete()) {
+                    NettyWsTransport.super.handleException(channel, new IOException("WebSocket handshake timed out"));
+                }
+            }, getTransportOptions().getConnectTimeout(), TimeUnit.MILLISECONDS);
+
             super.channelActive(context);
         }
 
@@ -170,7 +190,9 @@ public class NettyWsTransport extends NettyTcpTransport {
                 handshaker.finishHandshake(ch, (FullHttpResponse) message);
                 LOG.trace("WebSocket Client connected! {}", ctx.channel());
                 // Now trigger super processing as we are really connected.
-                NettyWsTransport.super.handleConnected(ch);
+                if(handshakeTimeoutFuture.cancel(false)) {
+                    NettyWsTransport.super.handleConnected(ch);
+                }
                 return;
             }
 

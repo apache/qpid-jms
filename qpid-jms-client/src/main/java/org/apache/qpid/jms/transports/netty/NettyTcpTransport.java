@@ -374,10 +374,15 @@ public class NettyTcpTransport implements Transport {
                     listener.onTransportClosed();
                 });
             }
+        } else if (!closed.get()) {
+            if (failureCause == null) {
+                failureCause = new IOException("Connection failed");
+            }
+            connectionFailed(channel, failureCause);
         }
     }
 
-    protected void handleException(Channel channel, Throwable cause) throws Exception {
+    protected void handleException(Channel channel, Throwable cause) {
         LOG.trace("Exception on channel! Channel is {}", channel);
         if (connected.compareAndSet(true, false) && !closed.get()) {
             LOG.trace("Firing onTransportError listener");

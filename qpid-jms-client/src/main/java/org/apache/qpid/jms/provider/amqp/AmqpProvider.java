@@ -77,6 +77,8 @@ import org.apache.qpid.jms.transports.Transport;
 import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.util.PropertyUtil;
 import org.apache.qpid.jms.util.QpidJMSThreadFactory;
+import org.apache.qpid.proton.amqp.Symbol;
+import org.apache.qpid.proton.amqp.transport.ErrorCondition;
 import org.apache.qpid.proton.engine.Collector;
 import org.apache.qpid.proton.engine.Connection;
 import org.apache.qpid.proton.engine.Delivery;
@@ -153,6 +155,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
         org.apache.qpid.proton.engine.Transport.Factory.create();
     private final Collector protonCollector = new CollectorImpl();
     private final Connection protonConnection = Connection.Factory.create();
+    private boolean protonTransportErrorHandled;
 
     private final ProviderFutureFactory futureFactory;
     private AsyncResult connectionRequest;
@@ -850,6 +853,11 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                 TRACE_BYTES.info("Received: {}", ByteBufUtil.hexDump(input));
             }
 
+            if(protonTransportErrorHandled) {
+                LOG.trace("Skipping data processing, proton transport previously errored.");
+                return;
+            }
+
             do {
                 ByteBuffer buffer = protonTransport.tail();
                 int chunkSize = Math.min(buffer.remaining(), input.readableBytes());
@@ -1001,6 +1009,17 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                             amqpEventSink.processDeliveryUpdates(this, (Delivery) protonEvent.getContext());
                         }
                         break;
+                    case TRANSPORT_ERROR:
+                        // We handle authentication failure elsewhere, but in doing so we close the transport
+                        // head which would also get us here, so only action this if auth succeeded.
+                        if(authenticator == null || (authenticator.isComplete() && authenticator.wasSuccessful())) {
+                            protonTransportErrorHandled = true;
+                            ErrorCondition transportCondition = protonTransport.getCondition();
+                            String message = extractTransportErrorMessage(transportCondition);
+
+                            throw new ProviderFailedException(message);
+                        }
+                        break;
                     default:
                         break;
                 }
@@ -1014,6 +1033,22 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                 fireProviderException(ProviderExceptionSupport.createOrPassthroughFatal(t));
             }
         }
+    }
+
+    private static String extractTransportErrorMessage(ErrorCondition errorCondition) {
+        String message = "Error without description from proton Transport";
+        if (errorCondition != null) {
+            if (errorCondition.getDescription() != null && !errorCondition.getDescription().isEmpty()) {
+                message = "Error in proton Transport: " + errorCondition.getDescription();
+            }
+
+            Symbol condition = errorCondition.getCondition();
+            if (condition != null) {
+                message = message + " [condition = " + condition + "]";
+            }
+        }
+
+        return message;
     }
 
     protected boolean pumpToProtonTransport() {

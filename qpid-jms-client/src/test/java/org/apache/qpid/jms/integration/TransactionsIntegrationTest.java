@@ -34,6 +34,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.jms.Connection;
 import javax.jms.JMSException;
@@ -48,6 +49,7 @@ import javax.jms.TransactionRolledBackException;
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsDefaultConnectionListener;
 import org.apache.qpid.jms.JmsOperationTimedOutException;
+import org.apache.qpid.jms.exceptions.JmsConnectionFailedException;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
@@ -77,6 +79,7 @@ import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
+import org.hamcrest.MatcherAssert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
@@ -1681,6 +1684,57 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(3000);
+        }
+    }
+
+    @Test(timeout=20000)
+    public void testTransactionDeclaredDispositionWithoutTxnId() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            AtomicReference<JMSException> failure = new AtomicReference<>();
+            CountDownLatch exceptionListenerFired = new CountDownLatch(1);
+            connection.setExceptionListener(jmse -> {
+                failure.compareAndSet(null, jmse);
+                exceptionListenerFired.countDown();
+            });
+
+            testPeer.expectBegin();
+            testPeer.expectCoordinatorAttach();
+
+            // Expect declare, reply declared but without a txn-id, which is illegal.
+            testPeer.expectDeclare(null);
+
+            // TODO: swap this in for below after PROTON-2142 fix is available:
+            // ErrorMatcher errorMatcher = new ErrorMatcher()
+            //         .withCondition(equalTo(AmqpError.DECODE_ERROR))
+            //         .withDescription(equalTo("The txn-id field cannot be omitted"));
+            // testPeer.expectClose(errorMatcher, false);
+            testPeer.expectClose(false);
+            testPeer.setSuppressReadExceptionOnClose(true);
+
+            try {
+                connection.createSession(true, Session.SESSION_TRANSACTED);
+                fail("expected exception to be thrown");
+            } catch (JMSException e) {
+                // Expected
+            }
+
+            assertTrue("The ExceptionListener should have been alerted", exceptionListenerFired.await(3, TimeUnit.SECONDS));
+            JMSException ex = failure.get();
+            assertTrue("Unexpected exception type: " + ex, ex instanceof JmsConnectionFailedException);
+
+            // TODO: swap this in for below after PROTON-2142 fix is available:
+            // MatcherAssert.assertThat("Unexpected exception type: ", ex.getMessage(),
+            //         equalTo("The JMS connection has failed: Error in proton Transport: The txn-id field cannot be omitted [condition = amqp:decode-error]"));
+            MatcherAssert.assertThat("Unexpected exception type: ", ex.getMessage(),
+                    equalTo("The JMS connection has failed: Error in proton Transport: org.apache.qpid.proton.engine.TransportException: "
+                            + "org.apache.qpid.proton.codec.DecodeException: The txn-id field cannot be omitted [condition = amqp:connection:framing-error]"));
+
+            testPeer.waitForAllHandlersToComplete(1000);
+
+            connection.close(); // Already nuked under the covers due to txn-id being missing
         }
     }
 }

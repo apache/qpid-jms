@@ -34,16 +34,16 @@ public class JmsBytesMessage extends JmsMessage implements BytesMessage {
     protected transient DataOutputStream dataOut;
     protected transient DataInputStream dataIn;
 
-    private final JmsBytesMessageFacade facade;
+    private final JmsBytesMessageFacade jmsBytesMessageFacade;
 
-    public JmsBytesMessage(JmsBytesMessageFacade facade) {
-        super(facade);
-        this.facade = facade;
+    public JmsBytesMessage(JmsBytesMessageFacade jmsBytesMessageFacade) {
+        super(jmsBytesMessageFacade);
+        this.jmsBytesMessageFacade = jmsBytesMessageFacade;
     }
 
     @Override
     public JmsBytesMessage copy() throws JMSException {
-        JmsBytesMessage other = new JmsBytesMessage(facade.copy());
+        JmsBytesMessage other = new JmsBytesMessage(jmsBytesMessageFacade.copy());
         other.copy(this);
         return other;
     }
@@ -74,7 +74,7 @@ public class JmsBytesMessage extends JmsMessage implements BytesMessage {
     @Override
     public long getBodyLength() throws JMSException {
         initializeReading();
-        return facade.getBodyLength();
+        return jmsBytesMessageFacade.getBodyLength();
     }
 
     @Override
@@ -386,7 +386,7 @@ public class JmsBytesMessage extends JmsMessage implements BytesMessage {
 
     @Override
     public void reset() throws JMSException {
-        this.facade.reset();
+        this.jmsBytesMessageFacade.reset();
         this.dataOut = null;
         this.dataIn = null;
         setReadOnlyBody(true);
@@ -400,36 +400,36 @@ public class JmsBytesMessage extends JmsMessage implements BytesMessage {
 
     @Override
     public String toString() {
-        return "JmsBytesMessage { " + facade + " }";
+        return "JmsBytesMessage { " + jmsBytesMessageFacade + " }";
     }
 
     @Override
     public boolean isBodyAssignableTo(@SuppressWarnings("rawtypes") Class target) throws JMSException {
-        return facade.hasBody() ? target.isAssignableFrom(byte[].class) : true;
+        return jmsBytesMessageFacade.hasBody() ? target.isAssignableFrom(byte[].class) : true;
     }
 
     @Override
     protected <T> T doGetBody(Class<T> asType) throws JMSException {
         reset();
 
-        if (!facade.hasBody()) {
+        if (!jmsBytesMessageFacade.hasBody()) {
             return null;
         }
 
-        return (T) facade.copyBody();
+        return (T) jmsBytesMessageFacade.copyBody();
     }
 
     private void initializeWriting() throws JMSException {
         checkReadOnlyBody();
         if (this.dataOut == null) {
-            this.dataOut = new DataOutputStream(this.facade.getOutputStream());
+            this.dataOut = new DataOutputStream(this.jmsBytesMessageFacade.getOutputStream());
         }
     }
 
     private void initializeReading() throws JMSException {
         checkWriteOnlyBody();
         if (dataIn == null) {
-            dataIn = new DataInputStream(this.facade.getInputStream());
+            dataIn = new DataInputStream(this.jmsBytesMessageFacade.getInputStream());
         }
     }
 }

@@ -38,6 +38,9 @@ import javax.jms.MessageFormatException;
 import javax.jms.MessageNotReadableException;
 import javax.jms.MessageNotWriteableException;
 
+import org.apache.avro.AvroTypeException;
+import org.apache.avro.Schema;
+import org.apache.avro.reflect.ReflectData;
 import org.apache.qpid.jms.message.facade.JmsBytesMessageFacade;
 import org.apache.qpid.jms.message.facade.test.JmsTestBytesMessageFacade;
 import org.apache.qpid.jms.message.facade.test.JmsTestMessageFactory;
@@ -1047,5 +1050,18 @@ public class JmsBytesMessageTest {
         assertTrue(message1.equals(message1));
         assertFalse(message1.equals(null));
         assertFalse(message1.equals(""));
+    }
+
+    //---------- Test for Avro serialization -------------------------------//
+
+    @Test
+    public void testSerializationWithAvro() throws Exception {
+        Schema schema = new ReflectData(JmsBytesMessage.class.getClassLoader()).getSchema(JmsBytesMessage.class);
+        assertNotNull(schema);
+    }
+
+    @Test(expected = AvroTypeException.class)
+    public void testSerializationThrowsAvroTypeException() throws Exception {
+        Schema schema = new ReflectData(JmsBytesMessageOldForTest.class.getClassLoader()).getSchema(JmsBytesMessageOldForTest.class);
     }
 }

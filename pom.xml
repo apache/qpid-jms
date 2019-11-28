@@ -76,6 +76,7 @@
 
     <netty-transport-native-epoll-classifier>linux-x86_64</netty-transport-native-epoll-classifier>
     <netty-transport-native-kqueue-classifier>osx-x86_64</netty-transport-native-kqueue-classifier>
+    <avro.version>1.9.0</avro.version>
   </properties>
 
   <issueManagement>
@@ -225,6 +226,12 @@
         <artifactId>hadoop-minikdc</artifactId>
         <version>${hadoop-minikdc-version}</version>
         <scope>test</scope>
+      </dependency>
+      <dependency>
+          <groupId>org.apache.avro</groupId>
+          <artifactId>avro</artifactId>
+          <version>${avro.version}</version>
+          <scope>test</scope>
       </dependency>
     </dependencies>
   </dependencyManagement>

@@ -413,7 +413,7 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout=20000)
-    public void testCloseDurableSubscriberWithUnackedAnUnconsumedPrefetchedMessages() throws Exception {
+    public void testCloseDurableSubscriberWithUnconsumedPrefetchedMessages() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
@@ -429,7 +429,7 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
 
             int messageCount = 5;
             // Create a consumer and fill the prefetch with some messages,
-            // which we will consume some of but ack none of.
+            // which we will only consume some of.
             testPeer.expectDurableSubscriberAttach(topicName, subscriptionName);
             testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, new AmqpValueDescribedType("content"), messageCount);
 

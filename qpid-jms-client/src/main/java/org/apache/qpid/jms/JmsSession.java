@@ -378,7 +378,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
 
                 try {
                     if (getSessionMode() == Session.CLIENT_ACKNOWLEDGE) {
-                        acknowledge(ACK_TYPE.MODIFIED_FAILED);
+                        acknowledge(ACK_TYPE.SESSION_SHUTDOWN);
                     }
                 } catch (Exception e) {
                     LOG.trace("Exception during session shutdown cleanup acknowledgement", e);

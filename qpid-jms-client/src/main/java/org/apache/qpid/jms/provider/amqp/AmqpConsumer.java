@@ -24,6 +24,8 @@ import java.util.ArrayList;
 import java.util.ListIterator;
 import java.util.concurrent.ScheduledFuture;
 
+import javax.jms.Session;
+
 import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsMessage;
@@ -54,6 +56,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     private static final Logger LOG = LoggerFactory.getLogger(AmqpConsumer.class);
 
     protected final AmqpSession session;
+    protected final int acknowledgementMode;
     protected AsyncResult stopRequest;
     protected AsyncResult pullRequest;
     protected long incomingSequence;
@@ -65,10 +68,13 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
         super(info, receiver, session);
 
         this.session = session;
+        this.acknowledgementMode = info.getAcknowledgementMode();
     }
 
     @Override
     public void close(AsyncResult request) {
+        acknowledgeUndeliveredRecoveredMessages();
+
         // If we have pending deliveries we remain open to allow for ACK or for a
         // pending transaction that this consumer is active in to complete.
         if (shouldDeferClose()) {
@@ -76,6 +82,27 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             stop(new StopAndReleaseRequest(request));
         } else {
             super.close(request);
+        }
+    }
+
+    private void acknowledgeUndeliveredRecoveredMessages() {
+        if(acknowledgementMode == Session.CLIENT_ACKNOWLEDGE) {
+            // Send dispositions for any messages which were previously delivered and
+            // session recovered, but were then not delivered again afterwards.
+            Delivery delivery = getEndpoint().head();
+            while (delivery != null) {
+                Delivery current = delivery;
+                delivery = delivery.next();
+
+                if (!(current.getContext() instanceof JmsInboundMessageDispatch)) {
+                    continue;
+                }
+
+                JmsInboundMessageDispatch envelope = (JmsInboundMessageDispatch) current.getContext();
+                if (envelope.isRecovered() && !envelope.isDelivered()) {
+                    handleDisposition(envelope, current, MODIFIED_FAILED);
+                }
+            }
         }
     }
 
@@ -220,12 +247,14 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             delivery = delivery.next();
 
             if (!(current.getContext() instanceof JmsInboundMessageDispatch)) {
-                LOG.debug("{} Found incomplete delivery with no context during recover processing", AmqpConsumer.this);
+                LOG.debug("{} Found incomplete delivery with no context during session acknowledge processing", AmqpConsumer.this);
                 continue;
             }
 
             JmsInboundMessageDispatch envelope = (JmsInboundMessageDispatch) current.getContext();
-            if (envelope.isDelivered()) {
+            if(ackType == ACK_TYPE.SESSION_SHUTDOWN && (envelope.isDelivered() || envelope.isRecovered())) {
+                handleDisposition(envelope, current, MODIFIED_FAILED);
+            } else if (envelope.isDelivered()) {
                 final DeliveryState disposition;
 
                 switch (ackType) {
@@ -304,6 +333,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     private void handleDelivered(JmsInboundMessageDispatch envelope, Delivery delivery) {
         LOG.debug("Delivered Ack of message: {}", envelope);
         deliveredCount++;
+        envelope.setRecovered(false);
         envelope.setDelivered(true);
         delivery.setDefaultDeliveryState(MODIFIED_FAILED);
     }
@@ -410,6 +440,9 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
                     envelope.getMessage().getFacade().getRedeliveryCount() + 1);
                 envelope.setEnqueueFirst(true);
                 envelope.setDelivered(false);
+                if(acknowledgementMode == Session.CLIENT_ACKNOWLEDGE) {
+                    envelope.setRecovered(true);
+                }
 
                 redispatchList.add(envelope);
             }

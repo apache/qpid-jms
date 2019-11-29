@@ -64,6 +64,7 @@ import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsDefaultConnectionListener;
 import org.apache.qpid.jms.JmsOperationTimedOutException;
 import org.apache.qpid.jms.JmsSession;
+import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;
 import org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
@@ -2259,8 +2260,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
             receivedTextMessage.acknowledge();
 
-            testPeer.expectDetach(false, true, false);
             testPeer.expectDisposition(true, new ModifiedMatcher().withDeliveryFailed(equalTo(true)), 2, 2);
+            testPeer.expectDetach(false, true, false);
             testPeer.expectDisposition(true, new ReleasedMatcher(), 3, 3);
 
             subscriber.close();
@@ -2316,6 +2317,262 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
             testPeer.expectDisposition(true, new ModifiedMatcher().withDeliveryFailed(equalTo(true)), 1, 1);
             testPeer.expectDisposition(true, new ModifiedMatcher().withDeliveryFailed(equalTo(true)), 2, 2);
+
+            if(closeSession) {
+                testPeer.expectEnd();
+
+                session.close();
+            }
+
+            testPeer.expectClose();
+
+            connection.close();
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testCloseConnectionWithRecoveredUndeliveredAndRedeliveredClientAckMessages() throws Exception {
+        // Send 6, recover 4, redeliver 2, close connection (and so implicitly, session)
+        doCloseWithWithRecoveredUndeliveredClientAckMessagesTestImpl(false, false, 6, 4, 2);
+    }
+
+    @Test(timeout = 20000)
+    public void testCloseConnectionWithRecoveredUndeliveredClientAckMessages() throws Exception {
+        // Send 4, recover 2, redeliver none, close connection (and so implicitly, session)
+        doCloseWithWithRecoveredUndeliveredClientAckMessagesTestImpl(false, false, 4, 2, 0);
+    }
+
+    @Test(timeout = 20000)
+    public void testCloseSessionWithRecoveredUndeliveredAndRedeliveredClientAckMessages() throws Exception {
+        // Send 6, recover 4, redeliver 2, close session (then connection)
+        doCloseWithWithRecoveredUndeliveredClientAckMessagesTestImpl(false, true, 6, 4, 2);
+    }
+
+    @Test(timeout = 20000)
+    public void testCloseSessionWithRecoveredUndeliveredClientAckMessages() throws Exception {
+        // Send 4, recover 2, redeliver none, close session (then connection)
+        doCloseWithWithRecoveredUndeliveredClientAckMessagesTestImpl(false, true, 4, 2, 0);
+    }
+
+    @Test(timeout = 20000)
+    public void testCloseConsumerWithRecoveredUndeliveredAndRedeliveredClientAckMessages() throws Exception {
+        // Send 6, recover 4, redeliver 2, close consumer then connection (and so implicitly, session)
+        doCloseWithWithRecoveredUndeliveredClientAckMessagesTestImpl(true, false, 6, 4, 2);
+    }
+
+    @Test(timeout = 20000)
+    public void testCloseConsumerWithRecoveredUndeliveredClientAckMessages() throws Exception {
+        // Send 4, recover 2, redeliver none, close consumer then connection (and so implicitly, session)
+        doCloseWithWithRecoveredUndeliveredClientAckMessagesTestImpl(true, false, 4, 2, 0);
+    }
+
+    @Test(timeout = 20000)
+    public void testCloseConsumerAndSessionWithRecoveredAndRedeliveredUndeliveredClientAckMessages() throws Exception {
+        // Send 6, recover 4, redeliver 2, close consumer then session (then connection)
+        doCloseWithWithRecoveredUndeliveredClientAckMessagesTestImpl(true, true, 6, 4, 2);
+    }
+
+    @Test(timeout = 20000)
+    public void testCloseConsumerAndSessionWithRecoveredUndeliveredClientAckMessages() throws Exception {
+        // Send 6, recover 4, redeliver 2, close consumer then session (then connection)
+        doCloseWithWithRecoveredUndeliveredClientAckMessagesTestImpl(true, true, 4, 2, 0);
+    }
+
+    private void doCloseWithWithRecoveredUndeliveredClientAckMessagesTestImpl(
+            boolean closeConsumer, boolean closeSession, int msgCount, int deliverBeforeRecoverCount, int deliverAfterRecoverCount) throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(Session.CLIENT_ACKNOWLEDGE);
+
+            String topicName = "myTopic";
+            Topic topic = session.createTopic(topicName);
+
+            final CountDownLatch incoming = new CountDownLatch(msgCount);
+            ((JmsConnection) connection).addConnectionListener(new JmsDefaultConnectionListener() {
+
+                @Override
+                public void onInboundMessage(JmsInboundMessageDispatch envelope) {
+                    incoming.countDown();
+                }
+            });
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, new AmqpValueDescribedType("content"), msgCount, false, false,
+                    equalTo(UnsignedInteger.valueOf(JmsDefaultPrefetchPolicy.DEFAULT_QUEUE_PREFETCH)), 1, false, true);
+
+            MessageConsumer consumer = session.createConsumer(topic);
+
+            TextMessage receivedTextMessage = null;
+            for (int i = 1; i <= deliverBeforeRecoverCount; i++) {
+                assertNotNull("Expected message did not arrive: " + i, receivedTextMessage = (TextMessage) consumer.receive(3000));
+                assertEquals("Unexpected delivery number", i,  receivedTextMessage.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER) + 1);
+            }
+
+            // Await all incoming messages to arrive at consumer before we recover, ensure deterministic test behaviour.
+            assertTrue("Messages did not arrive in a timely fashion", incoming.await(3, TimeUnit.SECONDS));
+
+            session.recover();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+
+            for (int i = 1; i <= deliverAfterRecoverCount; i++) {
+                assertNotNull("Expected message did not arrive after recover: " + i, receivedTextMessage = (TextMessage) consumer.receive(3000));
+                assertEquals("Unexpected delivery number after recover", i,  receivedTextMessage.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER) + 1);
+            }
+
+            int deliveredAtAnyPoint = Math.max(deliverBeforeRecoverCount, deliverAfterRecoverCount);
+
+            if (closeConsumer) {
+                if(deliverAfterRecoverCount > 0) {
+                    // Remaining credit will be drained if there are delivered messages yet to be acknowledged or recovered again.
+                    testPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.valueOf(JmsDefaultPrefetchPolicy.DEFAULT_QUEUE_PREFETCH - msgCount)));
+                }
+
+                // Any message delivered+recovered before but not then delivered again afterwards, will have disposition sent now.
+                for (int i = deliverAfterRecoverCount + 1; i <= deliverBeforeRecoverCount; i++) {
+                    testPeer.expectDisposition(true, new ModifiedMatcher().withDeliveryFailed(equalTo(true)), i, i);
+                }
+
+                if(deliverAfterRecoverCount > 0) {
+                    // Any further remaining messages prefetched will be released.
+                    for (int i = deliveredAtAnyPoint + 1; i <= msgCount; i++) {
+                        testPeer.expectDisposition(true, new ReleasedMatcher(), i, i);
+                    }
+                } else {
+                    // The link will close now
+                    testPeer.expectDetach(true, true, true);
+
+                    // Dispositions sent by proton when the link is freed
+                    for (int i = deliveredAtAnyPoint + 1; i <= msgCount; i++) {
+                        testPeer.expectDisposition(true, new ReleasedMatcher(), i, i);
+                    }
+                }
+
+                consumer.close();
+
+                testPeer.waitForAllHandlersToComplete(1000);
+
+                if(deliverAfterRecoverCount > 0) {
+                    // When the session or connection is closed, outstanding delivered messages will have disposition sent.
+                    for (int i = 1; i <= deliverAfterRecoverCount; i++) {
+                        testPeer.expectDisposition(true, new ModifiedMatcher().withDeliveryFailed(equalTo(true)), i, i);
+                    }
+                    testPeer.expectDetach(true, true, true);
+                }
+            } else {
+                // If we dont close the consumer first, all previously delivered messages will have
+                // disposition sent when the session or connection is closed.
+                for (int i = 1; i <= deliveredAtAnyPoint; i++) {
+                    testPeer.expectDisposition(true, new ModifiedMatcher().withDeliveryFailed(equalTo(true)), i, i);
+                }
+            }
+
+            if(closeSession) {
+                testPeer.expectEnd();
+
+                session.close();
+
+                testPeer.waitForAllHandlersToComplete(1000);
+            }
+
+            testPeer.expectClose();
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testAcknowledgeAllPreviouslyRecoveredClientAckMessages() throws Exception {
+        doAcknowledgePreviouslyRecoveredClientAckMessagesTestImpl(true, false, true);
+        doAcknowledgePreviouslyRecoveredClientAckMessagesTestImpl(false, true, true);
+        doAcknowledgePreviouslyRecoveredClientAckMessagesTestImpl(false, false, true);
+    }
+
+    @Test(timeout = 20000)
+    public void testAcknowledgeSomePreviouslyRecoveredClientAckMessages() throws Exception {
+        doAcknowledgePreviouslyRecoveredClientAckMessagesTestImpl(true, false, false);
+        doAcknowledgePreviouslyRecoveredClientAckMessagesTestImpl(false, true, false);
+        doAcknowledgePreviouslyRecoveredClientAckMessagesTestImpl(false, false, false);
+    }
+
+    private void doAcknowledgePreviouslyRecoveredClientAckMessagesTestImpl(boolean closeConsumer, boolean closeSession, boolean consumeAllRecovered) throws JMSException, Exception, IOException {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer, false, "?jms.clientID=myClientId", null, null, false);
+            connection.start();
+
+            int msgCount = 7;
+            int deliverBeforeRecoverCount = 4;
+            int acknowledgeAfterRecoverCount = consumeAllRecovered ? 5 : 2;
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(Session.CLIENT_ACKNOWLEDGE);
+
+            String topicName = "myTopic";
+            Topic topic = session.createTopic(topicName);
+
+            final CountDownLatch incoming = new CountDownLatch(msgCount);
+            ((JmsConnection) connection).addConnectionListener(new JmsDefaultConnectionListener() {
+
+                @Override
+                public void onInboundMessage(JmsInboundMessageDispatch envelope) {
+                    incoming.countDown();
+                }
+            });
+
+            testPeer.expectReceiverAttach();
+
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, new AmqpValueDescribedType("content"), msgCount, false, false,
+                    equalTo(UnsignedInteger.valueOf(JmsDefaultPrefetchPolicy.DEFAULT_QUEUE_PREFETCH)), 1, false, true);
+
+            MessageConsumer consumer = session.createConsumer(topic);
+
+            TextMessage receivedTextMessage = null;
+            for (int i = 1; i <= deliverBeforeRecoverCount; i++) {
+                assertNotNull("Expected message did not arrive: " + i, receivedTextMessage = (TextMessage) consumer.receive(3000));
+                assertEquals("Unexpected delivery number", i,  receivedTextMessage.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER) + 1);
+            }
+
+            // Await all incoming messages to arrive at consumer before we recover, ensure deterministic test behaviour.
+            assertTrue("Messages did not arrive in a timely fashion", incoming.await(3, TimeUnit.SECONDS));
+
+            session.recover();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+
+            for (int i = 1; i <= acknowledgeAfterRecoverCount; i++) {
+                assertNotNull("Expected message did not arrive after recover: " + i, receivedTextMessage = (TextMessage) consumer.receive(3000));
+                assertEquals("Unexpected delivery number after recover", i,  receivedTextMessage.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER) + 1);
+                testPeer.expectDisposition(true, new AcceptedMatcher(), i, i);
+                receivedTextMessage.acknowledge();
+            }
+
+            testPeer.waitForAllHandlersToComplete(1000);
+
+            if(!consumeAllRecovered) {
+                // Any message delivered+recovered before but not then delivered and acknowledged afterwards, will have
+                // disposition sent as consumer/session/connection is closed.
+                for (int i = acknowledgeAfterRecoverCount + 1; i <= deliverBeforeRecoverCount; i++) {
+                    testPeer.expectDisposition(true, new ModifiedMatcher().withDeliveryFailed(equalTo(true)), i, i);
+                }
+            }
+
+            if(closeConsumer) {
+                testPeer.expectDetach(true,  true,  true);
+
+                // Dispositions sent by proton when the link is freed
+                for (int i = Math.max(deliverBeforeRecoverCount, acknowledgeAfterRecoverCount) + 1; i <= msgCount; i++) {
+                    testPeer.expectDisposition(true, new ReleasedMatcher(), i, i);
+                }
+
+                consumer.close();
+            }
 
             if(closeSession) {
                 testPeer.expectEnd();

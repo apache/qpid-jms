@@ -31,6 +31,7 @@ public class JmsInboundMessageDispatch extends JmsAbstractResourceId {
     private JmsMessage message;
     private boolean enqueueFirst;
     private boolean delivered;
+    private boolean recovered;
 
     private transient JmsConsumerInfo consumerInfo;
     private transient String stringView;
@@ -73,6 +74,14 @@ public class JmsInboundMessageDispatch extends JmsAbstractResourceId {
 
     public void setDelivered(boolean delivered) {
         this.delivered = delivered;
+    }
+
+    public boolean isRecovered() {
+        return recovered;
+    }
+
+    public void setRecovered(boolean recovered) {
+        this.recovered = recovered;
     }
 
     public int getRedeliveryCount() {

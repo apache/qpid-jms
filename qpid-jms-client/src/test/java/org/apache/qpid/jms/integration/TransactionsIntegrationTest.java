@@ -65,6 +65,7 @@ import org.apache.qpid.jms.test.testpeer.describedtypes.Released;
 import org.apache.qpid.jms.test.testpeer.describedtypes.TransactionalState;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescribedType;
 import org.apache.qpid.jms.test.testpeer.matchers.AcceptedMatcher;
+import org.apache.qpid.jms.test.testpeer.matchers.ErrorMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.ModifiedMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.ReleasedMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.SourceMatcher;
@@ -1706,12 +1707,10 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             // Expect declare, reply declared but without a txn-id, which is illegal.
             testPeer.expectDeclare(null);
 
-            // TODO: swap this in for below after PROTON-2142 fix is available:
-            // ErrorMatcher errorMatcher = new ErrorMatcher()
-            //         .withCondition(equalTo(AmqpError.DECODE_ERROR))
-            //         .withDescription(equalTo("The txn-id field cannot be omitted"));
-            // testPeer.expectClose(errorMatcher, false);
-            testPeer.expectClose(false);
+            ErrorMatcher errorMatcher = new ErrorMatcher()
+                    .withCondition(equalTo(AmqpError.DECODE_ERROR))
+                    .withDescription(equalTo("The txn-id field cannot be omitted"));
+            testPeer.expectClose(errorMatcher, false);
             testPeer.setSuppressReadExceptionOnClose(true);
 
             try {
@@ -1725,12 +1724,8 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             JMSException ex = failure.get();
             assertTrue("Unexpected exception type: " + ex, ex instanceof JmsConnectionFailedException);
 
-            // TODO: swap this in for below after PROTON-2142 fix is available:
-            // MatcherAssert.assertThat("Unexpected exception type: ", ex.getMessage(),
-            //         equalTo("The JMS connection has failed: Error in proton Transport: The txn-id field cannot be omitted [condition = amqp:decode-error]"));
             MatcherAssert.assertThat("Unexpected exception type: ", ex.getMessage(),
-                    equalTo("The JMS connection has failed: Error in proton Transport: org.apache.qpid.proton.engine.TransportException: "
-                            + "org.apache.qpid.proton.codec.DecodeException: The txn-id field cannot be omitted [condition = amqp:connection:framing-error]"));
+                    equalTo("The JMS connection has failed: Error in proton Transport: The txn-id field cannot be omitted [condition = amqp:decode-error]"));
 
             testPeer.waitForAllHandlersToComplete(1000);
 

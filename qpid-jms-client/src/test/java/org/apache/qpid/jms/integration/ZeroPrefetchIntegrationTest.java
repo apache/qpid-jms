@@ -414,6 +414,8 @@ public class ZeroPrefetchIntegrationTest extends QpidJmsTestCase {
                 }
             }, 5000, 10));
 
+            testPeer.waitForAllHandlersToComplete(2000);
+
             testPeer.expectClose();
             connection.close();
 

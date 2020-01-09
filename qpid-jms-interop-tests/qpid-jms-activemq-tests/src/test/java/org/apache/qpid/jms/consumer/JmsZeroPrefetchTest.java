@@ -86,67 +86,6 @@ public class JmsZeroPrefetchTest extends AmqpTestSupport {
     }
 
     @Test(timeout = 60000)
-    public void testReceiveTimesOutAndRemovesCredit() throws Exception {
-        connection = createAmqpConnection();
-        connection.start();
-
-        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue queue = session.createQueue(getDestinationName());
-        MessageConsumer consumer = session.createConsumer(queue);
-        Message answer = consumer.receive(100);
-        assertNull("Should have not received a message!", answer);
-
-        MessageProducer producer = session.createProducer(queue);
-        producer.send(session.createTextMessage("Hello World! 1"));
-
-        final QueueViewMBean queueView = getProxyToQueue(getDestinationName());
-
-        // Assert that we only pulled one message and that we didn't cause
-        // the other message to be dispatched.
-        assertTrue(Wait.waitFor(new Wait.Condition() {
-
-            @Override
-            public boolean isSatisfied() throws Exception {
-                return queueView.getQueueSize() == 1;
-            }
-        }));
-
-        assertEquals(0, queueView.getInFlightCount());
-    }
-
-    @Test(timeout = 60000)
-    public void testReceiveNoWaitWaitForSever() throws Exception {
-        connection = createAmqpConnection();
-        connection.start();
-
-        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue queue = session.createQueue(getDestinationName());
-        MessageProducer producer = session.createProducer(queue);
-        producer.send(session.createTextMessage("Hello World! 1"));
-
-        MessageConsumer consumer = session.createConsumer(queue);
-        Message answer = consumer.receiveNoWait();
-        assertNotNull("Should have received a message!", answer);
-
-        // Send another, it should not get dispatched.
-        producer.send(session.createTextMessage("Hello World! 2"));
-
-        final QueueViewMBean queueView = getProxyToQueue(getDestinationName());
-
-        // Assert that we only pulled one message and that we didn't cause
-        // the other message to be dispatched.
-        assertTrue(Wait.waitFor(new Wait.Condition() {
-
-            @Override
-            public boolean isSatisfied() throws Exception {
-                return queueView.getQueueSize() == 1;
-            }
-        }));
-
-        assertEquals(0, queueView.getInFlightCount());
-    }
-
-    @Test(timeout = 60000)
     public void testRepeatedPullAttempts() throws Exception {
         connection = createAmqpConnection();
         connection.start();
@@ -166,41 +105,6 @@ public class JmsZeroPrefetchTest extends AmqpTestSupport {
         assertNull("Should have not received a message!", answer);
         answer = consumer.receiveNoWait();
         assertNull("Should have not received a message!", answer);
-    }
-
-    @Test(timeout = 60000)
-    public void testPullConsumerOnlyRequestsOneMessage() throws Exception {
-        connection = createAmqpConnection();
-        connection.start();
-
-        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue queue = session.createQueue(getDestinationName());
-        MessageProducer producer = session.createProducer(queue);
-        producer.send(session.createTextMessage("Hello World! 1"));
-        producer.send(session.createTextMessage("Hello World! 2"));
-
-        final QueueViewMBean queueView = getProxyToQueue(getDestinationName());
-
-        // Check initial Queue State
-        assertEquals(2, queueView.getQueueSize());
-        assertEquals(0, queueView.getInFlightCount());
-
-        // now lets receive it
-        MessageConsumer consumer = session.createConsumer(queue);
-        Message answer = consumer.receive(5000);
-        assertNotNull("Should have received a message!", answer);
-
-        // Assert that we only pulled one message and that we didn't cause
-        // the other message to be dispatched.
-        assertTrue(Wait.waitFor(new Wait.Condition() {
-
-            @Override
-            public boolean isSatisfied() throws Exception {
-                return queueView.getQueueSize() == 1;
-            }
-        }));
-
-        assertEquals(0, queueView.getInFlightCount());
     }
 
     @Test(timeout = 60000)

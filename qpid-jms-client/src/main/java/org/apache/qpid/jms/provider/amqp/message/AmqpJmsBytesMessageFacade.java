@@ -63,7 +63,9 @@ public class AmqpJmsBytesMessageFacade extends AmqpJmsMessageFacade implements J
         copyInto(copy);
 
         Binary payload = getBinaryFromBody();
-        copy.setContentType(OCTET_STREAM_CONTENT_TYPE);
+        if (copy.getContentType() == null) {
+            copy.setContentType(OCTET_STREAM_CONTENT_TYPE);
+        }
         if (payload.getLength() > 0) {
             copy.setBody(new Data(payload));
         } else {

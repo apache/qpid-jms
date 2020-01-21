@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.apache.qpid.proton.amqp.Binary;
+import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.AmqpSequence;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Data;
@@ -169,6 +170,19 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
 
         assertDataBodyAsExpected(amqpBytesMessageFacade.getBody(), 0);
         assertDataBodyAsExpected(copy.getBody(), 0);
+    }
+    
+    @Test
+    public void testCopyIncludesContentType() throws Exception {
+        AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createNewBytesMessageFacade();
+        amqpBytesMessageFacade.setContentType(Symbol.valueOf("application/xml"));
+        AmqpJmsBytesMessageFacade copy = amqpBytesMessageFacade.copy();
+        assertEquals("application/xml", copy.getContentType().toString());
+        
+        // check fallback as well
+        amqpBytesMessageFacade.setContentType(null);
+        copy = amqpBytesMessageFacade.copy();
+        assertEquals("application/octet-stream", copy.getContentType().toString());
     }
 
     /**

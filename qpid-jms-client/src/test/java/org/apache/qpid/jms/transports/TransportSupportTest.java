@@ -164,21 +164,40 @@ public class TransportSupportTest extends QpidJmsTestCase {
         // assertEquals(contextProtocol, context.getProtocol());
     }
 
-    @Test(expected = UnrecoverableKeyException.class)
+    @Test
     public void testCreateSslContextNoKeyStorePasswordJDK() throws Exception {
         TransportOptions options = createJksSslOptions();
         options.setKeyStorePassword(null);
-        TransportSupport.createJdkSslContext(options);
+        try {
+            TransportSupport.createJdkSslContext(options);
+            fail("Expected an exception to be thrown");
+        } catch (UnrecoverableKeyException e) {
+            // Expected
+        } catch (IllegalArgumentException iae) {
+            // Expected in certain cases
+            String message = iae.getMessage();
+            assertTrue("Unexpected message: " + message, message.contains("password can't be null"));
+        }
     }
 
-    @Test(expected = UnrecoverableKeyException.class)
+    @Test
     public void testCreateSslContextNoKeyStorePasswordOpenSSL() throws Exception {
         assumeTrue(OpenSsl.isAvailable());
         assumeTrue(OpenSsl.supportsKeyManagerFactory());
 
         TransportOptions options = createJksSslOptions();
         options.setKeyStorePassword(null);
-        TransportSupport.createOpenSslContext(options);
+
+        try {
+            TransportSupport.createOpenSslContext(options);
+            fail("Expected an exception to be thrown");
+        } catch (UnrecoverableKeyException e) {
+            // Expected
+        } catch (IllegalArgumentException iae) {
+            // Expected in certain cases
+            String message = iae.getMessage();
+            assertTrue("Unexpected message: " + message, message.contains("password can't be null"));
+        }
     }
 
     @Test(expected = IOException.class)

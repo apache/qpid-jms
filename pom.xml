@@ -48,7 +48,7 @@
     <opentracing-version>0.33.0</opentracing-version>
 
     <!-- Test Dependency Versions for this Project -->
-    <netty-tcnative-version>2.0.26.Final</netty-tcnative-version>
+    <netty-tcnative-version>2.0.28.Final</netty-tcnative-version>
     <activemq-version>5.15.9</activemq-version>
     <junit-version>4.12</junit-version>
     <fuse-joram-tests-version>1.0</fuse-joram-tests-version>

@@ -49,11 +49,11 @@
 
     <!-- Test Dependency Versions for this Project -->
     <netty-tcnative-version>2.0.28.Final</netty-tcnative-version>
-    <activemq-version>5.15.9</activemq-version>
-    <junit-version>4.12</junit-version>
+    <activemq-version>5.15.11</activemq-version>
+    <junit-version>4.13</junit-version>
     <fuse-joram-tests-version>1.0</fuse-joram-tests-version>
     <jetty-version>9.4.22.v20191022</jetty-version>
-    <mockito-version>3.1.0</mockito-version>
+    <mockito-version>3.2.4</mockito-version>
     <hamcrest-version>2.2</hamcrest-version>
     <hadoop-minikdc-version>2.9.0</hadoop-minikdc-version>
 
@@ -63,7 +63,7 @@
     <maven-idea-plugin-version>2.5</maven-idea-plugin-version>
     <maven-bundle-plugin-version>4.1.0</maven-bundle-plugin-version>
     <findbugs-maven-plugin-version>3.0.2</findbugs-maven-plugin-version>
-    <jacoco-plugin-version>0.8.4</jacoco-plugin-version>
+    <jacoco-plugin-version>0.8.5</jacoco-plugin-version>
     <surefire.version>2.22.2</surefire.version>
 
     <!-- Test properties -->

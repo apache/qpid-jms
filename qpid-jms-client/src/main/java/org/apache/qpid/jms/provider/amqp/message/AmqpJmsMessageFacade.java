@@ -140,7 +140,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
      * @return a Symbol value indicating the message content type.
      */
     public Symbol getContentType() {
-        if (properties != null && properties.getContentType() != null) {
+        if (properties != null) {
             return properties.getContentType();
         }
 

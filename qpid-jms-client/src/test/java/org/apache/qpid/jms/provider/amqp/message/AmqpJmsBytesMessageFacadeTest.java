@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.apache.qpid.proton.amqp.Binary;
+import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.AmqpSequence;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Data;
@@ -83,19 +84,6 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createNewBytesMessageFacade();
 
         assertEquals("Message reports unexpected length", 0, amqpBytesMessageFacade.getBodyLength());
-    }
-
-    @Test
-    public void testNewMessageHasContentType() throws Exception {
-        AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createNewBytesMessageFacade();
-
-        Properties properties = amqpBytesMessageFacade.getProperties();
-        assertNotNull(properties);
-        assertNotNull(properties.getContentType());
-
-        String contentType = properties.getContentType().toString();
-        assertNotNull("content type should be set", contentType);
-        assertEquals("application/octet-stream", contentType);
     }
 
     // ---------- test for normal message operations -------------------------//
@@ -169,6 +157,34 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
 
         assertDataBodyAsExpected(amqpBytesMessageFacade.getBody(), 0);
         assertDataBodyAsExpected(copy.getBody(), 0);
+    }
+
+    @Test
+    public void testCopyOfContentType() throws Exception {
+        AmqpJmsBytesMessageFacade amqpBytesMessageFacade1 = createNewBytesMessageFacade();
+        AmqpJmsBytesMessageFacade copy1 = amqpBytesMessageFacade1.copy();
+        assertNull(copy1.getContentType());
+
+        AmqpJmsBytesMessageFacade amqpBytesMessageFacade2 = createNewBytesMessageFacade();
+        Symbol contentType = Symbol.valueOf("content-type");
+        amqpBytesMessageFacade2.setContentType(contentType);
+
+        AmqpJmsBytesMessageFacade copy2 = amqpBytesMessageFacade2.copy();
+        assertEquals(contentType, copy2.getContentType());
+    }
+
+    @Test
+    public void testMessageToSendHasContentTypeSet() throws Exception {
+        AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createNewBytesMessageFacade();
+        amqpBytesMessageFacade.onSend(0);
+
+        Properties properties = amqpBytesMessageFacade.getProperties();
+        assertNotNull(properties);
+        assertNotNull(properties.getContentType());
+
+        String contentType = properties.getContentType().toString();
+        assertNotNull("content type should be set", contentType);
+        assertEquals("application/octet-stream", contentType);
     }
 
     /**

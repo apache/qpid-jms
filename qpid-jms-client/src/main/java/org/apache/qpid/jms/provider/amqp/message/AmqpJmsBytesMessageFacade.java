@@ -52,7 +52,6 @@ public class AmqpJmsBytesMessageFacade extends AmqpJmsMessageFacade implements J
 
     @Override
     protected void initializeEmptyBody() {
-        setContentType(OCTET_STREAM_CONTENT_TYPE);
         setBody(EMPTY_BODY);
     }
 
@@ -63,7 +62,6 @@ public class AmqpJmsBytesMessageFacade extends AmqpJmsMessageFacade implements J
         copyInto(copy);
 
         Binary payload = getBinaryFromBody();
-        copy.setContentType(OCTET_STREAM_CONTENT_TYPE);
         if (payload.getLength() > 0) {
             copy.setBody(new Data(payload));
         } else {
@@ -219,6 +217,10 @@ public class AmqpJmsBytesMessageFacade extends AmqpJmsMessageFacade implements J
     @Override
     public void onSend(long producerTtl) throws JMSException {
         super.onSend(producerTtl);
+
+        if(getContentType() == null) {
+            setContentType(OCTET_STREAM_CONTENT_TYPE);
+        }
 
         reset();
     }

@@ -256,14 +256,14 @@ public class NettyTcpTransport implements Transport {
     @Override
     public void write(ByteBuf output) throws IOException {
         checkConnected(output);
-        LOG.trace("Attempted write of: {} bytes", output.readableBytes());
+        LOG.trace("Attempted write of buffer: {}", output);
         channel.write(output, channel.voidPromise());
     }
 
     @Override
     public void writeAndFlush(ByteBuf output) throws IOException {
         checkConnected(output);
-        LOG.trace("Attempted write and flush of: {} bytes", output.readableBytes());
+        LOG.trace("Attempted write and flush of buffer: {}", output);
         channel.writeAndFlush(output, channel.voidPromise());
     }
 

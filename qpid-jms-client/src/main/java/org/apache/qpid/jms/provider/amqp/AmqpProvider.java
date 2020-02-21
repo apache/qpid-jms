@@ -1012,10 +1012,16 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                     case TRANSPORT_ERROR:
                         // We handle authentication failure elsewhere, but in doing so we close the transport
                         // head which would also get us here, so only action this if auth succeeded.
-                        if(authenticator == null || (authenticator.isComplete() && authenticator.wasSuccessful())) {
+                        if (authenticator == null || (authenticator.isComplete() && authenticator.wasSuccessful())) {
                             protonTransportErrorHandled = true;
                             ErrorCondition transportCondition = protonTransport.getCondition();
                             String message = extractTransportErrorMessage(transportCondition);
+
+                            // Transport has failed, ensure that we see local end of connection as closed
+                            // so other shutdown processing doesn't mistakenly assume we can still get a
+                            // close from the remote.
+                            protonConnection.setCondition(transportCondition);
+                            protonConnection.close();
 
                             throw new ProviderFailedException(message);
                         }
@@ -1442,6 +1448,14 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
     @Override
     public URI getRemoteURI() {
         return remoteURI;
+    }
+
+    public Throwable getFailureCause() {
+        return failureCause;
+    }
+
+    public boolean isFailed() {
+        return failureCause != null;
     }
 
     @Override

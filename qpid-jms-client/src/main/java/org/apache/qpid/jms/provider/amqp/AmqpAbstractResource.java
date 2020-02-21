@@ -87,9 +87,12 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
 
         resourceInfo.setState(ResourceState.CLOSED);
 
-        // If already closed signal success or else the caller might never get notified.
+        // If the current state of the connection or the provider doesn't match what we'd expect for
+        // a normal close chain of events then we can assume something else went wrong or was triggered
+        // by the remote so we just close our end and cleanup.
         if (getEndpoint().getLocalState() == EndpointState.CLOSED ||
-            getEndpoint().getRemoteState() == EndpointState.CLOSED) {
+            getEndpoint().getRemoteState() == EndpointState.CLOSED ||
+            getParent().getProvider().isFailed()) {
 
             // Remote already closed this resource, close locally and free.
             if (getEndpoint().getLocalState() != EndpointState.CLOSED) {

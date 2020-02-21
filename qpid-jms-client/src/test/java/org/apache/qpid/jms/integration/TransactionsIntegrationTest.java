@@ -1688,6 +1688,7 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
+    @Repeat(repetitions = 1)
     @Test(timeout=20000)
     public void testTransactionDeclaredDispositionWithoutTxnId() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {

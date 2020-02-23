@@ -118,6 +118,12 @@ public class AmqpConnectionBuilder extends AmqpResourceBuilder<AmqpConnection, A
         props.put(AmqpSupport.VERSION, MetaDataSupport.PROVIDER_VERSION);
         props.put(AmqpSupport.PLATFORM, MetaDataSupport.PLATFORM_DETAILS);
 
+        if (resourceInfo.getCustomConnectionProperties() != null) {
+            for (Map.Entry<String, String> entry : resourceInfo.getCustomConnectionProperties().entrySet()) {
+                props.put(Symbol.valueOf(entry.getKey()), entry.getValue());
+            }
+        }
+        
         Connection connection = getParent().getProtonConnection();
         connection.setHostname(hostname);
         connection.setContainer(resourceInfo.getClientId());

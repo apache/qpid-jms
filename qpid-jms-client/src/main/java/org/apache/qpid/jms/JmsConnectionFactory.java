@@ -108,6 +108,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     private ExceptionListener exceptionListener;
     private String tracing;
     private JmsTracer tracer;
+    private Map<String, String> customConnectionProperties;
 
     private JmsPrefetchPolicy prefetchPolicy = new JmsDefaultPrefetchPolicy();
     private JmsRedeliveryPolicy redeliveryPolicy = new JmsDefaultRedeliveryPolicy();
@@ -1025,6 +1026,26 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      */
     public JmsTracer getTracer() {
         return tracer;
+    }
+    
+    /**
+     * Gets the custom connection properties that the user have set.
+     * 
+     * @return the custom properties set by the user.
+     */
+    public Map<String, String> getCustomConnectionProperties() {
+        return customConnectionProperties;
+    }
+
+    /**
+     * Sets the custom connection properties defined by the user.
+     * Properties containing the invalid character '=' in their key or value will not be sent with the connection.
+     * 
+     * @param customConnectionProperties
+     *      a Map<String, String> containing the custom properties set by the user.
+     */
+    public void setCustomConnectionProperties(Map<String, String> customConnectionProperties) {
+        this.customConnectionProperties = customConnectionProperties;
     }
 
     //----- Static Methods ---------------------------------------------------//

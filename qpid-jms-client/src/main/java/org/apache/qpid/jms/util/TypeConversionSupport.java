@@ -18,6 +18,7 @@ package org.apache.qpid.jms.util;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Map;
 
 public final class TypeConversionSupport {
 
@@ -154,6 +155,13 @@ public final class TypeConversionSupport {
                 return Double.valueOf(((Number) value).doubleValue());
             }
         });
+
+        CONVERSION_MAP.put(new ConversionKey(String.class, Map.class), new Converter() {
+            @Override
+            public Object convert(Object value) {
+                return convertStringToStringMap((String) value);
+            }
+        });
     }
 
     public static Object convert(Object value, Class<?> toClass) {
@@ -203,6 +211,38 @@ public final class TypeConversionSupport {
         }
 
         return rc;
+    }
+
+    // This method does not handle types outside of String
+    private static Map<String, String> convertStringToStringMap(String string) {
+        Map<String, String> map = new HashMap<String, String>();
+        boolean returnNull = false;
+
+        try {
+            if (string == null) {
+                return null;
+            }
+
+            if (string.startsWith("{") && string.endsWith("}")) {
+                string = string.substring(1, string.length() - 1);
+            }
+
+            String[] pairs = string.split(",");
+            for (String pair : pairs) {
+                String[] keyValue = pair.split("=");
+                if (keyValue.length == 2) {
+                    map.put(keyValue[0], keyValue[1]);
+                }
+            }
+        } catch (Exception e) {
+            returnNull = true;
+        } finally {
+            if (returnNull) {
+                map = null;
+            }
+        }
+
+        return map;
     }
 
     private TypeConversionSupport() {}

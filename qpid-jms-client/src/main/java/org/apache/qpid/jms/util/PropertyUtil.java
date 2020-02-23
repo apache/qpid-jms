@@ -341,6 +341,8 @@ public class PropertyUtil {
                             properties.put(pd.getName(), ("" + value));
                         } else if (value instanceof SSLContext) {
                             // ignore this one..
+                        } else if (value instanceof Map) {
+                            properties.put(pd.getName(), value.toString());
                         } else {
                             Map<String, String> inner = getProperties(value);
                             for (Map.Entry<String, String> entry : inner.entrySet()) {

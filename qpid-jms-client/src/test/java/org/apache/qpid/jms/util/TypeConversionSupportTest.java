@@ -22,6 +22,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import org.junit.Test;
@@ -307,5 +309,14 @@ public class TypeConversionSupportTest {
         boolean result = (boolean) TypeConversionSupport.convert(true, Boolean.class);
         assertNotNull(result);
         assertTrue(result);
+    }
+
+    //----- Map conversion from String --------------------------//
+    @Test
+    public void testStringToStringMap() {
+        Map<String, String> map = new HashMap<String, String>();
+        map.put("key", "value");
+        Map<String, String> result = (Map<String, String>) TypeConversionSupport.convert(map.toString(), Map.class);
+        assertEquals(map, result);
     }
 }

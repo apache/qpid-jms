@@ -367,6 +367,18 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
     }
 
     @Test
+    public void testSetCustomConnectionProperties() {
+        Map<String, String> customProperties = new HashMap<String, String>();
+        customProperties.put("key", "value");
+        
+        JmsConnectionFactory cf = new JmsConnectionFactory();
+        assertNotEquals("custom properties should not have been set yet", customProperties, cf.getCustomConnectionProperties());
+        
+        cf.setCustomConnectionProperties(customProperties);
+        assertEquals("custom properties should have been set", customProperties, cf.getCustomConnectionProperties());
+    }
+    
+    @Test
     public void testSetPropertiesWithUnusedOptions() throws Exception {
         String uri = "amqp://localhost:1234";
         String unusedKey = "unusedKey";

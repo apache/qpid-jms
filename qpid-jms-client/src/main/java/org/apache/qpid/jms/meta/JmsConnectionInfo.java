@@ -19,6 +19,7 @@ package org.apache.qpid.jms.meta;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.EnumMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiFunction;
 
@@ -79,6 +80,7 @@ public final class JmsConnectionInfo extends JmsAbstractResource implements Comp
     private long closeTimeout = DEFAULT_CLOSE_TIMEOUT;
     private String queuePrefix = null;
     private String topicPrefix = null;
+    private Map<String, String> customConnectionProperties;
 
     private JmsPrefetchPolicy prefetchPolicy;
     private JmsRedeliveryPolicy redeliveryPolicy;
@@ -441,5 +443,13 @@ public final class JmsConnectionInfo extends JmsAbstractResource implements Comp
 
     public JmsTracer getTracer() {
         return tracer;
+    }
+
+    public Map<String, String> getCustomConnectionProperties() {
+        return customConnectionProperties;
+    }
+
+    public void setCustomConnectionProperties(Map<String, String> customConnectionProperties) {
+        this.customConnectionProperties = customConnectionProperties;
     }
 }

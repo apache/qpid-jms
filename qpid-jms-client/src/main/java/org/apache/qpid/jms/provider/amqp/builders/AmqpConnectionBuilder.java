@@ -29,6 +29,7 @@ import java.util.Map;
 
 import javax.jms.Session;
 
+import org.apache.qpid.jms.JmsConnectionExtensions;
 import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.meta.JmsSessionInfo;
 import org.apache.qpid.jms.provider.AsyncResult;
@@ -104,6 +105,7 @@ public class AmqpConnectionBuilder extends AmqpResourceBuilder<AmqpConnection, A
         };
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     protected Connection createEndpoint(JmsConnectionInfo resourceInfo) {
         String hostname = getParent().getVhost();
@@ -113,7 +115,17 @@ public class AmqpConnectionBuilder extends AmqpResourceBuilder<AmqpConnection, A
             hostname = null;
         }
 
-        Map<Symbol, Object> props = new LinkedHashMap<Symbol, Object>();
+        final Map<Symbol, Object> props = new LinkedHashMap<Symbol, Object>();
+
+        if (resourceInfo.getExtensionMap().containsKey(JmsConnectionExtensions.AMQP_OPEN_PROPERTIES)) {
+            final Map<String, Object> userConnectionProperties = (Map<String, Object>) resourceInfo.getExtensionMap().get(
+                JmsConnectionExtensions.AMQP_OPEN_PROPERTIES).apply(resourceInfo.getConnection(), parent.getTransport().getRemoteLocation());
+            if (userConnectionProperties != null && !userConnectionProperties.isEmpty()) {
+                userConnectionProperties.forEach((key, value) -> props.put(Symbol.valueOf(key), value));
+            }
+        }
+
+        // Client properties override anything the user added.
         props.put(AmqpSupport.PRODUCT, MetaDataSupport.PROVIDER_NAME);
         props.put(AmqpSupport.VERSION, MetaDataSupport.PROVIDER_VERSION);
         props.put(AmqpSupport.PLATFORM, MetaDataSupport.PLATFORM_DETAILS);

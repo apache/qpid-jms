@@ -123,7 +123,28 @@ public enum JmsConnectionExtensions {
      *   </li>
      * </ul>
      */
-    PROXY_HANDLER_SUPPLIER("proxyHandlerSupplier");
+    PROXY_HANDLER_SUPPLIER("proxyHandlerSupplier"),
+
+    /**
+     * Allows a user to inject custom properties into the AMQP Open performative that is sent
+     * after a successful remote connection has been made.  The properties are injected by adding
+     * {@link String} keys and {@link Object} values into a {@link Map} instance and returning it.
+     * The value entries in the provided {@link Map} must be valid AMQP primitive types that can
+     * be encoded to form a valid AMQP Open performative or an error will be thrown and the connection
+     * attempt will fail.  If a user supplied property collides with an internal client specific
+     * property the client  version is always given precedence.
+     * <p>
+     * This method will be invoked on the initial connect and on each successive reconnect if a connection
+     * failures occurs and the client is configured to provide automatic reconnect support.
+     * <p>
+     * The extension function takes the form of a BiFunction defined as the following:
+     * <ul>
+     *   <li>
+     *     {@link BiFunction}&lt;{@link Connection}, {@link URI}, {@link Map}&gt;
+     *   </li>
+     * </ul>
+     */
+    AMQP_OPEN_PROPERTIES("amqpOpenProperties");
 
     private final String extensionKey;
 

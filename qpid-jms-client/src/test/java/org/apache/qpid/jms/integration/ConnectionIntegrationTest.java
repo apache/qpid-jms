@@ -43,6 +43,7 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -62,6 +63,7 @@ import javax.jms.ResourceAllocationException;
 import javax.jms.Session;
 
 import org.apache.qpid.jms.JmsConnection;
+import org.apache.qpid.jms.JmsConnectionExtensions;
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.JmsConnectionRemotelyClosedException;
 import org.apache.qpid.jms.JmsDefaultConnectionListener;
@@ -904,6 +906,155 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(2000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testConnectionPropertiesExtensionAddedValues() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            final String property1 = "property1";
+            final String property2 = "property2";
+
+            final String value1 = UUID.randomUUID().toString();
+            final String value2 = UUID.randomUUID().toString();
+
+            Matcher<?> connPropsMatcher = allOf(
+                    hasEntry(Symbol.valueOf(property1), value1),
+                    hasEntry(Symbol.valueOf(property2), value2),
+                    hasEntry(AmqpSupport.PRODUCT, MetaDataSupport.PROVIDER_NAME),
+                    hasEntry(AmqpSupport.VERSION, MetaDataSupport.PROVIDER_VERSION),
+                    hasEntry(AmqpSupport.PLATFORM, MetaDataSupport.PLATFORM_DETAILS));
+
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen(connPropsMatcher, null, false);
+            testPeer.expectBegin();
+
+            final URI remoteURI = new URI("amqp://localhost:" + testPeer.getServerPort());
+
+            JmsConnectionFactory factory = new JmsConnectionFactory(remoteURI);
+
+            factory.setExtension(JmsConnectionExtensions.AMQP_OPEN_PROPERTIES.toString(), (connection, uri) -> {
+                Map<String, Object> properties = new HashMap<>();
+
+                properties.put(property1, value1);
+                properties.put(property2, value2);
+
+                return properties;
+            });
+
+            Connection connection = factory.createConnection();
+            connection.start();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+            assertNull(testPeer.getThrowable());
+
+            testPeer.expectClose();
+            connection.close();
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testConnectionPropertiesExtensionAddedValuesOfNonString() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            final String property1 = "property1";
+            final String property2 = "property2";
+
+            final UUID value1 = UUID.randomUUID();
+            final UUID value2 = UUID.randomUUID();
+
+            Matcher<?> connPropsMatcher = allOf(
+                    hasEntry(Symbol.valueOf(property1), value1),
+                    hasEntry(Symbol.valueOf(property2), value2));
+
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen(connPropsMatcher, null, false);
+            testPeer.expectBegin();
+
+            final URI remoteURI = new URI("amqp://localhost:" + testPeer.getServerPort());
+
+            JmsConnectionFactory factory = new JmsConnectionFactory(remoteURI);
+
+            factory.setExtension(JmsConnectionExtensions.AMQP_OPEN_PROPERTIES.toString(), (connection, uri) -> {
+                Map<String, Object> properties = new HashMap<>();
+
+                properties.put(property1, value1);
+                properties.put(property2, value2);
+
+                return properties;
+            });
+
+            Connection connection = factory.createConnection();
+            connection.start();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+            testPeer.expectClose();
+            connection.close();
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testConnectionPropertiesExtensionProtectsClientProperties() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+
+            Matcher<?> connPropsMatcher = allOf(
+                    hasEntry(AmqpSupport.PRODUCT, MetaDataSupport.PROVIDER_NAME),
+                    hasEntry(AmqpSupport.VERSION, MetaDataSupport.PROVIDER_VERSION),
+                    hasEntry(AmqpSupport.PLATFORM, MetaDataSupport.PLATFORM_DETAILS));
+
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen(connPropsMatcher, null, false);
+            testPeer.expectBegin();
+
+            final URI remoteURI = new URI("amqp://localhost:" + testPeer.getServerPort());
+
+            JmsConnectionFactory factory = new JmsConnectionFactory(remoteURI);
+
+            factory.setExtension(JmsConnectionExtensions.AMQP_OPEN_PROPERTIES.toString(), (connection, uri) -> {
+                Map<String, Object> properties = new HashMap<>();
+
+                properties.put(AmqpSupport.PRODUCT.toString(), "Super-Duper-Qpid-JMS");
+                properties.put(AmqpSupport.VERSION.toString(), "5.0.32.Final");
+                properties.put(AmqpSupport.PLATFORM.toString(), "Commodore 64");
+
+                return properties;
+            });
+
+            Connection connection = factory.createConnection();
+            connection.start();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+            testPeer.expectClose();
+            connection.close();
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testConnectionFailsWhenUserSuppliesIllegalProperties() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+
+            testPeer.expectSaslAnonymous();
+
+            final URI remoteURI = new URI("amqp://localhost:" + testPeer.getServerPort());
+
+            JmsConnectionFactory factory = new JmsConnectionFactory(remoteURI);
+
+            factory.setExtension(JmsConnectionExtensions.AMQP_OPEN_PROPERTIES.toString(), (connection, uri) -> {
+                Map<String, Object> properties = new HashMap<>();
+
+                properties.put("not-amqp-encodable", factory);
+
+                return properties;
+            });
+
+            Connection connection = factory.createConnection();
+
+            try {
+                connection.start();
+                fail("Should not be able to connect when illegal types are in the properties");
+            } catch (JMSException ex) {
+            }
+
+            testPeer.waitForAllHandlersToComplete(1000);
         }
     }
 

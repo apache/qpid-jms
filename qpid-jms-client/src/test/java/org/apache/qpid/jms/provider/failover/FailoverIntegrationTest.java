@@ -18,11 +18,14 @@ package org.apache.qpid.jms.provider.failover;
 
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.DELAYED_DELIVERY;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
@@ -36,6 +39,7 @@ import java.net.URI;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -64,6 +68,7 @@ import javax.jms.Topic;
 import javax.jms.TransactionRolledBackException;
 
 import org.apache.qpid.jms.JmsConnection;
+import org.apache.qpid.jms.JmsConnectionExtensions;
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.JmsDefaultConnectionListener;
 import org.apache.qpid.jms.JmsOperationTimedOutException;
@@ -159,7 +164,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
     private void doConnectThrowsSecurityViolationOnFailureFromSaslWithOrExplicitlyWithoutClientIDTestImpl(boolean clientID, UnsignedByte saslFailureCode) throws Exception {
         String optionString;
-        if(clientID) {
+        if (clientID) {
             optionString = "?jms.clientID=myClientID";
         } else {
             optionString = "?jms.awaitClientID=false";
@@ -3962,6 +3967,97 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             testPeer.waitForAllHandlersToComplete(1000);
         }
+    }
+
+    @Test(timeout = 20000)
+    public void testConnectionPropertiesExtensionAppliedOnEachReconnect() throws Exception {
+        try (TestAmqpPeer originalPeer = new TestAmqpPeer();
+             TestAmqpPeer finalPeer = new TestAmqpPeer();) {
+
+            final CountDownLatch originalConnected = new CountDownLatch(1);
+            final CountDownLatch finalConnected = new CountDownLatch(1);
+
+            // Create a peer to connect to, then one to reconnect to
+            final String originalURI = createPeerURI(originalPeer);
+            final String finalURI = createPeerURI(finalPeer);
+
+            LOG.info("Original peer is at: {}", originalURI);
+            LOG.info("Final peer is at: {}", finalURI);
+
+            final String property1 = "property1";
+            final String property2 = "property2";
+
+            final UUID value1 = UUID.randomUUID();
+            final UUID value2 = UUID.randomUUID();
+
+            Matcher<?> connPropsMatcher1 = allOf(
+                    hasEntry(Symbol.valueOf(property1), value1),
+                    not(hasEntry(Symbol.valueOf(property2), value2)));
+
+            Matcher<?> connPropsMatcher2 = allOf(
+                    not(hasEntry(Symbol.valueOf(property1), value1)),
+                    hasEntry(Symbol.valueOf(property2), value2));
+
+            originalPeer.expectSaslAnonymous();
+            originalPeer.expectOpen(connPropsMatcher1, null, false);
+            originalPeer.expectBegin();
+            originalPeer.dropAfterLastHandler(10);
+
+            finalPeer.expectSaslAnonymous();
+            finalPeer.expectOpen(connPropsMatcher2, null, false);
+            finalPeer.expectBegin();
+
+            final URI remoteURI = new URI("failover:(" + originalURI + "," + finalURI + ")");
+
+            JmsConnectionFactory factory = new JmsConnectionFactory(remoteURI);
+
+            factory.setExtension(JmsConnectionExtensions.AMQP_OPEN_PROPERTIES.toString(), (connection, uri) -> {
+                Map<String, Object> properties = new HashMap<>();
+
+                if (originalConnected.getCount() == 1) {
+                    properties.put(property1, value1);
+                } else {
+                    properties.put(property2, value2);
+                }
+
+                return properties;
+            });
+
+            JmsConnection connection = (JmsConnection) factory.createConnection();
+
+            connection.addConnectionListener(new JmsDefaultConnectionListener() {
+                @Override
+                public void onConnectionEstablished(URI remoteURI) {
+                    LOG.info("Connection Established: {}", remoteURI);
+                    if (originalURI.equals(remoteURI.toString())) {
+                        originalConnected.countDown();
+                    }
+                }
+
+                @Override
+                public void onConnectionRestored(URI remoteURI) {
+                    LOG.info("Connection Restored: {}", remoteURI);
+                    if (finalURI.equals(remoteURI.toString())) {
+                        finalConnected.countDown();
+                    }
+                }
+            });
+
+            try {
+                connection.start();
+            } catch (Exception ex) {
+                fail("Should not have thrown an Exception: " + ex);
+            }
+
+            finalPeer.waitForAllHandlersToComplete(2000);
+
+            assertTrue("Should connect to original peer", originalConnected.await(3, TimeUnit.SECONDS));
+            assertTrue("Should connect to final peer", finalConnected.await(3, TimeUnit.SECONDS));
+
+            finalPeer.expectClose();
+            connection.close();
+
+            finalPeer.waitForAllHandlersToComplete(1000);        }
     }
 
     private JmsConnection establishAnonymousConnecton(TestAmqpPeer... peers) throws JMSException {

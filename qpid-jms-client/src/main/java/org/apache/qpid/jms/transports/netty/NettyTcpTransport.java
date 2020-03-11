@@ -557,7 +557,7 @@ public class NettyTcpTransport implements Transport {
 
         @Override
         protected void channelRead0(ChannelHandlerContext ctx, ByteBuf buffer) throws Exception {
-            LOG.trace("New data read: {} bytes incomsing: {}", buffer.readableBytes(), buffer);
+            LOG.trace("New incoming data read: {}", buffer);
             // Avoid all doubts to the contrary
             if (channel.eventLoop().inEventLoop()) {
                 listener.onData(buffer);

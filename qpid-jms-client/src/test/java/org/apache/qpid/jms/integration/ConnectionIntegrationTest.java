@@ -24,6 +24,7 @@ import static org.apache.qpid.jms.provider.amqp.AmqpSupport.NETWORK_HOST;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.OPEN_HOSTNAME;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.PORT;
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.equalTo;
@@ -34,7 +35,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -1032,6 +1032,7 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
     public void testConnectionFailsWhenUserSuppliesIllegalProperties() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
+            testPeer.setSuppressReadExceptionOnClose(true);
             testPeer.expectSaslAnonymous();
 
             final URI remoteURI = new URI("amqp://localhost:" + testPeer.getServerPort());
@@ -1052,6 +1053,8 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
                 connection.start();
                 fail("Should not be able to connect when illegal types are in the properties");
             } catch (JMSException ex) {
+            } catch (Exception unexpected) {
+                fail("Caught unexpected error from connnection.start() : " + unexpected);
             }
 
             testPeer.waitForAllHandlersToComplete(1000);

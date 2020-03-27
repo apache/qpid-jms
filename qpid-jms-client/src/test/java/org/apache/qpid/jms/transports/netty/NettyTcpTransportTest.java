@@ -661,7 +661,12 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
                 }
             }, 10_000, 10));
 
-            assertEquals(1, testProxy.getSuccessCount());
+            assertTrue(Wait.waitFor(new Wait.Condition() {
+                @Override
+                public boolean isSatisfied() throws Exception {
+                    return testProxy.getSuccessCount() == 1;
+                }
+            }, 10_000, 10));
 
             transport.close();
 

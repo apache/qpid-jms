@@ -35,9 +35,6 @@
   </description>
 
   <properties>
-    <maven.compiler.source>1.8</maven.compiler.source>
-    <maven.compiler.target>1.8</maven.compiler.target>
-
     <!-- Dependency Versions for this Project -->
     <proton-version>0.33.4</proton-version>
     <netty-version>4.1.48.Final</netty-version>
@@ -65,6 +62,10 @@
     <findbugs-maven-plugin-version>3.0.2</findbugs-maven-plugin-version>
     <jacoco-plugin-version>0.8.5</jacoco-plugin-version>
     <surefire.version>2.22.2</surefire.version>
+
+    <!-- See also maven.compiler.release in the java9on profile -->
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
 
     <!-- Test properties -->
     <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
@@ -375,6 +376,16 @@
           </plugin>
         </plugins>
       </build>
+    </profile>
+
+    <profile>
+      <id>java9on</id>
+      <activation>
+        <jdk>[9,)</jdk>
+      </activation>
+      <properties>
+        <maven.compiler.release>8</maven.compiler.release>
+      </properties>
     </profile>
 
     <profile>

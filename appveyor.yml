@@ -3,19 +3,12 @@ skip_tags: true
 clone_depth: 30
 
 environment:
-  JAVA_HOME: C:\Program Files\Java\jdk1.8.0
+  matrix:
+    - JAVA_HOME: C:\Program Files\Java\jdk1.8.0
+    - JAVA_HOME: C:\Program Files\Java\jdk11
 
 install:
-  - ps: |
-      Add-Type -AssemblyName System.IO.Compression.FileSystem
-      if (!(Test-Path -Path "C:\maven\apache-maven-3.3.9" )) {
-        (new-object System.Net.WebClient).DownloadFile(
-          'http://repo2.maven.org/maven2/org/apache/maven/apache-maven/3.3.9/apache-maven-3.3.9-bin.zip',
-          'C:\maven-bin.zip'
-        )
-        [System.IO.Compression.ZipFile]::ExtractToDirectory("C:\maven-bin.zip", "C:\maven")
-      }
-  - cmd: SET PATH=C:\maven\apache-maven-3.3.9\bin;%JAVA_HOME%\bin;%PATH%
+  - cmd: SET PATH=%JAVA_HOME%\bin;%PATH%
 
 build_script:
   - mvn clean install -B -DskipTests
@@ -41,6 +34,3 @@ on_finish:
           $wc.UploadFile($url, (Resolve-Path $file.FullName))
         }
       }
-
-cache:
-  - C:\maven\apache-maven-3.3.9

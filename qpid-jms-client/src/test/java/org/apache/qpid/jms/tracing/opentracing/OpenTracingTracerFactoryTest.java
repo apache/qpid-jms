@@ -38,9 +38,9 @@ public class OpenTracingTracerFactoryTest {
         assertEquals("Unexpected tracer instance type", OpenTracingTracer.class, jmsTracer.getClass());
 
         //Check it doesn't close underlying tracer
-        Mockito.verifyZeroInteractions(mock);
+        Mockito.verifyNoInteractions(mock);
         jmsTracer.close();
-        Mockito.verifyZeroInteractions(mock);
+        Mockito.verifyNoInteractions(mock);
     }
 
     @Test
@@ -50,13 +50,13 @@ public class OpenTracingTracerFactoryTest {
 
         //Check it doesn't close underlying tracer if not asked
         JmsTracer jmsTracerDontClose  = OpenTracingTracerFactory.create(mock, false);
-        Mockito.verifyZeroInteractions(mock);
+        Mockito.verifyNoInteractions(mock);
         jmsTracerDontClose.close();
-        Mockito.verifyZeroInteractions(mock);
+        Mockito.verifyNoInteractions(mock);
 
         //Check it does close underlying tracer when asked
         JmsTracer jmsTracerClose  = OpenTracingTracerFactory.create(mock, true);
-        Mockito.verifyZeroInteractions(mock);
+        Mockito.verifyNoInteractions(mock);
         jmsTracerClose.close();
         Mockito.verify(mock).close();
         Mockito.verifyNoMoreInteractions(mock);

@@ -79,9 +79,9 @@ public class OpenTracingTracerTest extends QpidJmsTestCase {
         Tracer mockTracer2 = Mockito.mock(Tracer.class);
         JmsTracer jmsTracer2  = new OpenTracingTracer(mockTracer2, false);
 
-        Mockito.verifyZeroInteractions(mockTracer2);
+        Mockito.verifyNoInteractions(mockTracer2);
         jmsTracer2.close();
-        Mockito.verifyZeroInteractions(mockTracer2);
+        Mockito.verifyNoInteractions(mockTracer2);
     }
 
     @Test
@@ -90,7 +90,7 @@ public class OpenTracingTracerTest extends QpidJmsTestCase {
         Tracer mockTracer1 = Mockito.mock(Tracer.class);
         JmsTracer jmsTracer1  = new OpenTracingTracer(mockTracer1, true);
 
-        Mockito.verifyZeroInteractions(mockTracer1);
+        Mockito.verifyNoInteractions(mockTracer1);
         jmsTracer1.close();
         Mockito.verify(mockTracer1).close();
         Mockito.verifyNoMoreInteractions(mockTracer1);

@@ -170,13 +170,13 @@ public class FactoryFinder<T extends Object> {
             if (clazz == null) {
                 properties = loadProperties(path);
                 clazz = loadClass(properties);
-                Class<?> previousClass = classMap.putIfAbsent(path, clazz);
                 Properties previousProperties = propertiesMap.putIfAbsent(path, properties);
-                if (previousClass != null) {
-                    clazz = previousClass;
-                }
                 if (previousProperties != null) {
                     properties = previousProperties;
+                }
+                Class<?> previousClass = classMap.putIfAbsent(path, clazz);
+                if (previousClass != null) {
+                    clazz = previousClass;
                 }
             }
 

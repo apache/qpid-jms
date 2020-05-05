@@ -80,15 +80,15 @@ public class SaslMechanismFinder {
 
                 boolean mechConfigured = mechRestrictions != null && mechRestrictions.contains(remoteMechanism);
                 if (mechRestrictions != null && !mechConfigured) {
-                    LOG.debug("Skipping {} mechanism because it is not in the configured mechanisms restriction set", remoteMechanism);
+                    LOG.trace("Skipping {} mechanism because it is not in the configured mechanisms restriction set", remoteMechanism);
                 } else if (mech.isApplicable(username, password, localPrincipal)) {
                     if (mech.isEnabledByDefault() || mechConfigured) {
                         found.add(mech);
                     } else {
-                        LOG.debug("Skipping {} mechanism as it must be explicitly enabled in the configured sasl mechanisms", mech);
+                        LOG.trace("Skipping {} mechanism as it must be explicitly enabled in the configured sasl mechanisms", mech);
                     }
                 } else {
-                    LOG.debug("Skipping {} mechanism because the available credentials are not sufficient", mech);
+                    LOG.trace("Skipping {} mechanism because the available credentials are not sufficient", mech);
                 }
             }
         }
@@ -103,7 +103,7 @@ public class SaslMechanismFinder {
                 "No supported mechanism, or none usable with the available credentials. Server offered: " + remoteMechanismNames);
         }
 
-        LOG.info("Best match for SASL auth was: {}", match);
+        LOG.debug("Best match for SASL auth was: {}", match);
 
         return match;
     }
@@ -129,7 +129,7 @@ public class SaslMechanismFinder {
         try {
             factory = MECHANISM_FACTORY_FINDER.newInstance(name);
         } catch (ResourceNotFoundException rnfe) {
-            LOG.debug("Unknown SASL mechanism: [" + name + "]");
+            LOG.trace("Unknown SASL mechanism: [" + name + "]");
         } catch (Exception e) {
             LOG.warn("Caught exception while finding factory for SASL mechanism {}: {}", name, e.getMessage());
         }

@@ -1314,6 +1314,12 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
             session.onConnectionRestored();
         }
 
+        try {
+            LOG.info("Connection {} restored to server: {}", connectionInfo.getId(), URISupport.removeQuery(remoteURI));
+        } catch (URISyntaxException e) {
+            LOG.info("Connection {} restored to server: {}:{}", connectionInfo.getId(), remoteURI.getHost(), remoteURI.getPort());
+        }
+
         // Run the application callbacks on the connection executor to allow the provider to
         // return to its normal processing without waiting for client level processing to finish.
         for (final JmsConnectionListener listener : connectionListeners) {
@@ -1330,9 +1336,9 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
     @Override
     public void onConnectionEstablished(final URI remoteURI) {
         try {
-            LOG.info("Connection {} connected to remote Broker: {}", connectionInfo.getId(), URISupport.removeQuery(remoteURI));
+            LOG.info("Connection {} connected to server: {}", connectionInfo.getId(), URISupport.removeQuery(remoteURI));
         } catch (URISyntaxException e) {
-            LOG.info("Connection {} connected to remote Broker: {}", connectionInfo.getId());
+            LOG.info("Connection {} connected to server: {}:{}", connectionInfo.getId(), remoteURI.getHost(), remoteURI.getPort());
         }
 
         setMessageFactory(provider.getMessageFactory());

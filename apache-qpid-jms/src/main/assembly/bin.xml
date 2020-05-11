@@ -46,7 +46,7 @@
       <useProjectArtifact>false</useProjectArtifact>
       <useTransitiveFiltering>true</useTransitiveFiltering>
       <excludes>
-        <exclude>org.slf4j:slf4j-log4j12</exclude>
+        <exclude>org.apache.logging.log4j:log4j-slf4j-impl</exclude>
       </excludes>
     </dependencySet>
 
@@ -55,7 +55,7 @@
       <useProjectArtifact>false</useProjectArtifact>
       <useTransitiveFiltering>true</useTransitiveFiltering>
       <includes>
-        <include>org.slf4j:slf4j-log4j12</include>
+        <include>org.apache.logging.log4j:log4j-slf4j-impl</include>
       </includes>
     </dependencySet>
   </dependencySets>

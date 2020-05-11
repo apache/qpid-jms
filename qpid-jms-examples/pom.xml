@@ -41,8 +41,8 @@
     <!-- Provide a logging implementation to avoid
          notice from SLF4J that none was found -->
     <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-log4j12</artifactId>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-slf4j-impl</artifactId>
     </dependency>
   </dependencies>
 

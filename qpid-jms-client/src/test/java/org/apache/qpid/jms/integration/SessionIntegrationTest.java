@@ -21,6 +21,7 @@ package org.apache.qpid.jms.integration;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.ANONYMOUS_RELAY;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
@@ -77,6 +78,7 @@ import org.apache.qpid.jms.test.testpeer.describedtypes.Rejected;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescribedType;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.HeaderDescribedType;
 import org.apache.qpid.jms.test.testpeer.matchers.AcceptedMatcher;
+import org.apache.qpid.jms.test.testpeer.matchers.DescribedTypeMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.ModifiedMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.ReleasedMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.SourceMatcher;
@@ -90,8 +92,10 @@ import org.apache.qpid.jms.util.Repeat;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
+import org.apache.qpid.proton.amqp.UnsignedLong;
 import org.apache.qpid.proton.amqp.messaging.Modified;
 import org.apache.qpid.proton.amqp.messaging.Released;
+import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -277,6 +281,44 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             assertNull(consumer.getMessageSelector());
             consumer = session.createConsumer(queue, null, false);
             assertNull(consumer.getMessageSelector());
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testCreateConsumerWithSimpleSelector() throws Exception {
+        doCreateConsumerWithSelectorTestImpl("myvar=42");
+    }
+
+    @Test(timeout = 20000)
+    public void testCreateConsumerWithQuotedVariableSelector() throws Exception {
+        doCreateConsumerWithSelectorTestImpl("\"my.quoted-var\"='some-value'");
+    }
+
+    private void doCreateConsumerWithSelectorTestImpl(String messageSelector) throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            Matcher<?> filterMapMatcher = hasEntry(equalTo(Symbol.valueOf("jms-selector")),
+                    new DescribedTypeMatcher(UnsignedLong.valueOf(0x0000468C00000004L), Symbol.valueOf("apache.org:selector-filter:string"), equalTo(messageSelector)));
+
+            SourceMatcher sourceMatcher = new SourceMatcher();
+            sourceMatcher.withFilter(filterMapMatcher);
+
+            testPeer.expectReceiverAttach(notNullValue(), sourceMatcher);
+            testPeer.expectLinkFlow();
+            testPeer.expectClose();
+
+            Queue queue = session.createQueue("myQueue");
+            session.createConsumer(queue, messageSelector);
 
             connection.close();
 

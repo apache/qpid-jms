@@ -30,6 +30,7 @@ import java.net.URI;
 import java.util.UUID;
 
 import javax.jms.Connection;
+import javax.jms.JMSException;
 import javax.jms.QueueConnection;
 import javax.jms.TopicConnection;
 
@@ -476,6 +477,69 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
 
         factory.setRedeliveryPolicy(null);
         assertTrue(factory.getRedeliveryPolicy() instanceof JmsDefaultRedeliveryPolicy);
+    }
+
+    @Test(timeout = 20_000)
+    public void testConfigureFutureFactoryFromURITypeOfProgressive() throws Exception {
+        doTestCreateConnectionWithConfiguredFutureFactory("progressive");
+    }
+
+    @Test(timeout = 20_000)
+    public void testConfigureFutureFactoryFromURITypeOfBalanced() throws Exception {
+        doTestCreateConnectionWithConfiguredFutureFactory("balanced");
+    }
+
+    @Test(timeout = 20_000)
+    public void testConfigureFutureFactoryFromURITypeOfConservative() throws Exception {
+        doTestCreateConnectionWithConfiguredFutureFactory("conservative");
+    }
+
+    private void doTestCreateConnectionWithConfiguredFutureFactory(String futureType) throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            // Ignore errors from peer close due to not sending any Open / Close frames
+            testPeer.setSuppressReadExceptionOnClose(true);
+
+            // DONT create a test fixture, we will drive everything directly.
+            testPeer.expectSaslAnonymous();
+
+            String uri = "amqp://127.0.0.1:" + testPeer.getServerPort() + "?provider.futureType=" + futureType;
+
+            JmsConnectionFactory factory = new JmsConnectionFactory(uri);
+
+            JmsConnection connection = (JmsConnection) factory.createConnection();
+            assertNotNull(connection);
+
+            testPeer.waitForAllHandlersToComplete(1000);
+
+            testPeer.expectOpen();
+            testPeer.expectClose();
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToCompleteNoAssert(1000);
+        }
+    }
+
+    @Test(timeout = 20_000)
+    public void testConfigureFutureFactoryFromURITypeUnknown() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            // Ignore errors from peer close due to not sending any Open / Close frames
+            testPeer.setSuppressReadExceptionOnClose(true);
+
+            String uri = "amqp://127.0.0.1:" + testPeer.getServerPort() + "?provider.futureType=unknown";
+
+            JmsConnectionFactory factory = new JmsConnectionFactory(uri);
+
+            try {
+                factory.createConnection();
+                fail("Should not allow a connection to proceed with a bad future factory type");
+            } catch (JMSException ex) {
+                String message = ex.getMessage();
+                assertTrue(message.contains("No ProviderFuture implementation"));
+            }
+
+            testPeer.waitForAllHandlersToCompleteNoAssert(1000);
+        }
     }
 
     //----- Custom Policy Objects --------------------------------------------//

@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.jms.Connection;
@@ -58,7 +59,9 @@ import org.apache.qpid.jms.test.testpeer.AmqpPeerRunnable;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.basictypes.AmqpError;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescribedType;
+import org.apache.qpid.jms.test.testpeer.describedtypes.sections.DataDescribedType;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.HeaderDescribedType;
+import org.apache.qpid.jms.test.testpeer.describedtypes.sections.PropertiesDescribedType;
 import org.apache.qpid.jms.test.testpeer.matchers.AcceptedMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.ModifiedMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.RejectedMatcher;
@@ -68,7 +71,9 @@ import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageHeaderSectionM
 import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompositeMatcher;
 import org.apache.qpid.jms.util.QpidJMSTestRunner;
 import org.apache.qpid.jms.util.Repeat;
+import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
+import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
@@ -2223,6 +2228,59 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
             }
 
             testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testDispositionSentForDecodeErrorOnMessageCopyWithAsyncConsumer() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            final AtomicReference<JMSException> decodeError = new AtomicReference<>();
+
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.setExceptionListener(ex -> {
+                decodeError.set(ex);
+            });
+            connection.start();
+
+            byte[] badUTF8Encoding = { (byte) 0xe4, (byte) 0xa4, 0x01 };
+
+            testPeer.expectBegin();
+
+            final Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            final Queue destination = session.createQueue(getTestName());
+
+            PropertiesDescribedType properties = new PropertiesDescribedType();
+            properties.setContentType(Symbol.valueOf("text/plain;charset=utf-8"));
+
+            DescribedType dataContent = new DataDescribedType(new Binary(badUTF8Encoding));
+
+            ModifiedMatcher stateMatcher = new ModifiedMatcher();
+            stateMatcher.withDeliveryFailed(equalTo(true));
+            stateMatcher.withUndeliverableHere(equalTo(true));
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, properties, null, dataContent);
+            testPeer.expectDisposition(true, stateMatcher);
+            testPeer.expectClose();
+
+            final AtomicBoolean onMessage = new AtomicBoolean();
+
+            MessageConsumer messageConsumer = session.createConsumer(destination);
+            messageConsumer.setMessageListener(m -> onMessage.set(true));
+
+            assertTrue("Should have gotten an onException call from failed message copy", Wait.waitFor(new Wait.Condition() {
+
+                @Override
+                public boolean isSatisfied() throws Exception {
+                    return decodeError.get() != null;
+                }
+            }));
+
+            assertFalse("onMessage should not be called due to failed message copy", onMessage.get());
+
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(3000);

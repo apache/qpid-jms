@@ -71,7 +71,7 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
     protected volatile JmsMessageAvailableListener availableListener;
     protected final MessageQueue messageQueue;
     protected final Lock lock = new ReentrantLock();
-    protected final Lock dispatchLock = new ReentrantLock();
+    protected final ReentrantLock dispatchLock = new ReentrantLock();
     protected final AtomicReference<Throwable> failureCause = new AtomicReference<>();
     protected final MessageDeliverTask deliveryTask = new MessageDeliverTask();
     protected final JmsTracer tracer;
@@ -416,7 +416,13 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
         if (envelope == null || envelope.getMessage() == null) {
             return null;
         }
-        return envelope.getMessage().copy();
+
+        try {
+            return envelope.getMessage().copy();
+        } catch (Exception ex) {
+            session.acknowledge(envelope, ACK_TYPE.MODIFIED_FAILED_UNDELIVERABLE);
+            throw ex;
+        }
     }
 
     JmsInboundMessageDispatch ackFromReceive(final JmsInboundMessageDispatch envelope) throws JMSException {
@@ -437,7 +443,7 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
         try {
             session.acknowledge(envelope, ACK_TYPE.ACCEPTED);
         } catch (JMSException ex) {
-            session.onException(ex);
+            signalExceptionListener(ex);
             throw ex;
         }
         return envelope;
@@ -447,7 +453,7 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
         try {
             session.acknowledge(envelope, ACK_TYPE.DELIVERED);
         } catch (JMSException ex) {
-            session.onException(ex);
+            signalExceptionListener(ex);
             throw ex;
         }
         return envelope;
@@ -457,7 +463,7 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
         try {
             session.acknowledge(envelope, ACK_TYPE.MODIFIED_FAILED_UNDELIVERABLE);
         } catch (JMSException ex) {
-            session.onException(ex);
+            signalExceptionListener(ex);
             throw ex;
         }
     }
@@ -467,7 +473,7 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
             JmsRedeliveryPolicy redeliveryPolicy = consumerInfo.getRedeliveryPolicy();
             session.acknowledge(envelope, lookupAckTypeForDisposition(redeliveryPolicy.getOutcome(getDestination())));
         } catch (JMSException ex) {
-            session.onException(ex);
+            signalExceptionListener(ex);
             throw ex;
         }
     }
@@ -476,7 +482,7 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
         try {
             session.acknowledge(envelope, ACK_TYPE.RELEASED);
         } catch (JMSException ex) {
-            session.onException(ex);
+            signalExceptionListener(ex);
             throw ex;
         }
     }
@@ -730,6 +736,23 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
         return false;
     }
 
+    private final void signalExceptionListener(Exception ex) {
+        boolean reclaimLock = false;
+
+        if (dispatchLock.isHeldByCurrentThread()) {
+            reclaimLock = true;
+            dispatchLock.unlock();
+        }
+
+        try {
+            session.onException(ex);
+        } finally {
+            if (reclaimLock) {
+                dispatchLock.lock();
+            }
+        }
+    }
+
     private void drainMessageQueueToListener() {
         if (messageListener != null && session.isStarted() && messageQueue.isRunning()) {
             session.getDispatcherExecutor().execute(new BoundedMessageDeliverTask(messageQueue.size()));
@@ -778,7 +801,7 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
                         deliveryFailed = true;
                         tracer.asyncDeliveryComplete(facade, DeliveryOutcome.APPLICATION_ERROR, rte);
                     } finally {
-                        if(!deliveryFailed) {
+                        if (!deliveryFailed) {
                             tracer.asyncDeliveryComplete(facade, DeliveryOutcome.DELIVERED, null);
                         }
                     }
@@ -792,11 +815,9 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
                     }
                 }
             } catch (Exception e) {
-                // TODO - There are two cases where we can get an error here, one being
-                //        and error returned from the attempted ACK that was sent and the
-                //        other being an error while attempting to copy the incoming message.
-                //        We need to decide how to respond to these.
-                session.getConnection().onException(e);
+                // An error while attempting to copy the message is the likely cause of this
+                // exception case being hit.
+                signalExceptionListener(e);
             } finally {
                 dispatchLock.unlock();
 

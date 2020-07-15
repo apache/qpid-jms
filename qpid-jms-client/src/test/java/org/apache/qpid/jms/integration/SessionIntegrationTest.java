@@ -2266,6 +2266,50 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 20000)
+    public void testCloseConsumerWithUnackedClientAckMessagesThenRecoverSession() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(Session.CLIENT_ACKNOWLEDGE);
+
+            int msgCount = 2;
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, new AmqpValueDescribedType("content"), msgCount, false, false,
+                    Matchers.greaterThanOrEqualTo(UnsignedInteger.valueOf(msgCount)), 1, false, true);
+
+            Queue destination = session.createQueue(getTestName());
+            MessageConsumer consumer = session.createConsumer(destination);
+
+            TextMessage receivedTextMessage = null;
+            assertNotNull("Expected a message", receivedTextMessage = (TextMessage) consumer.receive(3000));
+            assertEquals("Unexpected delivery number", 1,  receivedTextMessage.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER) + 1);
+            assertNotNull("Expected a message", receivedTextMessage = (TextMessage) consumer.receive(3000));
+            assertEquals("Unexpected delivery number", 2,  receivedTextMessage.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER) + 1);
+
+            testPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.valueOf(JmsDefaultPrefetchPolicy.DEFAULT_QUEUE_PREFETCH - msgCount)));
+
+            consumer.close();
+
+            testPeer.waitForAllHandlersToComplete(2000);
+
+            testPeer.expectDisposition(true, new ModifiedMatcher().withDeliveryFailed(equalTo(true)), 1, 1);
+            testPeer.expectDisposition(true, new ModifiedMatcher().withDeliveryFailed(equalTo(true)), 2, 2);
+            testPeer.expectDetach(true, true, true);
+
+            session.recover();
+
+            // Verify the expectations happen in response to the recover() and not the following close().
+            testPeer.waitForAllHandlersToComplete(2000);
+
+            testPeer.expectClose();
+            connection.close();
+        }
+    }
+
+    @Test(timeout = 20000)
     public void testRecoveredClientAckSessionWithDurableSubscriber() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, false, "?jms.clientID=myClientId", null, null, false);

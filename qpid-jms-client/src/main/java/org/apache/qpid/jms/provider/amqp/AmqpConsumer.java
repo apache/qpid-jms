@@ -55,6 +55,8 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpConsumer.class);
 
+    private static final int INDIVIDUAL_ACKNOWLEDGE = 101;
+
     protected final AmqpSession session;
     protected final int acknowledgementMode;
     protected AsyncResult stopRequest;
@@ -86,7 +88,10 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     }
 
     private void acknowledgeUndeliveredRecoveredMessages() {
-        if(acknowledgementMode == Session.CLIENT_ACKNOWLEDGE) {
+        if(acknowledgementMode == Session.CLIENT_ACKNOWLEDGE
+                || acknowledgementMode == Session.AUTO_ACKNOWLEDGE
+                    || acknowledgementMode == Session.DUPS_OK_ACKNOWLEDGE
+                        || acknowledgementMode == INDIVIDUAL_ACKNOWLEDGE) {
             // Send dispositions for any messages which were previously delivered and
             // session recovered, but were then not delivered again afterwards.
             Delivery delivery = getEndpoint().head();
@@ -440,9 +445,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
                     envelope.getMessage().getFacade().getRedeliveryCount() + 1);
                 envelope.setEnqueueFirst(true);
                 envelope.setDelivered(false);
-                if(acknowledgementMode == Session.CLIENT_ACKNOWLEDGE) {
-                    envelope.setRecovered(true);
-                }
+                envelope.setRecovered(true);
 
                 redispatchList.add(envelope);
             }
@@ -457,6 +460,11 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
         ListIterator<JmsInboundMessageDispatch> reverseIterator = redispatchList.listIterator(redispatchList.size());
         while (reverseIterator.hasPrevious()) {
             deliver(reverseIterator.previous());
+        }
+
+        if(deferredClose) {
+            acknowledgeUndeliveredRecoveredMessages();
+            tryCompleteDeferredClose();
         }
     }
 

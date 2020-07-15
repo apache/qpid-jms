@@ -87,6 +87,8 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
 
     private static final Logger LOG = LoggerFactory.getLogger(ConsumerIntegrationTest.class);
 
+    private static final int INDIVIDUAL_ACKNOWLEDGE = 101;
+
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
 
     @Test(timeout = 20000)
@@ -1172,6 +1174,52 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout=20000)
     public void testMessageListenerClosesItsConsumer() throws Exception {
+        doMessageListenerClosesItsConsumerTestImpl(false, false, Session.AUTO_ACKNOWLEDGE);
+    }
+
+    @Test(timeout=20000)
+    public void testMessageListenerClosesItsConsumerAfterRecoverAutoAck() throws Exception {
+        doMessageListenerClosesItsConsumerTestImpl(true, false, Session.AUTO_ACKNOWLEDGE);
+    }
+
+    @Test(timeout=20000)
+    public void testMessageListenerClosesItsConsumerAfterRecoverClientAck() throws Exception {
+        doMessageListenerClosesItsConsumerTestImpl(true, false, Session.CLIENT_ACKNOWLEDGE);
+    }
+
+    @Test(timeout=20000)
+    public void testMessageListenerClosesItsConsumerAfterRecoverDupsOk() throws Exception {
+        doMessageListenerClosesItsConsumerTestImpl(true, false, Session.DUPS_OK_ACKNOWLEDGE);
+    }
+
+    @Test(timeout=20000)
+    public void testMessageListenerClosesItsConsumerAfterRecoverIndividualAck() throws Exception {
+        doMessageListenerClosesItsConsumerTestImpl(true, false, INDIVIDUAL_ACKNOWLEDGE);
+    }
+
+    @Test(timeout=20000)
+    public void testMessageListenerClosesItsConsumerBeforeRecoverAutoAck() throws Exception {
+        doMessageListenerClosesItsConsumerTestImpl(false, true, Session.AUTO_ACKNOWLEDGE);
+    }
+
+    @Test(timeout=20000)
+    public void testMessageListenerClosesItsConsumerBeforeRecoverClientAck() throws Exception {
+        doMessageListenerClosesItsConsumerTestImpl(false, true, Session.CLIENT_ACKNOWLEDGE);
+    }
+
+    @Test(timeout=20000)
+    public void testMessageListenerClosesItsConsumerBeforeRecoverDupsOk() throws Exception {
+        doMessageListenerClosesItsConsumerTestImpl(false, true, Session.DUPS_OK_ACKNOWLEDGE);
+    }
+
+    @Test(timeout=20000)
+    public void testMessageListenerClosesItsConsumerBeforeRecoverIndividualAck() throws Exception {
+        doMessageListenerClosesItsConsumerTestImpl(false, true, INDIVIDUAL_ACKNOWLEDGE);
+    }
+
+    private void doMessageListenerClosesItsConsumerTestImpl(boolean recoverAfterClose, boolean recoverBeforeClose, int ackMode) throws Exception {
+        assertFalse("Cant recover a transacted session", ackMode == Session.SESSION_TRANSACTED);
+
         final CountDownLatch latch = new CountDownLatch(1);
         final CountDownLatch exceptionListenerFired = new CountDownLatch(1);
         final AtomicReference<Throwable> error = new AtomicReference<>();
@@ -1190,7 +1238,7 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
 
             testPeer.expectBegin();
 
-            final Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            final Session session = connection.createSession(false, ackMode);
             Queue destination = session.createQueue(getTestName());
             connection.start();
 
@@ -1199,15 +1247,30 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
 
             MessageConsumer consumer = session.createConsumer(destination);
 
-            testPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.valueOf(JmsDefaultPrefetchPolicy.DEFAULT_QUEUE_PREFETCH -1)));
-            testPeer.expectDisposition(true, new AcceptedMatcher());
+            if(recoverBeforeClose) {
+                testPeer.expectDisposition(true, new ModifiedMatcher().withDeliveryFailed(equalTo(true)));
+            } else if(recoverAfterClose) {
+                testPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.valueOf(JmsDefaultPrefetchPolicy.DEFAULT_QUEUE_PREFETCH -1)));
+                testPeer.expectDisposition(true, new ModifiedMatcher().withDeliveryFailed(equalTo(true)));
+            } else {
+                testPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.valueOf(JmsDefaultPrefetchPolicy.DEFAULT_QUEUE_PREFETCH -1)));
+                testPeer.expectDisposition(true, new AcceptedMatcher());
+            }
             testPeer.expectDetach(true, true, true);
 
             consumer.setMessageListener(new MessageListener() {
                 @Override
                 public void onMessage(Message m) {
                     try {
+                        if(recoverBeforeClose) {
+                            session.recover();
+                        }
+
                         consumer.close();
+
+                        if(recoverAfterClose) {
+                            session.recover();
+                        }
                     } catch (Throwable t) {
                         error.set(t);
                         LOG.error("Unexpected error during close", t);

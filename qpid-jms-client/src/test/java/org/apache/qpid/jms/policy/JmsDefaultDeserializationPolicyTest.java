@@ -55,7 +55,7 @@ public class JmsDefaultDeserializationPolicyTest {
         assertTrue(policy.isTrustedType(destination, Object.class));
 
         // Only types in lang
-        policy.setWhiteList("java.lang");
+        policy.setAllowList("java.lang");
 
         assertTrue(policy.isTrustedType(destination, null));
         assertFalse(policy.isTrustedType(destination, UUID.class));
@@ -66,39 +66,39 @@ public class JmsDefaultDeserializationPolicyTest {
         // Entry must be complete package name prefix to match
         // i.e while "java.n" is a prefix of "java.net", this
         // wont match the socket class below.
-        policy.setWhiteList("java.n");
+        policy.setAllowList("java.n");
         assertFalse(policy.isTrustedType(destination, UUID.class));
         assertFalse(policy.isTrustedType(destination, String.class));
         assertFalse(policy.isTrustedType(destination, java.net.Socket.class));
 
         // add a non-core package
-        policy.setWhiteList("java.lang,org.apache.qpid.jms");
+        policy.setAllowList("java.lang,org.apache.qpid.jms");
 
         assertFalse(policy.isTrustedType(destination, UUID.class));
         assertTrue(policy.isTrustedType(destination, String.class));
         assertTrue(policy.isTrustedType(destination, getClass()));
 
         // Try with a class-specific entry
-        policy.setWhiteList("java.lang.Integer");
+        policy.setAllowList("java.lang.Integer");
 
         assertTrue(policy.isTrustedType(destination, Integer.class));
         assertFalse(policy.isTrustedType(destination, Boolean.class));
 
-        // Verify blacklist overrides whitelist
-        policy.setWhiteList("java.lang.Integer");
-        policy.setBlackList("java.lang.Integer");
+        // Verify deny list overrides allow list
+        policy.setAllowList("java.lang.Integer");
+        policy.setDenyList("java.lang.Integer");
 
         assertFalse(policy.isTrustedType(destination, Integer.class));
 
-        // Verify blacklist entry prefix overrides whitelist
-        policy.setWhiteList("java.lang.Integer");
-        policy.setBlackList("java.lang");
+        // Verify deny list entry prefix overrides allow list
+        policy.setAllowList("java.lang.Integer");
+        policy.setDenyList("java.lang");
 
         assertFalse(policy.isTrustedType(destination, Integer.class));
 
-        // Verify blacklist catch-all overrides whitelist
-        policy.setWhiteList("java.lang.Integer");
-        policy.setBlackList("*");
+        // Verify deny list catch-all overrides allow list
+        policy.setAllowList("java.lang.Integer");
+        policy.setDenyList("*");
 
         assertFalse(policy.isTrustedType(destination, Integer.class));
     }
@@ -112,27 +112,28 @@ public class JmsDefaultDeserializationPolicyTest {
         assertEquals(policy1.hashCode(), policy2.hashCode());
         assertEquals(policy2.hashCode(), policy1.hashCode());
 
-        ((JmsDefaultDeserializationPolicy) policy1).setWhiteList("java.util");
+        ((JmsDefaultDeserializationPolicy) policy1).setAllowList("java.util");
 
         assertFalse(policy1.hashCode() == policy2.hashCode());
         assertFalse(policy2.hashCode() == policy1.hashCode());
 
-        ((JmsDefaultDeserializationPolicy) policy2).setWhiteList("java.util");
+        ((JmsDefaultDeserializationPolicy) policy2).setAllowList("java.util");
 
         assertTrue(policy1.hashCode() == policy2.hashCode());
         assertTrue(policy2.hashCode() == policy1.hashCode());
 
-        ((JmsDefaultDeserializationPolicy) policy1).setBlackList("java.util");
+        ((JmsDefaultDeserializationPolicy) policy1).setDenyList("java.util");
 
         assertFalse(policy1.hashCode() == policy2.hashCode());
         assertFalse(policy2.hashCode() == policy1.hashCode());
 
-        ((JmsDefaultDeserializationPolicy) policy2).setBlackList("java.util");
+        ((JmsDefaultDeserializationPolicy) policy2).setDenyList("java.util");
 
         assertTrue(policy1.hashCode() == policy2.hashCode());
         assertTrue(policy2.hashCode() == policy1.hashCode());
     }
 
+    @SuppressWarnings("unlikely-arg-type")
     @Test
     public void testEqualsObject() {
         JmsDefaultDeserializationPolicy policy1 = new JmsDefaultDeserializationPolicy();
@@ -142,7 +143,7 @@ public class JmsDefaultDeserializationPolicyTest {
         assertTrue(policy1.equals(policy2));
         assertTrue(policy2.equals(policy1));
 
-        policy1.setWhiteList("java.util");
+        policy1.setAllowList("java.util");
 
         assertFalse(policy1.equals(policy2));
         assertFalse(policy2.equals(policy1));
@@ -151,21 +152,22 @@ public class JmsDefaultDeserializationPolicyTest {
         assertFalse(policy1.equals(""));
         assertFalse(policy1.equals(this));
 
-        policy2.setWhiteList("java.util");
+        policy2.setAllowList("java.util");
         assertTrue(policy1.equals(policy2));
 
-        policy1.setBlackList("java.util");
+        policy1.setDenyList("java.util");
 
         assertFalse(policy1.equals(policy2));
         assertFalse(policy2.equals(policy1));
 
-        policy2.setBlackList("java.util");
+        policy2.setDenyList("java.util");
         assertTrue(policy1.equals(policy2));
         assertTrue(policy2.equals(policy1));
     }
 
+    @Deprecated
     @Test
-    public void testJmsDefaultDeserializationPolicy() {
+    public void testJmsDefaultDeserializationPolicyDeprecated() {
         JmsDefaultDeserializationPolicy policy = new JmsDefaultDeserializationPolicy();
 
         assertFalse(policy.getWhiteList().isEmpty());
@@ -173,7 +175,16 @@ public class JmsDefaultDeserializationPolicyTest {
     }
 
     @Test
-    public void testJmsDefaultDeserializationPolicyCopyCtor() {
+    public void testJmsDefaultDeserializationPolicy() {
+        JmsDefaultDeserializationPolicy policy = new JmsDefaultDeserializationPolicy();
+
+        assertFalse(policy.getAllowList().isEmpty());
+        assertTrue(policy.getDenyList().isEmpty());
+    }
+
+    @Deprecated
+    @Test
+    public void testJmsDefaultDeserializationPolicyCopyCtorDeprecated() {
         JmsDefaultDeserializationPolicy policy = new JmsDefaultDeserializationPolicy();
 
         policy.setWhiteList("a.b.c");
@@ -186,7 +197,21 @@ public class JmsDefaultDeserializationPolicyTest {
     }
 
     @Test
-    public void testJmsDefaultDeserializationPolicyCopy() {
+    public void testJmsDefaultDeserializationPolicyCopyCtor() {
+        JmsDefaultDeserializationPolicy policy = new JmsDefaultDeserializationPolicy();
+
+        policy.setAllowList("a.b.c");
+        policy.setDenyList("d.e.f");
+
+        JmsDefaultDeserializationPolicy copy = new JmsDefaultDeserializationPolicy(policy);
+
+        assertEquals("a.b.c", copy.getAllowList());
+        assertEquals("d.e.f", copy.getDenyList());
+    }
+
+    @Deprecated
+    @Test
+    public void testJmsDefaultDeserializationPolicyCopyDeprecated() {
         JmsDefaultDeserializationPolicy policy = new JmsDefaultDeserializationPolicy();
 
         policy.setWhiteList("a.b.c");
@@ -199,6 +224,20 @@ public class JmsDefaultDeserializationPolicyTest {
     }
 
     @Test
+    public void testJmsDefaultDeserializationPolicyCopy() {
+        JmsDefaultDeserializationPolicy policy = new JmsDefaultDeserializationPolicy();
+
+        policy.setAllowList("a.b.c");
+        policy.setDenyList("d.e.f");
+
+        JmsDefaultDeserializationPolicy copy = (JmsDefaultDeserializationPolicy) policy.copy();
+
+        assertEquals("a.b.c", copy.getAllowList());
+        assertEquals("d.e.f", copy.getDenyList());
+    }
+
+    @Deprecated
+    @Test
     public void testSetWhiteList() {
         JmsDefaultDeserializationPolicy policy = new JmsDefaultDeserializationPolicy();
         assertNotNull(policy.getWhiteList());
@@ -206,21 +245,54 @@ public class JmsDefaultDeserializationPolicyTest {
         policy.setWhiteList(null);
         assertNotNull(policy.getWhiteList());
         assertTrue(policy.getWhiteList().isEmpty());
+        assertNotNull(policy.getAllowList());
+        assertTrue(policy.getAllowList().isEmpty());
 
         policy.setWhiteList("");
         assertNotNull(policy.getWhiteList());
         assertTrue(policy.getWhiteList().isEmpty());
+        assertNotNull(policy.getAllowList());
+        assertTrue(policy.getAllowList().isEmpty());
 
         policy.setWhiteList("*");
         assertNotNull(policy.getWhiteList());
         assertFalse(policy.getWhiteList().isEmpty());
+        assertNotNull(policy.getAllowList());
+        assertFalse(policy.getAllowList().isEmpty());
 
         policy.setWhiteList("a,b,c");
         assertNotNull(policy.getWhiteList());
+        assertNotNull(policy.getAllowList());
         assertFalse(policy.getWhiteList().isEmpty());
+        assertFalse(policy.getAllowList().isEmpty());
         assertEquals("a,b,c", policy.getWhiteList());
+        assertEquals("a,b,c", policy.getAllowList());
     }
 
+    @Test
+    public void testSetAllowList() {
+        JmsDefaultDeserializationPolicy policy = new JmsDefaultDeserializationPolicy();
+        assertNotNull(policy.getAllowList());
+
+        policy.setAllowList(null);
+        assertNotNull(policy.getAllowList());
+        assertTrue(policy.getAllowList().isEmpty());
+
+        policy.setAllowList("");
+        assertNotNull(policy.getAllowList());
+        assertTrue(policy.getAllowList().isEmpty());
+
+        policy.setAllowList("*");
+        assertNotNull(policy.getAllowList());
+        assertFalse(policy.getAllowList().isEmpty());
+
+        policy.setAllowList("a,b,c");
+        assertNotNull(policy.getAllowList());
+        assertFalse(policy.getAllowList().isEmpty());
+        assertEquals("a,b,c", policy.getAllowList());
+    }
+
+    @Deprecated
     @Test
     public void testSetBlackList() {
         JmsDefaultDeserializationPolicy policy = new JmsDefaultDeserializationPolicy();
@@ -229,19 +301,51 @@ public class JmsDefaultDeserializationPolicyTest {
         policy.setBlackList(null);
         assertNotNull(policy.getBlackList());
         assertTrue(policy.getBlackList().isEmpty());
+        assertNotNull(policy.getDenyList());
+        assertTrue(policy.getDenyList().isEmpty());
 
         policy.setBlackList("");
         assertNotNull(policy.getBlackList());
         assertTrue(policy.getBlackList().isEmpty());
+        assertNotNull(policy.getDenyList());
+        assertTrue(policy.getDenyList().isEmpty());
 
         policy.setBlackList("*");
         assertNotNull(policy.getBlackList());
         assertFalse(policy.getBlackList().isEmpty());
+        assertNotNull(policy.getDenyList());
+        assertFalse(policy.getDenyList().isEmpty());
 
         policy.setBlackList("a,b,c");
         assertNotNull(policy.getBlackList());
         assertFalse(policy.getBlackList().isEmpty());
         assertEquals("a,b,c", policy.getBlackList());
+        assertNotNull(policy.getDenyList());
+        assertFalse(policy.getDenyList().isEmpty());
+        assertEquals("a,b,c", policy.getDenyList());
+    }
+
+    @Test
+    public void testSetDenyList() {
+        JmsDefaultDeserializationPolicy policy = new JmsDefaultDeserializationPolicy();
+        assertNotNull(policy.getDenyList());
+
+        policy.setDenyList(null);
+        assertNotNull(policy.getDenyList());
+        assertTrue(policy.getDenyList().isEmpty());
+
+        policy.setDenyList("");
+        assertNotNull(policy.getDenyList());
+        assertTrue(policy.getDenyList().isEmpty());
+
+        policy.setDenyList("*");
+        assertNotNull(policy.getDenyList());
+        assertFalse(policy.getDenyList().isEmpty());
+
+        policy.setDenyList("a,b,c");
+        assertNotNull(policy.getDenyList());
+        assertFalse(policy.getDenyList().isEmpty());
+        assertEquals("a,b,c", policy.getDenyList());
     }
 
     @Test

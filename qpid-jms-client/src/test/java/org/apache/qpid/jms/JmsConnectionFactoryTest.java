@@ -192,7 +192,7 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         JmsDefaultDeserializationPolicy deserializationPolicy =
             (JmsDefaultDeserializationPolicy) factory.getDeserializationPolicy();
 
-        assertFalse(deserializationPolicy.getWhiteList().equals(TRUSTED_PACKAGES));
+        assertFalse(deserializationPolicy.getAllowList().equals(TRUSTED_PACKAGES));
 
         deserializationPolicy.setWhiteList(TRUSTED_PACKAGES);
 
@@ -203,7 +203,7 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         assertNotNull(deserializationPolicy);
         assertNotSame(factory.getDeserializationPolicy(), deserializationPolicy);
 
-        assertEquals(TRUSTED_PACKAGES, deserializationPolicy.getWhiteList());
+        assertEquals(TRUSTED_PACKAGES, deserializationPolicy.getAllowList());
     }
 
     @Test
@@ -591,25 +591,28 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
      * configured with some new deserialization configuration via the URI.
      *
      * @throws Exception if an error occurs during the test.
+     *
+     * @deprecated Remove this test when removing the deprecated configuration options
      */
+    @Deprecated
     @Test
-    public void testSerializeThenDeserializeMaintainsDeserializationPolicy() throws Exception {
-        String whiteListValue = "java.lang";
-        String whitelistKey = "deserializationPolicy.whiteList";
+    public void testSerializeThenDeserializeMaintainsDeserializationPolicyDeprecated() throws Exception {
+        String allowListValue = "java.lang";
+        String allowListKey = "deserializationPolicy.whiteList";
 
-        String blackListValue = "java.lang.foo";
-        String blacklistKey = "deserializationPolicy.blackList";
+        String denyListValue = "java.lang.foo";
+        String denyListKey = "deserializationPolicy.blackList";
 
-        String uri = "amqp://localhost:1234?jms." + whitelistKey + "=" + whiteListValue + "&jms." + blacklistKey + "=" + blackListValue;
+        String uri = "amqp://localhost:1234?jms." + allowListKey + "=" + allowListValue + "&jms." + denyListKey + "=" + denyListValue;
 
         JmsConnectionFactory cf = new JmsConnectionFactory(uri);
         Map<String, String> props = cf.getProperties();
 
-        assertTrue("Props dont contain expected deserialization policy change", props.containsKey(whitelistKey));
-        assertEquals("Unexpected value", whiteListValue, props.get(whitelistKey));
+        assertTrue("Props dont contain expected deserialization policy change", props.containsKey(allowListKey));
+        assertEquals("Unexpected value", allowListValue, props.get(allowListKey));
 
-        assertTrue("Props dont contain expected deserialization policy change", props.containsKey(blacklistKey));
-        assertEquals("Unexpected value", blackListValue, props.get(blacklistKey));
+        assertTrue("Props dont contain expected deserialization policy change", props.containsKey(denyListKey));
+        assertEquals("Unexpected value", denyListValue, props.get(denyListKey));
 
         Object roundTripped = roundTripSerialize(cf);
 
@@ -617,11 +620,52 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         assertEquals("Unexpected type", JmsConnectionFactory.class, roundTripped.getClass());
 
         Map<String, String> props2 = ((JmsConnectionFactory)roundTripped).getProperties();
-        assertTrue("Props dont contain expected deserialization policy change", props2.containsKey(whitelistKey));
-        assertEquals("Unexpected value", whiteListValue, props2.get(whitelistKey));
+        assertTrue("Props dont contain expected deserialization policy change", props2.containsKey(allowListKey));
+        assertEquals("Unexpected value", allowListValue, props2.get(allowListKey));
 
-        assertTrue("Props dont contain expected deserialization policy change", props2.containsKey(blacklistKey));
-        assertEquals("Unexpected value", blackListValue, props2.get(blacklistKey));
+        assertTrue("Props dont contain expected deserialization policy change", props2.containsKey(denyListKey));
+        assertEquals("Unexpected value", denyListValue, props2.get(denyListKey));
+
+        assertEquals("Properties were not equal", props, props2);
+    }
+
+    /**
+     * The deserialization policy is maintained in a child-object, which we extract the properties from
+     * when serializing the factory. Ensure this functions by doing a round trip on a factory
+     * configured with some new deserialization configuration via the URI.
+     *
+     * @throws Exception if an error occurs during the test.
+     */
+    @Test
+    public void testSerializeThenDeserializeMaintainsDeserializationPolicy() throws Exception {
+        String allowListValue = "java.lang";
+        String allowListKey = "deserializationPolicy.allowList";
+
+        String denyListValue = "java.lang.foo";
+        String denyListKey = "deserializationPolicy.denyList";
+
+        String uri = "amqp://localhost:1234?jms." + allowListKey + "=" + allowListValue + "&jms." + denyListKey + "=" + denyListValue;
+
+        JmsConnectionFactory cf = new JmsConnectionFactory(uri);
+        Map<String, String> props = cf.getProperties();
+
+        assertTrue("Props dont contain expected deserialization policy change", props.containsKey(allowListKey));
+        assertEquals("Unexpected value", allowListValue, props.get(allowListKey));
+
+        assertTrue("Props dont contain expected deserialization policy change", props.containsKey(denyListKey));
+        assertEquals("Unexpected value", denyListValue, props.get(denyListKey));
+
+        Object roundTripped = roundTripSerialize(cf);
+
+        assertNotNull("Null object returned", roundTripped);
+        assertEquals("Unexpected type", JmsConnectionFactory.class, roundTripped.getClass());
+
+        Map<String, String> props2 = ((JmsConnectionFactory)roundTripped).getProperties();
+        assertTrue("Props dont contain expected deserialization policy change", props2.containsKey(allowListKey));
+        assertEquals("Unexpected value", allowListValue, props2.get(allowListKey));
+
+        assertTrue("Props dont contain expected deserialization policy change", props2.containsKey(denyListKey));
+        assertEquals("Unexpected value", denyListValue, props2.get(denyListKey));
 
         assertEquals("Properties were not equal", props, props2);
     }

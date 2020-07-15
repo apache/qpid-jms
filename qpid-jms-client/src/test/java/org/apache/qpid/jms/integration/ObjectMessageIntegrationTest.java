@@ -311,7 +311,7 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 20000)
     public void testReceiveBlockedSerializedContentFailsOnGetObject() throws Exception {
-        // We arent allowing the test class
+        // We aren't allowing the test class
         doTestReceiveSerializedContentPolicyTest("java.lang,java.util", null, false);
     }
 
@@ -323,43 +323,43 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 20000)
     public void testReceiveBlockSomeSerializedContentFailsOnGetObject() throws Exception {
-        // We arent allowing the UUID
+        // We aren't allowing the UUID
         doTestReceiveSerializedContentPolicyTest("org.apache.qpid.jms", null, false);
     }
 
     @Test(timeout = 20000)
     public void testReceiveWithWrongUnblockedSerializedContentFailsOnGetObject() throws Exception {
-        // We arent allowing the UUID a different way
+        // We aren't allowing the UUID a different way
         doTestReceiveSerializedContentPolicyTest("java.lang,org.apache.qpid.jms", null, false);
     }
 
     @Test(timeout = 20000)
-    public void testReceiveWithFullyWhitelistedSerializedContentSucceeds() throws Exception {
+    public void testReceiveWithFullyAllowedSerializedContentSucceeds() throws Exception {
         // We are allowing everything needed
         doTestReceiveSerializedContentPolicyTest("java.lang,java.util,org.apache.qpid.jms", null, true);
     }
 
     @Test(timeout = 20000)
-    public void testReceiveWithFullyWhitelistedSerializedContentFailsDueToBlackList() throws Exception {
-        // We are whitelisting everything needed, but then the blacklist is overriding to block some
+    public void testReceiveWithFullyAllowedSerializedContentFailsDueToDenyList() throws Exception {
+        // We are allowing everything needed, but then the deny list is overriding to block some
         doTestReceiveSerializedContentPolicyTest("java.lang,java.util,org.apache.qpid.jms", "java.util", false);
     }
 
-    private void doTestReceiveSerializedContentPolicyTest(String whiteList, String blackList, boolean succeed) throws Exception {
+    private void doTestReceiveSerializedContentPolicyTest(String allowList, String denyList, boolean succeed) throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             String options = null;
-            if(whiteList != null) {
-                options = "?jms.deserializationPolicy.whiteList=" + whiteList;
+            if (allowList != null) {
+                options = "?jms.deserializationPolicy.allowList=" + allowList;
             }
 
-            if(blackList != null) {
-                if(options == null) {
+            if (denyList != null) {
+                if (options == null) {
                     options = "?";
                 } else {
                     options += "&";
                 }
 
-                options +="jms.deserializationPolicy.blackList=" + blackList;
+                options +="jms.deserializationPolicy.denyList=" + denyList;
             }
 
             Connection connection = testFixture.establishConnecton(testPeer, options);
@@ -402,17 +402,17 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase {
             Object received = null;
             try {
                 received = objectMessage.getObject();
-                if(!succeed) {
+                if (!succeed) {
                     fail("Should not be able to read blocked content");
                 }
             } catch (JMSException jmsEx) {
                 LOG.debug("Caught: ", jmsEx);
-                if(succeed) {
+                if (succeed) {
                     fail("Should have been able to read blocked content");
                 }
             }
 
-            if(succeed) {
+            if (succeed) {
                 assertEquals("Content not as expected", expectedContent, received);
             }
 

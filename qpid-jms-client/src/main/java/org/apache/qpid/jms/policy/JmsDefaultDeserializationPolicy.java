@@ -24,43 +24,66 @@ import java.util.List;
 import org.apache.qpid.jms.JmsDestination;
 
 /**
- * Default implementation of the deserialization policy that can read white and black list of
+ * Default implementation of the deserialization policy that can read allow and deny lists of
  * classes/packages from the environment, and be updated by the connection uri options.
  *
- * The policy reads a default blackList string value (comma separated) from the system property
- * {@value #BLACKLIST_PROPERTY} which defaults to null which indicates an empty blacklist.
+ * The policy reads a default deny list string value (comma separated) from the system property
+ * {@value #DENYLIST_PROPERTY} which defaults to null which indicates an empty deny list.
  *
- * The policy reads a default whitelist string value (comma separated) from the system property
- * {@value #WHITELIST_PROPERTY} which defaults to a {@value #CATCH_ALL_WILDCARD} which
- * indicates that all classes are whitelisted.
+ * The policy reads a default allow list string value (comma separated) from the system property
+ * {@value #ALLOWLIST_PROPERTY} which defaults to a {@value #CATCH_ALL_WILDCARD} which
+ * indicates that all classes are allowed.
  *
- * The blacklist overrides the whitelist, entries that could match both are counted as blacklisted.
+ * The deny list overrides the allow list, entries that could match both are counted as denied.
  *
- * If the policy should treat all classes as untrusted the blacklist should be set to
+ * If the policy should treat all classes as untrusted the deny list should be set to
  * {@value #CATCH_ALL_WILDCARD}".
  */
 public class JmsDefaultDeserializationPolicy implements JmsDeserializationPolicy {
 
     /**
-     * Value used to indicate that all classes should be white or black listed,
+     * Value used to indicate that all classes should be allowed or denied,
      */
     public static final String CATCH_ALL_WILDCARD = "*";
 
-    public static final String WHITELIST_PROPERTY = "org.apache.qpid.jms.deserialization.white_list";
-    public static final String BLACKLIST_PROPERTY = "org.apache.qpid.jms.deserialization.black_list";
+    /**
+     * @deprecated new applications should use the ALLOWLIST_PROPERTY instead
+     */
+    @Deprecated
+    public static final String DEPRECATED_ALLOWLIST_PROPERTY = "org.apache.qpid.jms.deserialization.white_list";
 
-    private List<String> whiteList = new ArrayList<String>();
-    private List<String> blackList = new ArrayList<String>();
+    /**
+     * @deprecated new applications should use the DENYLIST_PROPERTY instead
+     */
+    @Deprecated
+    public static final String DEPRECATED_DENYLIST_PROPERTY = "org.apache.qpid.jms.deserialization.black_list";
+
+    public static final String ALLOWLIST_PROPERTY = "org.apache.qpid.jms.deserialization.allow_list";
+    public static final String DENYLIST_PROPERTY = "org.apache.qpid.jms.deserialization.deny_list";
+
+    private List<String> allowList = new ArrayList<String>();
+    private List<String> denyList = new ArrayList<String>();
 
     /**
      * Creates an instance of this policy with default configuration.
      */
     public JmsDefaultDeserializationPolicy() {
-        String whitelist = System.getProperty(WHITELIST_PROPERTY, CATCH_ALL_WILDCARD);
-        setWhiteList(whitelist);
 
-        String blackList = System.getProperty(BLACKLIST_PROPERTY);
-        setBlackList(blackList);
+        // TODO: Upon removal of deprecated constants replace with call to use the CATCH_ALL_WILDCARD as the default
+        //        final String allowList = System.getProperty(ALLOWLIST_PROPERTY, CATCH_ALL_WILDCARD);
+
+        final String deprecatedAllowList = System.getProperty(DEPRECATED_ALLOWLIST_PROPERTY, CATCH_ALL_WILDCARD);
+        final String allowList = System.getProperty(ALLOWLIST_PROPERTY, deprecatedAllowList);
+
+        setAllowList(allowList);
+
+        // TODO: Upon removal of deprecated constants replace with call to use the no default value method
+        //        final String denyList = System.getProperty(DENYLIST_PROPERTY);
+
+        final String deprecatedDenyList = System.getProperty(DEPRECATED_DENYLIST_PROPERTY);
+        final String denyList = System.getProperty(DENYLIST_PROPERTY, deprecatedDenyList);
+
+        setDenyList(denyList);
     }
 
     /**
@@ -68,8 +91,8 @@ public class JmsDefaultDeserializationPolicy implements JmsDeserializationPolicy
      *      The instance whose configuration should be copied from.
      */
     public JmsDefaultDeserializationPolicy(JmsDefaultDeserializationPolicy source) {
-        this.whiteList.addAll(source.whiteList);
-        this.blackList.addAll(source.blackList);
+        this.allowList.addAll(source.allowList);
+        this.denyList.addAll(source.denyList);
     }
 
     @Override
@@ -89,18 +112,18 @@ public class JmsDefaultDeserializationPolicy implements JmsDeserializationPolicy
             className = clazz.getName();
         }
 
-        for (String blackListEntry : blackList) {
-            if (CATCH_ALL_WILDCARD.equals(blackListEntry)) {
+        for (String denyListEntry : denyList) {
+            if (CATCH_ALL_WILDCARD.equals(denyListEntry)) {
                 return false;
-            } else if (isClassOrPackageMatch(className, blackListEntry)) {
+            } else if (isClassOrPackageMatch(className, denyListEntry)) {
                 return false;
             }
         }
 
-        for (String whiteListEntry : whiteList) {
-            if (CATCH_ALL_WILDCARD.equals(whiteListEntry)) {
+        for (String allowListEntry : allowList) {
+            if (CATCH_ALL_WILDCARD.equals(allowListEntry)) {
                 return true;
-            } else if (isClassOrPackageMatch(className, whiteListEntry)) {
+            } else if (isClassOrPackageMatch(className, allowListEntry)) {
                 return true;
             }
         }
@@ -129,10 +152,20 @@ public class JmsDefaultDeserializationPolicy implements JmsDeserializationPolicy
     }
 
     /**
-     * @return the whiteList configured on this policy instance.
+     * @return the allow list configured on this policy instance.
+     *
+     * @deprecated Use the replacement method {@link #getAllowList()}
      */
+    @Deprecated
     public String getWhiteList() {
-        Iterator<String> entries = whiteList.iterator();
+        return getAllowList();
+    }
+
+    /**
+     * @return the allow list configured on this policy instance.
+     */
+    public String getAllowList() {
+        Iterator<String> entries = allowList.iterator();
         StringBuilder builder = new StringBuilder();
 
         while (entries.hasNext()) {
@@ -146,10 +179,20 @@ public class JmsDefaultDeserializationPolicy implements JmsDeserializationPolicy
     }
 
     /**
-     * @return the blackList configured on this policy instance.
+     * @return the deny list configured on this policy instance.
+     *
+     * @deprecated Use the replacement method {@link #getDenyList()}
      */
+    @Deprecated
     public String getBlackList() {
-        Iterator<String> entries = blackList.iterator();
+        return getDenyList();
+    }
+
+    /**
+     * @return the deny list configured on this policy instance.
+     */
+    public String getDenyList() {
+        Iterator<String> entries = denyList.iterator();
         StringBuilder builder = new StringBuilder();
 
         while (entries.hasNext()) {
@@ -163,47 +206,69 @@ public class JmsDefaultDeserializationPolicy implements JmsDeserializationPolicy
     }
 
     /**
-     * Replaces the currently configured whiteList with a comma separated
-     * string containing the new whiteList. Null or empty string denotes
-     * no whiteList entries, {@value #CATCH_ALL_WILDCARD} indicates that
-     * all classes are whiteListed.
+     * @param allowList
+     *      the allow list that this policy is configured to recognize.
      *
-     * @param whiteList
-     *      the whiteList that this policy is configured to recognize.
+     * @deprecated Use the replacement method {@link #setAllowList(String)}
      */
-    public void setWhiteList(String whiteList) {
-        ArrayList<String> list = new ArrayList<String>();
-        if (whiteList != null && !whiteList.isEmpty()) {
-            list.addAll(Arrays.asList(whiteList.split(",")));
-        }
-
-        this.whiteList = list;
+    @Deprecated
+    public void setWhiteList(String allowList) {
+        setAllowList(allowList);
     }
 
     /**
-     * Replaces the currently configured blackList with a comma separated
-     * string containing the new blackList. Null or empty string denotes
-     * no blacklist entries, {@value #CATCH_ALL_WILDCARD} indicates that
-     * all classes are blacklisted.
+     * Replaces the currently configured allow list with a comma separated
+     * string containing the new allow list. Null or empty string denotes
+     * no allow list entries, {@value #CATCH_ALL_WILDCARD} indicates that
+     * all classes are allowed.
      *
-     * @param blackList
-     *      the blackList that this policy is configured to recognize.
+     * @param allowList
+     *      the allow list that this policy is configured to recognize.
      */
-    public void setBlackList(String blackList) {
+    public void setAllowList(String allowList) {
         ArrayList<String> list = new ArrayList<String>();
-        if (blackList != null && !blackList.isEmpty()) {
-            list.addAll(Arrays.asList(blackList.split(",")));
+        if (allowList != null && !allowList.isEmpty()) {
+            list.addAll(Arrays.asList(allowList.split(",")));
         }
 
-        this.blackList = list;
+        this.allowList = list;
+    }
+
+    /**
+     * @param denyList
+     *      the deny list that this policy is configured to recognize.
+     *
+     * @deprecated Use the replacement method {@link #setDenyList(String)}
+     */
+    @Deprecated
+    public void setBlackList(String denyList) {
+        setDenyList(denyList);
+    }
+
+    /**
+     * Replaces the currently configured deny list with a comma separated
+     * string containing the new deny list. Null or empty string denotes
+     * no deny list entries, {@value #CATCH_ALL_WILDCARD} indicates that
+     * all classes are denied.
+     *
+     * @param denyList
+     *      the deny list that this policy is configured to recognize.
+     */
+    public void setDenyList(String denyList) {
+        ArrayList<String> list = new ArrayList<String>();
+        if (denyList != null && !denyList.isEmpty()) {
+            list.addAll(Arrays.asList(denyList.split(",")));
+        }
+
+        this.denyList = list;
     }
 
     @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((whiteList == null) ? 0 : whiteList.hashCode());
-        result = prime * result + ((blackList == null) ? 0 : blackList.hashCode());
+        result = prime * result + ((allowList == null) ? 0 : allowList.hashCode());
+        result = prime * result + ((denyList == null) ? 0 : denyList.hashCode());
         return result;
     }
 
@@ -223,19 +288,19 @@ public class JmsDefaultDeserializationPolicy implements JmsDeserializationPolicy
 
         JmsDefaultDeserializationPolicy other = (JmsDefaultDeserializationPolicy) obj;
 
-        if (whiteList == null) {
-            if (other.whiteList != null) {
+        if (allowList == null) {
+            if (other.allowList != null) {
                 return false;
             }
-        } else if (!whiteList.equals(other.whiteList)) {
+        } else if (!allowList.equals(other.allowList)) {
             return false;
         }
 
-        if (blackList == null) {
-            if (other.blackList != null) {
+        if (denyList == null) {
+            if (other.denyList != null) {
                 return false;
             }
-        } else if (!blackList.equals(other.blackList)) {
+        } else if (!denyList.equals(other.denyList)) {
             return false;
         }
 

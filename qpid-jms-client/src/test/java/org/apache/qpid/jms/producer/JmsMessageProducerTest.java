@@ -449,8 +449,6 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
     public void testInOrderSendAcksCompletionsReturnInOrder() throws Exception {
         final int MESSAGE_COUNT = 3;
 
-        final MockRemotePeer remotePoor = MockRemotePeer.INSTANCE;
-
         JmsConnectionFactory factory = new JmsConnectionFactory(
             "mock://localhost?mock.delayCompletionCalls=true");
 
@@ -467,11 +465,11 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
 
             @Override
             public boolean isSatisfied() throws Exception {
-                return remotePoor.getPendingCompletions(destination).size() == MESSAGE_COUNT;
+                return remotePeer.getPendingCompletions(destination).size() == MESSAGE_COUNT;
             }
         }));
 
-        remotePoor.completeAllPendingSends(destination);
+        remotePeer.completeAllPendingSends(destination);
 
         assertTrue("Not all completions triggered", Wait.waitFor(new Wait.Condition() {
 
@@ -490,8 +488,6 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
     public void testReversedOrderSendAcksCompletionsReturnInOrder() throws Exception {
         final int MESSAGE_COUNT = 3;
 
-        final MockRemotePeer remotePoor = MockRemotePeer.INSTANCE;
-
         JmsConnectionFactory factory = new JmsConnectionFactory(
             "mock://localhost?mock.delayCompletionCalls=true");
 
@@ -508,17 +504,17 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
 
             @Override
             public boolean isSatisfied() throws Exception {
-                return remotePoor.getPendingCompletions(destination).size() == MESSAGE_COUNT;
+                return remotePeer.getPendingCompletions(destination).size() == MESSAGE_COUNT;
             }
         }));
 
-        List<JmsOutboundMessageDispatch> pending = remotePoor.getPendingCompletions(destination);
+        List<JmsOutboundMessageDispatch> pending = remotePeer.getPendingCompletions(destination);
         assertEquals(MESSAGE_COUNT, pending.size());
         Collections.reverse(pending);
 
         for (JmsOutboundMessageDispatch envelope : pending) {
             LOG.info("Trigger completion of message: {}", envelope.getMessage().getJMSMessageID());
-            remotePoor.completePendingSend(envelope);
+            remotePeer.completePendingSend(envelope);
         }
 
         assertTrue("Not all completions triggered", Wait.waitFor(new Wait.Condition() {
@@ -538,8 +534,6 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
     public void testInOrderSendFailuresCompletionsReturnInOrder() throws Exception {
         final int MESSAGE_COUNT = 3;
 
-        final MockRemotePeer remotePoor = MockRemotePeer.INSTANCE;
-
         JmsConnectionFactory factory = new JmsConnectionFactory(
             "mock://localhost?mock.delayCompletionCalls=true");
 
@@ -555,10 +549,10 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
 
             @Override
             public boolean isSatisfied() throws Exception {
-                return remotePoor.getPendingCompletions(destination).size() == MESSAGE_COUNT;
+                return remotePeer.getPendingCompletions(destination).size() == MESSAGE_COUNT;
             }
         }));
-        remotePoor.failAllPendingSends(destination, new ProviderException("Could not send message"));
+        remotePeer.failAllPendingSends(destination, new ProviderException("Could not send message"));
 
         assertTrue("Not all completions triggered", Wait.waitFor(new Wait.Condition() {
 
@@ -577,8 +571,6 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
     public void testReversedOrderSendAcksFailuresReturnInOrder() throws Exception {
         final int MESSAGE_COUNT = 3;
 
-        final MockRemotePeer remotePoor = MockRemotePeer.INSTANCE;
-
         JmsConnectionFactory factory = new JmsConnectionFactory(
             "mock://localhost?mock.delayCompletionCalls=true");
 
@@ -595,17 +587,17 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
 
             @Override
             public boolean isSatisfied() throws Exception {
-                return remotePoor.getPendingCompletions(destination).size() == MESSAGE_COUNT;
+                return remotePeer.getPendingCompletions(destination).size() == MESSAGE_COUNT;
             }
         }));
 
-        List<JmsOutboundMessageDispatch> pending = remotePoor.getPendingCompletions(destination);
+        List<JmsOutboundMessageDispatch> pending = remotePeer.getPendingCompletions(destination);
         assertEquals(MESSAGE_COUNT, pending.size());
         Collections.reverse(pending);
 
         for (JmsOutboundMessageDispatch envelope : pending) {
             LOG.info("Trigger failure of message: {}", envelope.getMessage().getJMSMessageID());
-            remotePoor.failPendingSend(envelope, new ProviderException("Failed to send message"));
+            remotePeer.failPendingSend(envelope, new ProviderException("Failed to send message"));
         }
 
         assertTrue("Not all failures triggered", Wait.waitFor(new Wait.Condition() {
@@ -625,8 +617,6 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
     public void testInterleavedCompletionsReturnedInOrder() throws Exception {
         final int MESSAGE_COUNT = 3;
 
-        final MockRemotePeer remotePoor = MockRemotePeer.INSTANCE;
-
         JmsConnectionFactory factory = new JmsConnectionFactory(
             "mock://localhost?mock.delayCompletionCalls=true");
 
@@ -643,11 +633,11 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
 
             @Override
             public boolean isSatisfied() throws Exception {
-                return remotePoor.getPendingCompletions(destination).size() == MESSAGE_COUNT;
+                return remotePeer.getPendingCompletions(destination).size() == MESSAGE_COUNT;
             }
         }));
 
-        List<JmsOutboundMessageDispatch> pending = remotePoor.getPendingCompletions(destination);
+        List<JmsOutboundMessageDispatch> pending = remotePeer.getPendingCompletions(destination);
         assertEquals(MESSAGE_COUNT, pending.size());
         Collections.reverse(pending);
 
@@ -655,10 +645,10 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
             int sequence = envelope.getMessage().getIntProperty("sequence");
             if (sequence % 2 == 0) {
                 LOG.info("Trigger completion of message: {}", envelope.getMessage().getJMSMessageID());
-                remotePoor.completePendingSend(envelope);
+                remotePeer.completePendingSend(envelope);
             } else {
                 LOG.info("Trigger failure of message: {}", envelope.getMessage().getJMSMessageID());
-                remotePoor.failPendingSend(envelope, new ProviderException("Failed to send message"));
+                remotePeer.failPendingSend(envelope, new ProviderException("Failed to send message"));
             }
         }
 
@@ -678,8 +668,6 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
     @Test(timeout = 15000)
     public void testCompletionListenerOnCompleteCallsProducerCloseThrowsISE() throws Exception {
         final int MESSAGE_COUNT = 1;
-
-        final MockRemotePeer remotePoor = MockRemotePeer.INSTANCE;
 
         JmsConnectionFactory factory = new JmsConnectionFactory(
             "mock://localhost?mock.delayCompletionCalls=true");
@@ -715,11 +703,11 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
 
             @Override
             public boolean isSatisfied() throws Exception {
-                return remotePoor.getPendingCompletions(destination).size() == MESSAGE_COUNT;
+                return remotePeer.getPendingCompletions(destination).size() == MESSAGE_COUNT;
             }
         }));
 
-        remotePoor.completeAllPendingSends(destination);
+        remotePeer.completeAllPendingSends(destination);
 
         assertTrue("Completion never got expected ISE", done.await(10, TimeUnit.SECONDS));
 
@@ -729,8 +717,6 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
     @Test(timeout = 15000)
     public void testCompletionListenerOnExceptionCallsProducerCloseThrowsISE() throws Exception {
         final int MESSAGE_COUNT = 1;
-
-        final MockRemotePeer remotePoor = MockRemotePeer.INSTANCE;
 
         JmsConnectionFactory factory = new JmsConnectionFactory(
             "mock://localhost?mock.delayCompletionCalls=true");
@@ -765,11 +751,11 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
 
             @Override
             public boolean isSatisfied() throws Exception {
-                return remotePoor.getPendingCompletions(destination).size() == MESSAGE_COUNT;
+                return remotePeer.getPendingCompletions(destination).size() == MESSAGE_COUNT;
             }
         }));
 
-        remotePoor.failAllPendingSends(destination, new ProviderException("Could not send message"));
+        remotePeer.failAllPendingSends(destination, new ProviderException("Could not send message"));
 
         assertTrue("Completion never got expected ISE", done.await(10, TimeUnit.SECONDS));
 

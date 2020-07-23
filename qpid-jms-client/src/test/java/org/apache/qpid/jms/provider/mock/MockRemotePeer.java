@@ -36,7 +36,7 @@ import org.apache.qpid.jms.provider.ProviderException;
  */
 public class MockRemotePeer {
 
-    public static MockRemotePeer INSTANCE;
+    static volatile MockRemotePeer LAST_STARTED_INSTANCE;
 
     private final Map<String, MockProvider> activeProviders = new ConcurrentHashMap<String, MockProvider>();
     private final MockProviderStats contextStats = new MockProviderStats();
@@ -101,13 +101,13 @@ public class MockRemotePeer {
         lastRegistered = null;
         offline = false;
 
-        MockRemotePeer.INSTANCE = this;
+        MockRemotePeer.LAST_STARTED_INSTANCE = this;
     }
 
     public void terminate() {
         shutdown();
 
-        MockRemotePeer.INSTANCE = null;
+        MockRemotePeer.LAST_STARTED_INSTANCE = null;
     }
 
     public void shutdown() {

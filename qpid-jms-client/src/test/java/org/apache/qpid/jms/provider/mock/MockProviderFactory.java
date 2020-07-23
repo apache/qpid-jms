@@ -56,7 +56,7 @@ public class MockProviderFactory extends ProviderFactory {
         }
 
         MockProviderConfiguration configuration = new MockProviderConfiguration();
-        MockRemotePeer remote = MockRemotePeer.INSTANCE;
+        MockRemotePeer remote = MockRemotePeer.LAST_STARTED_INSTANCE;
         if (remote != null) {
             remote.getContextStats().recordProviderCreated();
         }

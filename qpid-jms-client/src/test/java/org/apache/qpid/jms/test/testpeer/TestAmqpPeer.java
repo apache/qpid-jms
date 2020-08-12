@@ -2167,9 +2167,19 @@ public class TestAmqpPeer implements AutoCloseable
         expectTransfer(expectedPayloadMatcher, nullValue(), false, false, null, false);
     }
 
+    public void expectTransferButDoNotRespond(Matcher<Binary> expectedPayloadMatcher, Matcher<Binary> deliveryTagMatcher)
+    {
+        expectTransfer(expectedPayloadMatcher, deliveryTagMatcher, nullValue(), false, false, null, false, 0, 0);
+    }
+
     public void expectTransfer(Matcher<Binary> expectedPayloadMatcher)
     {
         expectTransfer(expectedPayloadMatcher, nullValue(), false, true, new Accepted(), true);
+    }
+
+    public void expectTransfer(Matcher<Binary> expectedPayloadMatcher, Matcher<Binary> deliveryTagMatcher)
+    {
+        expectTransfer(expectedPayloadMatcher, deliveryTagMatcher, nullValue(), false, true, new Accepted(), true, 0, 0);
     }
 
     public void expectTransfer(int frameSize)
@@ -2189,9 +2199,17 @@ public class TestAmqpPeer implements AutoCloseable
         expectTransfer(expectedPayloadMatcher, stateMatcher, settled, sendResponseDisposition, responseState, responseSettled, 0, 0);
     }
 
+    public void expectTransfer(Matcher<Binary> expectedPayloadMatcher,
+            Matcher<?> stateMatcher, boolean settled, boolean sendResponseDisposition, ListDescribedType responseState,
+            boolean responseSettled, int frameSize, long dispositionDelay)
+    {
+        expectTransfer(expectedPayloadMatcher, null, stateMatcher, settled, sendResponseDisposition, responseState, responseSettled, frameSize, dispositionDelay);
+    }
+
     //TODO: fix responseState to only admit applicable types.
-    public void expectTransfer(Matcher<Binary> expectedPayloadMatcher, Matcher<?> stateMatcher, boolean settled,
-            boolean sendResponseDisposition, ListDescribedType responseState, boolean responseSettled, int frameSize, long dispositionDelay)
+    public void expectTransfer(Matcher<Binary> expectedPayloadMatcher, Matcher<Binary> deliveryTagMatcher,
+            Matcher<?> stateMatcher, boolean settled, boolean sendResponseDisposition, ListDescribedType responseState,
+            boolean responseSettled, int frameSize, long dispositionDelay)
     {
         Matcher<Boolean> settledMatcher = null;
         if(settled)
@@ -2207,6 +2225,9 @@ public class TestAmqpPeer implements AutoCloseable
         transferMatcher.setPayloadMatcher(expectedPayloadMatcher);
         transferMatcher.withSettled(settledMatcher);
         transferMatcher.withState(stateMatcher);
+        if (deliveryTagMatcher != null) {
+            transferMatcher.withDeliveryTag(deliveryTagMatcher);
+        }
 
         if(sendResponseDisposition) {
             final DispositionFrame dispositionResponse = new DispositionFrame()

@@ -3051,4 +3051,42 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             finalPeer.waitForAllHandlersToComplete(1000);
         }
     }
+
+    @Test(timeout = 20000)
+    public void testSendTimeoutDoesNotRecycleDeliveryTag() throws Exception {
+        try(TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
+            connection.setSendTimeout(500);
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            String queueName = "myQueue";
+            Queue queue = session.createQueue(queueName);
+
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+
+            // Expect the producer to attach and grant it some credit, it should send
+            // a transfer which we will not send any response for which should cause the
+            // send operation to time out.
+            testPeer.expectSenderAttach();
+            testPeer.expectTransferButDoNotRespond(messageMatcher, equalTo(new Binary(new byte[] { 0 })));
+            testPeer.expectTransfer(messageMatcher, equalTo(new Binary(new byte[] { 1 })));
+            testPeer.expectClose();
+
+            MessageProducer producer = session.createProducer(queue);
+
+            try {
+                producer.send(session.createTextMessage("text"));
+                fail("Send should fail after send timeout exceeded.");
+            } catch (JmsSendTimedOutException error) {
+            }
+
+            producer.send(session.createTextMessage("text"));
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
 }

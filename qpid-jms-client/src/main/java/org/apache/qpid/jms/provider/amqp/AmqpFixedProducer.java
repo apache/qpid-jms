@@ -400,19 +400,17 @@ public class AmqpFixedProducer extends AmqpProducer {
         private void handleSendCompletion(boolean successful) {
             setRequestTimeout(null);
 
+            // Null delivery means that we never had credit to send so no delivery was created to carry the message.
             if (getDelivery() != null) {
                 sent.remove(envelope.getMessageId());
                 delivery.settle();
-                tagGenerator.returnTag(delivery.getTag());
-            } else {
-                blocked.remove(envelope.getMessageId());
-            }
-
-            // Null delivery means that we never had credit to send so no delivery was created to carry the message.
-            if (delivery != null) {
-                DeliveryState remoteState = delivery.getRemoteState();
+                if (successful) {
+                    tagGenerator.returnTag(delivery.getTag());
+                }
+                final DeliveryState remoteState = delivery.getRemoteState();
                 tracer.completeSend(envelope.getMessage().getFacade(), remoteState == null ? null : remoteState.getType().name());
             } else {
+                blocked.remove(envelope.getMessageId());
                 tracer.completeSend(envelope.getMessage().getFacade(), null);
             }
 

@@ -59,7 +59,7 @@
     <maven-javacc-plugin-version>2.6</maven-javacc-plugin-version>
     <maven-eclipse-plugin-version>2.10</maven-eclipse-plugin-version>
     <maven-idea-plugin-version>2.5</maven-idea-plugin-version>
-    <maven-bundle-plugin-version>4.1.0</maven-bundle-plugin-version>
+    <maven-bundle-plugin-version>5.1.1</maven-bundle-plugin-version>
     <findbugs-maven-plugin-version>3.0.2</findbugs-maven-plugin-version>
     <jacoco-plugin-version>0.8.5</jacoco-plugin-version>
     <surefire.version>2.22.2</surefire.version>

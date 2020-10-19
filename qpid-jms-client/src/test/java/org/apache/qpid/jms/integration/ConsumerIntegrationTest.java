@@ -2393,8 +2393,6 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
 
             List<String> receivedPayloads = new ArrayList<>();
 
-            MessageConsumer consumer = session.createConsumer(destination);
-
             // Await the messages being prefetched before we set the listener to make the
             // test viable, ongoing prefetching would make the reordering non-deterministic.
             ((JmsConnection) connection).addConnectionListener(new JmsDefaultConnectionListener() {
@@ -2403,6 +2401,8 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
                     arrived.countDown();
                 }
             });
+
+            MessageConsumer consumer = session.createConsumer(destination);
 
             boolean awaitPrefetch = arrived.await(15, TimeUnit.SECONDS);
             assertTrue("Messages not prefetched within given timeout, outstanding: " + arrived.getCount(), awaitPrefetch);

@@ -36,7 +36,7 @@
 
   <properties>
     <!-- Dependency Versions for this Project -->
-    <proton-version>0.33.6</proton-version>
+    <proton-version>0.33.7</proton-version>
     <netty-version>4.1.51.Final</netty-version>
     <slf4j-version>1.7.30</slf4j-version>
     <log4j-slf4j-version>2.13.3</log4j-slf4j-version>

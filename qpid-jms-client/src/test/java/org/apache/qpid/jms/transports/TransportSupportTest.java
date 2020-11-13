@@ -498,7 +498,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
         TransportOptions options = createJksSslOptions();
         SSLEngine directEngine = createSSLEngineDirectly(options);
         String[] protocols = directEngine.getEnabledProtocols();
-        assertTrue("There were no initial protocols to choose from!", protocols.length > 1);
+        assumeTrue("Insufficient initial protocols to filter from: " + Arrays.toString(protocols) , protocols.length > 1);
 
         // Pull out two to enable, and one to disable specifically
         String protocol1 = protocols[0];
@@ -525,7 +525,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
         TransportOptions options = createJksSslOptions();
         SSLEngine directEngine = createOpenSSLEngineDirectly(options);
         String[] protocols = directEngine.getEnabledProtocols();
-        assertTrue("There were no initial protocols to choose from!", protocols.length > 1);
+        assumeTrue("Insufficient initial protocols to filter from: " + Arrays.toString(protocols) , protocols.length > 1);
 
         // Pull out two to enable, and one to disable specifically
         String protocol1 = protocols[0];

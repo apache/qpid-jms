@@ -93,13 +93,17 @@ public class AmqpFixedProducer extends AmqpProducer {
             request.onFailure(new ProviderIllegalStateException("The MessageProducer is closed"));
         }
 
+        final InFlightSend send = new InFlightSend(envelope, request);
+
         if (!delayedDeliverySupported && envelope.getMessage().getFacade().isDeliveryTimeTransmitted()) {
             // Don't allow sends with delay if the remote has not said it can handle them
-            request.onFailure(new ProviderUnsupportedOperationException("Remote does not support delayed message delivery"));
+            send.onFailure(new ProviderUnsupportedOperationException("Remote does not support delayed message delivery"));
+        } else if (session.isTransactionInDoubt()) {
+            // If the transaction has failed due to remote termination etc then we just indicate
+            // the send has succeeded until the a new transaction is started.
+            send.onSuccess();
         } else if (getEndpoint().getCredit() <= 0) {
             LOG.trace("Holding Message send until credit is available.");
-
-            InFlightSend send = new InFlightSend(envelope, request);
 
             if (getSendTimeout() > JmsConnectionInfo.INFINITE) {
                 send.requestTimeout = getParent().getProvider().scheduleRequestTimeout(send, getSendTimeout(), send);
@@ -108,14 +112,7 @@ public class AmqpFixedProducer extends AmqpProducer {
             blocked.put(envelope.getMessageId(), send);
             getParent().getProvider().pumpToProtonTransport(request);
         } else {
-            // If the transaction has failed due to remote termination etc then we just indicate
-            // the send has succeeded until the a new transaction is started.
-            if (session.isTransacted() && session.isTransactionFailed()) {
-                request.onSuccess();
-                return;
-            }
-
-            doSend(envelope, new InFlightSend(envelope, request));
+            doSend(envelope, send);
         }
     }
 
@@ -190,7 +187,7 @@ public class AmqpFixedProducer extends AmqpProducer {
                 try {
                     // If the transaction has failed due to remote termination etc then we just indicate
                     // the send has succeeded until the a new transaction is started.
-                    if (session.isTransacted() && session.isTransactionFailed()) {
+                    if (session.isTransacted() && session.isTransactionInDoubt()) {
                         held.onSuccess();
                         return;
                     }

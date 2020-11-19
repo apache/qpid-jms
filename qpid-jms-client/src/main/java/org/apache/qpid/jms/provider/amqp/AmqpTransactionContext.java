@@ -224,8 +224,10 @@ public class AmqpTransactionContext implements AmqpResourceParent {
         return current;
     }
 
-    public boolean isTransactionFailed() {
-        return coordinator == null ? false : coordinator.isClosed();
+    public boolean isTransactionInDoubt() {
+        // A context either has an active transaction or the transaction state of all
+        // operations is in-doubt and cannot proceed as normal.
+        return coordinator == null ? true : coordinator.isClosed();
     }
 
     public Binary getAmqpTransactionId() {

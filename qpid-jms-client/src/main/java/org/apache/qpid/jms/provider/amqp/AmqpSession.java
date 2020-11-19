@@ -273,8 +273,8 @@ public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> i
         return getResourceInfo().isTransacted();
     }
 
-    public boolean isTransactionFailed() {
-        return txContext == null ? false : txContext.isTransactionFailed();
+    public boolean isTransactionInDoubt() {
+        return txContext == null ? false : txContext.isTransactionInDoubt();
     }
 
     boolean isAsyncAck() {

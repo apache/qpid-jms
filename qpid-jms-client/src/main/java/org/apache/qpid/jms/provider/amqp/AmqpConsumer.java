@@ -88,7 +88,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     }
 
     private void acknowledgeUndeliveredRecoveredMessages() {
-        if(acknowledgementMode == Session.CLIENT_ACKNOWLEDGE
+        if (acknowledgementMode == Session.CLIENT_ACKNOWLEDGE
                 || acknowledgementMode == Session.AUTO_ACKNOWLEDGE
                     || acknowledgementMode == Session.DUPS_OK_ACKNOWLEDGE
                         || acknowledgementMode == INDIVIDUAL_ACKNOWLEDGE) {
@@ -257,7 +257,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             }
 
             JmsInboundMessageDispatch envelope = (JmsInboundMessageDispatch) current.getContext();
-            if(ackType == ACK_TYPE.SESSION_SHUTDOWN && (envelope.isDelivered() || envelope.isRecovered())) {
+            if (ackType == ACK_TYPE.SESSION_SHUTDOWN && (envelope.isDelivered() || envelope.isRecovered())) {
                 handleDisposition(envelope, current, MODIFIED_FAILED);
             } else if (envelope.isDelivered()) {
                 final DeliveryState disposition;
@@ -347,8 +347,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
         LOG.debug("Accepted Ack of message: {}", envelope);
         if (!delivery.remotelySettled()) {
             if (session.isTransacted() && !getResourceInfo().isBrowser()) {
-
-                if (session.isTransactionFailed()) {
+                if (session.isTransactionInDoubt()) {
                     LOG.trace("Skipping ack of message {} in failed transaction.", envelope);
                     return;
                 }
@@ -462,7 +461,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             deliver(reverseIterator.previous());
         }
 
-        if(deferredClose) {
+        if (deferredClose) {
             acknowledgeUndeliveredRecoveredMessages();
             tryCompleteDeferredClose();
         }
@@ -523,7 +522,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
 
     @Override
     public void processDeliveryUpdates(AmqpProvider provider, Delivery delivery) throws ProviderException {
-        if(delivery.getDefaultDeliveryState() == null){
+        if (delivery.getDefaultDeliveryState() == null){
             delivery.setDefaultDeliveryState(Released.getInstance());
         }
 

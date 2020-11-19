@@ -1733,4 +1733,63 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             connection.close(); // Already nuked under the covers due to txn-id being missing
         }
     }
+
+    @Test(timeout = 30_000)
+    public void testAsyncConsumerAcksAfterCommitAndBeginWhenCommitCalledInOnMessage() throws Exception {
+        final Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
+
+        final TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+        messageMatcher.setHeadersMatcher(new MessageHeaderSectionMatcher(true));
+        messageMatcher.setMessageAnnotationsMatcher(new MessageAnnotationsSectionMatcher(true));
+
+        final TransactionalStateMatcher transferStateMatcher = new TransactionalStateMatcher();
+        transferStateMatcher.withTxnId(equalTo(txnId));
+        transferStateMatcher.withOutcome(nullValue());
+
+        final TransactionalStateMatcher dispositionStateMatcher = new TransactionalStateMatcher();
+        dispositionStateMatcher.withTxnId(equalTo(txnId));
+        dispositionStateMatcher.withOutcome(new AcceptedMatcher());
+
+        final TransactionalState transferTxnOutcome = new TransactionalState();
+        transferTxnOutcome.setTxnId(txnId);
+        transferTxnOutcome.setOutcome(new Accepted());
+
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer, "?amqp.drainTimeout=1000");
+            connection.start();
+
+            testPeer.expectBegin();
+            testPeer.expectCoordinatorAttach();
+            testPeer.expectDeclare(txnId);
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, new AmqpValueDescribedType("content"), 1);
+            testPeer.expectDisposition(true, dispositionStateMatcher);
+            testPeer.expectSenderAttach();
+            testPeer.expectTransfer(messageMatcher, transferStateMatcher, transferTxnOutcome, true);
+            testPeer.expectDischarge(txnId, false);
+            testPeer.expectDeclare(txnId);
+
+            // Test that consumer onMessage delivery and a send within the listener are
+            // both included into the same transaction prior to the commit in the listener.
+            Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+            Queue queue = session.createQueue("myQueue");
+            MessageConsumer messageConsumer = session.createConsumer(queue);
+            messageConsumer.setMessageListener((message) -> {
+                try {
+                    session.createProducer(queue).send(session.createTextMessage("sample"));
+                    session.commit();
+                } catch (JMSException jmsEx) {
+                    throw new RuntimeException("Behaving badly since commit already did", jmsEx);
+                }
+            });
+
+            testPeer.waitForAllHandlersToComplete(1000);
+
+            testPeer.expectDischarge(txnId, true);
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
 }

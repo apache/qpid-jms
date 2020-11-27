@@ -2437,4 +2437,71 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
             assertEquals("Message payloads not as expected", expectedPayloads, receivedPayloads);
         }
     }
+
+    @Test(timeout=20000)
+    public void testClosingSessionAndConnectionWithinExceptionListenerDueToAsyncConsumerDeliveryFailure() throws Exception {
+        final CountDownLatch exceptionListenerCalled = new CountDownLatch(1);
+        final CountDownLatch exceptionListenerCompleted = new CountDownLatch(1);
+        final AtomicReference<Throwable> asyncError = new AtomicReference<Throwable>(null);
+        final AtomicBoolean messageListenerCalled = new AtomicBoolean();
+
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            final Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue destination = session.createQueue(getTestName());
+            connection.start();
+
+            final PropertiesDescribedType properties = new PropertiesDescribedType();
+            properties.setContentType(Symbol.valueOf("text/plain;charset=utf-8"));
+
+            byte[] invalidPayload = new byte[2];  // Add two for malformed UTF8
+            invalidPayload[0] = (byte) 0b11000111; // The prefix for a two-byte UTF8 encoding
+            invalidPayload[1] = (byte) 0b00110000; // An invalid next byte, as encoding must be 0b10xxxxxx
+            DescribedType invalidUTF8DataContent = new DataDescribedType(new Binary(invalidPayload));
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, properties, null, invalidUTF8DataContent, 1);
+
+            final ModifiedMatcher modifiedFailedUndeliverableMatcher = new ModifiedMatcher();
+            modifiedFailedUndeliverableMatcher.withDeliveryFailed(equalTo(true));
+            modifiedFailedUndeliverableMatcher.withUndeliverableHere(equalTo(true));
+
+            MessageConsumer consumer = session.createConsumer(destination);
+
+            testPeer.waitForAllHandlersToComplete(2000);
+
+            testPeer.expectDisposition(true, modifiedFailedUndeliverableMatcher);
+            testPeer.expectEnd();
+            testPeer.expectClose();
+
+            connection.setExceptionListener(exception -> {
+                try {
+                    exceptionListenerCalled.countDown();
+                    session.close();
+                    connection.close();
+                } catch (Exception ex) {
+                    asyncError.set(ex);
+                } finally {
+                    exceptionListenerCompleted.countDown();
+                }
+            });
+
+            consumer.setMessageListener(m -> messageListenerCalled.set(true));
+
+            assertTrue("Exception listener was not fired within given timeout",
+                    exceptionListenerCalled.await(4000, TimeUnit.MILLISECONDS));
+
+            assertTrue("Exception listener didnt complete within given timeout",
+                    exceptionListenerCompleted.await(4000, TimeUnit.MILLISECONDS));
+
+            assertNull("Unexpected failure during exception listener handling", asyncError.get());
+            assertFalse("Message listener should not have been called due to decoding error", messageListenerCalled.get());
+
+            testPeer.waitForAllHandlersToComplete(2000);
+        }
+    }
 }

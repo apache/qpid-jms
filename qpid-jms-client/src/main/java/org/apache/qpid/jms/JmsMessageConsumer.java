@@ -741,6 +741,7 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
 
         if (dispatchLock.isHeldByCurrentThread()) {
             reclaimLock = true;
+            session.setDeliveryThreadCheckEnabled(false);
             dispatchLock.unlock();
         }
 
@@ -749,6 +750,7 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
         } finally {
             if (reclaimLock) {
                 dispatchLock.lock();
+                session.setDeliveryThreadCheckEnabled(true);
             }
         }
     }

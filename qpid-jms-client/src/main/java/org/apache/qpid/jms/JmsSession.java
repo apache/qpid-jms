@@ -127,6 +127,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
     private volatile ThreadPoolExecutor deliveryExecutor;
     private volatile ThreadPoolExecutor completionExcecutor;
     private AtomicReference<Thread> deliveryThread = new AtomicReference<Thread>();
+    private boolean deliveryThreadCheckEnabled = true;
     private AtomicReference<Thread> completionThread = new AtomicReference<Thread>();
 
     private final AtomicLong consumerIdGenerator = new AtomicLong();
@@ -1277,8 +1278,12 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         }
     }
 
+    void setDeliveryThreadCheckEnabled(boolean enabled) {
+        deliveryThreadCheckEnabled = enabled;
+    }
+
     void checkIsDeliveryThread() throws JMSException {
-        if (Thread.currentThread().equals(deliveryThread.get())) {
+        if (deliveryThreadCheckEnabled && Thread.currentThread().equals(deliveryThread.get())) {
             throw new IllegalStateException("Illegal invocation from MessageListener callback");
         }
     }

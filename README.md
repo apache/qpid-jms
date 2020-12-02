@@ -1,6 +1,7 @@
-# QpidJMS
+# Qpid JMS
 
-The QpidJMS project provides a JMS based client that uses the AMQP v1.0 protocol.
+[Qpid JMS](https://qpid.apache.org/components/jms/) is a JMS 2.0 client that uses
+the AMQP 1.0 protocol, enabling it to interact with various AMQP 1.0 servers.
 
 Below are some quick pointers you might find useful.
 
@@ -34,7 +35,8 @@ consult the README in the qpid-jms-examples module itself.
 
 ## Documentation
 
-There is some basic documentation in the qpid-jms-docs module.
+Documentation source can be found in the qpid-jms-docs module, with a published
+version available on the [website](https://qpid.apache.org/components/jms/).
 
 ## Distribution assemblies
 

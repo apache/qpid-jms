@@ -474,7 +474,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
     public MessageConsumer createConsumer(Destination destination, String messageSelector, boolean noLocal) throws JMSException {
         checkClosed();
         checkDestination(destination);
-        messageSelector = checkSelector(messageSelector);
+        messageSelector = checkSelector(messageSelector, connection.isValidateSelector());
         JmsDestination dest = JmsMessageTransformation.transformDestination(connection, destination);
         JmsMessageConsumer result = new JmsMessageConsumer(getNextConsumerId(), this, dest, messageSelector, noLocal);
         result.init();
@@ -501,7 +501,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
     public QueueReceiver createReceiver(Queue queue, String messageSelector) throws JMSException {
         checkClosed();
         checkDestination(queue);
-        messageSelector = checkSelector(messageSelector);
+        messageSelector = checkSelector(messageSelector, connection.isValidateSelector());
         JmsDestination dest = JmsMessageTransformation.transformDestination(connection, queue);
         JmsQueueReceiver result = new JmsQueueReceiver(getNextConsumerId(), this, dest, messageSelector);
         result.init();
@@ -523,7 +523,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
     public QueueBrowser createBrowser(Queue destination, String messageSelector) throws JMSException {
         checkClosed();
         checkDestination(destination);
-        messageSelector = checkSelector(messageSelector);
+        messageSelector = checkSelector(messageSelector, connection.isValidateSelector());
         JmsDestination dest = JmsMessageTransformation.transformDestination(connection, destination);
         JmsQueueBrowser result = new JmsQueueBrowser(this, dest, messageSelector);
         return result;
@@ -544,7 +544,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
     public TopicSubscriber createSubscriber(Topic topic, String messageSelector, boolean noLocal) throws JMSException {
         checkClosed();
         checkDestination(topic);
-        messageSelector = checkSelector(messageSelector);
+        messageSelector = checkSelector(messageSelector, connection.isValidateSelector());
         JmsDestination dest = JmsMessageTransformation.transformDestination(connection, topic);
         JmsTopicSubscriber result = new JmsTopicSubscriber(getNextConsumerId(), this, dest, noLocal, messageSelector);
         result.init();
@@ -567,7 +567,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         checkClosed();
         checkDestination(topic);
         checkClientIDWasSetExplicitly();
-        messageSelector = checkSelector(messageSelector);
+        messageSelector = checkSelector(messageSelector, connection.isValidateSelector());
         JmsDestination dest = JmsMessageTransformation.transformDestination(connection, topic);
         JmsTopicSubscriber result = new JmsDurableTopicSubscriber(getNextConsumerId(), this, dest, name, noLocal, messageSelector);
         result.init();
@@ -621,7 +621,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
     public MessageConsumer createSharedConsumer(Topic topic, String name, String selector) throws JMSException {
         checkClosed();
         checkDestination(topic);
-        selector = checkSelector(selector);
+        selector = checkSelector(selector, connection.isValidateSelector());
         JmsDestination dest = JmsMessageTransformation.transformDestination(connection, topic);
         JmsMessageConsumer result = new JmsSharedMessageConsumer(getNextConsumerId(), this, dest, name, selector);
         result.init();
@@ -644,7 +644,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
     public MessageConsumer createSharedDurableConsumer(Topic topic, String name, String selector) throws JMSException {
         checkClosed();
         checkDestination(topic);
-        selector = checkSelector(selector);
+        selector = checkSelector(selector, connection.isValidateSelector());
         JmsDestination dest = JmsMessageTransformation.transformDestination(connection, topic);
         JmsMessageConsumer result = new JmsSharedDurableMessageConsumer(getNextConsumerId(), this, dest, name, selector);
         result.init();
@@ -1109,18 +1109,21 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         }
     }
 
-    static String checkSelector(String selector) throws InvalidSelectorException {
+    static String checkSelector(String selector, boolean validate) throws InvalidSelectorException {
         if (selector != null) {
             if (selector.trim().length() == 0) {
                 return null;
             }
 
-            try {
-                SelectorParser.parse(selector);
-            } catch (FilterException e) {
-                throw new InvalidSelectorException(e.getMessage());
+            if (validate) {
+                try {
+                    SelectorParser.parse(selector);
+                } catch (FilterException e) {
+                    throw new InvalidSelectorException(e.getMessage());
+                }
             }
         }
+
         return selector;
     }
 

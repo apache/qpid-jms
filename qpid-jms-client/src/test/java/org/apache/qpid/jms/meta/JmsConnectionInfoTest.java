@@ -80,6 +80,8 @@ public class JmsConnectionInfoTest {
         info.setUsername("user");
         boolean validatePropertyNames = !info.isValidatePropertyNames();
         info.setValidatePropertyNames(validatePropertyNames);
+        boolean validateSelector = !info.isValidateSelector();
+        info.setValidateSelector(validateSelector);
         boolean awaitClientID = !info.isAwaitClientID();
         info.setAwaitClientID(awaitClientID);
         info.setMessageIDPolicy(new JmsDefaultMessageIDPolicy());
@@ -103,6 +105,7 @@ public class JmsConnectionInfoTest {
         assertEquals("topic", copy.getTopicPrefix());
         assertEquals("user", copy.getUsername());
         assertEquals(validatePropertyNames, copy.isValidatePropertyNames());
+        assertEquals(validateSelector, copy.isValidateSelector());
 
         assertNotSame(info.getPrefetchPolicy(), copy.getPrefetchPolicy());
         assertNotSame(info.getPresettlePolicy(), copy.getPresettlePolicy());

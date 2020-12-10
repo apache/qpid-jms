@@ -91,6 +91,7 @@ The options apply to the behaviour of the JMS objects such as Connection, Sessio
 + **jms.localMessageExpiry** Controls whether MessageConsumer instances will locally filter expired Messages or deliver them.  By default this value is set to true and expired messages will be filtered.
 + **jms.localMessagePriority** If enabled prefetched messages are reordered locally based on their given Message priority value. Default is false.
 + **jms.validatePropertyNames** If message property names should be validated as valid Java identifiers. Default is true.
++ **jms.validateSelector** Controls whether local validation is performed on consumer message selector strings. Default is true.
 + **jms.receiveLocalOnly** If enabled receive calls with a timeout will only check a consumers local message buffer, otherwise the remote peer is checked to ensure there are really no messages available if the local timeout expires before a message arrives. Default is false, the remote is checked.
 + **jms.receiveNoWaitLocalOnly** If enabled receiveNoWait calls will only check a consumers local message buffer, otherwise the remote peer is checked to ensure there are really no messages available. Default is false, the remote is checked.
 + **jms.queuePrefix** Optional prefix value added to the name of any Queue created from a JMS Session.

@@ -65,6 +65,7 @@ public final class JmsConnectionInfo extends JmsAbstractResource implements Comp
     private boolean forceSyncSend;
     private boolean forceAsyncAcks;
     private boolean validatePropertyNames = true;
+    private boolean validateSelector = true;
     private boolean receiveLocalOnly;
     private boolean receiveNoWaitLocalOnly;
     private boolean localMessagePriority;
@@ -118,6 +119,7 @@ public final class JmsConnectionInfo extends JmsAbstractResource implements Comp
         copy.topicPrefix = topicPrefix;
         copy.connectTimeout = connectTimeout;
         copy.validatePropertyNames = validatePropertyNames;
+        copy.validateSelector = validateSelector;
         copy.useDaemonThread = useDaemonThread;
         copy.closeLinksThatFailOnReconnect = closeLinksThatFailOnReconnect;
         copy.messageIDPolicy = getMessageIDPolicy().copy();
@@ -215,6 +217,14 @@ public final class JmsConnectionInfo extends JmsAbstractResource implements Comp
 
     public void setValidatePropertyNames(boolean validatePropertyNames) {
         this.validatePropertyNames = validatePropertyNames;
+    }
+
+    public boolean isValidateSelector() {
+        return validateSelector;
+    }
+
+    public void setValidateSelector(boolean validateSelector) {
+        this.validateSelector = validateSelector;
     }
 
     public long getCloseTimeout() {

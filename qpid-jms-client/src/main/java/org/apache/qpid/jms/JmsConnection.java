@@ -993,6 +993,14 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         connectionInfo.setValidatePropertyNames(validatePropertyNames);
     }
 
+    public boolean isValidateSelector() {
+        return connectionInfo.isValidateSelector();
+    }
+
+    public void setValidateSelector(boolean validateSelector) {
+        connectionInfo.setValidateSelector(validateSelector);
+    }
+
     public JmsPrefetchPolicy getPrefetchPolicy() {
         return connectionInfo.getPrefetchPolicy();
     }

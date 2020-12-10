@@ -242,9 +242,12 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-            testPeer.expectReceiverAttach();
+            SourceMatcher sourceMatcher = new SourceMatcher();
+            sourceMatcher.withFilter(nullValue());
+
+            testPeer.expectReceiverAttach(notNullValue(), sourceMatcher);
             testPeer.expectLinkFlow();
-            testPeer.expectReceiverAttach();
+            testPeer.expectReceiverAttach(notNullValue(), sourceMatcher);
             testPeer.expectLinkFlow();
             testPeer.expectClose();
 
@@ -270,9 +273,12 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-            testPeer.expectReceiverAttach();
+            SourceMatcher sourceMatcher = new SourceMatcher();
+            sourceMatcher.withFilter(nullValue());
+
+            testPeer.expectReceiverAttach(notNullValue(), sourceMatcher);
             testPeer.expectLinkFlow();
-            testPeer.expectReceiverAttach();
+            testPeer.expectReceiverAttach(notNullValue(), sourceMatcher);
             testPeer.expectLinkFlow();
             testPeer.expectClose();
 
@@ -289,18 +295,55 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 20000)
+    public void testCreateConsumerWithInvalidSelector() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            Topic destination = session.createTopic(getTestName());
+
+            try {
+                session.createConsumer(destination, "3+5");
+                fail("Should have thrown a invalid selector exception");
+            } catch (InvalidSelectorException jmsse) {
+                // Expected
+            }
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
     public void testCreateConsumerWithSimpleSelector() throws Exception {
-        doCreateConsumerWithSelectorTestImpl("myvar=42");
+        doCreateConsumerWithSelectorTestImpl("myvar=42", false);
     }
 
     @Test(timeout = 20000)
     public void testCreateConsumerWithQuotedVariableSelector() throws Exception {
-        doCreateConsumerWithSelectorTestImpl("\"my.quoted-var\"='some-value'");
+        doCreateConsumerWithSelectorTestImpl("\"my.quoted-var\"='some-value'", false);
     }
 
-    private void doCreateConsumerWithSelectorTestImpl(String messageSelector) throws Exception {
+    @Test(timeout = 20000)
+    public void testCreateConsumerWithInvalidSelectorAndDisableValidation() throws Exception {
+        // Verifies that with the local validation disabled, the selector filter is still created
+        // and sent on the source terminus, containing the desired non-JMS selector string.
+        doCreateConsumerWithSelectorTestImpl("my.invalid-var > 'string-value'", true);
+    }
+
+    private void doCreateConsumerWithSelectorTestImpl(String messageSelector, boolean disableValidation) throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer);
+            String options = null;
+            if(disableValidation) {
+                options = "jms.validateSelector=false";
+            }
+
+            Connection connection = testFixture.establishConnecton(testPeer, options);
             connection.start();
 
             testPeer.expectBegin();
@@ -992,31 +1035,6 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
                 session.createProducer(destination);
                 fail("Should have thrown a security exception");
             } catch (JMSSecurityException jmsse) {
-            }
-
-            testPeer.expectClose();
-            connection.close();
-
-            testPeer.waitForAllHandlersToComplete(1000);
-        }
-    }
-
-    @Test(timeout = 20000)
-    public void testInvalidSelector() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer);
-            connection.start();
-
-            testPeer.expectBegin();
-            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-
-            String topicName = "myTopic";
-            Topic destination = session.createTopic(topicName);
-
-            try {
-                session.createConsumer(destination, "3+5");
-                fail("Should have thrown a invalid selector exception");
-            } catch (InvalidSelectorException jmsse) {
             }
 
             testPeer.expectClose();

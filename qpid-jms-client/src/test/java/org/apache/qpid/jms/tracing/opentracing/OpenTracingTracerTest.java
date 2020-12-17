@@ -41,6 +41,7 @@ import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.tracing.JmsTracer;
 import org.apache.qpid.jms.tracing.JmsTracer.DeliveryOutcome;
 import org.apache.qpid.jms.tracing.TraceableMessage;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -67,10 +68,16 @@ public class OpenTracingTracerTest extends QpidJmsTestCase {
 
     @Captor
     private ArgumentCaptor<Map<String, String>> annotationMapCaptor;
+    private AutoCloseable closable;
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
+        closable = MockitoAnnotations.openMocks(this);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closable.close();
     }
 
     @Test

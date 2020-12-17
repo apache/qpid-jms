@@ -74,11 +74,7 @@ import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.hamcrest.Matchers;
-import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.MockitoAnnotations;
 
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
@@ -92,14 +88,6 @@ import io.opentracing.propagation.TextMapAdapter;
 import io.opentracing.tag.Tags;
 
 public class OpenTracingIntegrationTest extends QpidJmsTestCase {
-
-    @Captor
-    private ArgumentCaptor<Map<String, String>> annotationMapCaptor;
-
-    @Before
-    public void setUp() {
-        MockitoAnnotations.initMocks(this);
-    }
 
     @Test(timeout = 20000)
     public void testSend() throws Exception {

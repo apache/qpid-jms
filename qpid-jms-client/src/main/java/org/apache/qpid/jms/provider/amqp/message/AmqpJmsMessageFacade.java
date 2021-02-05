@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 
 import javax.jms.JMSException;
 import javax.jms.JMSRuntimeException;
@@ -1021,6 +1022,20 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         }
 
         return result;
+    }
+
+    public Set<Symbol> getMessageAnnotationNames() {
+        if(messageAnnotationsMap != null && !messageAnnotationsMap.isEmpty()) {
+            return messageAnnotationsMap.keySet();
+        }
+        return null;
+    }
+
+    public Set<Symbol> getDeliveryAnnotationNames() {
+        if(deliveryAnnotationsMap != null && !deliveryAnnotationsMap.isEmpty()) {
+            return deliveryAnnotationsMap.keySet();
+        }
+        return null;
     }
 
     void setMessageAnnotations(MessageAnnotations messageAnnotations) {

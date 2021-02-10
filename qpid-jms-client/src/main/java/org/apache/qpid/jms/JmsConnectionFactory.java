@@ -361,8 +361,8 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
         if (name != null && name.trim().isEmpty() == false) {
             try {
                 return new URI(name);
-            } catch (URISyntaxException e) {
-                throw (IllegalArgumentException) new IllegalArgumentException("Invalid remote URI: " + name).initCause(e);
+            } catch (URISyntaxException ex) {
+                throw new IllegalArgumentException("Invalid remote URI: " + name, ex);
             }
         }
         return null;

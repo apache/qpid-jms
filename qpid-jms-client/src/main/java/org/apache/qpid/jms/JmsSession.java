@@ -327,7 +327,9 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         shutdown(null);
     }
 
-    protected void shutdown(Throwable cause) throws JMSException {
+    protected boolean shutdown(Throwable cause) throws JMSException {
+        boolean listenerPresent = false;
+
         if (closed.compareAndSet(false, true)) {
             JMSException shutdownError = null;
 
@@ -339,6 +341,10 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
                     stop();
 
                     for (JmsMessageConsumer consumer : new ArrayList<JmsMessageConsumer>(this.consumers.values())) {
+                        if(consumer.hasMessageListener()) {
+                            listenerPresent = true;
+                        }
+
                         consumer.shutdown(cause);
                     }
 
@@ -398,13 +404,18 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
                 connection.removeSession(sessionInfo);
             }
         }
+
+        return listenerPresent;
     }
 
     //----- Events fired when resource remotely closed due to some error -----//
 
     void sessionClosed(Throwable cause) {
         try {
-            shutdown(cause);
+            boolean listenerPresent = shutdown(cause);
+            if (listenerPresent) {
+                connection.onAsyncException(JmsExceptionSupport.create(cause));
+            }
         } catch (Throwable error) {
             LOG.trace("Ignoring exception thrown during cleanup of closed session", error);
         }

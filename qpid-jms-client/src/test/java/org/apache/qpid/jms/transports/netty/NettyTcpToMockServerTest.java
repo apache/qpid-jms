@@ -126,7 +126,9 @@ public class NettyTcpToMockServerTest extends QpidJmsTestCase {
             } catch (Exception ex) {
                 LOG.info("Caught expected exception while attempting to connect");
             } finally {
-                connection.close();
+                if (connection != null) {
+                    connection.close();
+                }
             }
         }
     }

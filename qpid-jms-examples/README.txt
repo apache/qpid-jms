@@ -31,3 +31,4 @@ src/main/resources/jndi.properties
 NOTE: The earlier build command will cause Maven to resolve the client artifact
 dependencies against its local and remote repositories. If you wish to use a
 locally-built client, ensure to "mvn install" it in your local repo first.
+

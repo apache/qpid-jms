@@ -61,6 +61,7 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
     private static final Symbol CRAM_MD5 = Symbol.valueOf("CRAM-MD5");
     private static final Symbol SCRAM_SHA_1 = Symbol.valueOf("SCRAM-SHA-1");
     private static final Symbol SCRAM_SHA_256 = Symbol.valueOf("SCRAM-SHA-256");
+    private static final Symbol SCRAM_SHA_512 = Symbol.valueOf("SCRAM-SHA-512");
     private static final Symbol EXTERNAL = Symbol.valueOf("EXTERNAL");
     private static final Symbol XOAUTH2 = Symbol.valueOf("XOAUTH2");
 
@@ -294,6 +295,11 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 20000)
+    public void testScramSha512SelectedWhenCredentialsPresent() throws Exception {
+        doMechanismSelectedTestImpl("username", "password", SCRAM_SHA_512, new Symbol[] {SCRAM_SHA_512, SCRAM_SHA_256, SCRAM_SHA_1, CRAM_MD5, PLAIN, ANONYMOUS}, false);
+    }
+
+    @Test(timeout = 20000)
     public void testXoauth2SelectedWhenCredentialsPresent() throws Exception {
         String token = Base64.getEncoder().encodeToString("token".getBytes(StandardCharsets.US_ASCII));
         doMechanismSelectedTestImpl("username", token, XOAUTH2, new Symbol[] {XOAUTH2, ANONYMOUS}, false);
@@ -326,12 +332,12 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 20000)
     public void testExternalSelectedWhenLocalPrincipalPresent() throws Exception {
-        doMechanismSelectedExternalTestImpl(true, EXTERNAL, new Symbol[] {EXTERNAL, SCRAM_SHA_256, SCRAM_SHA_1, CRAM_MD5, PLAIN, ANONYMOUS});
+        doMechanismSelectedExternalTestImpl(true, EXTERNAL, new Symbol[] {EXTERNAL, SCRAM_SHA_512, SCRAM_SHA_256, SCRAM_SHA_1, CRAM_MD5, PLAIN, ANONYMOUS});
     }
 
     @Test(timeout = 20000)
     public void testExternalNotSelectedWhenLocalPrincipalMissing() throws Exception {
-        doMechanismSelectedExternalTestImpl(false, ANONYMOUS, new Symbol[] {EXTERNAL, SCRAM_SHA_256, SCRAM_SHA_1, CRAM_MD5, PLAIN, ANONYMOUS});
+        doMechanismSelectedExternalTestImpl(false, ANONYMOUS, new Symbol[] {EXTERNAL, SCRAM_SHA_512, SCRAM_SHA_256, SCRAM_SHA_1, CRAM_MD5, PLAIN, ANONYMOUS});
     }
 
     private void doMechanismSelectedExternalTestImpl(boolean requireClientCert, Symbol clientSelectedMech, Symbol[] serverMechs) throws Exception {

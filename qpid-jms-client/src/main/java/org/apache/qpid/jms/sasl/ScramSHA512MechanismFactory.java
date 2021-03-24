@@ -16,35 +16,13 @@
  */
 package org.apache.qpid.jms.sasl;
 
-import java.security.Principal;
-
 /**
- * Implements the External SASL authentication mechanism.
+ * Create the Scram SHA512 SASL Authentication Mechanism types.
  */
-public class ExternalMechanism extends AbstractMechanism {
+public class ScramSHA512MechanismFactory implements MechanismFactory {
 
     @Override
-    public byte[] getInitialResponse() {
-        return EMPTY;
-    }
-
-    @Override
-    public byte[] getChallengeResponse(byte[] challenge) {
-        return EMPTY;
-    }
-
-    @Override
-    public int getPriority() {
-        return PRIORITY.HIGHEST.getValue();
-    }
-
-    @Override
-    public String getName() {
-        return "EXTERNAL";
-    }
-
-    @Override
-    public boolean isApplicable(String username, String password, Principal localPrincipal) {
-        return localPrincipal != null;
+    public Mechanism createMechanism() {
+        return new ScramSHA512Mechanism();
     }
 }

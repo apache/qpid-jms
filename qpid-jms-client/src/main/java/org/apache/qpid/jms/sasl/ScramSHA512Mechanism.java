@@ -16,35 +16,32 @@
  */
 package org.apache.qpid.jms.sasl;
 
-import java.security.Principal;
+import java.util.UUID;
 
 /**
- * Implements the External SASL authentication mechanism.
+ * Implements the SASL Scram SHA 512 authentication Mechanism.
  */
-public class ExternalMechanism extends AbstractMechanism {
+public class ScramSHA512Mechanism extends AbstractScramSHAMechanism {
 
-    @Override
-    public byte[] getInitialResponse() {
-        return EMPTY;
+    public static final String SHA_512 = "SHA-512";
+    public static final String HMAC_SHA_512 = "HmacSHA512";
+
+    public ScramSHA512Mechanism() {
+        this(UUID.randomUUID().toString());
     }
 
-    @Override
-    public byte[] getChallengeResponse(byte[] challenge) {
-        return EMPTY;
+    /** For unit testing */
+    ScramSHA512Mechanism(String clientNonce) {
+        super(SHA_512, HMAC_SHA_512, clientNonce);
     }
 
     @Override
     public int getPriority() {
-        return PRIORITY.HIGHEST.getValue();
+        return PRIORITY.HIGHER_STILL.getValue();
     }
 
     @Override
     public String getName() {
-        return "EXTERNAL";
-    }
-
-    @Override
-    public boolean isApplicable(String username, String password, Principal localPrincipal) {
-        return localPrincipal != null;
+        return "SCRAM-SHA-512";
     }
 }

@@ -89,30 +89,30 @@ public class AmqpFixedProducer extends AmqpProducer {
 
     @Override
     public void send(JmsOutboundMessageDispatch envelope, AsyncResult request) throws ProviderException {
-        if (isClosed()) {
-            request.onFailure(new ProviderIllegalStateException("The MessageProducer is closed"));
-        }
+        if (!isClosed()) {
+            final InFlightSend send = new InFlightSend(envelope, request);
 
-        final InFlightSend send = new InFlightSend(envelope, request);
+            if (!delayedDeliverySupported && envelope.getMessage().getFacade().isDeliveryTimeTransmitted()) {
+                // Don't allow sends with delay if the remote has not said it can handle them
+                send.onFailure(new ProviderUnsupportedOperationException("Remote does not support delayed message delivery"));
+            } else if (session.isTransactionInDoubt()) {
+                // If the transaction has failed due to remote termination etc then we just indicate
+                // the send has succeeded until the a new transaction is started.
+                send.onSuccess();
+            } else if (getEndpoint().getCredit() <= 0) {
+                LOG.trace("Holding Message send until credit is available.");
 
-        if (!delayedDeliverySupported && envelope.getMessage().getFacade().isDeliveryTimeTransmitted()) {
-            // Don't allow sends with delay if the remote has not said it can handle them
-            send.onFailure(new ProviderUnsupportedOperationException("Remote does not support delayed message delivery"));
-        } else if (session.isTransactionInDoubt()) {
-            // If the transaction has failed due to remote termination etc then we just indicate
-            // the send has succeeded until the a new transaction is started.
-            send.onSuccess();
-        } else if (getEndpoint().getCredit() <= 0) {
-            LOG.trace("Holding Message send until credit is available.");
+                if (getSendTimeout() > JmsConnectionInfo.INFINITE) {
+                    send.requestTimeout = getParent().getProvider().scheduleRequestTimeout(send, getSendTimeout(), send);
+                }
 
-            if (getSendTimeout() > JmsConnectionInfo.INFINITE) {
-                send.requestTimeout = getParent().getProvider().scheduleRequestTimeout(send, getSendTimeout(), send);
+                blocked.put(envelope.getMessageId(), send);
+                getParent().getProvider().pumpToProtonTransport(request);
+            } else {
+                doSend(envelope, send);
             }
-
-            blocked.put(envelope.getMessageId(), send);
-            getParent().getProvider().pumpToProtonTransport(request);
         } else {
-            doSend(envelope, send);
+            request.onFailure(new ProviderIllegalStateException("The MessageProducer is closed"));
         }
     }
 

@@ -45,8 +45,11 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.LockSupport;
 
 import javax.jms.BytesMessage;
 import javax.jms.CompletionListener;
@@ -66,6 +69,7 @@ import javax.jms.Topic;
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.JmsDefaultConnectionListener;
+import org.apache.qpid.jms.JmsMessageProducer;
 import org.apache.qpid.jms.JmsOperationTimedOutException;
 import org.apache.qpid.jms.JmsSendTimedOutException;
 import org.apache.qpid.jms.message.foreign.ForeignJmsMessage;
@@ -3085,6 +3089,74 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             producer.send(session.createTextMessage("text"));
 
             connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    /**
+     * Added to attempt to reproduce the race condition in:
+     * https://issues.apache.org/jira/browse/QPIDJMS-529
+     *
+     * The test would fail eventually if repeated a few hundred times before hitting the timing race
+     * that lead to close stalling the executor shutdown indefinitely.  Three way race between the IO
+     * thread handling the remote close, the sender having queued a send right after and the producer
+     * close having queued a close on the IO thread before the close event hits the connection executor
+     * thread and trips the closed boolean in {@link JmsMessageProducer}.
+     *
+     * @throws Exception
+     */
+    @Repeat(repetitions = 1)
+    @Test(timeout = 20000)
+    public void testSendToRemotelyClosedProducerFailsIfSendAfterDetached() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
+
+            final CountDownLatch warmups = new CountDownLatch(2);
+
+            testPeer.expectBegin();
+            // Create a producer, then remotely end it afterwards with a second test peer method in order to
+            // ensure enough time delay to try and allow the three way race into the IO thread.
+            testPeer.expectSenderAttachWithoutGrantingCredit();
+            testPeer.remotelyDetachLastOpenedLinkOnLastOpenedSession(true, true, AmqpError.RESOURCE_DELETED, "deleted for test", 1);
+            testPeer.expectEnd();
+
+            // Get both threads running to provide a slightly better chance that send will beat
+            // close onto the provider IO thread and fail due to the remote close.
+            final ExecutorService executor = Executors.newFixedThreadPool(2);
+            executor.submit(() -> warmups.countDown());
+            executor.submit(() -> warmups.countDown());
+            assertTrue(warmups.await(10, TimeUnit.SECONDS));
+
+            final Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            final Queue queue = session.createQueue("myQueue");
+            final TextMessage message = session.createTextMessage("test");
+            final MessageProducer producer = session.createProducer(queue);
+
+            executor.submit(() -> {
+                try {
+                    producer.send(message);
+                } catch (JMSException ex) {
+                    // Expected that producer gets closed by remote detach and send failed.
+                    LOG.info("Send failed as expected");
+                }
+            });
+
+            executor.submit(() -> {
+                try {
+                    LockSupport.parkNanos(5);
+                    producer.close();
+                } catch (JMSException ex) {
+                    // Expected that producer gets closed by remote detach and send failed.
+                }
+
+                LOG.info("Producer closed as expected");
+            });
+
+            executor.shutdown();
+            executor.awaitTermination(20, TimeUnit.SECONDS);
+
+            session.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
         }

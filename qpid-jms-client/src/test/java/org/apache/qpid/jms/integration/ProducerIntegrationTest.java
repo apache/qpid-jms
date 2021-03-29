@@ -3107,7 +3107,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
      * @throws Exception
      */
     @Repeat(repetitions = 1)
-    @Test(timeout = 20000)
+    @Test(timeout = 35000)
     public void testSendToRemotelyClosedProducerFailsIfSendAfterDetached() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
@@ -3157,6 +3157,11 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             executor.awaitTermination(20, TimeUnit.SECONDS);
 
             session.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+
+            testPeer.expectClose();
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
         }

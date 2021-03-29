@@ -3154,7 +3154,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             });
 
             executor.shutdown();
-            executor.awaitTermination(20, TimeUnit.SECONDS);
+            assertTrue("send + close didnt complete in given time", executor.awaitTermination(20, TimeUnit.SECONDS));
 
             session.close();
 

@@ -341,7 +341,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
                     stop();
 
                     for (JmsMessageConsumer consumer : new ArrayList<JmsMessageConsumer>(this.consumers.values())) {
-                        if(consumer.hasMessageListener()) {
+                        if (consumer.hasMessageListener()) {
                             listenerPresent = true;
                         }
 
@@ -425,12 +425,12 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         LOG.info("A JMS MessageConsumer has been closed: {}", resource);
 
         JmsMessageConsumer consumer = consumers.get(resource.getId());
-        if (consumer.hasMessageListener()) {
-            connection.onAsyncException(JmsExceptionSupport.create(cause));
-        }
-
         try {
             if (consumer != null) {
+                if (consumer.hasMessageListener()) {
+                    connection.onAsyncException(JmsExceptionSupport.create(cause));
+                }
+
                 consumer.shutdown(cause);
             }
         } catch (Throwable error) {

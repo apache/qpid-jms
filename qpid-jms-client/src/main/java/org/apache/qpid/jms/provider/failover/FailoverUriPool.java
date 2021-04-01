@@ -318,8 +318,15 @@ public class FailoverUriPool {
                 firstAddr = InetAddress.getByName(first.getHost());
                 secondAddr = InetAddress.getByName(second.getHost());
 
-                if (firstAddr.equals(secondAddr)) {
-                    result = true;
+                // only compare IP addresses if it's a loopback address.
+                if (firstAddr.isLoopbackAddress() || secondAddr.isLoopbackAddress()){
+                    if (firstAddr.equals(secondAddr)) {
+                        result = true;
+                    }
+                }else{
+                    if(first.getHost().equalsIgnoreCase(second.getHost())){
+                        result = true;
+                    }
                 }
             } catch (IOException e) {
                 if (firstAddr == null) {

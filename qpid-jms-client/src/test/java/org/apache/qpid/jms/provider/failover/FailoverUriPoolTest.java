@@ -157,15 +157,15 @@ public class FailoverUriPoolTest extends QpidJmsTestCase {
 
         assertEquals(1, pool.size());
         pool.add(new URI("tcp://localhost:5672?transport.tcpNoDelay=true"));
-        assertEquals(1, pool.size());
+        assertEquals(2, pool.size());
 
-        assertEquals(1, pool.size());
+        assertEquals(2, pool.size());
         pool.add(new URI("tcp://localhost:5672?transport.tcpNoDelay=false"));
-        assertEquals(1, pool.size());
+        assertEquals(2, pool.size());
     }
 
     @Test
-    public void testDuplicatesNotAddedWithHostResolution() throws URISyntaxException {
+    public void testDuplicatesNotAddedWithoutHostResolution() throws URISyntaxException {
         FailoverUriPool pool = new FailoverUriPool();
 
         assertTrue(pool.isEmpty());
@@ -174,11 +174,11 @@ public class FailoverUriPoolTest extends QpidJmsTestCase {
 
         assertEquals(1, pool.size());
         pool.add(new URI("tcp://localhost:5672"));
-        assertEquals(1, pool.size());
-
-        assertEquals(1, pool.size());
-        pool.add(new URI("tcp://localhost:5673"));
         assertEquals(2, pool.size());
+
+        assertEquals(2, pool.size());
+        pool.add(new URI("tcp://localhost:5673"));
+        assertEquals(3, pool.size());
     }
 
     @Test
@@ -353,22 +353,18 @@ public class FailoverUriPoolTest extends QpidJmsTestCase {
         assertTrue(pool.isEmpty());
         pool.add(new URI("tcp://127.0.0.1:5672?transport.tcpNoDelay=true"));
         assertFalse(pool.isEmpty());
-        pool.remove(new URI("tcp://localhost:5672?transport.tcpNoDelay=true"));
-        assertTrue(pool.isEmpty());
-        pool.add(new URI("tcp://127.0.0.1:5672?transport.tcpNoDelay=true"));
-        assertFalse(pool.isEmpty());
-        pool.remove(new URI("tcp://localhost:5672?transport.tcpNoDelay=false"));
+        pool.remove(new URI("tcp://127.0.0.1:5672?transport.tcpNoDelay=true"));
         assertTrue(pool.isEmpty());
     }
 
     @Test
-    public void testRemoveWithHostResolution() throws URISyntaxException {
+    public void testRemove() throws URISyntaxException {
         FailoverUriPool pool = new FailoverUriPool();
 
         assertTrue(pool.isEmpty());
         pool.add(new URI("tcp://127.0.0.1:5672"));
         assertFalse(pool.isEmpty());
-        pool.remove(new URI("tcp://localhost:5672"));
+        pool.remove(new URI("tcp://127.0.0.1:5672"));
         assertTrue(pool.isEmpty());
         pool.add(new URI("tcp://127.0.0.1:5672"));
         assertFalse(pool.isEmpty());

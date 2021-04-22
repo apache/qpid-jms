@@ -312,25 +312,8 @@ public class FailoverUriPool {
         }
 
         if (first.getPort() == second.getPort()) {
-            InetAddress firstAddr = null;
-            InetAddress secondAddr = null;
-            try {
-                firstAddr = InetAddress.getByName(first.getHost());
-                secondAddr = InetAddress.getByName(second.getHost());
-
-                if (firstAddr.equals(secondAddr)) {
-                    result = true;
-                }
-            } catch (IOException e) {
-                if (firstAddr == null) {
-                    LOG.error("Failed to Lookup INetAddress for URI[ " + first + " ] : " + e);
-                } else {
-                    LOG.error("Failed to Lookup INetAddress for URI[ " + second + " ] : " + e);
-                }
-
-                if (first.getHost().equalsIgnoreCase(second.getHost())) {
-                    result = true;
-                }
+            if (first.getHost().equalsIgnoreCase(second.getHost())) {
+                result = true;
             }
         }
 

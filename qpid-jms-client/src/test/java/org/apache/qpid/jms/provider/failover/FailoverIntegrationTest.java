@@ -1877,6 +1877,42 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 20000)
+    public void testFailoverEnforcesRequestTimeoutSessionWhenBeginSent() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
+
+            // Create a peer to connect to so we can get to a state where we
+            // can try to send when offline.
+            final String peerURI = createPeerURI(testPeer);
+
+            LOG.info("Original peer is at: {}", peerURI);
+
+            // Connect to the test peer
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen();
+            testPeer.expectBegin();
+            testPeer.expectBegin(false);
+            testPeer.dropAfterLastHandler();
+
+            final JmsConnection connection = establishAnonymousConnecton(
+                "jms.requestTimeout=1000&failover.reconnectDelay=2000&failover.maxReconnectAttempts=30", testPeer);
+            connection.start();
+
+            try {
+                connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+                fail("Should have thrown an exception");
+            } catch (JmsOperationTimedOutException jmsEx) {
+                LOG.info("Caught timed out exception from send:", jmsEx);
+            } catch (Exception ex) {
+                fail("Should have caught a timed out exception");
+            }
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
     public void testFailoverEnforcesSendTimeout() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
 
@@ -4912,6 +4948,237 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             connection.close();
 
             finalPeer.waitForAllHandlersToComplete(1000);        }
+    }
+
+    @Test(timeout = 20000)
+    public void testSessionCreationRecoversAfterDropWithNoBeginResponse() throws Exception {
+        try (TestAmqpPeer originalPeer = new TestAmqpPeer();
+             TestAmqpPeer finalPeer = new TestAmqpPeer();) {
+
+            final String content = "myContent";
+            final DescribedType amqpValueNullContent = new AmqpValueDescribedType(content);
+
+            originalPeer.expectSaslAnonymous();
+            originalPeer.expectOpen();
+            originalPeer.expectBegin();
+            originalPeer.expectBegin(false);
+            originalPeer.dropAfterLastHandler(20);
+
+            finalPeer.expectSaslAnonymous();
+            finalPeer.expectOpen();
+            finalPeer.expectBegin();
+            finalPeer.expectBegin();
+            finalPeer.expectReceiverAttach();
+            finalPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, amqpValueNullContent);
+            finalPeer.expectDispositionThatIsAcceptedAndSettled();
+            finalPeer.expectClose();
+
+            final JmsConnection connection = establishAnonymousConnecton(originalPeer, finalPeer);
+
+            try {
+                connection.start();
+            } catch (Exception ex) {
+                fail("Should not have thrown an Exception: " + ex);
+            }
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+            MessageConsumer consumer = session.createConsumer(queue);
+            Message message = consumer.receive(2000);
+
+            connection.close();
+
+            originalPeer.waitForAllHandlersToCompleteNoAssert(1000);
+            finalPeer.waitForAllHandlersToComplete(1000);
+
+            assertNotNull(message);
+            assertTrue(message instanceof TextMessage);
+            assertEquals(content, ((TextMessage) message).getText());
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testMultipleSessionCreationRecoversAfterDropWithNoBeginResponseAndFailedRecoveryAttempt() throws Exception {
+        try (TestAmqpPeer originalPeer = new TestAmqpPeer();
+             TestAmqpPeer intermediatePeer = new TestAmqpPeer();
+             TestAmqpPeer finalPeer = new TestAmqpPeer();) {
+
+            final String content = "myContent";
+            final DescribedType amqpValueNullContent = new AmqpValueDescribedType(content);
+
+            originalPeer.expectSaslAnonymous();
+            originalPeer.expectOpen();
+            originalPeer.expectBegin();
+            originalPeer.expectBegin();
+            originalPeer.expectBegin(false);
+            originalPeer.dropAfterLastHandler(20);
+
+            intermediatePeer.expectSaslAnonymous();
+            intermediatePeer.expectOpen();
+            intermediatePeer.expectBegin();
+            intermediatePeer.expectBegin(false);
+            intermediatePeer.dropAfterLastHandler();
+
+            finalPeer.expectSaslAnonymous();
+            finalPeer.expectOpen();
+            finalPeer.expectBegin();
+            finalPeer.expectBegin();
+            finalPeer.expectBegin();
+            finalPeer.expectReceiverAttach();
+            finalPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, amqpValueNullContent);
+            finalPeer.expectDispositionThatIsAcceptedAndSettled();
+            finalPeer.expectReceiverAttach();
+            finalPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, amqpValueNullContent);
+            finalPeer.expectDispositionThatIsAcceptedAndSettled();
+            finalPeer.expectClose();
+
+            final JmsConnection connection = establishAnonymousConnecton(originalPeer, intermediatePeer, finalPeer);
+
+            try {
+                connection.start();
+            } catch (Exception ex) {
+                fail("Should not have thrown an Exception: " + ex);
+            }
+
+            Session session1 = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Session session2 = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            Queue queue1 = session1.createQueue("myQueue");
+            MessageConsumer consumer1 = session1.createConsumer(queue1);
+            Message message1 = consumer1.receive(2000);
+
+            Queue queue2 = session2.createQueue("myQueue");
+            MessageConsumer consumer2 = session2.createConsumer(queue2);
+            Message message2 = consumer2.receive(2000);
+
+            connection.close();
+
+            originalPeer.waitForAllHandlersToComplete(1000);
+            intermediatePeer.waitForAllHandlersToComplete(1000);
+            finalPeer.waitForAllHandlersToComplete(1000);
+
+            assertNotNull(message1);
+            assertTrue(message1 instanceof TextMessage);
+            assertEquals(content, ((TextMessage) message1).getText());
+            assertNotNull(message2);
+            assertTrue(message2 instanceof TextMessage);
+            assertEquals(content, ((TextMessage) message2).getText());
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testMultipleSenderCreationRecoversAfterDropWithNoAttachResponseAndFailedRecoveryAttempt() throws Exception {
+        try (TestAmqpPeer originalPeer = new TestAmqpPeer();
+             TestAmqpPeer intermediatePeer = new TestAmqpPeer();
+             TestAmqpPeer finalPeer = new TestAmqpPeer();) {
+
+            originalPeer.expectSaslAnonymous();
+            originalPeer.expectOpen();
+            originalPeer.expectBegin();
+            originalPeer.expectBegin();
+            originalPeer.expectSenderAttach();
+            originalPeer.expectSenderAttachButDoNotRespond();
+            originalPeer.dropAfterLastHandler(20);
+
+            intermediatePeer.expectSaslAnonymous();
+            intermediatePeer.expectOpen();
+            intermediatePeer.expectBegin();
+            intermediatePeer.expectBegin();
+            intermediatePeer.expectSenderAttachButDoNotRespond();
+            intermediatePeer.dropAfterLastHandler();
+
+            finalPeer.expectSaslAnonymous();
+            finalPeer.expectOpen();
+            finalPeer.expectBegin();
+            finalPeer.expectBegin();
+            finalPeer.expectSenderAttach();
+            finalPeer.expectSenderAttach();
+            finalPeer.expectClose();
+
+            final JmsConnection connection = establishAnonymousConnecton(originalPeer, intermediatePeer, finalPeer);
+
+            try {
+                connection.start();
+            } catch (Exception ex) {
+                fail("Should not have thrown an Exception: " + ex);
+            }
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            MessageProducer producer1 = session.createProducer(queue);
+            MessageProducer producer2 = session.createProducer(queue);
+
+            assertNotNull(producer1);
+            assertNotNull(producer2);
+
+            assertEquals(queue, producer1.getDestination());
+            assertEquals(queue, producer2.getDestination());
+
+            connection.close();
+
+            originalPeer.waitForAllHandlersToComplete(1000);
+            intermediatePeer.waitForAllHandlersToComplete(1000);
+            finalPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testSenderAndReceiverCreationRecoversAfterDropWithNoAttachResponseAndFailedRecoveryAttempt() throws Exception {
+        try (TestAmqpPeer originalPeer = new TestAmqpPeer();
+             TestAmqpPeer intermediatePeer = new TestAmqpPeer();
+             TestAmqpPeer finalPeer = new TestAmqpPeer();) {
+
+            originalPeer.expectSaslAnonymous();
+            originalPeer.expectOpen();
+            originalPeer.expectBegin();
+            originalPeer.expectBegin();
+            originalPeer.expectSenderAttach();
+            originalPeer.expectReceiverAttachButDoNotRespond();
+            originalPeer.dropAfterLastHandler(20);
+
+            intermediatePeer.expectSaslAnonymous();
+            intermediatePeer.expectOpen();
+            intermediatePeer.expectBegin();
+            intermediatePeer.expectBegin();
+            intermediatePeer.expectSenderAttachButDoNotRespond();
+            intermediatePeer.dropAfterLastHandler(10);
+
+            finalPeer.expectSaslAnonymous();
+            finalPeer.expectOpen();
+            finalPeer.expectBegin();
+            finalPeer.expectBegin();
+            finalPeer.expectSenderAttach();
+            finalPeer.expectReceiverAttach();
+            finalPeer.expectLinkFlow();
+            finalPeer.expectClose();
+
+            final JmsConnection connection = establishAnonymousConnecton(originalPeer, intermediatePeer, finalPeer);
+
+            try {
+                connection.start();
+            } catch (Exception ex) {
+                fail("Should not have thrown an Exception: " + ex);
+            }
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            MessageProducer producer = session.createProducer(queue);
+            MessageConsumer consumer = session.createConsumer(queue);
+
+            assertNotNull(producer);
+            assertNotNull(consumer);
+
+            assertEquals(queue, producer.getDestination());
+            assertNull(consumer.getMessageListener());
+
+            connection.close();
+
+            originalPeer.waitForAllHandlersToComplete(1000);
+            intermediatePeer.waitForAllHandlersToComplete(1000);
+            finalPeer.waitForAllHandlersToComplete(1000);
+        }
     }
 
     private JmsConnection establishAnonymousConnecton(TestAmqpPeer... peers) throws JMSException {

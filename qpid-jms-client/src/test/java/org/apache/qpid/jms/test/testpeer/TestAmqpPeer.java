@@ -1019,6 +1019,11 @@ public class TestAmqpPeer implements AutoCloseable
         expectBegin(notNullValue(), true);
     }
 
+    public void expectBegin(boolean sendResponse)
+    {
+        expectBegin(notNullValue(), sendResponse);
+    }
+
     public void expectBegin(Matcher<?> outgoingWindowMatcher, boolean sendResponse)
     {
         final BeginMatcher beginMatcher = new BeginMatcher()
@@ -1240,6 +1245,20 @@ public class TestAmqpPeer implements AutoCloseable
         addHandler(attachMatcher);
     }
 
+    public void expectSenderAttachButDoNotRespond()
+    {
+        final AttachMatcher attachMatcher = new AttachMatcher()
+                .withName(notNullValue())
+                .withHandle(notNullValue())
+                .withRole(equalTo(Role.SENDER))
+                .withSndSettleMode(Matchers.oneOf(SenderSettleMode.SETTLED, SenderSettleMode.UNSETTLED))
+                .withRcvSettleMode(equalTo(ReceiverSettleMode.FIRST))
+                .withSource(notNullValue())
+                .withTarget(notNullValue());
+
+        addHandler(attachMatcher);
+    }
+
     public void expectSenderAttach()
     {
         expectSenderAttach(notNullValue(), false, false);
@@ -1431,6 +1450,20 @@ public class TestAmqpPeer implements AutoCloseable
     public void expectQueueBrowserAttach()
     {
         expectReceiverAttach(notNullValue(), notNullValue(), true);
+    }
+
+    public void expectReceiverAttachButDoNotRespond()
+    {
+        final AttachMatcher attachMatcher = new AttachMatcher()
+                .withName(notNullValue())
+                .withHandle(notNullValue())
+                .withRole(equalTo(Role.RECEIVER))
+                .withSndSettleMode(Matchers.oneOf(SenderSettleMode.SETTLED, SenderSettleMode.UNSETTLED))
+                .withRcvSettleMode(equalTo(ReceiverSettleMode.FIRST))
+                .withSource(notNullValue())
+                .withTarget(notNullValue());
+
+        addHandler(attachMatcher);
     }
 
     public void expectReceiverAttach()

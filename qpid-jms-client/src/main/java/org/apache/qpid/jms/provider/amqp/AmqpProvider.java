@@ -160,6 +160,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
     private final ProviderFutureFactory futureFactory;
     private AsyncResult connectionRequest;
     private ScheduledFuture<?> nextIdleTimeoutCheck;
+    private List<AsyncResult> failOnConnectionDropList = new ArrayList<>();
 
     /**
      * Create a new instance of an AmqpProvider bonded to the given remote URI.
@@ -1146,8 +1147,17 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
         failureCause = ex;
 
         ProviderListener listener = this.listener;
-        if (listener != null) {
-            listener.onConnectionFailure(ProviderExceptionSupport.createNonFatalOrPassthrough(ex));
+        try {
+            if (listener != null) {
+                listener.onConnectionFailure(ProviderExceptionSupport.createNonFatalOrPassthrough(ex));
+            }
+        } finally {
+            // Alert the request to the failure and then afterwards clean up any stragglers that have not
+            // been altered to the provider having failed to avoid any lingering blocked resource create
+            // calls and possibly others as needed.
+            for (AsyncResult request : failOnConnectionDropList) {
+                request.onFailure(ex);
+            }
         }
     }
 
@@ -1544,6 +1554,14 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
         }
 
         return null;
+    }
+
+    public void addToFailOnConnectionDropTracking(AsyncResult result) {
+        failOnConnectionDropList.add(result);
+    }
+
+    public void removeFromFailOnConnectionDropTracking(AsyncResult result) {
+        failOnConnectionDropList.remove(result);
     }
 
     //----- Internal implementation ------------------------------------------//

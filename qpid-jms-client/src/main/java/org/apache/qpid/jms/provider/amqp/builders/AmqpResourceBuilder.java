@@ -54,10 +54,12 @@ public abstract class AmqpResourceBuilder<TARGET extends AmqpResource, PARENT ex
     protected ENDPOINT endpoint;
     protected final PARENT parent;
     protected final INFO resourceInfo;
+    protected final AmqpProvider provider;
 
     public AmqpResourceBuilder(PARENT parent, INFO resourceInfo) {
         this.parent = parent;
         this.resourceInfo = resourceInfo;
+        this.provider = parent.getProvider();
     }
 
     /**
@@ -72,6 +74,9 @@ public abstract class AmqpResourceBuilder<TARGET extends AmqpResource, PARENT ex
     public void buildResource(final AsyncResult request) {
         this.request = request;
 
+        // Store the request with the provider for failure if connection drops
+        provider.addToFailOnConnectionDropTracking(request);
+
         // Create the local end of the manage resource.
         endpoint = createEndpoint(resourceInfo);
         endpoint.setContext(this);
@@ -79,8 +84,6 @@ public abstract class AmqpResourceBuilder<TARGET extends AmqpResource, PARENT ex
 
         // Create the resource object now
         resource = createResource(parent, resourceInfo, endpoint);
-
-        AmqpProvider provider = parent.getProvider();
 
         if (getRequestTimeout() > JmsConnectionInfo.INFINITE) {
 
@@ -147,6 +150,7 @@ public abstract class AmqpResourceBuilder<TARGET extends AmqpResource, PARENT ex
     //----- Standard open and close handlers ---------------------------------//
 
     protected final void handleOpened(AmqpProvider provider) {
+        provider.removeFromFailOnConnectionDropTracking(request);
 
         // perform any post open processing prior to opened state inspection.
         afterOpened();
@@ -172,6 +176,8 @@ public abstract class AmqpResourceBuilder<TARGET extends AmqpResource, PARENT ex
     }
 
     protected final void handleClosed(AmqpProvider provider, ProviderException cause) {
+        provider.removeFromFailOnConnectionDropTracking(request);
+
         // If the resource being built is closed during the creation process
         // then this is always an error.
 

@@ -1250,6 +1250,12 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
 
     @Override
     public void onConnectionInterrupted(final URI remoteURI) {
+        try {
+            LOG.info("Connection {} interrupted to server: {}", connectionInfo.getId(), URISupport.removeQuery(remoteURI));
+        } catch (URISyntaxException e) {
+            LOG.info("Connection {} interrupted to server: {}:{}", connectionInfo.getId(), remoteURI.getHost(), remoteURI.getPort());
+        }
+
         for (JmsSession session : sessions.values()) {
             session.onConnectionInterrupted();
         }
@@ -1368,6 +1374,8 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
     @Override
     public void onConnectionFailure(final ProviderException ex) {
         providerFailed(ex);
+
+        LOG.info("Connection has failed due to error: {}", ex != null ? ex.getMessage() : "No error details provided.");
 
         // Signal that connection dropped we need to mark transactions as
         // failed, deliver failure events to asynchronous send completions etc.

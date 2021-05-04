@@ -1375,7 +1375,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
     public void onConnectionFailure(final ProviderException ex) {
         providerFailed(ex);
 
-        LOG.info("Connection has failed due to error: {}", ex != null ? ex.getMessage() : "No error details provided.");
+        LOG.warn("Connection {} has failed due to: {}", connectionInfo.getId(), ex != null ? ex.getMessage() : "No error details provided.");
 
         // Signal that connection dropped we need to mark transactions as
         // failed, deliver failure events to asynchronous send completions etc.

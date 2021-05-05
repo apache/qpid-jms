@@ -16,8 +16,6 @@
  */
 package org.apache.qpid.jms.provider.failover;
 
-import java.io.IOException;
-import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -307,30 +305,15 @@ public class FailoverUriPool {
 
     private boolean compareURIs(final URI first, final URI second) {
         boolean result = false;
+
         if (first == null || second == null) {
             return result;
-        }
+        } else if (first.getPort() == second.getPort()) {
+            final String firstHost = first.getHost();
+            final String secondHost = second.getHost();
 
-        if (first.getPort() == second.getPort()) {
-            InetAddress firstAddr = null;
-            InetAddress secondAddr = null;
-            try {
-                firstAddr = InetAddress.getByName(first.getHost());
-                secondAddr = InetAddress.getByName(second.getHost());
-
-                if (firstAddr.equals(secondAddr)) {
-                    result = true;
-                }
-            } catch (IOException e) {
-                if (firstAddr == null) {
-                    LOG.error("Failed to Lookup INetAddress for URI[ " + first + " ] : " + e);
-                } else {
-                    LOG.error("Failed to Lookup INetAddress for URI[ " + second + " ] : " + e);
-                }
-
-                if (first.getHost().equalsIgnoreCase(second.getHost())) {
-                    result = true;
-                }
+            if (firstHost.equalsIgnoreCase(secondHost)) {
+                result = true;
             }
         }
 

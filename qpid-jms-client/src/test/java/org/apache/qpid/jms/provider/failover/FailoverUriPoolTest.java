@@ -23,7 +23,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.junit.Assume.assumeFalse;
+import static org.junit.Assume.assumeTrue;
 
 import java.net.InetAddress;
 import java.net.URI;
@@ -152,78 +152,81 @@ public class FailoverUriPoolTest extends QpidJmsTestCase {
         FailoverUriPool pool = new FailoverUriPool();
 
         assertTrue(pool.isEmpty());
-        pool.add(new URI("tcp://127.0.0.1:5672?transport.tcpNoDelay=true"));
+        pool.add(new URI("tcp://localhost:5671?transport.tcpNoDelay=true"));
         assertFalse(pool.isEmpty());
 
         assertEquals(1, pool.size());
         pool.add(new URI("tcp://localhost:5672?transport.tcpNoDelay=true"));
-        assertEquals(1, pool.size());
+        assertEquals(2, pool.size());
 
-        assertEquals(1, pool.size());
+        assertEquals(2, pool.size());
         pool.add(new URI("tcp://localhost:5672?transport.tcpNoDelay=false"));
-        assertEquals(1, pool.size());
+        assertEquals(2, pool.size());
     }
 
     @Test
-    public void testDuplicatesNotAddedWithHostResolution() throws URISyntaxException {
+    public void testNoHostResolutionPerformedFilterDuplicatesOnly() throws URISyntaxException {
         FailoverUriPool pool = new FailoverUriPool();
 
         assertTrue(pool.isEmpty());
         pool.add(new URI("tcp://127.0.0.1:5672"));
         assertFalse(pool.isEmpty());
-
-        assertEquals(1, pool.size());
-        pool.add(new URI("tcp://localhost:5672"));
         assertEquals(1, pool.size());
 
+        assertFalse(pool.isEmpty());
+        pool.add(new URI("tcp://127.0.0.1:5672"));  // Not added as it duplicates previous
+        assertFalse(pool.isEmpty());
         assertEquals(1, pool.size());
-        pool.add(new URI("tcp://localhost:5673"));
+
+        pool.add(new URI("tcp://localhost:5672"));  // Added since there is no host resolution
+        assertEquals(2, pool.size());
+
+        pool.add(new URI("tcp://localhost:5673"));  // Added since the port is different
+        assertEquals(3, pool.size());
+
+        pool.add(new URI("tcp://localhost:5672"));  // Not added as it duplicates previous
+        assertEquals(3, pool.size());
+    }
+
+    @Test
+    public void testDuplicatesNotAddedWhenCaseIsDifferent() throws Exception {
+        FailoverUriPool pool = new FailoverUriPool();
+
+        assertTrue(pool.isEmpty());
+        pool.add(new URI("tcp://somerandomhostname:5672"));
+        assertFalse(pool.isEmpty());
+
+        assertEquals(1, pool.size());
+        pool.add(new URI("tcp://SomerandomHostname:5672"));
+        assertEquals(1, pool.size());
+
+        assertEquals(1, pool.size());
+        pool.add(new URI("tcp://SOMERANDOMHOSTNAME:5672"));
+        assertEquals(1, pool.size());
+
+        assertEquals(1, pool.size());
+        pool.add(new URI("tcp://SOMERANDOMHOSTNAME2:5672"));
         assertEquals(2, pool.size());
     }
 
     @Test
-    public void testDuplicatesNotAddedUnresolvable() throws Exception {
-        assumeFalse("Host resolution works when not expected", checkIfResolutionWorks());
-
+    public void testDuplicatesNotAddedWhenCaseIsDifferentAndQueryStringPresent() throws URISyntaxException {
         FailoverUriPool pool = new FailoverUriPool();
 
         assertTrue(pool.isEmpty());
-        pool.add(new URI("tcp://shouldbeunresolvable:5672"));
+        pool.add(new URI("tcp://somerandomhostname:5672?transport.tcpNoDelay=true"));
         assertFalse(pool.isEmpty());
 
         assertEquals(1, pool.size());
-        pool.add(new URI("tcp://shouldbeunresolvable:5672"));
+        pool.add(new URI("tcp://SomerandomHostname:5672?transport.tcpNoDelay=false"));
         assertEquals(1, pool.size());
 
         assertEquals(1, pool.size());
-        pool.add(new URI("tcp://SHOULDBEUNRESOLVABLE:5672"));
+        pool.add(new URI("tcp://SOMERANDOMHOSTNAME:5672?transport.tcpNoDelay=true"));
         assertEquals(1, pool.size());
 
         assertEquals(1, pool.size());
-        pool.add(new URI("tcp://SHOULDBEUNRESOLVABLE2:5672"));
-        assertEquals(2, pool.size());
-    }
-
-    @Test
-    public void testDuplicatesNotAddedWhenQueryPresentAndUnresolveable() throws URISyntaxException {
-        assumeFalse("Host resolution works when not expected", checkIfResolutionWorks());
-
-        FailoverUriPool pool = new FailoverUriPool();
-
-        assertTrue(pool.isEmpty());
-        pool.add(new URI("tcp://shouldbeunresolvable:5672?transport.tcpNoDelay=true"));
-        assertFalse(pool.isEmpty());
-
-        assertEquals(1, pool.size());
-        pool.add(new URI("tcp://shouldbeunresolvable:5672?transport.tcpNoDelay=false"));
-        assertEquals(1, pool.size());
-
-        assertEquals(1, pool.size());
-        pool.add(new URI("tcp://SHOULDBEUNRESOLVABLE:5672?transport.tcpNoDelay=true"));
-        assertEquals(1, pool.size());
-
-        assertEquals(1, pool.size());
-        pool.add(new URI("tcp://SHOULDBEUNRESOLVABLE2:5672?transport.tcpNoDelay=true"));
+        pool.add(new URI("tcp://SOMERANDOMHOSTNAME2:5672?transport.tcpNoDelay=true"));
         assertEquals(2, pool.size());
     }
 
@@ -353,60 +356,54 @@ public class FailoverUriPoolTest extends QpidJmsTestCase {
         assertTrue(pool.isEmpty());
         pool.add(new URI("tcp://127.0.0.1:5672?transport.tcpNoDelay=true"));
         assertFalse(pool.isEmpty());
-        pool.remove(new URI("tcp://localhost:5672?transport.tcpNoDelay=true"));
-        assertTrue(pool.isEmpty());
-        pool.add(new URI("tcp://127.0.0.1:5672?transport.tcpNoDelay=true"));
-        assertFalse(pool.isEmpty());
-        pool.remove(new URI("tcp://localhost:5672?transport.tcpNoDelay=false"));
+        pool.remove(new URI("tcp://127.0.0.1:5672?transport.tcpNoDelay=true"));
         assertTrue(pool.isEmpty());
     }
 
     @Test
-    public void testRemoveWithHostResolution() throws URISyntaxException {
+    public void testRemove() throws URISyntaxException {
         FailoverUriPool pool = new FailoverUriPool();
 
         assertTrue(pool.isEmpty());
         pool.add(new URI("tcp://127.0.0.1:5672"));
         assertFalse(pool.isEmpty());
-        pool.remove(new URI("tcp://localhost:5672"));
+        pool.remove(new URI("tcp://127.0.0.1:5672"));
         assertTrue(pool.isEmpty());
         pool.add(new URI("tcp://127.0.0.1:5672"));
+        assertFalse(pool.isEmpty());
+        pool.add(new URI("tcp://127.0.0.1:5673"));
         assertFalse(pool.isEmpty());
         pool.remove(new URI("tcp://localhost:5673"));
         assertFalse(pool.isEmpty());
     }
 
     @Test
-    public void testRemoveWhenUnresolvable() throws URISyntaxException {
-        assumeFalse("Host resolution works when not expected", checkIfResolutionWorks());
-
+    public void testRemoveHostIgnoresCaseInHostname() throws URISyntaxException {
         FailoverUriPool pool = new FailoverUriPool();
 
         assertTrue(pool.isEmpty());
-        pool.add(new URI("tcp://shouldbeunresolvable:5672"));
+        pool.add(new URI("tcp://somerandomhostname:5672"));
         assertFalse(pool.isEmpty());
-        pool.remove(new URI("tcp://SHOULDBEUNRESOLVABLE:5672"));
+        pool.remove(new URI("tcp://SOMERANDOMHOSTNAME:5672"));
         assertTrue(pool.isEmpty());
-        pool.add(new URI("tcp://shouldbeunresolvable:5672"));
+        pool.add(new URI("tcp://somerandomhostname:5672"));
         assertFalse(pool.isEmpty());
-        pool.remove(new URI("tcp://shouldbeunresolvable:5673"));
+        pool.remove(new URI("tcp://somerandomhostname:5673"));
         assertFalse(pool.isEmpty());
     }
 
     @Test
-    public void testRemoveWhenQueryPresentAndUnresolveable() throws URISyntaxException {
-        assumeFalse("Host resolution works when not expected", checkIfResolutionWorks());
-
+    public void testRemoveWhenQueryPresentIgnoresCaseInHostname() throws URISyntaxException {
         FailoverUriPool pool = new FailoverUriPool();
 
         assertTrue(pool.isEmpty());
-        pool.add(new URI("tcp://shouldbeunresolvable:5672?transport.tcpNoDelay=true"));
+        pool.add(new URI("tcp://somerandomhostname:5672?transport.tcpNoDelay=true"));
         assertFalse(pool.isEmpty());
-        pool.remove(new URI("tcp://SHOULDBEUNRESOLVABLE:5672?transport.tcpNoDelay=true"));
+        pool.remove(new URI("tcp://SOMERANDOMHOSTNAME:5672?transport.tcpNoDelay=true"));
         assertTrue(pool.isEmpty());
-        pool.add(new URI("tcp://shouldbeunresolvable:5672?transport.tcpNoDelay=true"));
+        pool.add(new URI("tcp://somerandomhostname:5672?transport.tcpNoDelay=true"));
         assertFalse(pool.isEmpty());
-        pool.remove(new URI("tcp://shouldbeunresolvable:5673?transport.tcpNoDelay=true"));
+        pool.remove(new URI("tcp://somerandomhostname:5673?transport.tcpNoDelay=true"));
         assertFalse(pool.isEmpty());
     }
 
@@ -421,7 +418,6 @@ public class FailoverUriPoolTest extends QpidJmsTestCase {
     }
 
     private void assertConnectedEffectOnPool(boolean randomize, boolean shouldShuffle) {
-
         FailoverUriPool pool = new FailoverUriPool(uris, null);
         pool.setRandomize(randomize);
 
@@ -547,18 +543,6 @@ public class FailoverUriPoolTest extends QpidJmsTestCase {
         assertEquals(uris.get(0).getHost(), pool.getNext().getHost());
     }
 
-    private boolean checkIfResolutionWorks() {
-        boolean resolutionWorks = false;
-        try {
-            resolutionWorks = InetAddress.getByName("shouldbeunresolvable") != null;
-            resolutionWorks = InetAddress.getByName("SHOULDBEUNRESOLVABLE") != null;
-            resolutionWorks = InetAddress.getByName("SHOULDBEUNRESOLVABLE2") != null;
-        } catch (Exception e) {
-        }
-
-        return resolutionWorks;
-    }
-
     @Test
     public void testRemoveAll() throws URISyntaxException {
         FailoverUriPool pool = new FailoverUriPool(uris, null);
@@ -569,5 +553,30 @@ public class FailoverUriPoolTest extends QpidJmsTestCase {
         assertEquals(0, pool.size());
 
         pool.removeAll();
+    }
+
+    @Test
+    public void testLoopBackAndLocalHostAllowedInSamePool() throws URISyntaxException {
+        assumeTrue(checkLocalHostResolvesToLoopbackIP());
+
+        FailoverUriPool pool = new FailoverUriPool();
+
+        assertTrue(pool.isEmpty());
+        pool.add(new URI("tcp://127.0.0.1:5672"));
+        assertFalse(pool.isEmpty());
+        assertEquals(1, pool.size());
+        pool.add(new URI("tcp://localhost:5672"));
+        assertEquals(2, pool.size());
+    }
+
+    private boolean checkLocalHostResolvesToLoopbackIP() {
+        try {
+            InetAddress localhost = InetAddress.getByName("localhost");
+            InetAddress loopback = InetAddress.getLoopbackAddress();
+
+            return localhost.equals(loopback);
+        } catch (Exception failsOnError) {
+            return false;
+        }
     }
 }

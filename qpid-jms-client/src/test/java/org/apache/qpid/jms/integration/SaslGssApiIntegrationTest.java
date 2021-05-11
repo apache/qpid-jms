@@ -20,9 +20,34 @@
  */
 package org.apache.qpid.jms.integration;
 
-import org.apache.directory.server.kerberos.shared.keytab.Keytab;
-import org.apache.directory.server.kerberos.shared.keytab.KeytabEntry;
+import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
+import java.nio.channels.WritableByteChannel;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Properties;
+
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.JMSSecurityException;
+
 import org.apache.hadoop.minikdc.MiniKdc;
+import org.apache.kerby.kerberos.kerb.keytab.Keytab;
+import org.apache.kerby.kerberos.kerb.keytab.KeytabEntry;
+import org.apache.kerby.kerberos.kerb.type.base.PrincipalName;
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
@@ -35,20 +60,6 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.JMSSecurityException;
-import java.io.File;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
-
-import static junit.framework.TestCase.assertTrue;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
-
 public class SaslGssApiIntegrationTest extends QpidJmsTestCase {
 
     private static final Logger LOG = LoggerFactory.getLogger(SaslGssApiIntegrationTest.class);
@@ -57,6 +68,8 @@ public class SaslGssApiIntegrationTest extends QpidJmsTestCase {
     private static final String GSSAPI = "GSSAPI";
     private static final Symbol ANONYMOUS = Symbol.valueOf("ANONYMOUS");
     private static final Symbol PLAIN = Symbol.valueOf("PLAIN");
+    private static final String KRB5_TCP_PORT_TEMPLATE = "MINI_KDC_PORT";
+    private static final String KRB5_CONFIG_TEMPLATE = "minikdc-krb5-template.conf";
     private static final String KRB5_KEYTAB = "target/SaslGssApiIntegrationTest.krb5.keytab";
     private static final String CLIENT_PRINCIPAL_LOGIN_CONFIG = "clientprincipal";
     private static final String CLIENT_PRINCIPAL_FACTORY_USERNAME = "factoryusername";
@@ -76,21 +89,42 @@ public class SaslGssApiIntegrationTest extends QpidJmsTestCase {
         Path tempDirectory = Files.createTempDirectory(targetDir, "junit.SaslGssApiIntegrationTest.");
         File root = tempDirectory.toFile();
 
-        kdc = new MiniKdc(MiniKdc.createConf(), new File(root, "kdc"));
+        Properties kdcConf = MiniKdc.createConf();
+        kdcConf.setProperty("debug", Boolean.toString(DEBUG));
+
+        kdc = new MiniKdc(kdcConf, new File(root, "kdc"));
         kdc.start();
 
-        // hard coded match, default_keytab_name in minikdc-krb5.conf template
         File userKeyTab = new File(KRB5_KEYTAB);
         kdc.createPrincipal(userKeyTab, CLIENT_PRINCIPAL_LOGIN_CONFIG, CLIENT_PRINCIPAL_FACTORY_USERNAME,
                 CLIENT_PRINCIPAL_URI_USERNAME, CLIENT_PRINCIPAL_DEFAULT_CONFIG_SCOPE, servicePrincipal);
 
+        // We need to hard code the default keyTab into the Krb5 configuration file which is not possible
+        // with this version of MiniKDC so we use a template file and replace the port with the value from
+        // the MiniKDC instance we just started.
+        rewriteKrbConfFile(kdc);
+
         if (DEBUG) {
-            Keytab kt = Keytab.read(userKeyTab);
-            for (KeytabEntry entry : kt.getEntries()) {
-                LOG.info("KeyTab Entry: PrincipalName:" + entry.getPrincipalName() + " ; KeyInfo:"+ entry.getKey().getKeyType());
+            LOG.debug("java.security.krb5.conf='{}'", System.getProperty("java.security.krb5.conf"));
+            try (BufferedReader br = new BufferedReader(new FileReader(System.getProperty("java.security.krb5.conf")))) {
+                br.lines().forEach(line -> LOG.debug(line));
+            }
+
+            Keytab kt = Keytab.loadKeytab(userKeyTab);
+            for (PrincipalName name : kt.getPrincipals()) {
+                for (KeytabEntry entry : kt.getKeytabEntries(name)) {
+                    LOG.info("KeyTab Entry: PrincipalName:" + entry.getPrincipal() + " ; KeyInfo:"+ entry.getKey().getKeyType());
+                }
             }
 
             java.util.logging.Logger logger = java.util.logging.Logger.getLogger("javax.security.sasl");
+            logger.setLevel(java.util.logging.Level.FINEST);
+            logger.addHandler(new java.util.logging.ConsoleHandler());
+            for (java.util.logging.Handler handler : logger.getHandlers()) {
+                handler.setLevel(java.util.logging.Level.FINEST);
+            }
+
+            logger = java.util.logging.Logger.getLogger("logincontext");
             logger.setLevel(java.util.logging.Level.FINEST);
             logger.addHandler(new java.util.logging.ConsoleHandler());
             for (java.util.logging.Handler handler : logger.getHandlers()) {
@@ -114,7 +148,7 @@ public class SaslGssApiIntegrationTest extends QpidJmsTestCase {
     @AfterClass
     public static void cleanUpKerberos() {
         if (kdc != null) {
-            kdc.stop();
+           kdc.stop();
         }
     }
 
@@ -142,7 +176,6 @@ public class SaslGssApiIntegrationTest extends QpidJmsTestCase {
 
     private void doSaslGssApiKrbConnectionTestImpl(String configScope, String clientAuthIdAtServer) throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-
             testPeer.expectSaslGSSAPI(servicePrincipal, KRB5_KEYTAB, clientAuthIdAtServer);
             testPeer.expectOpen();
 
@@ -150,7 +183,7 @@ public class SaslGssApiIntegrationTest extends QpidJmsTestCase {
             testPeer.expectBegin();
 
             String uriOptions = "?amqp.saslMechanisms=" + GSSAPI;
-            if(configScope != null) {
+            if (configScope != null) {
                 uriOptions += "&sasl.options.configScope=" + configScope;
             }
 
@@ -170,7 +203,6 @@ public class SaslGssApiIntegrationTest extends QpidJmsTestCase {
     @Test(timeout = 20000)
     public void testSaslGssApiKrbConnectionWithPrincipalViaJmsUsernameUri() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-
             testPeer.expectSaslGSSAPI(servicePrincipal, KRB5_KEYTAB, CLIENT_PRINCIPAL_URI_USERNAME + "@EXAMPLE.COM");
             testPeer.expectOpen();
 
@@ -179,7 +211,8 @@ public class SaslGssApiIntegrationTest extends QpidJmsTestCase {
 
             // No password, not needed as using keyTab.
             String uriOptions = "?sasl.options.configScope=KRB5-CLIENT-URI-USERNAME-CALLBACK&jms.username="
-                                + CLIENT_PRINCIPAL_URI_USERNAME +"&amqp.saslMechanisms=" + GSSAPI;
+                                + CLIENT_PRINCIPAL_URI_USERNAME +
+                                "&amqp.saslMechanisms=" + GSSAPI;
             ConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + testPeer.getServerPort() + uriOptions);
 
             Connection connection = factory.createConnection();
@@ -198,7 +231,6 @@ public class SaslGssApiIntegrationTest extends QpidJmsTestCase {
     @Test(timeout = 20000)
     public void testSaslGssApiKrbConnectionWithPrincipalViaJmsUsernameConnFactory() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-
             testPeer.expectSaslGSSAPI(servicePrincipal, KRB5_KEYTAB, CLIENT_PRINCIPAL_FACTORY_USERNAME + "@EXAMPLE.COM");
             testPeer.expectOpen();
 
@@ -251,7 +283,7 @@ public class SaslGssApiIntegrationTest extends QpidJmsTestCase {
             testPeer.expectSaslFailingAuthentication(serverMechs, clientSelectedMech);
 
             String uriOptions = "?jms.clientID=myclientid";
-            if(enableGssapiExplicitly) {
+            if (enableGssapiExplicitly) {
                 uriOptions += "&amqp.saslMechanisms=PLAIN," + GSSAPI;
             }
             ConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + testPeer.getServerPort() + uriOptions);
@@ -268,6 +300,21 @@ public class SaslGssApiIntegrationTest extends QpidJmsTestCase {
             }
 
             testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    private static void rewriteKrbConfFile(MiniKdc server) throws Exception {
+        final Path template = Paths.get(SaslGssApiIntegrationTest.class.getClassLoader().getResource(KRB5_CONFIG_TEMPLATE).toURI());
+        final String krb5confTemplate = new String(Files.readAllBytes(template), StandardCharsets.UTF_8);
+        final String replacementPort = Integer.toString(server.getPort());
+
+        // Replace the port template with the current actual port of the MiniKDC Server instance.
+        final String krb5confUpdated = krb5confTemplate.replaceAll(KRB5_TCP_PORT_TEMPLATE, replacementPort);
+
+        try (OutputStream outputStream = Files.newOutputStream(kdc.getKrb5conf().toPath());
+             WritableByteChannel channel = Channels.newChannel(outputStream)) {
+
+            channel.write(ByteBuffer.wrap(krb5confUpdated.getBytes(StandardCharsets.UTF_8)));
         }
     }
 }

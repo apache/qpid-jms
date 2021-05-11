@@ -86,7 +86,7 @@ public class ConstantExpression implements Expression {
     }
 
     public static ConstantExpression createFloat(String text) {
-        Number value = new Double(text);
+        Number value = Double.valueOf(text);
         return new ConstantExpression(value);
     }
 

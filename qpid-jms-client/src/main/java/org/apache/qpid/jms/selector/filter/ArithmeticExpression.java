@@ -115,7 +115,7 @@ public abstract class ArithmeticExpression extends BinaryExpression {
         case LONG:
             return Long.valueOf(left.longValue() + right.longValue());
         default:
-            return new Double(left.doubleValue() + right.doubleValue());
+            return Double.valueOf(left.doubleValue() + right.doubleValue());
         }
     }
 
@@ -126,7 +126,7 @@ public abstract class ArithmeticExpression extends BinaryExpression {
         case LONG:
             return Long.valueOf(left.longValue() - right.longValue());
         default:
-            return new Double(left.doubleValue() - right.doubleValue());
+            return Double.valueOf(left.doubleValue() - right.doubleValue());
         }
     }
 
@@ -137,16 +137,16 @@ public abstract class ArithmeticExpression extends BinaryExpression {
         case LONG:
             return Long.valueOf(left.longValue() * right.longValue());
         default:
-            return new Double(left.doubleValue() * right.doubleValue());
+            return Double.valueOf(left.doubleValue() * right.doubleValue());
         }
     }
 
     protected Number divide(Number left, Number right) {
-        return new Double(left.doubleValue() / right.doubleValue());
+        return Double.valueOf(left.doubleValue() / right.doubleValue());
     }
 
     protected Number mod(Number left, Number right) {
-        return new Double(left.doubleValue() % right.doubleValue());
+        return Double.valueOf(left.doubleValue() % right.doubleValue());
     }
 
     private int numberType(Number left, Number right) {

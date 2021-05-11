@@ -184,9 +184,9 @@ public abstract class UnaryExpression implements Expression {
         } else if (clazz == Long.class) {
             return Long.valueOf(-left.longValue());
         } else if (clazz == Float.class) {
-            return new Float(-left.floatValue());
+            return Float.valueOf(-left.floatValue());
         } else if (clazz == Double.class) {
-            return new Double(-left.doubleValue());
+            return Double.valueOf(-left.doubleValue());
         } else if (clazz == BigDecimal.class) {
             // We usually get a big decimal when we have Long.MIN_VALUE constant in
             // the Selector. Long.MIN_VALUE is too big to store in a Long as a positive

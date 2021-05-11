@@ -21,9 +21,9 @@
 package org.apache.qpid.jms.test.testpeer.matchers.sections;
 
 import java.util.HashMap;
+
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedLong;
-import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageListSectionMatcher;
 import org.hamcrest.Matcher;
 
 /**

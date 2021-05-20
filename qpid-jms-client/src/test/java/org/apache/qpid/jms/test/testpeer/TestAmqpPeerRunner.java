@@ -164,7 +164,7 @@ class TestAmqpPeerRunner implements Runnable
                 }
                 else
                 {
-                    LOGGER.debug("Caught throwable after socket is closed: " + t);
+                    LOGGER.debug("Caught throwable after socket is closed: " + t, t);
                     _throwable = t;
                 }
             }

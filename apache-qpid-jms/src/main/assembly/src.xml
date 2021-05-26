@@ -28,7 +28,7 @@
     <!-- main project directory structure -->
     <fileSet>
       <directory>${project.basedir}/..</directory>
-      <outputDirectory>/</outputDirectory>
+      <outputDirectory>${file.separator}</outputDirectory>
       <useDefaultExcludes>true</useDefaultExcludes>
       <excludes>
         <!-- build output -->
@@ -73,7 +73,7 @@
     </fileSet>
     <fileSet>
       <directory>${project.build.directory}/maven-shared-archive-resources/META-INF</directory>
-      <outputDirectory>/</outputDirectory>
+      <outputDirectory>${file.separator}</outputDirectory>
       <includes>
         <!-- Only include the generated dependencies file, we maintain license and notice ourselves -->
         <include>DEPENDENCIES</include>

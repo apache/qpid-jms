@@ -30,7 +30,7 @@
   <fileSets>
     <fileSet>
       <directory>${basedir}/src/main/assembly/</directory>
-      <outputDirectory>/</outputDirectory>
+      <outputDirectory>${file.separator}</outputDirectory>
       <includes>
         <include>README.txt</include>
         <include>NOTICE</include>

@@ -299,22 +299,6 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-enforcer-plugin</artifactId>
           <version>${maven-enforcer-plugin-version}</version>
-          <executions>
-            <execution>
-              <id>enforce-java-version</id>
-              <goals>
-                <goal>enforce</goal>
-              </goals>
-              <configuration>
-                <rules>
-                  <requireJavaVersion>
-                    <version>[11,)</version>
-                    <message>You must use Java 11+ to build</message>
-                  </requireJavaVersion>
-                </rules>
-              </configuration>
-            </execution>
-          </executions>
         </plugin>
         <plugin>
           <groupId>org.apache.felix</groupId>
@@ -391,6 +375,40 @@
           </excludes>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>enforce-java-version</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireJavaVersion>
+                  <version>[11,)</version>
+                  <message>You must use Java 11+ to build</message>
+                </requireJavaVersion>
+              </rules>
+            </configuration>
+            </execution>
+            <execution>
+              <id>enforce-maven-version</id>
+              <goals>
+                <goal>enforce</goal>
+              </goals>
+              <configuration>
+                <rules>
+                  <requireMavenVersion>
+                    <version>3.5.0</version>
+                    <message>You must use Maven 3.5.0+ to build</message>
+                  </requireMavenVersion>
+                </rules>
+              </configuration>
+            </execution>
+        </executions>
+        </plugin>
     </plugins>
   </build>
 

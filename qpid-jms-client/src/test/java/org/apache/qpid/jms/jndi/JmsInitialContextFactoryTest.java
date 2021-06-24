@@ -616,4 +616,33 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
 
         assertEquals("Unexpected name for returned queue", variableValue, ((JmsTopic) o).getTopicName());
     }
+
+    @Test
+    public void testSettingProviderURLToRemoteUri() throws NamingException {
+
+        doSettingProviderURLToRemoteUriTest("amqp://host1:5672");
+        doSettingProviderURLToRemoteUriTest("amqps://host1:5672");
+        doSettingProviderURLToRemoteUriTest("failover:(amqp://host1:5672,amqp://host2:5672)");
+        doSettingProviderURLToRemoteUriTest("failover:(amqps://host1:5672,amqps://host2:5672)");
+    }
+
+    private void doSettingProviderURLToRemoteUriTest(String providerUrl) throws NamingException {
+        Properties properties = new Properties();
+        properties.setProperty(Context.INITIAL_CONTEXT_FACTORY, JmsInitialContextFactory.class.getName());
+        properties.setProperty(Context.PROVIDER_URL, providerUrl);
+
+        InitialContext context = new InitialContext(properties);
+
+        ConnectionFactory connectionFactory = (ConnectionFactory) context.lookup("ConnectionFactory");
+        ConnectionFactory queueConnectionFactory = (ConnectionFactory) context.lookup("QueueConnectionFactory");
+        ConnectionFactory topicConnectionFactory = (ConnectionFactory) context.lookup("TopicConnectionFactory");
+
+        assertTrue(connectionFactory instanceof JmsConnectionFactory);
+        assertTrue(queueConnectionFactory instanceof JmsConnectionFactory);
+        assertTrue(topicConnectionFactory instanceof JmsConnectionFactory);
+
+        assertEquals(providerUrl, ((JmsConnectionFactory) connectionFactory).getRemoteURI());
+        assertEquals(providerUrl, ((JmsConnectionFactory) queueConnectionFactory).getRemoteURI());
+        assertEquals(providerUrl, ((JmsConnectionFactory) topicConnectionFactory).getRemoteURI());
+    }
 }

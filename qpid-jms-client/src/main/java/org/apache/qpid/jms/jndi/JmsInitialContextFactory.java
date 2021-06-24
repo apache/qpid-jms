@@ -20,6 +20,7 @@ import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Collections;
@@ -40,6 +41,7 @@ import javax.naming.spi.InitialContextFactory;
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.JmsQueue;
 import org.apache.qpid.jms.JmsTopic;
+import org.apache.qpid.jms.provider.ProviderFactory;
 import org.apache.qpid.jms.util.VariableExpansion;
 
 public class JmsInitialContextFactory implements InitialContextFactory {
@@ -69,8 +71,19 @@ public class JmsInitialContextFactory implements InitialContextFactory {
             location = System.getProperty(Context.PROVIDER_URL);
         }
 
+        String uri = null;
+        if (location != null) {
+            try {
+                //Check to see if location is of a provider uri, by seeing if it has a provider factory, if it is we initiate the default connection factories with the provider url.
+                if (ProviderFactory.findProviderFactory(new URI(location)) != null) {
+                    uri = location;
+                }
+            } catch (IOException | URISyntaxException e) {
+            }
+        }
+
         try {
-            if (location != null) {
+            if (location != null && uri == null) {
                 BufferedInputStream inputStream;
 
                 try {
@@ -101,7 +114,11 @@ public class JmsInitialContextFactory implements InitialContextFactory {
 
         // Now inspect the environment and create the bindings for the context
         Map<String, Object> bindings = new ConcurrentHashMap<String, Object>();
-        createConnectionFactories(environmentCopy, bindings);
+        if (uri != null) {
+            createDefaultConnectionFactories(uri, environmentCopy, bindings);
+        } else {
+            createConnectionFactories(environmentCopy, bindings);
+        }
         createQueues(environmentCopy, bindings);
         createTopics(environmentCopy, bindings);
 
@@ -127,6 +144,20 @@ public class JmsInitialContextFactory implements InitialContextFactory {
         });
 
         return createContext(environmentCopy, bindings);
+    }
+
+    private void createDefaultConnectionFactories(String uri, Hashtable<Object, Object> environmentCopy, Map<String, Object> bindings) throws NamingException {
+        Map<String, String> defaults = getConnectionFactoryDefaults(environmentCopy);
+        for (String factoryName : DEFAULT_CONNECTION_FACTORY_NAMES) {
+            try {
+                JmsConnectionFactory factory = createConnectionFactory(factoryName, uri, defaults, environmentCopy);
+                bindings.put(factoryName, factory);
+            } catch (Exception e) {
+                NamingException ne = new NamingException("Exception while creating ConnectionFactory '" + factoryName + "'.");
+                ne.initCause(e);
+                throw ne;
+            }
+        }
     }
 
     private void createConnectionFactories(Hashtable<Object, Object> environment, Map<String, Object> bindings) throws NamingException {

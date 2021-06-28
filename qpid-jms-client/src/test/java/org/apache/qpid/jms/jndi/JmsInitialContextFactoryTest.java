@@ -616,4 +616,51 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
 
         assertEquals("Unexpected name for returned queue", variableValue, ((JmsTopic) o).getTopicName());
     }
+
+    @Test
+    public void testVariableExpansionWhenDefaultFactoryUriSetViaProviderURL() throws NamingException {
+        String variable = "myTestHostnameVariable";
+        String hostValue = "myTestHostnameValue";
+
+        setTestSystemProperty(variable, hostValue);
+
+        doSetDefaultFactoryUriViaProviderURLTestImpl("amqp://${"+ variable +"}:5672", "amqp://"+ hostValue +":5672");
+        doSetDefaultFactoryUriViaProviderURLTestImpl("amqps://${" + variable +"}:5672", "amqps://" + hostValue +":5672");
+        doSetDefaultFactoryUriViaProviderURLTestImpl("failover:(amqp://${"+ variable +"}1:5672,amqp://${"+ variable +"}2:5672)",
+                                                     "failover:(amqp://"+ hostValue +"1:5672,amqp://"+ hostValue +"2:5672)");
+        doSetDefaultFactoryUriViaProviderURLTestImpl("failover:(amqps://${"+ variable +"}1:5672,amqps://${"+ variable +"}2:5672)",
+                                                     "failover:(amqps://"+ hostValue +"1:5672,amqps://"+ hostValue +"2:5672)");
+    }
+
+    private void doSetDefaultFactoryUriViaProviderURLTestImpl(String providerUrl, String expectedUrl) throws NamingException {
+        Properties env = new Properties();
+        env.setProperty(Context.INITIAL_CONTEXT_FACTORY, JmsInitialContextFactory.class.getName());
+        env.setProperty(Context.PROVIDER_URL, providerUrl);
+
+        Context context = createInitialContext(env);
+
+        ConnectionFactory connectionFactory = (ConnectionFactory) context.lookup("ConnectionFactory");
+        ConnectionFactory queueConnectionFactory = (ConnectionFactory) context.lookup("QueueConnectionFactory");
+        ConnectionFactory topicConnectionFactory = (ConnectionFactory) context.lookup("TopicConnectionFactory");
+
+        assertTrue(connectionFactory instanceof JmsConnectionFactory);
+        assertTrue(queueConnectionFactory instanceof JmsConnectionFactory);
+        assertTrue(topicConnectionFactory instanceof JmsConnectionFactory);
+
+        assertEquals(expectedUrl, ((JmsConnectionFactory) connectionFactory).getRemoteURI());
+        assertEquals(expectedUrl, ((JmsConnectionFactory) queueConnectionFactory).getRemoteURI());
+        assertEquals(expectedUrl, ((JmsConnectionFactory) topicConnectionFactory).getRemoteURI());
+    }
+
+    private void doSetDefaultFactoryUriViaProviderURLTestImpl(String providerUrl) throws NamingException {
+        doSetDefaultFactoryUriViaProviderURLTestImpl(providerUrl, providerUrl);
+    }
+
+    @Test
+    public void testProvidingDefaultFactoryRemoteUriViaProviderURL() throws NamingException {
+        doSetDefaultFactoryUriViaProviderURLTestImpl("amqp://host1:5672");
+        doSetDefaultFactoryUriViaProviderURLTestImpl("amqps://host1:5672");
+        doSetDefaultFactoryUriViaProviderURLTestImpl("failover:(amqp://host1:5672,amqp://host2:5672)");
+        doSetDefaultFactoryUriViaProviderURLTestImpl("failover:(amqps://host1:5672,amqps://host2:5672)");
+    }
 }

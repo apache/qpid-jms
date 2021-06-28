@@ -16,10 +16,13 @@
  */
 package org.apache.qpid.jms.jndi;
 
+import static org.apache.qpid.jms.JmsConnectionFactory.REMOTE_URI_PROP;
+
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Collections;
@@ -40,6 +43,7 @@ import javax.naming.spi.InitialContextFactory;
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.JmsQueue;
 import org.apache.qpid.jms.JmsTopic;
+import org.apache.qpid.jms.provider.ProviderFactory;
 import org.apache.qpid.jms.util.VariableExpansion;
 
 public class JmsInitialContextFactory implements InitialContextFactory {
@@ -61,7 +65,6 @@ public class JmsInitialContextFactory implements InitialContextFactory {
         Hashtable<Object, Object> environmentCopy = new Hashtable<Object, Object>();
         environmentCopy.putAll(environment);
 
-        // Check for an *optional* properties file use to augment the environment
         String location = null;
         if (environmentCopy.containsKey(Context.PROVIDER_URL)) {
             location = (String) environment.get(Context.PROVIDER_URL);
@@ -69,8 +72,24 @@ public class JmsInitialContextFactory implements InitialContextFactory {
             location = System.getProperty(Context.PROVIDER_URL);
         }
 
+        // If present, check if PROVIDER_URL is a client URI, by seeing if we find a factory for it.
+        // If we do, set it as the URI to be used for the default connection factories.
+        boolean providerUri = false;
+        if (location != null) {
+            try {
+                String expanded = expand(location, environmentCopy);
+                if (ProviderFactory.findProviderFactory(new URI(expanded)) != null) {
+                    environmentCopy.put(CONNECTION_FACTORY_DEFAULT_KEY_PREFIX + REMOTE_URI_PROP, expanded);
+                    providerUri = true;
+                }
+            } catch (IOException | URISyntaxException e) {
+                // Not a valid URI or didnt find a client factory for it.
+            }
+        }
+
         try {
-            if (location != null) {
+            // If it wasnt a client URI, check for *optional* properties file to augment given environment
+            if (!providerUri && location != null) {
                 BufferedInputStream inputStream;
 
                 try {

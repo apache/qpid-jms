@@ -16,8 +16,6 @@
  */
 package org.apache.qpid.jms.message;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 
@@ -25,14 +23,16 @@ import javax.jms.BytesMessage;
 import javax.jms.JMSException;
 import javax.jms.MessageFormatException;
 
+import io.netty.buffer.ByteBufInputStream;
+import io.netty.buffer.ByteBufOutputStream;
 import org.apache.qpid.jms.exceptions.JmsExceptionSupport;
 import org.apache.qpid.jms.message.facade.JmsBytesMessageFacade;
 
 @SuppressWarnings("unchecked")
 public class JmsBytesMessage extends JmsMessage implements BytesMessage {
 
-    protected transient DataOutputStream dataOut;
-    protected transient DataInputStream dataIn;
+    protected transient ByteBufOutputStream dataOut;
+    protected transient ByteBufInputStream dataIn;
 
     private final JmsBytesMessageFacade facade;
 
@@ -422,14 +422,14 @@ public class JmsBytesMessage extends JmsMessage implements BytesMessage {
     private void initializeWriting() throws JMSException {
         checkReadOnlyBody();
         if (this.dataOut == null) {
-            this.dataOut = new DataOutputStream(this.facade.getOutputStream());
+            this.dataOut = this.facade.getOutputStream();
         }
     }
 
     private void initializeReading() throws JMSException {
         checkWriteOnlyBody();
         if (dataIn == null) {
-            dataIn = new DataInputStream(this.facade.getInputStream());
+            dataIn = this.facade.getInputStream();
         }
     }
 }

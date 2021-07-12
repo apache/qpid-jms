@@ -27,3 +27,14 @@ jobs:
 
       - name: Build
         run: mvn -B clean verify
+
+      - name: Archive Test Logs On Failure
+        if: failure()
+        run: tar -czvf surefire-reports-jdk-${{ matrix.java }}.tar.gz **/target/surefire-reports/*
+
+      - name: Upload Test Logs On Failure
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: surefire-reports-jdk-${{ matrix.java }}
+          path: surefire-reports-jdk-${{ matrix.java }}.tar.gz

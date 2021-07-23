@@ -50,13 +50,9 @@ public class TransportSupportTest extends QpidJmsTestCase {
 
     public static final String PASSWORD = "password";
 
-    public static final String BROKER_JKS_KEYSTORE = "src/test/resources/broker-jks.keystore";
-    public static final String BROKER_JKS_TRUSTSTORE = "src/test/resources/broker-jks.truststore";
     public static final String CLIENT_JKS_KEYSTORE = "src/test/resources/client-jks.keystore";
     public static final String CLIENT_JKS_TRUSTSTORE = "src/test/resources/client-jks.truststore";
 
-    public static final String BROKER_JCEKS_KEYSTORE = "src/test/resources/broker-jceks.keystore";
-    public static final String BROKER_JCEKS_TRUSTSTORE = "src/test/resources/broker-jceks.truststore";
     public static final String CLIENT_JCEKS_KEYSTORE = "src/test/resources/client-jceks.keystore";
     public static final String CLIENT_JCEKS_TRUSTSTORE = "src/test/resources/client-jceks.truststore";
 

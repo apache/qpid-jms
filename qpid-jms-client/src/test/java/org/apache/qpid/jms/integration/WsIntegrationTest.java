@@ -35,13 +35,13 @@ import org.junit.Test;
 
 public class WsIntegrationTest extends QpidJmsTestCase {
 
-    private static final String BROKER_JKS_KEYSTORE = "src/test/resources/broker-jks.keystore";
+    private static final String BROKER_PKCS12_KEYSTORE = "src/test/resources/broker-pkcs12.keystore";
     private static final String PASSWORD = "password";
 
     @Test(timeout = 30000)
     public void testNonSslWebSocketConnectionFailsToSslServer() throws Exception {
         TransportOptions serverOptions = new TransportOptions();
-        serverOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
+        serverOptions.setKeyStoreLocation(BROKER_PKCS12_KEYSTORE);
         serverOptions.setKeyStorePassword(PASSWORD);
         serverOptions.setVerifyHost(false);
 

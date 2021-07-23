@@ -69,7 +69,7 @@ import io.netty.handler.proxy.Socks5ProxyHandler;
 @RunWith(QpidJMSTestRunner.class)
 public class ProxyIntegrationTest extends QpidJmsTestCase {
     private static final Logger LOG = LoggerFactory.getLogger(ProxyIntegrationTest.class);
-    private static final String BROKER_JKS_KEYSTORE = "src/test/resources/broker-jks.keystore";
+    private static final String BROKER_PKCS12_KEYSTORE = "src/test/resources/broker-pkcs12.keystore";
     private static final String CLIENT_JKS_TRUSTSTORE = "src/test/resources/client-jks.truststore";
     private static final String PASSWORD = "password";
 
@@ -98,7 +98,7 @@ public class ProxyIntegrationTest extends QpidJmsTestCase {
     @Test(timeout = 20000)
     public void testCreateSecureConnectionViaSocksProxy() throws Exception {
         TransportOptions sslOptions = new TransportOptions();
-        sslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
+        sslOptions.setKeyStoreLocation(BROKER_PKCS12_KEYSTORE);
         sslOptions.setKeyStorePassword(PASSWORD);
         sslOptions.setVerifyHost(false);
 
@@ -232,7 +232,7 @@ public class ProxyIntegrationTest extends QpidJmsTestCase {
 
     private void doTestCreateWebSocketConnectionViaHttpProxyAndStart(boolean secure) throws Exception {
         TransportOptions options = new TransportOptions();
-        options.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
+        options.setKeyStoreLocation(BROKER_PKCS12_KEYSTORE);
         options.setKeyStorePassword(PASSWORD);
         options.setVerifyHost(false);
 
@@ -290,7 +290,7 @@ public class ProxyIntegrationTest extends QpidJmsTestCase {
 
     private void doTestCreateWebSocketConnectionViaSocksProxyAndStart(boolean secure) throws Exception {
         TransportOptions serverOptions = new TransportOptions();
-        serverOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
+        serverOptions.setKeyStoreLocation(BROKER_PKCS12_KEYSTORE);
         serverOptions.setKeyStorePassword(PASSWORD);
         serverOptions.setVerifyHost(false);
 

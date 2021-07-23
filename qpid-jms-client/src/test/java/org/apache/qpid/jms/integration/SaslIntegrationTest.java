@@ -70,8 +70,8 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
     private static final UnsignedByte SASL_SYS_PERM = UnsignedByte.valueOf((byte) 3);
     private static final UnsignedByte SASL_SYS_TEMP = UnsignedByte.valueOf((byte) 4);
 
-    private static final String BROKER_JKS_KEYSTORE = "src/test/resources/broker-jks.keystore";
-    private static final String BROKER_JKS_TRUSTSTORE = "src/test/resources/broker-jks.truststore";
+    private static final String BROKER_PKCS12_KEYSTORE = "src/test/resources/broker-pkcs12.keystore";
+    private static final String BROKER_PKCS12_TRUSTSTORE = "src/test/resources/broker-pkcs12.truststore";
     private static final String CLIENT_JKS_KEYSTORE = "src/test/resources/client-jks.keystore";
     private static final String CLIENT_JKS_TRUSTSTORE = "src/test/resources/client-jks.truststore";
     private static final String PASSWORD = "password";
@@ -79,10 +79,10 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
     @Test(timeout = 20000)
     public void testSaslExternalConnection() throws Exception {
         TransportOptions sslOptions = new TransportOptions();
-        sslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
+        sslOptions.setKeyStoreLocation(BROKER_PKCS12_KEYSTORE);
         sslOptions.setKeyStorePassword(PASSWORD);
         sslOptions.setVerifyHost(false);
-        sslOptions.setTrustStoreLocation(BROKER_JKS_TRUSTSTORE);
+        sslOptions.setTrustStoreLocation(BROKER_PKCS12_TRUSTSTORE);
         sslOptions.setTrustStorePassword(PASSWORD);
 
         String connOptions = "?transport.trustStoreLocation=" + CLIENT_JKS_TRUSTSTORE + "&" +
@@ -342,11 +342,11 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
 
     private void doMechanismSelectedExternalTestImpl(boolean requireClientCert, Symbol clientSelectedMech, Symbol[] serverMechs) throws Exception {
         TransportOptions sslOptions = new TransportOptions();
-        sslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
+        sslOptions.setKeyStoreLocation(BROKER_PKCS12_KEYSTORE);
         sslOptions.setKeyStorePassword(PASSWORD);
         sslOptions.setVerifyHost(false);
         if (requireClientCert) {
-            sslOptions.setTrustStoreLocation(BROKER_JKS_TRUSTSTORE);
+            sslOptions.setTrustStoreLocation(BROKER_PKCS12_TRUSTSTORE);
             sslOptions.setTrustStorePassword(PASSWORD);
         }
 

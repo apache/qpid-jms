@@ -55,8 +55,8 @@ public class FailoverWithAmqpOpenProvidedServerListIntegrationTest extends QpidJ
 
     private static final Logger LOG = LoggerFactory.getLogger(FailoverWithAmqpOpenProvidedServerListIntegrationTest.class);
 
-    private static final String BROKER_JKS_KEYSTORE = "src/test/resources/broker-jks.keystore";
-    private static final String BROKER_JKS_TRUSTSTORE = "src/test/resources/broker-jks.truststore";
+    private static final String BROKER_PKCS12_KEYSTORE = "src/test/resources/broker-pkcs12.keystore";
+    private static final String BROKER_PKCS12_TRUSTSTORE = "src/test/resources/broker-pkcs12.truststore";
     private static final String PASSWORD = "password";
     private static final String CLIENT_JKS_KEYSTORE = "src/test/resources/client-jks.keystore";
     private static final String CLIENT_JKS_TRUSTSTORE = "src/test/resources/client-jks.truststore";
@@ -400,8 +400,8 @@ public class FailoverWithAmqpOpenProvidedServerListIntegrationTest extends QpidJ
     @Test(timeout = 20000)
     public void testFailoverUsingSSLConfiguredBySystemProperties() throws Exception {
         TransportOptions serverSslOptions = new TransportOptions();
-        serverSslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
-        serverSslOptions.setTrustStoreLocation(BROKER_JKS_TRUSTSTORE);
+        serverSslOptions.setKeyStoreLocation(BROKER_PKCS12_KEYSTORE);
+        serverSslOptions.setTrustStoreLocation(BROKER_PKCS12_TRUSTSTORE);
         serverSslOptions.setKeyStorePassword(PASSWORD);
         serverSslOptions.setTrustStorePassword(PASSWORD);
         serverSslOptions.setVerifyHost(false);
@@ -509,7 +509,7 @@ public class FailoverWithAmqpOpenProvidedServerListIntegrationTest extends QpidJ
     @Test(timeout = 20000)
     public void testFailoverUsingSSLConfiguredByTransportOptions() throws Exception {
         TransportOptions sslOptions = new TransportOptions();
-        sslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
+        sslOptions.setKeyStoreLocation(BROKER_PKCS12_KEYSTORE);
         sslOptions.setKeyStorePassword(PASSWORD);
         sslOptions.setVerifyHost(false);
 
@@ -628,7 +628,7 @@ public class FailoverWithAmqpOpenProvidedServerListIntegrationTest extends QpidJ
     @Test(timeout = 20000)
     public void testFailoverUsingSSLConfiguredByNestedTransportOptions() throws Exception {
         TransportOptions sslOptions = new TransportOptions();
-        sslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
+        sslOptions.setKeyStoreLocation(BROKER_PKCS12_KEYSTORE);
         sslOptions.setKeyStorePassword(PASSWORD);
         sslOptions.setVerifyHost(false);
 
@@ -747,8 +747,8 @@ public class FailoverWithAmqpOpenProvidedServerListIntegrationTest extends QpidJ
     @Test(timeout = 20000)
     public void testFailoverUsingSSLConfiguredByCustomSSLContext() throws Exception {
         TransportOptions serverSslOptions = new TransportOptions();
-        serverSslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
-        serverSslOptions.setTrustStoreLocation(BROKER_JKS_TRUSTSTORE);
+        serverSslOptions.setKeyStoreLocation(BROKER_PKCS12_KEYSTORE);
+        serverSslOptions.setTrustStoreLocation(BROKER_PKCS12_TRUSTSTORE);
         serverSslOptions.setKeyStorePassword(PASSWORD);
         serverSslOptions.setTrustStorePassword(PASSWORD);
         serverSslOptions.setVerifyHost(false);
@@ -886,8 +886,8 @@ public class FailoverWithAmqpOpenProvidedServerListIntegrationTest extends QpidJ
     private void doTestFailoverHandlingOfInsecureRedirectAdvertisement(boolean allow) throws Exception {
 
         TransportOptions serverSslOptions = new TransportOptions();
-        serverSslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
-        serverSslOptions.setTrustStoreLocation(BROKER_JKS_TRUSTSTORE);
+        serverSslOptions.setKeyStoreLocation(BROKER_PKCS12_KEYSTORE);
+        serverSslOptions.setTrustStoreLocation(BROKER_PKCS12_TRUSTSTORE);
         serverSslOptions.setKeyStorePassword(PASSWORD);
         serverSslOptions.setTrustStorePassword(PASSWORD);
         serverSslOptions.setVerifyHost(false);
@@ -993,8 +993,8 @@ public class FailoverWithAmqpOpenProvidedServerListIntegrationTest extends QpidJ
     private void doTestFailoverAcceptsUpdateUsingTransportSchemes(String transportScheme, String expected) throws Exception {
 
         TransportOptions serverSslOptions = new TransportOptions();
-        serverSslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
-        serverSslOptions.setTrustStoreLocation(BROKER_JKS_TRUSTSTORE);
+        serverSslOptions.setKeyStoreLocation(BROKER_PKCS12_KEYSTORE);
+        serverSslOptions.setTrustStoreLocation(BROKER_PKCS12_TRUSTSTORE);
         serverSslOptions.setKeyStorePassword(PASSWORD);
         serverSslOptions.setTrustStorePassword(PASSWORD);
         serverSslOptions.setVerifyHost(false);

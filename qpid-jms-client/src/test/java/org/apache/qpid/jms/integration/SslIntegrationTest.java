@@ -53,9 +53,7 @@ import io.netty.handler.ssl.OpenSsl;
 
 public class SslIntegrationTest extends QpidJmsTestCase {
 
-    private static final String BROKER_JKS_KEYSTORE = "src/test/resources/broker-jks.keystore";
     private static final String BROKER_PKCS12_KEYSTORE = "src/test/resources/broker-pkcs12.keystore";
-    private static final String BROKER_JKS_TRUSTSTORE = "src/test/resources/broker-jks.truststore";
     private static final String BROKER_PKCS12_TRUSTSTORE = "src/test/resources/broker-pkcs12.truststore";
     private static final String CLIENT_MULTI_KEYSTORE = "src/test/resources/client-multiple-keys-jks.keystore";
     private static final String CLIENT_JKS_TRUSTSTORE = "src/test/resources/client-jks.truststore";
@@ -100,7 +98,7 @@ public class SslIntegrationTest extends QpidJmsTestCase {
 
     private void testCreateAndCloseSslConnection(boolean openSSL) throws Exception {
         TransportOptions sslOptions = new TransportOptions();
-        sslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
+        sslOptions.setKeyStoreLocation(BROKER_PKCS12_KEYSTORE);
         sslOptions.setKeyStorePassword(PASSWORD);
         sslOptions.setVerifyHost(false);
 
@@ -135,7 +133,7 @@ public class SslIntegrationTest extends QpidJmsTestCase {
 
     private void doTestCreateSslConnectionWithServerSendingPreemptiveData(boolean openSSL) throws Exception {
         TransportOptions serverSslOptions = new TransportOptions();
-        serverSslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
+        serverSslOptions.setKeyStoreLocation(BROKER_PKCS12_KEYSTORE);
         serverSslOptions.setKeyStorePassword(PASSWORD);
         serverSslOptions.setVerifyHost(false);
 
@@ -179,8 +177,8 @@ public class SslIntegrationTest extends QpidJmsTestCase {
 
     private void doTestCreateAndCloseSslConnectionWithClientAuth(boolean openSSL) throws Exception {
         TransportOptions sslOptions = new TransportOptions();
-        sslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
-        sslOptions.setTrustStoreLocation(BROKER_JKS_TRUSTSTORE);
+        sslOptions.setKeyStoreLocation(BROKER_PKCS12_KEYSTORE);
+        sslOptions.setTrustStoreLocation(BROKER_PKCS12_TRUSTSTORE);
         sslOptions.setKeyStorePassword(PASSWORD);
         sslOptions.setTrustStorePassword(PASSWORD);
         sslOptions.setVerifyHost(false);
@@ -221,8 +219,8 @@ public class SslIntegrationTest extends QpidJmsTestCase {
 
     private void doConnectionWithAliasTestImpl(String alias, String expectedDN, boolean requestOpenSSL) throws Exception, JMSException, SSLPeerUnverifiedException, IOException {
         TransportOptions sslOptions = new TransportOptions();
-        sslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
-        sslOptions.setTrustStoreLocation(BROKER_JKS_TRUSTSTORE);
+        sslOptions.setKeyStoreLocation(BROKER_PKCS12_KEYSTORE);
+        sslOptions.setTrustStoreLocation(BROKER_PKCS12_TRUSTSTORE);
         sslOptions.setKeyStorePassword(PASSWORD);
         sslOptions.setTrustStorePassword(PASSWORD);
         sslOptions.setVerifyHost(false);
@@ -268,8 +266,8 @@ public class SslIntegrationTest extends QpidJmsTestCase {
 
     private void doCreateConnectionWithInvalidAliasTestImpl(String alias) throws Exception, IOException {
         TransportOptions sslOptions = new TransportOptions();
-        sslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
-        sslOptions.setTrustStoreLocation(BROKER_JKS_TRUSTSTORE);
+        sslOptions.setKeyStoreLocation(BROKER_PKCS12_KEYSTORE);
+        sslOptions.setTrustStoreLocation(BROKER_PKCS12_TRUSTSTORE);
         sslOptions.setKeyStorePassword(PASSWORD);
         sslOptions.setTrustStorePassword(PASSWORD);
         sslOptions.setVerifyHost(false);
@@ -327,8 +325,8 @@ public class SslIntegrationTest extends QpidJmsTestCase {
 
     private void doConnectionWithSslContextOverride(String clientKeyStorePath, String expectedDN, boolean useExtension) throws Exception {
         TransportOptions serverSslOptions = new TransportOptions();
-        serverSslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
-        serverSslOptions.setTrustStoreLocation(BROKER_JKS_TRUSTSTORE);
+        serverSslOptions.setKeyStoreLocation(BROKER_PKCS12_KEYSTORE);
+        serverSslOptions.setTrustStoreLocation(BROKER_PKCS12_TRUSTSTORE);
         serverSslOptions.setKeyStorePassword(PASSWORD);
         serverSslOptions.setTrustStorePassword(PASSWORD);
         serverSslOptions.setVerifyHost(false);
@@ -410,8 +408,8 @@ public class SslIntegrationTest extends QpidJmsTestCase {
 
     private void doConnectionWithSslContextOverrideAndURIConfig(SSLContext clientContext, String expectedDN) throws Exception {
         TransportOptions serverSslOptions = new TransportOptions();
-        serverSslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
-        serverSslOptions.setTrustStoreLocation(BROKER_JKS_TRUSTSTORE);
+        serverSslOptions.setKeyStoreLocation(BROKER_PKCS12_KEYSTORE);
+        serverSslOptions.setTrustStoreLocation(BROKER_PKCS12_TRUSTSTORE);
         serverSslOptions.setKeyStorePassword(PASSWORD);
         serverSslOptions.setTrustStorePassword(PASSWORD);
         serverSslOptions.setVerifyHost(false);
@@ -493,13 +491,13 @@ public class SslIntegrationTest extends QpidJmsTestCase {
     public void testConfigurePkcs12StoresWithSslSystemProperties() throws Exception {
         // Set properties and expect connection as Client1
         setSslSystemPropertiesForCurrentTest(CLIENT_PKCS12_KEYSTORE, CUSTOM_STORE_TYPE_PKCS12, PASSWORD, CLIENT_PKCS12_TRUSTSTORE, CUSTOM_STORE_TYPE_PKCS12, PASSWORD);
-        doConfigureStoresWithSslSystemPropertiesTestImpl(CLIENT_DN, true);
+        doConfigureStoresWithSslSystemPropertiesTestImpl(CLIENT_DN);
     }
 
     @Test(timeout = 30000)
     public void testNonSslConnectionFailsToSslServer() throws Exception {
         TransportOptions serverOptions = new TransportOptions();
-        serverOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
+        serverOptions.setKeyStoreLocation(BROKER_PKCS12_KEYSTORE);
         serverOptions.setKeyStorePassword(PASSWORD);
         serverOptions.setVerifyHost(false);
 
@@ -537,27 +535,12 @@ public class SslIntegrationTest extends QpidJmsTestCase {
     }
 
     private void doConfigureStoresWithSslSystemPropertiesTestImpl(String expectedDN) throws Exception {
-        doConfigureStoresWithSslSystemPropertiesTestImpl(expectedDN, false);
-    }
-
-    private void doConfigureStoresWithSslSystemPropertiesTestImpl(String expectedDN, boolean usePkcs12Store) throws Exception {
         TransportOptions serverSslOptions = new TransportOptions();
-
-        if (!usePkcs12Store) {
-            serverSslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
-            serverSslOptions.setTrustStoreLocation(BROKER_JKS_TRUSTSTORE);
-            serverSslOptions.setKeyStorePassword(PASSWORD);
-            serverSslOptions.setTrustStorePassword(PASSWORD);
-            serverSslOptions.setVerifyHost(false);
-        } else {
-            serverSslOptions.setKeyStoreLocation(BROKER_PKCS12_KEYSTORE);
-            serverSslOptions.setTrustStoreLocation(BROKER_PKCS12_TRUSTSTORE);
-            serverSslOptions.setKeyStoreType(CUSTOM_STORE_TYPE_PKCS12);
-            serverSslOptions.setTrustStoreType(CUSTOM_STORE_TYPE_PKCS12);
-            serverSslOptions.setKeyStorePassword(PASSWORD);
-            serverSslOptions.setTrustStorePassword(PASSWORD);
-            serverSslOptions.setVerifyHost(false);
-        }
+        serverSslOptions.setKeyStoreLocation(BROKER_PKCS12_KEYSTORE);
+        serverSslOptions.setTrustStoreLocation(BROKER_PKCS12_TRUSTSTORE);
+        serverSslOptions.setKeyStorePassword(PASSWORD);
+        serverSslOptions.setTrustStorePassword(PASSWORD);
+        serverSslOptions.setVerifyHost(false);
 
         SSLContext serverSslContext = TransportSupport.createJdkSslContext(serverSslOptions);
 

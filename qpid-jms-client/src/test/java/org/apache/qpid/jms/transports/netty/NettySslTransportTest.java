@@ -57,9 +57,9 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
     private static final Logger LOG = LoggerFactory.getLogger(NettySslTransportTest.class);
 
     public static final String PASSWORD = "password";
-    public static final String SERVER_KEYSTORE = "src/test/resources/broker-jks.keystore";
-    public static final String SERVER_TRUSTSTORE = "src/test/resources/broker-jks.truststore";
-    public static final String SERVER_WRONG_HOST_KEYSTORE = "src/test/resources/broker-wrong-host-jks.keystore";
+    public static final String SERVER_KEYSTORE = "src/test/resources/broker-pkcs12.keystore";
+    public static final String SERVER_TRUSTSTORE = "src/test/resources/broker-pkcs12.truststore";
+    public static final String SERVER_WRONG_HOST_KEYSTORE = "src/test/resources/broker-wrong-host-pkcs12.keystore";
     public static final String CLIENT_KEYSTORE = "src/test/resources/client-jks.keystore";
     public static final String CLIENT_MULTI_KEYSTORE = "src/test/resources/client-multiple-keys-jks.keystore";
     public static final String CLIENT_TRUSTSTORE = "src/test/resources/client-jks.truststore";
@@ -391,7 +391,6 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
         options.setKeyStorePassword(PASSWORD);
         options.setTrustStoreLocation(SERVER_TRUSTSTORE);
         options.setTrustStorePassword(PASSWORD);
-        options.setStoreType(KEYSTORE_TYPE);
         options.setVerifyHost(false);
 
         return options;

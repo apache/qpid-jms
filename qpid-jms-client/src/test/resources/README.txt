@@ -21,26 +21,19 @@ keytool -storetype pkcs12 -keystore ca-pkcs12.keystore -storepass password -alia
 keytool -storetype pkcs12 -keystore broker-pkcs12.keystore -storepass password -keypass password -importcert -alias ca -file ca.crt -noprompt
 keytool -storetype pkcs12 -keystore broker-pkcs12.keystore -storepass password -keypass password -importcert -alias broker -file broker.crt
 
-# Create some alternative keystore types for testing:
-# ---------------------------------------------------
-keytool -importkeystore -srckeystore broker-pkcs12.keystore -destkeystore broker-jceks.keystore -srcstoretype pkcs12 -deststoretype jceks -srcstorepass password -deststorepass password
-keytool -importkeystore -srckeystore broker-pkcs12.keystore -destkeystore broker-jks.keystore -srcstoretype pkcs12 -deststoretype jks -srcstorepass password -deststorepass password
-
 # Create a key pair for the broker with an unexpected hostname, and sign it with the CA:
 # --------------------------------------------------------------------------------------
-keytool -storetype jks -keystore broker-wrong-host-jks.keystore -storepass password -keypass password -alias broker-wrong-host -genkey -keyalg "RSA" -keysize 2048 -dname "O=Server,CN=wronghost" -validity 9999 -ext bc=ca:false -ext eku=sA
+keytool -storetype pkcs12 -keystore broker-wrong-host-pkcs12.keystore -storepass password -keypass password -alias broker-wrong-host -genkey -keyalg "RSA" -keysize 2048 -dname "O=Server,CN=wronghost" -validity 9999 -ext bc=ca:false -ext eku=sA
 
-keytool -storetype jks -keystore broker-wrong-host-jks.keystore -storepass password -alias broker-wrong-host -certreq -file broker-wrong-host.csr
+keytool -storetype pkcs12 -keystore broker-wrong-host-pkcs12.keystore -storepass password -alias broker-wrong-host -certreq -file broker-wrong-host.csr
 keytool -storetype pkcs12 -keystore ca-pkcs12.keystore -storepass password -alias ca -gencert -rfc -infile broker-wrong-host.csr -outfile broker-wrong-host.crt -validity 9999 -ext bc=ca:false -ext eku=sA
 
-keytool -storetype jks -keystore broker-wrong-host-jks.keystore -storepass password -keypass password -importcert -alias ca -file ca.crt -noprompt
-keytool -storetype jks -keystore broker-wrong-host-jks.keystore -storepass password -keypass password -importcert -alias broker-wrong-host -file broker-wrong-host.crt
+keytool -storetype pkcs12 -keystore broker-wrong-host-pkcs12.keystore -storepass password -keypass password -importcert -alias ca -file ca.crt -noprompt
+keytool -storetype pkcs12 -keystore broker-wrong-host-pkcs12.keystore -storepass password -keypass password -importcert -alias broker-wrong-host -file broker-wrong-host.crt
 
-# Create trust stores for the broker, import the CA cert:
+# Create trust store for the broker, import the CA cert:
 # -------------------------------------------------------
 keytool -storetype pkcs12 -keystore broker-pkcs12.truststore -storepass password -keypass password -importcert -alias ca -file ca.crt -noprompt
-keytool -importkeystore -srckeystore broker-pkcs12.truststore -destkeystore broker-jceks.truststore -srcstoretype pkcs12 -deststoretype jceks -srcstorepass password -deststorepass password
-keytool -importkeystore -srckeystore broker-pkcs12.truststore -destkeystore broker-jks.truststore -srcstoretype pkcs12 -deststoretype jks -srcstorepass password -deststorepass password
 
 # Create a key pair for the client, and sign it with the CA:
 # ----------------------------------------------------------

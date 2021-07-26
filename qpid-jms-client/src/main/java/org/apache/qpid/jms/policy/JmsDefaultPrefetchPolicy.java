@@ -220,7 +220,7 @@ public class JmsDefaultPrefetchPolicy implements JmsPrefetchPolicy {
     private int getMaxPrefetchLimit(int value) {
         int result = Math.min(value, maxPrefetchSize);
         if (result < value) {
-            LOG.warn("maximum prefetch limit has been reset from " + value + " to " + MAX_PREFETCH_SIZE);
+            LOG.warn("prefetch limit has been reset from " + value + " to the maximum " + maxPrefetchSize);
         }
         return result;
     }

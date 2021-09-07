@@ -47,11 +47,11 @@
 
     <!-- Test Dependency Versions for this Project -->
     <netty-tcnative-version>2.0.40.Final</netty-tcnative-version>
-    <activemq-version>5.16.2</activemq-version>
+    <activemq-version>5.16.3</activemq-version>
     <junit-version>4.13.2</junit-version>
     <fuse-joram-tests-version>1.0</fuse-joram-tests-version>
-    <jetty-version>9.4.22.v20191022</jetty-version>
-    <mockito-version>3.11.2</mockito-version>
+    <jetty-version>9.4.43.v20210629</jetty-version>
+    <mockito-version>3.12.4</mockito-version>
     <hamcrest-version>2.2</hamcrest-version>
     <hadoop-minikdc-version>3.3.0</hadoop-minikdc-version>
     <commons-io-version>2.10.0</commons-io-version>

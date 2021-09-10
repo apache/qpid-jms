@@ -663,4 +663,20 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
         doSetDefaultFactoryUriViaProviderURLTestImpl("failover:(amqp://host1:5672,amqp://host2:5672)");
         doSetDefaultFactoryUriViaProviderURLTestImpl("failover:(amqps://host1:5672,amqps://host2:5672)");
     }
+
+    @Test
+    public void testProvidingDefaultFactoryRemoteUriViaProviderURLWithContextCredentials() throws NamingException {
+        Properties env = new Properties();
+        env.setProperty(Context.INITIAL_CONTEXT_FACTORY, JmsInitialContextFactory.class.getName());
+        env.setProperty(Context.PROVIDER_URL, "failover:(amqps://host1:5672,amqps://host2:5672)");
+        env.setProperty(Context.SECURITY_PRINCIPAL, "myuser");
+        env.setProperty(Context.SECURITY_CREDENTIALS, "mypassword");
+
+        Context context = createInitialContext(env);
+
+        ConnectionFactory connectionFactory = (ConnectionFactory) context.lookup("ConnectionFactory");
+        assertTrue(connectionFactory instanceof JmsConnectionFactory);
+        assertEquals("myuser", ((JmsConnectionFactory) connectionFactory).getUsername());
+        assertEquals("mypassword", ((JmsConnectionFactory) connectionFactory).getPassword());
+    }
 }

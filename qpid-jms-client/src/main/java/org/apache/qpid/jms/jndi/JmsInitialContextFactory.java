@@ -80,6 +80,14 @@ public class JmsInitialContextFactory implements InitialContextFactory {
                 String expanded = expand(location, environmentCopy);
                 if (ProviderFactory.findProviderFactory(new URI(expanded)) != null) {
                     environmentCopy.put(CONNECTION_FACTORY_DEFAULT_KEY_PREFIX + REMOTE_URI_PROP, expanded);
+                    String principle = environmentCopy.containsKey(Context.SECURITY_PRINCIPAL) ? (String) environment.get(Context.SECURITY_PRINCIPAL) : System.getProperty(Context.SECURITY_PRINCIPAL);
+                    if (principle != null) {
+                        environmentCopy.put(CONNECTION_FACTORY_DEFAULT_KEY_PREFIX + "username", principle);
+                    }
+                    String credentials = environmentCopy.containsKey(Context.SECURITY_CREDENTIALS) ? (String) environment.get(Context.SECURITY_CREDENTIALS) : System.getProperty(Context.SECURITY_CREDENTIALS);
+                    if (credentials != null) {
+                        environmentCopy.put(CONNECTION_FACTORY_DEFAULT_KEY_PREFIX + "password", credentials);
+                    }
                     providerUri = true;
                 }
             } catch (IOException | URISyntaxException e) {

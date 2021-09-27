@@ -8,7 +8,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java: [ 8, 11, 16 ]
+        java: [ 8, 11, 17 ]
 
     steps:
       - uses: actions/checkout@v2
@@ -23,7 +23,7 @@ jobs:
         uses: actions/setup-java@v2
         with:
           java-version: ${{ matrix.java }}
-          distribution: 'adopt'
+          distribution: 'temurin'
 
       - name: Build
         run: mvn -B clean verify

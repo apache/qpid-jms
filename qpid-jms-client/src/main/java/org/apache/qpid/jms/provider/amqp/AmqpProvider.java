@@ -448,15 +448,21 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
                         AmqpConnectionBuilder builder = new AmqpConnectionBuilder(AmqpProvider.this, connectionInfo);
                         connectionRequest = new AsyncResult() {
+                            AtomicBoolean signalled = new AtomicBoolean();
+
                             @Override
                             public void onSuccess() {
-                                fireConnectionEstablished();
-                                request.onSuccess();
+                                if (signalled.compareAndSet(false, true)) {
+                                    fireConnectionEstablished();
+                                    request.onSuccess();
+                                }
                             }
 
                             @Override
                             public void onFailure(ProviderException result) {
-                                request.onFailure(result);
+                                if (signalled.compareAndSet(false, true)) {
+                                    request.onFailure(result);
+                                }
                             }
 
                             @Override
@@ -1470,12 +1476,14 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
     @Override
     public List<URI> getAlternateURIs() {
-        List<URI> alternates = new ArrayList<>();
+        List<URI> alternates = null;
 
         if (connection != null) {
             // If there are failover servers in the open then we signal that to the listeners
             List<AmqpRedirect> failoverList = connection.getProperties().getFailoverServerList();
             if (!failoverList.isEmpty()) {
+                alternates = new ArrayList<>();
+
                 for (AmqpRedirect redirect : failoverList) {
                     try {
                         alternates.add(redirect.toURI());
@@ -1486,7 +1494,11 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
             }
         }
 
-        return alternates;
+        if (alternates != null) {
+            return alternates;
+        } else {
+            return Collections.emptyList();
+        }
     }
 
     public org.apache.qpid.proton.engine.Transport getProtonTransport() {

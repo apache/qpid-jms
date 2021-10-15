@@ -940,8 +940,9 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
         Provider provider = this.provider;
         if (provider != null) {
             return provider.getAlternateURIs();
+        } else {
+            return Collections.emptyList();
         }
-        return null;
     };
 
     @Override
@@ -1296,7 +1297,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                     LOG.debug("Request received error: {}", result.getMessage());
                     // If we managed to receive an Open frame it might contain
                     // a failover update so process it before handling the error.
-                    processAlternates(provider.getAlternateURIs());
+                    processAlternates(activeProvider.getAlternateURIs());
                     handleProviderFailure(activeProvider, ProviderExceptionSupport.createOrPassthroughFatal(result));
                 }
             } finally {

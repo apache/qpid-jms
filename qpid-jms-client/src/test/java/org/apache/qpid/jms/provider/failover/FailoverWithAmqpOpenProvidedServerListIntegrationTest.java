@@ -18,6 +18,7 @@ package org.apache.qpid.jms.provider.failover;
 
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.SCHEME;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -41,6 +42,7 @@ import org.apache.qpid.jms.JmsDefaultConnectionListener;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.basictypes.AmqpError;
+import org.apache.qpid.jms.test.testpeer.basictypes.ConnectionError;
 import org.apache.qpid.jms.transports.TransportOptions;
 import org.apache.qpid.jms.transports.TransportSupport;
 import org.apache.qpid.jms.util.PropertyUtil;
@@ -386,6 +388,92 @@ public class FailoverWithAmqpOpenProvidedServerListIntegrationTest extends QpidJ
             primaryPeer.close();
 
             backupPeer.waitForAllHandlersToComplete(3000);
+
+            backupPeer.expectClose();
+            connection.close();
+            backupPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testFailoverHandlesRemoteCloseWithRedirectDuringConnectionSessionEstablishment() throws Exception {
+        try (TestAmqpPeer primaryPeer = new TestAmqpPeer();
+             TestAmqpPeer backupPeer = new TestAmqpPeer();) {
+
+            final URI primaryPeerURI = createPeerURI(primaryPeer);
+            final URI backupPeerURI = createPeerURI(backupPeer);
+            LOG.info("Primary is at {}: Backup peer is at: {}", primaryPeerURI, backupPeerURI);
+
+            final CountDownLatch connectedToPrimary = new CountDownLatch(1);
+            final CountDownLatch connectedToBackup = new CountDownLatch(1);
+
+            Map<Symbol, Object> redirectInfo = new HashMap<Symbol, Object>();
+            redirectInfo.put(NETWORK_HOST, "localhost");
+            redirectInfo.put(PORT, backupPeer.getServerPort());
+
+            // Have the failover-server-list containing a third (non-existent) servers details
+            String thirdPeerTestHost = "test-host";
+            int thirdPeerTestPort = 45678;
+
+            Map<Symbol,Object> thirdPeerTestDetails = new HashMap<>();
+            thirdPeerTestDetails.put(NETWORK_HOST, thirdPeerTestHost);
+            thirdPeerTestDetails.put(PORT, thirdPeerTestPort);
+
+            List<Map<Symbol, Object>> failoverServerList = new ArrayList<Map<Symbol, Object>>();
+            failoverServerList.add(thirdPeerTestDetails);
+
+            Map<Symbol,Object> forcingPeerConnectionProperties = new HashMap<Symbol, Object>();
+            forcingPeerConnectionProperties.put(FAILOVER_SERVER_LIST, failoverServerList);
+
+            primaryPeer.expectSaslAnonymous();
+            primaryPeer.expectOpen(true);
+            // Prepare a bare Open without any failure hint, suggesting success,
+            // but defer writing it until the Close is ready to send too.
+            primaryPeer.sendOpenFrameAfterLastAction(true, forcingPeerConnectionProperties);
+            // Then send a redirecting Close, prompting the Open to actually be written.
+            primaryPeer.remotelyCloseConnection(false, ConnectionError.REDIRECT, "Server is going away", redirectInfo);
+            primaryPeer.expectBegin(false);// From the connection-session, prompted by 'successful' Open.
+            primaryPeer.expectClose(false);
+
+            backupPeer.expectSaslAnonymous();
+            backupPeer.expectOpen();
+            backupPeer.expectBegin();
+
+            final JmsConnection connection = establishAnonymousConnecton(null, primaryPeer);
+            connection.addConnectionListener(new JmsDefaultConnectionListener() {
+                @Override
+                public void onConnectionEstablished(URI remoteURI) {
+                    LOG.info("Connection Established: {}", remoteURI);
+                    if (primaryPeerURI.equals(remoteURI)) {
+                        connectedToPrimary.countDown();
+                    }
+
+                    if (backupPeerURI.equals(remoteURI)) {
+                        connectedToBackup.countDown();
+                    }
+                }
+            });
+
+            // Verify the existing failover URIs are as expected, the initial peer only
+            List<URI> beforeOpenFailoverURIs = new ArrayList<>();
+            beforeOpenFailoverURIs.add(primaryPeerURI);
+
+            assertFailoverURIList(connection, beforeOpenFailoverURIs);
+
+            connection.start();
+
+            primaryPeer.waitForAllHandlersToComplete(3000);
+
+            assertTrue("Should connect to backup peer", connectedToBackup.await(5, TimeUnit.SECONDS));
+            assertFalse("Should not connect to primary peer", connectedToPrimary.await(10, TimeUnit.MILLISECONDS));
+
+            // Verify the failover URIs are as expected, now containing initial peer, its advertised third test-details peer, and the peer it then redirected to.
+            List<URI> afterOpenFailoverURIs = new ArrayList<>();
+            afterOpenFailoverURIs.add(primaryPeerURI);
+            afterOpenFailoverURIs.add(new URI("amqp://" + thirdPeerTestHost + ":" + thirdPeerTestPort));
+            afterOpenFailoverURIs.add(backupPeerURI);
+
+            assertFailoverURIList(connection, afterOpenFailoverURIs);
 
             backupPeer.expectClose();
             connection.close();

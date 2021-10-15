@@ -928,11 +928,24 @@ public class TestAmqpPeer implements AutoCloseable
     }
 
     public void sendPreemptiveServerOpenFrame() {
+        sendOpenFrameAfterLastAction(false, null);
+    }
+
+    public void sendOpenFrameAfterLastAction(boolean deferWrite, Map<Symbol, Object> serverProperties) {
         // Arrange to send the Open frame after the previous handler
         OpenFrame open = createOpenFrame();
+        if (serverProperties != null) {
+            open.setProperties(serverProperties);
+        }
 
         CompositeAmqpPeerRunnable comp = insertCompsiteActionForLastHandler();
-        comp.add(new FrameSender(this, FrameType.AMQP, 0, open, null));
+
+        FrameSender openSender = new FrameSender(this, FrameType.AMQP, 0, open, null);
+        if (deferWrite) {
+            openSender.setDeferWrite(true);
+        }
+
+        comp.add(openSender);
     }
 
     public void expectOpen(Symbol[] desiredCapabilities, Symbol[] serverCapabilities,

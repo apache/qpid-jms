@@ -22,7 +22,10 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ForkJoinPool;
 import java.util.function.BiFunction;
+import java.util.function.Supplier;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
@@ -55,12 +58,17 @@ import org.apache.qpid.jms.provider.ProviderFactory;
 import org.apache.qpid.jms.tracing.JmsNoOpTracer;
 import org.apache.qpid.jms.tracing.JmsTracer;
 import org.apache.qpid.jms.tracing.JmsTracerFactory;
+import org.apache.qpid.jms.util.RefPool.Ref;
 import org.apache.qpid.jms.util.IdGenerator;
 import org.apache.qpid.jms.util.PropertyUtil;
+import org.apache.qpid.jms.util.QpidJMSForkJoinWorkerThreadFactory;
+import org.apache.qpid.jms.util.ThreadPoolUtils;
 import org.apache.qpid.jms.util.URISupport;
 import org.apache.qpid.jms.util.URISupport.CompositeData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static org.apache.qpid.jms.util.RefPool.shared;
 
 /**
  * JMS ConnectionFactory Implementation.
@@ -102,6 +110,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     private long requestTimeout = JmsConnectionInfo.DEFAULT_REQUEST_TIMEOUT;
     private long closeTimeout = JmsConnectionInfo.DEFAULT_CLOSE_TIMEOUT;
     private long connectTimeout = JmsConnectionInfo.DEFAULT_CONNECT_TIMEOUT;
+    private int completionThreads = JmsConnectionInfo.DEFAULT_COMPLETION_THREADS;
     private IdGenerator clientIdGenerator;
     private String clientIDPrefix;
     private IdGenerator connectionIdGenerator;
@@ -109,7 +118,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     private ExceptionListener exceptionListener;
     private String tracing;
     private JmsTracer tracer;
-
+    private Supplier<Ref<ExecutorService>> completionExecutorServiceFactory;
     private JmsPrefetchPolicy prefetchPolicy = new JmsDefaultPrefetchPolicy();
     private JmsRedeliveryPolicy redeliveryPolicy = new JmsDefaultRedeliveryPolicy();
     private JmsPresettlePolicy presettlePolicy = new JmsDefaultPresettlePolicy();
@@ -282,7 +291,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
                 implicitTracer = JmsTracerFactory.create(remoteURI, tracing);
                 connectionInfo.setTracer(implicitTracer);
             }
-
+            connectionInfo.setCompletionExecutorServiceFactory(getCompletionExecutorServiceFactory());
             // Set properties to make additional configuration changes
             PropertyUtil.setProperties(connectionInfo, properties);
 
@@ -366,6 +375,19 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
             }
         }
         return null;
+    }
+
+    protected Supplier<Ref<ExecutorService>> getCompletionExecutorServiceFactory() {
+        if (this.completionThreads == 0) {
+            return null;
+        }
+        synchronized (this) {
+            if (completionExecutorServiceFactory == null) {
+                QpidJMSForkJoinWorkerThreadFactory fjThreadFactory = new QpidJMSForkJoinWorkerThreadFactory("completion thread pool", true);
+                completionExecutorServiceFactory = shared(() -> new ForkJoinPool(completionThreads, fjThreadFactory, null, false), ThreadPoolUtils::shutdown);
+            }
+            return completionExecutorServiceFactory;
+        }
     }
 
     protected synchronized IdGenerator getConnectionIdGenerator() {
@@ -589,6 +611,14 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      */
     public long getConnectTimeout() {
         return this.connectTimeout;
+    }
+
+    public void setCompletionThreads(final int completionThreads) {
+        this.completionThreads = completionThreads;
+    }
+
+    public int getCompletionThreads() {
+        return completionThreads;
     }
 
     /**

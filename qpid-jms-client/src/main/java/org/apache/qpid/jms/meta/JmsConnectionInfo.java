@@ -20,7 +20,10 @@ import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.EnumMap;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.ExecutorService;
 import java.util.function.BiFunction;
+import java.util.function.Supplier;
 
 import javax.jms.Connection;
 
@@ -38,6 +41,7 @@ import org.apache.qpid.jms.policy.JmsPresettlePolicy;
 import org.apache.qpid.jms.policy.JmsRedeliveryPolicy;
 import org.apache.qpid.jms.tracing.JmsNoOpTracer;
 import org.apache.qpid.jms.tracing.JmsTracer;
+import org.apache.qpid.jms.util.RefPool.Ref;
 
 /**
  * Meta object that contains the JmsConnection identification and configuration
@@ -50,6 +54,7 @@ public final class JmsConnectionInfo extends JmsAbstractResource implements Comp
     public static final long DEFAULT_CLOSE_TIMEOUT = 60000;
     public static final long DEFAULT_SEND_TIMEOUT = INFINITE;
     public static final long DEFAULT_REQUEST_TIMEOUT = INFINITE;
+    public static final int DEFAULT_COMPLETION_THREADS = 0;
 
     private final JmsConnectionId connectionId;
     private final EnumMap<JmsConnectionExtensions, BiFunction<Connection, URI, Object>> extensionMap = new EnumMap<>(JmsConnectionExtensions.class);
@@ -89,6 +94,7 @@ public final class JmsConnectionInfo extends JmsAbstractResource implements Comp
 
     private volatile byte[] encodedUserId;
     private JmsTracer tracer = JmsNoOpTracer.INSTANCE;
+    private Optional<Supplier<Ref<ExecutorService>>> completionExecutorServiceFactory;
 
     public JmsConnectionInfo(JmsConnectionId connectionId) {
         if (connectionId == null) {
@@ -451,5 +457,16 @@ public final class JmsConnectionInfo extends JmsAbstractResource implements Comp
 
     public JmsTracer getTracer() {
         return tracer;
+    }
+
+    public void setCompletionExecutorServiceFactory(final Supplier<Ref<ExecutorService>> completionExecutorServiceFactory) {
+        this.completionExecutorServiceFactory = Optional.ofNullable(completionExecutorServiceFactory);
+    }
+
+    public Optional<Supplier<Ref<ExecutorService>>> getCompletionExecutorServiceFactory() {
+        if (completionExecutorServiceFactory == null) {
+            return Optional.empty();
+        }
+        return completionExecutorServiceFactory;
     }
 }

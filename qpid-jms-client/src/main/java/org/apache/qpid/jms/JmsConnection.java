@@ -22,12 +22,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionConsumer;
@@ -83,6 +85,7 @@ import org.apache.qpid.jms.provider.ProviderListener;
 import org.apache.qpid.jms.provider.ProviderSynchronization;
 import org.apache.qpid.jms.tracing.JmsTracer;
 import org.apache.qpid.jms.util.FifoMessageQueue;
+import org.apache.qpid.jms.util.RefPool;
 import org.apache.qpid.jms.util.MessageQueue;
 import org.apache.qpid.jms.util.PriorityMessageQueue;
 import org.apache.qpid.jms.util.QpidJMSThreadFactory;
@@ -106,7 +109,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
     private final AtomicBoolean started = new AtomicBoolean();
     private final AtomicReference<Exception> failureCause = new AtomicReference<>();
     private final JmsConnectionInfo connectionInfo;
-    private final ThreadPoolExecutor executor;
+    protected final ThreadPoolExecutor executor;
 
     private ExceptionListener exceptionListener;
     private JmsMessageFactory messageFactory;
@@ -119,6 +122,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
     private final AtomicLong transactionIdGenerator = new AtomicLong();
     private final AtomicLong connectionConsumerIdGenerator = new AtomicLong();
     private final Map<AsyncResult, AsyncResult> requests = new ConcurrentHashMap<>();
+    private final RefPool.Ref<ExecutorService> completionExecutorService;
 
     protected JmsConnection(final JmsConnectionInfo connectionInfo, Provider provider) throws JMSException {
 
@@ -127,7 +131,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         // will also serve as a means of preventing JVM shutdown should a client application
         // not have it's own mechanism for doing so if the configuration specifies that the
         // Connection create this thread as a non-daemon thread.
-        executor = new ThreadPoolExecutor(1, 1, 5, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(),
+        executor = new ThreadPoolExecutor(1, 1, 5, TimeUnit.SECONDS, new LinkedTransferQueue<>(),
             new QpidJMSThreadFactory("QpidJMS Connection Executor: " + connectionInfo.getId(), connectionInfo.isUseDaemonThread()));
 
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardOldestPolicy());
@@ -151,6 +155,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
 
         this.connectionInfo = connectionInfo;
         this.connectionInfo.setConnection(this);
+        this.completionExecutorService = this.connectionInfo.getCompletionExecutorServiceFactory().map(Supplier::get).orElse(null);
     }
 
     JmsConnection connect() throws JMSException {
@@ -211,6 +216,10 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
                     session.shutdown();
                 }
 
+                if (completionExecutorService != null) {
+                    completionExecutorService.close();
+                }
+
                 for (JmsConnectionConsumer connectionConsumer : connectionConsumers.values()) {
                     connectionConsumer.shutdown();
                 }
@@ -264,6 +273,10 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
                 Thread.currentThread().interrupt();
             }
         }
+    }
+
+    RefPool.Ref<ExecutorService> getCompletionExecutorService() {
+        return completionExecutorService;
     }
 
     /**

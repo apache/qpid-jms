@@ -67,6 +67,7 @@ import org.apache.qpid.jms.test.testpeer.basictypes.AmqpError;
 import org.apache.qpid.jms.test.testpeer.basictypes.ReceiverSettleMode;
 import org.apache.qpid.jms.test.testpeer.basictypes.Role;
 import org.apache.qpid.jms.test.testpeer.basictypes.SenderSettleMode;
+import org.apache.qpid.jms.test.testpeer.basictypes.StdDistMode;
 import org.apache.qpid.jms.test.testpeer.basictypes.TerminusDurability;
 import org.apache.qpid.jms.test.testpeer.basictypes.TerminusExpiryPolicy;
 import org.apache.qpid.jms.test.testpeer.basictypes.TransactionError;
@@ -1462,7 +1463,10 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectQueueBrowserAttach()
     {
-        expectReceiverAttach(notNullValue(), notNullValue(), true);
+        SourceMatcher sourceMatcher = new SourceMatcher();
+        sourceMatcher.withDistributionMode(equalTo(StdDistMode.COPY));
+
+        expectReceiverAttach(notNullValue(), sourceMatcher, true);
     }
 
     public void expectReceiverAttachButDoNotRespond()

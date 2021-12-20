@@ -45,18 +45,6 @@
       <outputDirectory>/lib</outputDirectory>
       <useProjectArtifact>false</useProjectArtifact>
       <useTransitiveFiltering>true</useTransitiveFiltering>
-      <excludes>
-        <exclude>org.apache.logging.log4j:log4j-slf4j-impl</exclude>
-      </excludes>
-    </dependencySet>
-
-    <dependencySet>
-      <outputDirectory>/lib/optional</outputDirectory>
-      <useProjectArtifact>false</useProjectArtifact>
-      <useTransitiveFiltering>true</useTransitiveFiltering>
-      <includes>
-        <include>org.apache.logging.log4j:log4j-slf4j-impl</include>
-      </includes>
     </dependencySet>
   </dependencySets>
   <moduleSets>

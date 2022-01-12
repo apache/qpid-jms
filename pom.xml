@@ -52,7 +52,7 @@
     <jetty-version>9.4.43.v20210629</jetty-version>
     <mockito-version>3.12.4</mockito-version>
     <hamcrest-version>2.2</hamcrest-version>
-    <hadoop-minikdc-version>3.3.0</hadoop-minikdc-version>
+    <hadoop-minikdc-version>3.3.1</hadoop-minikdc-version>
     <commons-io-version>2.10.0</commons-io-version>
 
     <!-- Maven Plugin Versions for this Project -->
@@ -243,6 +243,10 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
           </exclusion>
+          <exclusion>
+            <groupId>com.nimbusds</groupId>
+            <artifactId>nimbus-jose-jwt</artifactId>
+          </exclusion>
         </exclusions>
       </dependency>
       <dependency>
@@ -250,17 +254,6 @@
         <artifactId>commons-io</artifactId>
         <version>${commons-io-version}</version>
         <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.kerby</groupId>
-        <artifactId>token-provider</artifactId>
-        <scope>test</scope>
-        <exclusions>
-          <exclusion>
-            <groupId>com.nimbusds</groupId>
-            <artifactId>nimbus-jose-jwt</artifactId>
-          </exclusion>
-        </exclusions>
       </dependency>
     </dependencies>
   </dependencyManagement>

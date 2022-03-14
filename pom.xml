@@ -52,8 +52,8 @@
     <jetty-version>9.4.43.v20210629</jetty-version>
     <mockito-version>4.2.0</mockito-version>
     <hamcrest-version>2.2</hamcrest-version>
-    <hadoop-minikdc-version>3.3.1</hadoop-minikdc-version>
-    <commons-io-version>2.10.0</commons-io-version>
+    <hadoop-minikdc-version>3.3.2</hadoop-minikdc-version>
+    <commons-io-version>2.11.0</commons-io-version>
 
     <!-- Maven Plugin Versions for this Project -->
     <maven-javacc-plugin-version>2.6</maven-javacc-plugin-version>

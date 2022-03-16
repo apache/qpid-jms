@@ -44,6 +44,7 @@ public class NettyTcpTransportFactoryTest {
     public static final int CUSTOM_CONNECT_TIMEOUT = 90000;
     private static final String CUSTOM_LOCAL_ADDRESS = "localhost";
     private static final int CUSTOM_LOCAL_PORT = 30000;
+    private static final int CUSTOM_SHARED_EVENT_LOOP_THREADS = 7;
 
     @Test(timeout = 30000)
     public void testCreateWithDefaultOptions() throws Exception {
@@ -70,6 +71,7 @@ public class NettyTcpTransportFactoryTest {
         assertEquals(TransportOptions.DEFAULT_SO_TIMEOUT, options.getSoTimeout());
         assertNull(options.getLocalAddress());
         assertEquals(TransportOptions.DEFAULT_LOCAL_PORT, options.getLocalPort());
+        assertEquals(TransportOptions.DEFAULT_SHARED_EVENT_LOOP_THREADS, options.getSharedEventLoopThreads());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -114,6 +116,7 @@ public class NettyTcpTransportFactoryTest {
         URI BASE_URI = new URI("tcp://localhost:5672");
 
         URI configuredURI = new URI(BASE_URI.toString() + "?" +
+            "transport.sharedEventLoopThreads=" + CUSTOM_SHARED_EVENT_LOOP_THREADS + "&" +
             "transport.connectTimeout=" + CUSTOM_CONNECT_TIMEOUT + "&" +
             "transport.sendBufferSize=" + CUSTOM_SEND_BUFFER_SIZE + "&" +
             "transport.receiveBufferSize=" + CUSTOM_RECEIVE_BUFFER_SIZE + "&" +
@@ -136,6 +139,7 @@ public class NettyTcpTransportFactoryTest {
         TransportOptions options = transport.getTransportOptions();
         assertNotNull(options);
 
+        assertEquals(CUSTOM_SHARED_EVENT_LOOP_THREADS, options.getSharedEventLoopThreads());
         assertEquals(CUSTOM_CONNECT_TIMEOUT, options.getConnectTimeout());
         assertEquals(CUSTOM_SEND_BUFFER_SIZE, options.getSendBufferSize());
         assertEquals(CUSTOM_RECEIVE_BUFFER_SIZE, options.getReceiveBufferSize());

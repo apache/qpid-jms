@@ -19,6 +19,7 @@ package org.apache.qpid.jms.util;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +31,7 @@ public class QpidJMSThreadFactory implements ThreadFactory {
 
     private static final Logger LOG = LoggerFactory.getLogger(QpidJMSThreadFactory.class);
 
-    private final String threadName;
+    private final Function<Thread, String> threadNamingStrategy;
     private final boolean daemon;
     private final AtomicReference<Thread> threadTracker;
 
@@ -39,12 +40,12 @@ public class QpidJMSThreadFactory implements ThreadFactory {
      * given name and daemon state.
      *
      * @param threadName
-     * 		the name that will be used for each thread created.
+     *      the name that will be used for each thread created.
      * @param daemon
-     * 		should the created thread be a daemon thread.
+     *      should the created thread be a daemon thread.
      */
     public QpidJMSThreadFactory(String threadName, boolean daemon) {
-        this.threadName = threadName;
+        this.threadNamingStrategy = t -> threadName;
         this.daemon = daemon;
         this.threadTracker = null;
     }
@@ -59,16 +60,31 @@ public class QpidJMSThreadFactory implements ThreadFactory {
      * to be known for some reason.
      *
      * @param threadName
-     * 		the name that will be used for each thread created.
+     *      the name that will be used for each thread created.
      * @param daemon
-     * 		should the created thread be a daemon thread.
+     *      should the created thread be a daemon thread.
      * @param threadTracker
-     * 		AtomicReference that will be updated any time a new Thread is created.
+     *      AtomicReference that will be updated any time a new Thread is created.
      */
     public QpidJMSThreadFactory(String threadName, boolean daemon, AtomicReference<Thread> threadTracker) {
-        this.threadName = threadName;
+        this.threadNamingStrategy = t -> threadName;
         this.daemon = daemon;
         this.threadTracker = threadTracker;
+    }
+
+    /**
+     * Creates a new Thread factory that will create threads with the
+     * provided thread naming function and daemon state.
+     *
+     * @param threadNamingStrategy
+     *      the naming strategy that will be used for each thread created.
+     * @param daemon
+     *      should the created thread be a daemon thread.
+     */
+    public QpidJMSThreadFactory(Function<Thread, String> threadNamingStrategy, boolean daemon) {
+        this.threadNamingStrategy = threadNamingStrategy;
+        this.daemon = daemon;
+        this.threadTracker = null;
     }
 
     @Override
@@ -91,8 +107,9 @@ public class QpidJMSThreadFactory implements ThreadFactory {
             };
         }
 
-        Thread thread = new Thread(runner, threadName);
+        Thread thread = new Thread(runner);
         thread.setDaemon(daemon);
+        thread.setName(threadNamingStrategy.apply(thread));
         thread.setUncaughtExceptionHandler(new UncaughtExceptionHandler() {
 
             @Override

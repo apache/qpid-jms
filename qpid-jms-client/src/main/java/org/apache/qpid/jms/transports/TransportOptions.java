@@ -39,6 +39,7 @@ public class TransportOptions implements Cloneable {
     public static final int DEFAULT_SO_TIMEOUT = -1;
     public static final int DEFAULT_CONNECT_TIMEOUT = 60000;
     public static final int DEFAULT_TCP_PORT = 5672;
+    public static final int DEFAULT_SHARED_EVENT_LOOP_THREADS = -1;
     public static final boolean DEFAULT_USE_EPOLL = true;
     public static final boolean DEFAULT_USE_KQUEUE = false;
     public static final boolean DEFAULT_TRACE_BYTES = false;
@@ -73,6 +74,7 @@ public class TransportOptions implements Cloneable {
     private boolean useKQueue = DEFAULT_USE_KQUEUE;
     private boolean traceBytes = DEFAULT_TRACE_BYTES;
     private boolean useOpenSSL = DEFAULT_USE_OPENSSL;
+    private int sharedEventLoopThreads = DEFAULT_SHARED_EVENT_LOOP_THREADS;
 
     private String keyStoreLocation;
     private String keyStorePassword;
@@ -211,6 +213,14 @@ public class TransportOptions implements Cloneable {
 
     public void setTcpKeepAlive(boolean keepAlive) {
         this.tcpKeepAlive = keepAlive;
+    }
+
+    public void setSharedEventLoopThreads(int numThreads) {
+        this.sharedEventLoopThreads = numThreads;
+    }
+
+    public int getSharedEventLoopThreads() {
+        return sharedEventLoopThreads;
     }
 
     public int getConnectTimeout() {
@@ -590,6 +600,7 @@ public class TransportOptions implements Cloneable {
         copy.setUseOpenSSL(isUseOpenSSL());
         copy.setLocalAddress(getLocalAddress());
         copy.setLocalPort(getLocalPort());
+        copy.setSharedEventLoopThreads(getSharedEventLoopThreads());
 
         return copy;
     }

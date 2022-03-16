@@ -50,6 +50,7 @@ public class TransportOptionsTest extends QpidJmsTestCase {
     public static final int LOCAL_PORT = 30000;
     public static final boolean TEST_USE_EPOLL_VALUE = !TransportOptions.DEFAULT_USE_EPOLL;
     public static final boolean TEST_TRACE_BYTES_VALUE = !TransportOptions.DEFAULT_TRACE_BYTES;
+    public static final int TEST_SHARED_EVENT_LOOP_THREADS_VALUE = 5;
 
     private static final String PASSWORD = "password";
     private static final String CLIENT_KEYSTORE = "src/test/resources/client-jks.keystore";
@@ -98,6 +99,7 @@ public class TransportOptionsTest extends QpidJmsTestCase {
         assertNull(options.getKeyAlias());
         assertNull(options.getSslContextOverride());
         assertNull(options.getProxyHandlerSupplier());
+        assertEquals(TransportOptions.DEFAULT_SHARED_EVENT_LOOP_THREADS, options.getSharedEventLoopThreads());
     }
 
     @Test
@@ -149,6 +151,7 @@ public class TransportOptionsTest extends QpidJmsTestCase {
         assertArrayEquals(DISABLED_PROTOCOLS,options.getDisabledProtocols());
         assertArrayEquals(ENABLED_CIPHERS,options.getEnabledCipherSuites());
         assertArrayEquals(DISABLED_CIPHERS,options.getDisabledCipherSuites());
+        assertEquals(TEST_SHARED_EVENT_LOOP_THREADS_VALUE, options.getSharedEventLoopThreads());
     }
 
     @Test
@@ -337,6 +340,7 @@ public class TransportOptionsTest extends QpidJmsTestCase {
         options.setLocalAddress(LOCAL_ADDRESS);
         options.setLocalPort(LOCAL_PORT);
         options.setProxyHandlerSupplier(PROXY_HANDLER_SUPPLIER);
+        options.setSharedEventLoopThreads(TEST_SHARED_EVENT_LOOP_THREADS_VALUE);
 
         return options;
     }

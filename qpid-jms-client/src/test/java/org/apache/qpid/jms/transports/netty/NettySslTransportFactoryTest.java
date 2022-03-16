@@ -49,6 +49,7 @@ public class NettySslTransportFactoryTest {
     public static final int CUSTOM_CONNECT_TIMEOUT = 90000;
     private static final String CUSTOM_LOCAL_ADDRESS = "localhost";
     private static final int CUSTOM_LOCAL_PORT = 30000;
+    private static final int CUSTOM_SHARED_EVENT_LOOP_THREADS = 7;
 
     public static final String CUSTOM_CONTEXT_PROTOCOL = "TLSv1.2";
     public static final String[] CUSTOM_ENABLED_PROTOCOLS = { "TLSv1.1", "TLSv1.2" };
@@ -93,6 +94,7 @@ public class NettySslTransportFactoryTest {
         assertEquals(TransportOptions.DEFAULT_SO_TIMEOUT, options.getSoTimeout());
         assertNull(options.getLocalAddress());
         assertEquals(TransportOptions.DEFAULT_LOCAL_PORT, options.getLocalPort());
+        assertEquals(TransportOptions.DEFAULT_SHARED_EVENT_LOOP_THREADS, options.getSharedEventLoopThreads());
 
         assertEquals(TransportOptions.DEFAULT_CONTEXT_PROTOCOL, options.getContextProtocol());
         assertNull(options.getEnabledProtocols());
@@ -124,6 +126,7 @@ public class NettySslTransportFactoryTest {
         URI BASE_URI = new URI("tcp://localhost:5672");
 
         URI configuredURI = new URI(BASE_URI.toString() + "?" +
+            "transport.sharedEventLoopThreads=" + CUSTOM_SHARED_EVENT_LOOP_THREADS + "&" +
             "transport.connectTimeout=" + CUSTOM_CONNECT_TIMEOUT + "&" +
             "transport.sendBufferSize=" + CUSTOM_SEND_BUFFER_SIZE + "&" +
             "transport.receiveBufferSize=" + CUSTOM_RECEIVE_BUFFER_SIZE + "&" +
@@ -156,6 +159,7 @@ public class NettySslTransportFactoryTest {
         TransportOptions options = transport.getTransportOptions();
         assertNotNull(options);
 
+        assertEquals(CUSTOM_SHARED_EVENT_LOOP_THREADS, options.getSharedEventLoopThreads());
         assertEquals(CUSTOM_CONNECT_TIMEOUT, options.getConnectTimeout());
         assertEquals(CUSTOM_SEND_BUFFER_SIZE, options.getSendBufferSize());
         assertEquals(CUSTOM_RECEIVE_BUFFER_SIZE, options.getReceiveBufferSize());

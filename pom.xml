@@ -39,7 +39,7 @@
     <proton-version>0.33.10</proton-version>
     <netty-version>4.1.75.Final</netty-version>
     <slf4j-version>1.7.36</slf4j-version>
-    <geronimo.jms.2.spec.version>1.0-alpha-2</geronimo.jms.2.spec.version>
+    <jakarta.jms-api-version>2.0.3</jakarta.jms-api-version>
 
     <!-- 'Provided'/Test Dependency Versions for this Project -->
     <opentracing-version>0.33.0</opentracing-version>
@@ -122,9 +122,9 @@
         <version>${proton-version}</version>
       </dependency>
       <dependency>
-        <groupId>org.apache.geronimo.specs</groupId>
-        <artifactId>geronimo-jms_2.0_spec</artifactId>
-        <version>${geronimo.jms.2.spec.version}</version>
+        <groupId>jakarta.jms</groupId>
+        <artifactId>jakarta.jms-api</artifactId>
+        <version>${jakarta.jms-api-version}</version>
       </dependency>
       <dependency>
         <groupId>org.slf4j</groupId>

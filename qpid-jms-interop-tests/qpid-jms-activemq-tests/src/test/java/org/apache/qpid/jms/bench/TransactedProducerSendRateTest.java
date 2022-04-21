@@ -18,11 +18,11 @@ package org.apache.qpid.jms.bench;
 
 import java.util.concurrent.TimeUnit;
 
-import javax.jms.DeliveryMode;
-import javax.jms.Destination;
-import javax.jms.Message;
-import javax.jms.MessageProducer;
-import javax.jms.Session;
+import jakarta.jms.DeliveryMode;
+import jakarta.jms.Destination;
+import jakarta.jms.Message;
+import jakarta.jms.MessageProducer;
+import jakarta.jms.Session;
 
 import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.apache.qpid.jms.support.AmqpTestSupport;
@@ -70,10 +70,10 @@ public class TransactedProducerSendRateTest extends AmqpTestSupport {
 
     @Test
     public void testSendNonPersistentTopicMessagesOpenWire() throws Exception {
-        connection = createActiveMQConnection();
-        Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
-        Destination destination = session.createTopic(getDestinationName());
-        MessageProducer producer = session.createProducer(destination);
+        jmsConnection = createActiveMQConnection();
+        javax.jms.Session session = jmsConnection.createSession(true, Session.SESSION_TRANSACTED);
+        javax.jms.Destination destination = session.createTopic(getDestinationName());
+        javax.jms.MessageProducer producer = session.createProducer(destination);
         producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
 
         // Warm
@@ -113,10 +113,10 @@ public class TransactedProducerSendRateTest extends AmqpTestSupport {
 
     @Test
     public void testSendNonPersistentQueueMessagesOpenWire() throws Exception {
-        connection = createActiveMQConnection();
-        Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
-        Destination destination = session.createQueue(getDestinationName());
-        MessageProducer producer = session.createProducer(destination);
+        jmsConnection = createActiveMQConnection();
+        javax.jms.Session session = jmsConnection.createSession(true, Session.SESSION_TRANSACTED);
+        javax.jms.Destination destination = session.createQueue(getDestinationName());
+        javax.jms.MessageProducer producer = session.createProducer(destination);
         producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
         QueueViewMBean queueView = getProxyToQueue(getDestinationName());
 
@@ -137,6 +137,22 @@ public class TransactedProducerSendRateTest extends AmqpTestSupport {
     // Send under TX - Count commit in elapsed time.
     private long produceMessages(Session session, MessageProducer producer) throws Exception {
         Message message = session.createTextMessage("payload");
+
+        long start = System.nanoTime();
+        for (int i = 0; i < BATCH_SIZE; ++i) {
+            producer.send(message);
+        }
+
+        if (session.getTransacted()) {
+            session.commit();
+        }
+        long elapsed = System.nanoTime() - start;
+
+        return elapsed;
+    }
+
+    private long produceMessages(javax.jms.Session session, javax.jms.MessageProducer producer) throws Exception {
+        javax.jms.Message message = session.createTextMessage("payload");
 
         long start = System.nanoTime();
         for (int i = 0; i < BATCH_SIZE; ++i) {

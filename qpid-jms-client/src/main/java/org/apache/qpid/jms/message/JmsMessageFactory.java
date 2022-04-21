@@ -18,7 +18,7 @@ package org.apache.qpid.jms.message;
 
 import java.io.Serializable;
 
-import javax.jms.JMSException;
+import jakarta.jms.JMSException;
 
 /**
  * Interface that a Provider should implement to provide a Provider

@@ -20,12 +20,12 @@ import java.util.Enumeration;
 import java.util.NoSuchElementException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.jms.IllegalStateException;
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageConsumer;
-import javax.jms.Queue;
-import javax.jms.QueueBrowser;
+import jakarta.jms.IllegalStateException;
+import jakarta.jms.JMSException;
+import jakarta.jms.Message;
+import jakarta.jms.MessageConsumer;
+import jakarta.jms.Queue;
+import jakarta.jms.QueueBrowser;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,10 +49,10 @@ import org.slf4j.LoggerFactory;
  * A <CODE>QueueBrowser</CODE> can be created from either a <CODE>Session
  * </CODE> or a <CODE>QueueSession</CODE>.
  *
- * @see javax.jms.Session#createBrowser
- * @see javax.jms.QueueSession#createBrowser
- * @see javax.jms.QueueBrowser
- * @see javax.jms.QueueReceiver
+ * @see jakarta.jms.Session#createBrowser
+ * @see jakarta.jms.QueueSession#createBrowser
+ * @see jakarta.jms.QueueBrowser
+ * @see jakarta.jms.QueueReceiver
  */
 public class JmsQueueBrowser implements AutoCloseable, QueueBrowser, Enumeration<Message> {
 
@@ -77,7 +77,7 @@ public class JmsQueueBrowser implements AutoCloseable, QueueBrowser, Enumeration
      * @param selector
      *      The selector string used to filter the browsed message.
      *
-     * @throws javax.jms.JMSException if an error occurs while creating this instance.
+     * @throws jakarta.jms.JMSException if an error occurs while creating this instance.
      */
     protected JmsQueueBrowser(JmsSession session, JmsDestination destination, String selector) throws JMSException {
         this.session = session;
@@ -90,7 +90,7 @@ public class JmsQueueBrowser implements AutoCloseable, QueueBrowser, Enumeration
      * received.
      *
      * @return an enumeration for browsing the messages
-     * @throws javax.jms.JMSException
+     * @throws jakarta.jms.JMSException
      *         if the JMS provider fails to get the enumeration for this browser due to some
      *         internal error.
      */
@@ -165,7 +165,7 @@ public class JmsQueueBrowser implements AutoCloseable, QueueBrowser, Enumeration
      * Gets the queue associated with this queue browser.
      *
      * @return the queue
-     * @throws javax.jms.JMSException
+     * @throws jakarta.jms.JMSException
      *         if the JMS provider fails to get the queue associated with this browser due to
      *         some internal error.
      */

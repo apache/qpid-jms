@@ -16,11 +16,11 @@
  */
 package org.apache.qpid.jms.producer;
 
-import javax.jms.Queue;
-import javax.jms.QueueConnection;
-import javax.jms.QueueSender;
-import javax.jms.QueueSession;
-import javax.jms.Session;
+import jakarta.jms.Queue;
+import jakarta.jms.QueueConnection;
+import jakarta.jms.QueueSender;
+import jakarta.jms.QueueSession;
+import jakarta.jms.Session;
 
 import org.apache.qpid.jms.JmsConnectionTestSupport;
 import org.junit.Before;
@@ -48,37 +48,37 @@ public class JmsQueueSenderClosedTest extends JmsConnectionTestSupport {
         createTestResources();
     }
 
-    @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
+    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
     public void testGetDeliveryModeFails() throws Exception {
         sender.getDeliveryMode();
     }
 
-    @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
+    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
     public void testGetDestinationFails() throws Exception {
         sender.getDestination();
     }
 
-    @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
+    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
     public void testGetQueueFails() throws Exception {
         sender.getQueue();
     }
 
-    @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
+    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
     public void testGetDisableMessageIDFails() throws Exception {
         sender.getDisableMessageID();
     }
 
-    @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
+    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
     public void testGetDisableMessageTimestampFails() throws Exception {
         sender.getDisableMessageTimestamp();
     }
 
-    @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
+    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
     public void testGetTimeToLiveFails() throws Exception {
         sender.getTimeToLive();
     }
 
-    @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
+    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
     public void testGetPriorityFails() throws Exception {
         sender.getPriority();
     }

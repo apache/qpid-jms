@@ -25,7 +25,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.jms.Session;
+import jakarta.jms.Session;
 
 import org.apache.qpid.jms.policy.JmsDefaultMessageIDPolicy;
 import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;

@@ -27,14 +27,14 @@ import static org.junit.Assert.fail;
 import java.io.IOException;
 import java.net.URI;
 
-import javax.jms.ConnectionMetaData;
-import javax.jms.ExceptionListener;
-import javax.jms.IllegalStateException;
-import javax.jms.InvalidClientIDException;
-import javax.jms.JMSException;
-import javax.jms.Session;
-import javax.jms.TemporaryQueue;
-import javax.jms.TemporaryTopic;
+import jakarta.jms.ConnectionMetaData;
+import jakarta.jms.ExceptionListener;
+import jakarta.jms.IllegalStateException;
+import jakarta.jms.InvalidClientIDException;
+import jakarta.jms.JMSException;
+import jakarta.jms.Session;
+import jakarta.jms.TemporaryQueue;
+import jakarta.jms.TemporaryTopic;
 
 import org.apache.qpid.jms.meta.JmsConnectionId;
 import org.apache.qpid.jms.meta.JmsConnectionInfo;
@@ -293,9 +293,9 @@ public class JmsConnectionTest {
         ConnectionMetaData metaData = connection.getMetaData();
 
         assertNotNull(metaData);
-        assertEquals(2, metaData.getJMSMajorVersion());
+        assertEquals(3, metaData.getJMSMajorVersion());
         assertEquals(0, metaData.getJMSMinorVersion());
-        assertEquals("2.0", metaData.getJMSVersion());
+        assertEquals("3.0", metaData.getJMSVersion());
         assertNotNull(metaData.getJMSXPropertyNames());
 
         assertNotNull(metaData.getProviderVersion());

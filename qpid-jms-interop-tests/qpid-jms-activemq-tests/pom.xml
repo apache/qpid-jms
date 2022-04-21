@@ -85,17 +85,6 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.fusesource.joram-jms-tests</groupId>
-      <artifactId>joram-jms-tests</artifactId>
-      <version>${fuse-joram-tests-version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.jetty</groupId>
-      <artifactId>jetty-jndi</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>org.eclipse.jetty.websocket</groupId>
       <artifactId>websocket-server</artifactId>
       <scope>test</scope>

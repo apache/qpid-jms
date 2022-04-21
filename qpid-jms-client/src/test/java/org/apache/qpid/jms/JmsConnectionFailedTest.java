@@ -20,8 +20,8 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.TimeUnit;
 
-import javax.jms.ExceptionListener;
-import javax.jms.JMSException;
+import jakarta.jms.ExceptionListener;
+import jakarta.jms.JMSException;
 
 import org.apache.qpid.jms.provider.ProviderException;
 import org.apache.qpid.jms.test.Wait;

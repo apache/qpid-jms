@@ -27,7 +27,7 @@ import static org.junit.Assert.fail;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 
-import javax.jms.JMSException;
+import jakarta.jms.JMSException;
 
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.DataDescribedType;
 import org.apache.qpid.proton.amqp.Binary;

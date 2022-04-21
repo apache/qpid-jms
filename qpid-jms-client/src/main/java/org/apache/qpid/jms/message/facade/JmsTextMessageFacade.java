@@ -16,7 +16,7 @@
  */
 package org.apache.qpid.jms.message.facade;
 
-import javax.jms.JMSException;
+import jakarta.jms.JMSException;
 
 /**
  * A Facade around a provider message that behaves like a TextMessage instance.

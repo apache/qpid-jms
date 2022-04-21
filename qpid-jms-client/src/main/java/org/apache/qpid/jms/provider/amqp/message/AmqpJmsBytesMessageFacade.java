@@ -23,8 +23,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import javax.jms.IllegalStateException;
-import javax.jms.JMSException;
+import jakarta.jms.IllegalStateException;
+import jakarta.jms.JMSException;
 
 import org.apache.qpid.jms.message.JmsBytesMessage;
 import org.apache.qpid.jms.message.facade.JmsBytesMessageFacade;

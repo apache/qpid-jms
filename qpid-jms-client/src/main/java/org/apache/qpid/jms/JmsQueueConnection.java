@@ -16,11 +16,11 @@
  */
 package org.apache.qpid.jms;
 
-import javax.jms.ConnectionConsumer;
-import javax.jms.JMSException;
-import javax.jms.ServerSessionPool;
-import javax.jms.Topic;
-import javax.jms.TopicSession;
+import jakarta.jms.ConnectionConsumer;
+import jakarta.jms.JMSException;
+import jakarta.jms.ServerSessionPool;
+import jakarta.jms.Topic;
+import jakarta.jms.TopicSession;
 
 import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.provider.Provider;
@@ -33,16 +33,16 @@ public class JmsQueueConnection extends JmsConnection implements AutoCloseable {
 
     @Override
     public TopicSession createTopicSession(boolean transacted, int acknowledgeMode) throws JMSException {
-        throw new javax.jms.IllegalStateException("Operation not supported by a QueueConnection");
+        throw new jakarta.jms.IllegalStateException("Operation not supported by a QueueConnection");
     }
 
     @Override
     public ConnectionConsumer createDurableConnectionConsumer(Topic topic, String subscriptionName, String messageSelector, ServerSessionPool sessionPool, int maxMessages) throws JMSException {
-        throw new javax.jms.IllegalStateException("Operation not supported by a QueueConnection");
+        throw new jakarta.jms.IllegalStateException("Operation not supported by a QueueConnection");
     }
 
     @Override
     public ConnectionConsumer createConnectionConsumer(Topic topic, String messageSelector, ServerSessionPool sessionPool, int maxMessages) throws JMSException {
-        throw new javax.jms.IllegalStateException("Operation not supported by a QueueConnection");
+        throw new jakarta.jms.IllegalStateException("Operation not supported by a QueueConnection");
     }
 }

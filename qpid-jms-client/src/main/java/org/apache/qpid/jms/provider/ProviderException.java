@@ -16,7 +16,7 @@
  */
 package org.apache.qpid.jms.provider;
 
-import javax.jms.JMSException;
+import jakarta.jms.JMSException;
 
 public class ProviderException extends Exception {
 

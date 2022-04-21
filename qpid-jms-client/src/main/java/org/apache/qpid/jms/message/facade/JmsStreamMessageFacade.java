@@ -16,8 +16,8 @@
  */
 package org.apache.qpid.jms.message.facade;
 
-import javax.jms.JMSException;
-import javax.jms.MessageEOFException;
+import jakarta.jms.JMSException;
+import jakarta.jms.MessageEOFException;
 
 /**
  * Interface for a Message Facade that wraps a stream or list based provider

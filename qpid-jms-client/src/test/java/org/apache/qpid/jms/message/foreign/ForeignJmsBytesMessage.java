@@ -16,8 +16,8 @@
  */
 package org.apache.qpid.jms.message.foreign;
 
-import javax.jms.BytesMessage;
-import javax.jms.JMSException;
+import jakarta.jms.BytesMessage;
+import jakarta.jms.JMSException;
 
 import org.apache.qpid.jms.message.JmsBytesMessage;
 import org.apache.qpid.jms.message.facade.test.JmsTestBytesMessageFacade;

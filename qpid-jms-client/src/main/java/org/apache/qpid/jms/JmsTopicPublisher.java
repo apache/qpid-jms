@@ -16,11 +16,11 @@
  */
 package org.apache.qpid.jms;
 
-import javax.jms.IllegalStateException;
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.Topic;
-import javax.jms.TopicPublisher;
+import jakarta.jms.IllegalStateException;
+import jakarta.jms.JMSException;
+import jakarta.jms.Message;
+import jakarta.jms.Topic;
+import jakarta.jms.TopicPublisher;
 
 import org.apache.qpid.jms.meta.JmsProducerId;
 
@@ -34,7 +34,7 @@ public class JmsTopicPublisher extends JmsMessageProducer implements AutoCloseab
     }
 
     /**
-     * @see javax.jms.TopicPublisher#getTopic()
+     * @see jakarta.jms.TopicPublisher#getTopic()
      */
     @Override
     public Topic getTopic() throws IllegalStateException {
@@ -43,7 +43,7 @@ public class JmsTopicPublisher extends JmsMessageProducer implements AutoCloseab
     }
 
     /**
-     * @see javax.jms.TopicPublisher#publish(javax.jms.Message)
+     * @see jakarta.jms.TopicPublisher#publish(jakarta.jms.Message)
      */
     @Override
     public void publish(Message message) throws JMSException {
@@ -51,7 +51,7 @@ public class JmsTopicPublisher extends JmsMessageProducer implements AutoCloseab
     }
 
     /**
-     * @see javax.jms.TopicPublisher#publish(javax.jms.Topic, javax.jms.Message)
+     * @see jakarta.jms.TopicPublisher#publish(jakarta.jms.Topic, jakarta.jms.Message)
      */
     @Override
     public void publish(Topic topic, Message message) throws JMSException {
@@ -59,7 +59,7 @@ public class JmsTopicPublisher extends JmsMessageProducer implements AutoCloseab
     }
 
     /**
-     * @see javax.jms.TopicPublisher#publish(javax.jms.Message, int, int, long)
+     * @see jakarta.jms.TopicPublisher#publish(jakarta.jms.Message, int, int, long)
      */
     @Override
     public void publish(Message message, int deliveryMode, int priority, long timeToLive) throws JMSException {
@@ -67,7 +67,7 @@ public class JmsTopicPublisher extends JmsMessageProducer implements AutoCloseab
     }
 
     /**
-     * @see javax.jms.TopicPublisher#publish(javax.jms.Topic, javax.jms.Message, int, int, long)
+     * @see jakarta.jms.TopicPublisher#publish(jakarta.jms.Topic, jakarta.jms.Message, int, int, long)
      */
     @Override
     public void publish(Topic topic, Message message, int deliveryMode, int priority, long timeToLive) throws JMSException {

@@ -26,7 +26,7 @@ import static org.junit.Assert.fail;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.jms.JMSRuntimeException;
+import jakarta.jms.JMSRuntimeException;
 
 import org.apache.qpid.jms.JmsTopic;
 import org.apache.qpid.jms.meta.JmsConsumerId;

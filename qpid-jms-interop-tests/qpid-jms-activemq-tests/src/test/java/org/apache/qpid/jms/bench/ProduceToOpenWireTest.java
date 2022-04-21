@@ -44,9 +44,9 @@ public class ProduceToOpenWireTest extends AmqpTestSupport {
 
     @Test
     public void singleSendProfile() throws Exception {
-        connection = createActiveMQConnection();
+        jmsConnection = createActiveMQConnection();
 
-        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Session session = jmsConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Topic topic = session.createTopic(getDestinationName());
         MessageProducer producer = session.createProducer(topic);
         producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
@@ -58,9 +58,8 @@ public class ProduceToOpenWireTest extends AmqpTestSupport {
 
     @Test
     public void testProduceRateToTopic() throws Exception {
-
-        connection = createActiveMQConnection();
-        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        jmsConnection = createActiveMQConnection();
+        Session session = jmsConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Topic topic = session.createTopic(getDestinationName());
 
         // Warm Up the broker.
@@ -82,9 +81,8 @@ public class ProduceToOpenWireTest extends AmqpTestSupport {
 
     @Test
     public void testProduceRateToQueue() throws Exception {
-
-        connection = createActiveMQConnection();
-        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        jmsConnection = createActiveMQConnection();
+        Session session = jmsConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue queue = session.createQueue(getDestinationName());
 
         // Warm Up the broker.
@@ -109,7 +107,7 @@ public class ProduceToOpenWireTest extends AmqpTestSupport {
     }
 
     protected long produceMessages(Destination destination, int msgCount) throws Exception {
-        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Session session = jmsConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         MessageProducer producer = session.createProducer(destination);
         producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
 

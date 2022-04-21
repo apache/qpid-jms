@@ -16,11 +16,11 @@
  */
 package org.apache.qpid.jms;
 
-import javax.jms.IllegalStateException;
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.Queue;
-import javax.jms.QueueSender;
+import jakarta.jms.IllegalStateException;
+import jakarta.jms.JMSException;
+import jakarta.jms.Message;
+import jakarta.jms.Queue;
+import jakarta.jms.QueueSender;
 
 import org.apache.qpid.jms.meta.JmsProducerId;
 
@@ -34,7 +34,7 @@ public class JmsQueueSender extends JmsMessageProducer implements AutoCloseable,
     }
 
     /**
-     * @see javax.jms.QueueSender#getQueue()
+     * @see jakarta.jms.QueueSender#getQueue()
      */
     @Override
     public Queue getQueue() throws IllegalStateException {
@@ -43,7 +43,7 @@ public class JmsQueueSender extends JmsMessageProducer implements AutoCloseable,
     }
 
     /**
-     * @see javax.jms.QueueSender#send(javax.jms.Queue, javax.jms.Message)
+     * @see jakarta.jms.QueueSender#send(jakarta.jms.Queue, jakarta.jms.Message)
      */
     @Override
     public void send(Queue queue, Message message) throws JMSException {
@@ -51,7 +51,7 @@ public class JmsQueueSender extends JmsMessageProducer implements AutoCloseable,
     }
 
     /**
-     * @see javax.jms.QueueSender#send(javax.jms.Queue, javax.jms.Message, int, int, long)
+     * @see jakarta.jms.QueueSender#send(jakarta.jms.Queue, jakarta.jms.Message, int, int, long)
      */
     @Override
     public void send(Queue queue, Message message, int deliveryMode, int priority, long timeToLive) throws JMSException {

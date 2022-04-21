@@ -16,9 +16,9 @@
  */
 package org.apache.qpid.jms.message;
 
-import javax.jms.JMSException;
-import javax.jms.MessageNotWriteableException;
-import javax.jms.TextMessage;
+import jakarta.jms.JMSException;
+import jakarta.jms.MessageNotWriteableException;
+import jakarta.jms.TextMessage;
 
 import org.apache.qpid.jms.message.facade.JmsTextMessageFacade;
 

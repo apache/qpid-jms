@@ -16,11 +16,11 @@
  */
 package org.apache.qpid.jms;
 
-import javax.jms.Destination;
-import javax.jms.ExceptionListener;
-import javax.jms.JMSException;
-import javax.jms.Session;
-import javax.jms.Topic;
+import jakarta.jms.Destination;
+import jakarta.jms.ExceptionListener;
+import jakarta.jms.JMSException;
+import jakarta.jms.Session;
+import jakarta.jms.Topic;
 
 import org.junit.Before;
 import org.junit.Test;

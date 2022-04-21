@@ -16,11 +16,11 @@
  */
 package org.apache.qpid.jms.producer;
 
-import javax.jms.Session;
-import javax.jms.Topic;
-import javax.jms.TopicConnection;
-import javax.jms.TopicPublisher;
-import javax.jms.TopicSession;
+import jakarta.jms.Session;
+import jakarta.jms.Topic;
+import jakarta.jms.TopicConnection;
+import jakarta.jms.TopicPublisher;
+import jakarta.jms.TopicSession;
 
 import org.apache.qpid.jms.JmsConnectionTestSupport;
 import org.junit.Before;
@@ -48,37 +48,37 @@ public class JmsTopicPublisherClosedTest extends JmsConnectionTestSupport {
         createTestResources();
     }
 
-    @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
+    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
     public void testGetDeliveryModeFails() throws Exception {
         publisher.getDeliveryMode();
     }
 
-    @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
+    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
     public void testGetDestinationFails() throws Exception {
         publisher.getDestination();
     }
 
-    @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
+    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
     public void testGetTopicFails() throws Exception {
         publisher.getTopic();
     }
 
-    @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
+    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
     public void testGetDisableMessageIDFails() throws Exception {
         publisher.getDisableMessageID();
     }
 
-    @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
+    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
     public void testGetDisableMessageTimestampFails() throws Exception {
         publisher.getDisableMessageTimestamp();
     }
 
-    @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
+    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
     public void testGetTimeToLiveFails() throws Exception {
         publisher.getTimeToLive();
     }
 
-    @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
+    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
     public void testGetPriorityFails() throws Exception {
         publisher.getPriority();
     }

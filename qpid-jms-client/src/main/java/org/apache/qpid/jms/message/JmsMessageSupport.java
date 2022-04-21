@@ -16,7 +16,7 @@
  */
 package org.apache.qpid.jms.message;
 
-import javax.jms.JMSException;
+import jakarta.jms.JMSException;
 
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 

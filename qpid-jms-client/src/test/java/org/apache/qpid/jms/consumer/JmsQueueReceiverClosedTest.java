@@ -16,11 +16,11 @@
  */
 package org.apache.qpid.jms.consumer;
 
-import javax.jms.Queue;
-import javax.jms.QueueConnection;
-import javax.jms.QueueReceiver;
-import javax.jms.QueueSession;
-import javax.jms.Session;
+import jakarta.jms.Queue;
+import jakarta.jms.QueueConnection;
+import jakarta.jms.QueueReceiver;
+import jakarta.jms.QueueSession;
+import jakarta.jms.Session;
 
 import org.apache.qpid.jms.JmsConnectionTestSupport;
 import org.junit.Before;
@@ -48,17 +48,17 @@ public class JmsQueueReceiverClosedTest extends JmsConnectionTestSupport {
         createTestResources();
     }
 
-    @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
+    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
     public void testGetMessageListenerFails() throws Exception {
         receiver.getMessageListener();
     }
 
-    @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
+    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
     public void testGetMessageSelectorFails() throws Exception {
         receiver.getMessageSelector();
     }
 
-    @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
+    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
     public void testGetTopicFails() throws Exception {
         receiver.getQueue();
     }

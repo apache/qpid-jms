@@ -25,16 +25,16 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.jms.Connection;
-import javax.jms.DeliveryMode;
-import javax.jms.Message;
-import javax.jms.MessageConsumer;
-import javax.jms.MessageListener;
-import javax.jms.MessageProducer;
-import javax.jms.Queue;
-import javax.jms.Session;
-import javax.jms.TextMessage;
-import javax.jms.Topic;
+import jakarta.jms.Connection;
+import jakarta.jms.DeliveryMode;
+import jakarta.jms.Message;
+import jakarta.jms.MessageConsumer;
+import jakarta.jms.MessageListener;
+import jakarta.jms.MessageProducer;
+import jakarta.jms.Queue;
+import jakarta.jms.Session;
+import jakarta.jms.TextMessage;
+import jakarta.jms.Topic;
 
 import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.apache.activemq.broker.jmx.TopicViewMBean;
@@ -241,19 +241,22 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         int messagesSent = 3;
         assertTrue(brokerService.isPersistent());
 
-        connection = createActiveMQConnection();
-        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue queue = session.createQueue(name.getMethodName());
-        MessageProducer p = session.createProducer(queue);
-        TextMessage message = null;
-        for (int i=0; i < messagesSent; i++) {
-            message = session.createTextMessage();
-            String messageText = "Hello " + i + " sent at " + new java.util.Date().toString();
-            message.setText(messageText);
-            LOG.debug(">>>> Sent [{}]", messageText);
-            p.send(message);
+        javax.jms.Connection conn = createActiveMQConnection();
+        try {
+            javax.jms.Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            javax.jms.Queue queue = session.createQueue(name.getMethodName());
+            javax.jms.MessageProducer p = session.createProducer(queue);
+            javax.jms.TextMessage message = null;
+            for (int i = 0; i < messagesSent; i++) {
+                message = session.createTextMessage();
+                String messageText = "Hello " + i + " sent at " + new java.util.Date().toString();
+                message.setText(messageText);
+                LOG.debug(">>>> Sent [{}]", messageText);
+                p.send(message);
+            }
+        } finally {
+            conn.close();
         }
-        connection.close();
 
         // After the first restart we should get all messages sent above
         restartPrimaryBroker();

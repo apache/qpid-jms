@@ -18,9 +18,9 @@ package org.apache.qpid.jms;
 
 import java.net.URI;
 
-import javax.jms.MessageConsumer;
-import javax.jms.MessageProducer;
-import javax.jms.Session;
+import jakarta.jms.MessageConsumer;
+import jakarta.jms.MessageProducer;
+import jakarta.jms.Session;
 
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 

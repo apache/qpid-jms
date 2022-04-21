@@ -31,14 +31,14 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import javax.jms.IllegalStateRuntimeException;
-import javax.jms.JMSConsumer;
-import javax.jms.JMSContext;
-import javax.jms.JMSRuntimeException;
-import javax.jms.Message;
-import javax.jms.MessageFormatRuntimeException;
-import javax.jms.MessageListener;
-import javax.jms.Queue;
+import jakarta.jms.IllegalStateRuntimeException;
+import jakarta.jms.JMSConsumer;
+import jakarta.jms.JMSContext;
+import jakarta.jms.JMSRuntimeException;
+import jakarta.jms.Message;
+import jakarta.jms.MessageFormatRuntimeException;
+import jakarta.jms.MessageListener;
+import jakarta.jms.Queue;
 
 import org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport;
 import org.apache.qpid.jms.test.QpidJmsTestCase;

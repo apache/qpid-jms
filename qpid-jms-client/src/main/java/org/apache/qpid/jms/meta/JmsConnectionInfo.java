@@ -22,7 +22,7 @@ import java.util.EnumMap;
 import java.util.Objects;
 import java.util.function.BiFunction;
 
-import javax.jms.Connection;
+import jakarta.jms.Connection;
 
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsConnectionExtensions;

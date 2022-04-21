@@ -23,19 +23,19 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.jms.DeliveryMode;
-import javax.jms.Destination;
-import javax.jms.JMSException;
-import javax.jms.MessageFormatException;
-import javax.jms.MessageNotReadableException;
-import javax.jms.MessageNotWriteableException;
+import jakarta.jms.DeliveryMode;
+import jakarta.jms.Destination;
+import jakarta.jms.JMSException;
+import jakarta.jms.MessageFormatException;
+import jakarta.jms.MessageNotReadableException;
+import jakarta.jms.MessageNotWriteableException;
 
 import org.apache.qpid.jms.JmsAcknowledgeCallback;
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.exceptions.JmsExceptionSupport;
 import org.apache.qpid.jms.message.facade.JmsMessageFacade;
 
-public class JmsMessage implements javax.jms.Message {
+public class JmsMessage implements jakarta.jms.Message {
 
     private static final String ID_PREFIX = "ID:";
     protected transient JmsAcknowledgeCallback acknowledgeCallback;

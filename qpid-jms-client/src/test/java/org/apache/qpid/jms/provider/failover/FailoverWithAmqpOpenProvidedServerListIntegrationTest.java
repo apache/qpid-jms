@@ -32,8 +32,8 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
+import jakarta.jms.Connection;
+import jakarta.jms.ConnectionFactory;
 import javax.net.ssl.SSLContext;
 
 import org.apache.qpid.jms.JmsConnection;

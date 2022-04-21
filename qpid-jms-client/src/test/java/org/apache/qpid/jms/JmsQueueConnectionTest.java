@@ -16,10 +16,10 @@
  */
 package org.apache.qpid.jms;
 
-import javax.jms.IllegalStateException;
-import javax.jms.JMSException;
-import javax.jms.ServerSessionPool;
-import javax.jms.Session;
+import jakarta.jms.IllegalStateException;
+import jakarta.jms.JMSException;
+import jakarta.jms.ServerSessionPool;
+import jakarta.jms.Session;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -50,7 +50,7 @@ public class JmsQueueConnectionTest extends JmsConnectionTestSupport {
     /**
      * Test that a call to <code>createDurableConnectionConsumer()</code> method
      * on a <code>QueueConnection</code> throws a
-     * <code>javax.jms.IllegalStateException</code>.
+     * <code>jakarta.jms.IllegalStateException</code>.
      * (see JMS 1.1 specs, table 4-1).
      *
      * @since JMS 1.1

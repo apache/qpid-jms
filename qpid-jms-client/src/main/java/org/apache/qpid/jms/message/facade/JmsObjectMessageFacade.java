@@ -19,7 +19,7 @@ package org.apache.qpid.jms.message.facade;
 import java.io.IOException;
 import java.io.Serializable;
 
-import javax.jms.JMSException;
+import jakarta.jms.JMSException;
 
 /**
  * Interface for a message Facade that wraps an ObjectMessage based

@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.jms.exceptions;
 
-import javax.jms.JMSException;
+import jakarta.jms.JMSException;
 
 public class QpidJmsException extends JMSException {
     private static final long serialVersionUID = 751932967255393054L;

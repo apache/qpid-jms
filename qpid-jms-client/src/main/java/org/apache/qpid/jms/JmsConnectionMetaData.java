@@ -19,7 +19,7 @@ package org.apache.qpid.jms;
 import java.util.Enumeration;
 import java.util.Vector;
 
-import javax.jms.ConnectionMetaData;
+import jakarta.jms.ConnectionMetaData;
 
 import org.apache.qpid.jms.util.MetaDataSupport;
 
@@ -40,7 +40,7 @@ public final class JmsConnectionMetaData implements ConnectionMetaData {
      */
     @Override
     public String getJMSVersion() {
-        return "2.0";
+        return "3.0";
     }
 
     /**
@@ -50,7 +50,7 @@ public final class JmsConnectionMetaData implements ConnectionMetaData {
      */
     @Override
     public int getJMSMajorVersion() {
-        return 2;
+        return 3;
     }
 
     /**

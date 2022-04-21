@@ -29,11 +29,11 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.InvalidClientIDException;
-import javax.jms.InvalidDestinationException;
-import javax.jms.JMSException;
+import jakarta.jms.Connection;
+import jakarta.jms.ConnectionFactory;
+import jakarta.jms.InvalidClientIDException;
+import jakarta.jms.InvalidDestinationException;
+import jakarta.jms.JMSException;
 
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.JmsOperationTimedOutException;

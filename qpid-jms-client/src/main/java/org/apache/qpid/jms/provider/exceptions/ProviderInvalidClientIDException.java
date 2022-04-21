@@ -16,7 +16,7 @@
  */
 package org.apache.qpid.jms.provider.exceptions;
 
-import javax.jms.InvalidClientIDException;
+import jakarta.jms.InvalidClientIDException;
 
 public class ProviderInvalidClientIDException extends ProviderConnectionRemotelyClosedException {
 

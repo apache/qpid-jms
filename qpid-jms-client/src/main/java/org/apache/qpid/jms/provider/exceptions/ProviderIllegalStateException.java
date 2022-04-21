@@ -16,7 +16,7 @@
  */
 package org.apache.qpid.jms.provider.exceptions;
 
-import javax.jms.IllegalStateException;
+import jakarta.jms.IllegalStateException;
 
 import org.apache.qpid.jms.provider.ProviderException;
 

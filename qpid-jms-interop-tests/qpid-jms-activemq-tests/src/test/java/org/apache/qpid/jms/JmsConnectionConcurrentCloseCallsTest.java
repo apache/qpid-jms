@@ -24,7 +24,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import javax.jms.Session;
+import jakarta.jms.Session;
 
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.junit.Test;

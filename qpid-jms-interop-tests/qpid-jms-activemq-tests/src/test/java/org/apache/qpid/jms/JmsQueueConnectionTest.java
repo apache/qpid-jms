@@ -19,9 +19,9 @@ package org.apache.qpid.jms;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import javax.jms.JMSException;
-import javax.jms.JMSSecurityException;
-import javax.jms.QueueConnection;
+import jakarta.jms.JMSException;
+import jakarta.jms.JMSSecurityException;
+import jakarta.jms.QueueConnection;
 
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.junit.Test;

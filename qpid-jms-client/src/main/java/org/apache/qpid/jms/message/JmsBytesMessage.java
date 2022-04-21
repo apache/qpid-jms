@@ -21,9 +21,9 @@ import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 
-import javax.jms.BytesMessage;
-import javax.jms.JMSException;
-import javax.jms.MessageFormatException;
+import jakarta.jms.BytesMessage;
+import jakarta.jms.JMSException;
+import jakarta.jms.MessageFormatException;
 
 import org.apache.qpid.jms.exceptions.JmsExceptionSupport;
 import org.apache.qpid.jms.message.facade.JmsBytesMessageFacade;

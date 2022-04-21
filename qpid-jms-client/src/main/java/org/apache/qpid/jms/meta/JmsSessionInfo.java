@@ -16,7 +16,7 @@
  */
 package org.apache.qpid.jms.meta;
 
-import javax.jms.Session;
+import jakarta.jms.Session;
 
 import org.apache.qpid.jms.policy.JmsDefaultDeserializationPolicy;
 import org.apache.qpid.jms.policy.JmsDefaultMessageIDPolicy;

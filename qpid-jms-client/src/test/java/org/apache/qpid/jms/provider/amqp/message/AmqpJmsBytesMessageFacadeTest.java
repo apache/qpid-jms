@@ -272,7 +272,7 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         try {
             amqpBytesMessageFacade.getInputStream();
             fail("expected exception not thrown");
-        } catch (javax.jms.IllegalStateException ise) {
+        } catch (jakarta.jms.IllegalStateException ise) {
             // expected
         }
     }
@@ -285,7 +285,7 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         try {
             amqpBytesMessageFacade.getOutputStream();
             fail("expected exception not thrown");
-        } catch (javax.jms.IllegalStateException ise) {
+        } catch (jakarta.jms.IllegalStateException ise) {
             // expected
         }
     }

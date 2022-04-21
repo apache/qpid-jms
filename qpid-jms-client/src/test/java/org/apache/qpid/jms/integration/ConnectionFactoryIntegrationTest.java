@@ -29,10 +29,10 @@ import static org.junit.Assert.fail;
 import java.net.URI;
 import java.util.UUID;
 
-import javax.jms.Connection;
-import javax.jms.JMSException;
-import javax.jms.QueueConnection;
-import javax.jms.TopicConnection;
+import jakarta.jms.Connection;
+import jakarta.jms.JMSException;
+import jakarta.jms.QueueConnection;
+import jakarta.jms.TopicConnection;
 
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsConnectionFactory;

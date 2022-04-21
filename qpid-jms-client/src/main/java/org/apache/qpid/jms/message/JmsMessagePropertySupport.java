@@ -16,8 +16,8 @@
  */
 package org.apache.qpid.jms.message;
 
-import javax.jms.JMSException;
-import javax.jms.MessageFormatException;
+import jakarta.jms.JMSException;
+import jakarta.jms.MessageFormatException;
 
 import org.apache.qpid.jms.util.TypeConversionSupport;
 

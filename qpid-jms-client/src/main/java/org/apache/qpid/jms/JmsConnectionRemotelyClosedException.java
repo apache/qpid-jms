@@ -16,7 +16,7 @@
  */
 package org.apache.qpid.jms;
 
-import javax.jms.JMSException;
+import jakarta.jms.JMSException;
 
 /**
  * Thrown when the remote peer closes the connection with amqp:connection:forced

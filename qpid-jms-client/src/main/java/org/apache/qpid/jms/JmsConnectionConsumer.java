@@ -30,12 +30,12 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 
-import javax.jms.ConnectionConsumer;
-import javax.jms.IllegalStateException;
-import javax.jms.JMSException;
-import javax.jms.ServerSession;
-import javax.jms.ServerSessionPool;
-import javax.jms.Session;
+import jakarta.jms.ConnectionConsumer;
+import jakarta.jms.IllegalStateException;
+import jakarta.jms.JMSException;
+import jakarta.jms.ServerSession;
+import jakarta.jms.ServerSessionPool;
+import jakarta.jms.Session;
 
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsMessage;

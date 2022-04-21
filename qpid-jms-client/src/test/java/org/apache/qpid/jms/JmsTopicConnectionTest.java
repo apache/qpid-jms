@@ -16,10 +16,10 @@
  */
 package org.apache.qpid.jms;
 
-import javax.jms.IllegalStateException;
-import javax.jms.JMSException;
-import javax.jms.ServerSessionPool;
-import javax.jms.Session;
+import jakarta.jms.IllegalStateException;
+import jakarta.jms.JMSException;
+import jakarta.jms.ServerSessionPool;
+import jakarta.jms.Session;
 
 import org.junit.Before;
 import org.junit.Test;

@@ -16,7 +16,7 @@
  */
 package org.apache.qpid.jms.provider.exceptions;
 
-import javax.jms.TransactionRolledBackException;
+import jakarta.jms.TransactionRolledBackException;
 
 import org.apache.qpid.jms.provider.ProviderException;
 

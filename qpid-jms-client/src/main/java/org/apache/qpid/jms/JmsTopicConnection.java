@@ -16,11 +16,11 @@
  */
 package org.apache.qpid.jms;
 
-import javax.jms.ConnectionConsumer;
-import javax.jms.JMSException;
-import javax.jms.Queue;
-import javax.jms.QueueSession;
-import javax.jms.ServerSessionPool;
+import jakarta.jms.ConnectionConsumer;
+import jakarta.jms.JMSException;
+import jakarta.jms.Queue;
+import jakarta.jms.QueueSession;
+import jakarta.jms.ServerSessionPool;
 
 import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.provider.Provider;
@@ -33,11 +33,11 @@ public class JmsTopicConnection extends JmsConnection implements AutoCloseable {
 
     @Override
     public ConnectionConsumer createConnectionConsumer(Queue queue, String messageSelector, ServerSessionPool sessionPool, int maxMessages) throws JMSException {
-        throw new javax.jms.IllegalStateException("Operation not supported by a TopicConnection");
+        throw new jakarta.jms.IllegalStateException("Operation not supported by a TopicConnection");
     }
 
     @Override
     public QueueSession createQueueSession(boolean transacted, int acknowledgeMode) throws JMSException {
-        throw new javax.jms.IllegalStateException("Operation not supported by a TopicConnection");
+        throw new jakarta.jms.IllegalStateException("Operation not supported by a TopicConnection");
     }
 }

@@ -26,8 +26,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import javax.jms.JMSException;
-import javax.jms.MessageFormatException;
+import jakarta.jms.JMSException;
+import jakarta.jms.MessageFormatException;
 
 import org.apache.qpid.jms.util.TypeConversionSupport;
 

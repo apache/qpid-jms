@@ -19,11 +19,11 @@ package org.apache.qpid.jms.producer;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-import javax.jms.Session;
-import javax.jms.Topic;
-import javax.jms.TopicConnection;
-import javax.jms.TopicPublisher;
-import javax.jms.TopicSession;
+import jakarta.jms.Session;
+import jakarta.jms.Topic;
+import jakarta.jms.TopicConnection;
+import jakarta.jms.TopicPublisher;
+import jakarta.jms.TopicSession;
 
 import org.apache.activemq.broker.jmx.TopicViewMBean;
 import org.apache.qpid.jms.JmsConnectionFactory;

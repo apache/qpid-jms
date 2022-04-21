@@ -24,16 +24,16 @@ import static org.junit.Assert.fail;
 
 import java.util.UUID;
 
-import javax.jms.BytesMessage;
-import javax.jms.Destination;
-import javax.jms.MapMessage;
-import javax.jms.MessageConsumer;
-import javax.jms.MessageEOFException;
-import javax.jms.MessageProducer;
-import javax.jms.ObjectMessage;
-import javax.jms.Session;
-import javax.jms.StreamMessage;
-import javax.jms.TextMessage;
+import jakarta.jms.BytesMessage;
+import jakarta.jms.Destination;
+import jakarta.jms.MapMessage;
+import jakarta.jms.MessageConsumer;
+import jakarta.jms.MessageEOFException;
+import jakarta.jms.MessageProducer;
+import jakarta.jms.ObjectMessage;
+import jakarta.jms.Session;
+import jakarta.jms.StreamMessage;
+import jakarta.jms.TextMessage;
 
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.junit.Test;

@@ -38,9 +38,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import javax.jms.JMSException;
-import javax.jms.MessageFormatException;
-import javax.jms.Topic;
+import jakarta.jms.JMSException;
+import jakarta.jms.MessageFormatException;
+import jakarta.jms.Topic;
 
 import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.JmsQueue;

@@ -16,7 +16,7 @@
  */
 package org.apache.qpid.jms;
 
-import javax.jms.Connection;
+import jakarta.jms.Connection;
 
 import org.apache.activemq.junit.ActiveMQTestRunner;
 import org.apache.activemq.junit.Repeat;

@@ -16,8 +16,8 @@
  */
 package org.apache.qpid.jms.message.foreign;
 
-import javax.jms.JMSException;
-import javax.jms.TextMessage;
+import jakarta.jms.JMSException;
+import jakarta.jms.TextMessage;
 
 import org.apache.qpid.jms.message.JmsTextMessage;
 import org.apache.qpid.jms.message.facade.test.JmsTestTextMessageFacade;

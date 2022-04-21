@@ -18,8 +18,8 @@ package org.apache.qpid.jms.message.foreign;
 
 import java.io.Serializable;
 
-import javax.jms.JMSException;
-import javax.jms.ObjectMessage;
+import jakarta.jms.JMSException;
+import jakarta.jms.ObjectMessage;
 
 import org.apache.qpid.jms.message.JmsObjectMessage;
 import org.apache.qpid.jms.message.facade.test.JmsTestObjectMessageFacade;

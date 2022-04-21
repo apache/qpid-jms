@@ -22,10 +22,10 @@ import static org.junit.Assert.assertNull;
 
 import java.util.Map;
 
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.JMSContext;
-import javax.jms.JMSException;
+import jakarta.jms.Connection;
+import jakarta.jms.ConnectionFactory;
+import jakarta.jms.JMSContext;
+import jakarta.jms.JMSException;
 
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;

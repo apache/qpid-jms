@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
 
-import javax.jms.JMSException;
+import jakarta.jms.JMSException;
 
 import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.message.facade.JmsMessageFacade;
@@ -56,7 +56,7 @@ public class JmsTestMessageFacade implements JmsMessageFacade {
 
     protected Map<String, Object> properties = new HashMap<String, Object>();
 
-    protected int priority = javax.jms.Message.DEFAULT_PRIORITY;
+    protected int priority = jakarta.jms.Message.DEFAULT_PRIORITY;
     protected String groupId;
     protected int groupSequence;
     protected Object messageId;

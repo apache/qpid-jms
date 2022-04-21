@@ -18,7 +18,7 @@ package org.apache.qpid.jms.message.facade.test;
 
 import java.io.Serializable;
 
-import javax.jms.JMSException;
+import jakarta.jms.JMSException;
 
 import org.apache.qpid.jms.message.JmsBytesMessage;
 import org.apache.qpid.jms.message.JmsMapMessage;
@@ -30,7 +30,7 @@ import org.apache.qpid.jms.message.JmsTextMessage;
 
 /**
  * Implementation of the JmsMessageFactory that create simple
- * javax.jms.Message instances with test facades.
+ * jakarta.jms.Message instances with test facades.
  */
 public class JmsTestMessageFactory implements JmsMessageFactory {
 

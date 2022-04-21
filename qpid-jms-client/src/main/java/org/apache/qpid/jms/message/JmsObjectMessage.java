@@ -18,9 +18,9 @@ package org.apache.qpid.jms.message;
 
 import java.io.Serializable;
 
-import javax.jms.JMSException;
-import javax.jms.MessageFormatException;
-import javax.jms.ObjectMessage;
+import jakarta.jms.JMSException;
+import jakarta.jms.MessageFormatException;
+import jakarta.jms.ObjectMessage;
 
 import org.apache.qpid.jms.message.facade.JmsObjectMessageFacade;
 

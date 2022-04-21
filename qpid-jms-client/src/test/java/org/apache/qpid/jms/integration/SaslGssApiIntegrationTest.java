@@ -40,9 +40,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Properties;
 
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.JMSSecurityException;
+import jakarta.jms.Connection;
+import jakarta.jms.ConnectionFactory;
+import jakarta.jms.JMSSecurityException;
 
 import org.apache.hadoop.minikdc.MiniKdc;
 import org.apache.kerby.kerberos.kerb.keytab.Keytab;

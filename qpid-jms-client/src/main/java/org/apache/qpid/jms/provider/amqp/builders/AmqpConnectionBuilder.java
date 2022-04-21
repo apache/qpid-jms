@@ -27,7 +27,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.jms.Session;
+import jakarta.jms.Session;
 
 import org.apache.qpid.jms.JmsConnectionExtensions;
 import org.apache.qpid.jms.meta.JmsConnectionInfo;

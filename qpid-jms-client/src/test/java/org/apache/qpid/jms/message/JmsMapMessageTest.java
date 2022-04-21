@@ -27,9 +27,9 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.List;
 
-import javax.jms.JMSException;
-import javax.jms.MessageFormatException;
-import javax.jms.MessageNotWriteableException;
+import jakarta.jms.JMSException;
+import jakarta.jms.MessageFormatException;
+import jakarta.jms.MessageNotWriteableException;
 
 import org.apache.qpid.jms.message.facade.JmsMapMessageFacade;
 import org.apache.qpid.jms.message.facade.test.JmsTestMapMessageFacade;

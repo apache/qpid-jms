@@ -31,16 +31,16 @@ import java.util.Enumeration;
 import java.util.Map;
 import java.util.UUID;
 
-import javax.jms.BytesMessage;
-import javax.jms.DeliveryMode;
-import javax.jms.JMSException;
-import javax.jms.MapMessage;
-import javax.jms.Message;
-import javax.jms.MessageFormatException;
-import javax.jms.MessageNotWriteableException;
-import javax.jms.ObjectMessage;
-import javax.jms.StreamMessage;
-import javax.jms.TextMessage;
+import jakarta.jms.BytesMessage;
+import jakarta.jms.DeliveryMode;
+import jakarta.jms.JMSException;
+import jakarta.jms.MapMessage;
+import jakarta.jms.Message;
+import jakarta.jms.MessageFormatException;
+import jakarta.jms.MessageNotWriteableException;
+import jakarta.jms.ObjectMessage;
+import jakarta.jms.StreamMessage;
+import jakarta.jms.TextMessage;
 
 import org.apache.qpid.jms.JmsAcknowledgeCallback;
 import org.apache.qpid.jms.JmsConnection;
@@ -1237,7 +1237,7 @@ public class JmsMessageTest {
     /**
      * Property 'identifiers' (i.e. names) must begin with a letter for which
      * {@link Character#isJavaLetter(char)} is true, as described in
-     * {@link javax.jms.Message}. Verify an IAE is thrown if setting a property
+     * {@link jakarta.jms.Message}. Verify an IAE is thrown if setting a property
      * beginning with a non-letter character.
      *
      * @throws Exception if an error occurs during the test.
@@ -1256,7 +1256,7 @@ public class JmsMessageTest {
     /**
      * Property 'identifiers' (i.e. names) must continue with a letter or digit
      * for which {@link Character#isJavaLetterOrDigit(char)} is true, as
-     * described in {@link javax.jms.Message}. Verify an IAE is thrown if
+     * described in {@link jakarta.jms.Message}. Verify an IAE is thrown if
      * setting a property continuing with a non-letter-or-digit character.
      *
      * @throws Exception if an error occurs during the test.
@@ -1294,7 +1294,7 @@ public class JmsMessageTest {
 
     /**
      * Property 'identifiers' (i.e. names) are not allowed to be NULL, TRUE, or
-     * FALSE, as described in {@link javax.jms.Message}. Verify an IAE is thrown
+     * FALSE, as described in {@link jakarta.jms.Message}. Verify an IAE is thrown
      * if setting a property with these values.
      *
      * @throws Exception if an error occurs during the test.
@@ -1311,7 +1311,7 @@ public class JmsMessageTest {
 
     /**
      * Property 'identifiers' (i.e. names) are not allowed to be NULL, TRUE, or
-     * FALSE, as described in {@link javax.jms.Message}. Verify an IAE is thrown
+     * FALSE, as described in {@link jakarta.jms.Message}. Verify an IAE is thrown
      * if setting a property with these values.
      *
      * @throws Exception if an error occurs during the test.
@@ -1328,7 +1328,7 @@ public class JmsMessageTest {
 
     /**
      * Property 'identifiers' (i.e. names) are not allowed to be NULL, TRUE, or
-     * FALSE, as described in {@link javax.jms.Message}. Verify an IAE is thrown
+     * FALSE, as described in {@link jakarta.jms.Message}. Verify an IAE is thrown
      * if setting a property with these values.
      *
      * @throws Exception if an error occurs during the test.
@@ -1346,7 +1346,7 @@ public class JmsMessageTest {
     /**
      * Property 'identifiers' (i.e. names) are not allowed to be NOT, AND, OR,
      * BETWEEN, LIKE, IN, IS, or ESCAPE, as described in
-     * {@link javax.jms.Message}. Verify an IAE is thrown if setting a property
+     * {@link jakarta.jms.Message}. Verify an IAE is thrown if setting a property
      * with these values.
      *
      * @throws Exception if an error occurs during the test.
@@ -1364,7 +1364,7 @@ public class JmsMessageTest {
     /**
      * Property 'identifiers' (i.e. names) are not allowed to be NOT, AND, OR,
      * BETWEEN, LIKE, IN, IS, or ESCAPE, as described in
-     * {@link javax.jms.Message}. Verify an IAE is thrown if setting a property
+     * {@link jakarta.jms.Message}. Verify an IAE is thrown if setting a property
      * with these values.
      *
      * @throws Exception if an error occurs during the test.
@@ -1382,7 +1382,7 @@ public class JmsMessageTest {
     /**
      * Property 'identifiers' (i.e. names) are not allowed to be NOT, AND, OR,
      * BETWEEN, LIKE, IN, IS, or ESCAPE, as described in
-     * {@link javax.jms.Message}. Verify an IAE is thrown if setting a property
+     * {@link jakarta.jms.Message}. Verify an IAE is thrown if setting a property
      * with these values.
      *
      * @throws Exception if an error occurs during the test.
@@ -1400,7 +1400,7 @@ public class JmsMessageTest {
     /**
      * Property 'identifiers' (i.e. names) are not allowed to be NOT, AND, OR,
      * BETWEEN, LIKE, IN, IS, or ESCAPE, as described in
-     * {@link javax.jms.Message}. Verify an IAE is thrown if setting a property
+     * {@link jakarta.jms.Message}. Verify an IAE is thrown if setting a property
      * with these values.
      *
      * @throws Exception if an error occurs during the test.
@@ -1418,7 +1418,7 @@ public class JmsMessageTest {
     /**
      * Property 'identifiers' (i.e. names) are not allowed to be NOT, AND, OR,
      * BETWEEN, LIKE, IN, IS, or ESCAPE, as described in
-     * {@link javax.jms.Message}. Verify an IAE is thrown if setting a property
+     * {@link jakarta.jms.Message}. Verify an IAE is thrown if setting a property
      * with these values.
      *
      * @throws Exception if an error occurs during the test.
@@ -1436,7 +1436,7 @@ public class JmsMessageTest {
     /**
      * Property 'identifiers' (i.e. names) are not allowed to be NOT, AND, OR,
      * BETWEEN, LIKE, IN, IS, or ESCAPE, as described in
-     * {@link javax.jms.Message}. Verify an IAE is thrown if setting a property
+     * {@link jakarta.jms.Message}. Verify an IAE is thrown if setting a property
      * with these values.
      *
      * @throws Exception if an error occurs during the test.
@@ -1454,7 +1454,7 @@ public class JmsMessageTest {
     /**
      * Property 'identifiers' (i.e. names) are not allowed to be NOT, AND, OR,
      * BETWEEN, LIKE, IN, IS, or ESCAPE, as described in
-     * {@link javax.jms.Message}. Verify an IAE is thrown if setting a property
+     * {@link jakarta.jms.Message}. Verify an IAE is thrown if setting a property
      * with these values.
      *
      * @throws Exception if an error occurs during the test.
@@ -1472,7 +1472,7 @@ public class JmsMessageTest {
     /**
      * Property 'identifiers' (i.e. names) are not allowed to be NOT, AND, OR,
      * BETWEEN, LIKE, IN, IS, or ESCAPE, as described in
-     * {@link javax.jms.Message}. Verify an IAE is thrown if setting a property
+     * {@link jakarta.jms.Message}. Verify an IAE is thrown if setting a property
      * with these values.
      *
      * @throws Exception if an error occurs during the test.

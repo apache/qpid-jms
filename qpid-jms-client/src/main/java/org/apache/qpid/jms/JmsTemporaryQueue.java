@@ -16,8 +16,8 @@
  */
 package org.apache.qpid.jms;
 
-import javax.jms.JMSException;
-import javax.jms.TemporaryQueue;
+import jakarta.jms.JMSException;
+import jakarta.jms.TemporaryQueue;
 
 /**
  * Temporary Queue Object
@@ -33,7 +33,7 @@ public class JmsTemporaryQueue extends JmsTemporaryDestination implements Tempor
     }
 
     /**
-     * @see javax.jms.TemporaryQueue#delete()
+     * @see jakarta.jms.TemporaryQueue#delete()
      */
     @Override
     public void delete() throws JMSException {
@@ -42,7 +42,7 @@ public class JmsTemporaryQueue extends JmsTemporaryDestination implements Tempor
 
     /**
      * @return name
-     * @see javax.jms.Queue#getQueueName()
+     * @see jakarta.jms.Queue#getQueueName()
      */
     @Override
     public String getQueueName() {

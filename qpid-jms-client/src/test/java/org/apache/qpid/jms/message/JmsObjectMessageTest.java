@@ -30,11 +30,11 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.jms.JMSException;
-import javax.jms.MessageFormatException;
-import javax.jms.MessageNotReadableException;
-import javax.jms.MessageNotWriteableException;
-import javax.jms.ObjectMessage;
+import jakarta.jms.JMSException;
+import jakarta.jms.MessageFormatException;
+import jakarta.jms.MessageNotReadableException;
+import jakarta.jms.MessageNotWriteableException;
+import jakarta.jms.ObjectMessage;
 
 import org.apache.qpid.jms.message.facade.JmsObjectMessageFacade;
 import org.apache.qpid.jms.message.facade.test.JmsTestMessageFactory;

@@ -16,12 +16,12 @@
  */
 package org.apache.qpid.jms.session;
 
-import javax.jms.Queue;
-import javax.jms.QueueConnection;
-import javax.jms.QueueReceiver;
-import javax.jms.QueueSender;
-import javax.jms.QueueSession;
-import javax.jms.Session;
+import jakarta.jms.Queue;
+import jakarta.jms.QueueConnection;
+import jakarta.jms.QueueReceiver;
+import jakarta.jms.QueueSender;
+import jakarta.jms.QueueSession;
+import jakarta.jms.Session;
 
 import org.apache.qpid.jms.JmsConnectionTestSupport;
 import org.junit.Before;
@@ -74,12 +74,12 @@ public class JmsQueueSessionClosedTest extends JmsConnectionTestSupport {
         sender.close();
     }
 
-    @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
+    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
     public void testReceiverGetQueueFails() throws Exception {
         receiver.getQueue();
     }
 
-    @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
+    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
     public void testSenderGetQueueFails() throws Exception {
         sender.getQueue();
     }

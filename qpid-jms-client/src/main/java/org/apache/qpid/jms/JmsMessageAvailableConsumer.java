@@ -16,7 +16,7 @@
  */
 package org.apache.qpid.jms;
 
-import javax.jms.MessageConsumer;
+import jakarta.jms.MessageConsumer;
 
 /**
  * Marker interface used for MessageConsumer instances that support sending

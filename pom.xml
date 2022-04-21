@@ -39,7 +39,7 @@
     <proton-version>0.33.10</proton-version>
     <netty-version>4.1.75.Final</netty-version>
     <slf4j-version>1.7.36</slf4j-version>
-    <jakarta.jms-api-version>2.0.3</jakarta.jms-api-version>
+    <jakarta.jms-api-version>3.0.0</jakarta.jms-api-version>
 
     <!-- 'Provided'/Test Dependency Versions for this Project -->
     <opentracing-version>0.33.0</opentracing-version>

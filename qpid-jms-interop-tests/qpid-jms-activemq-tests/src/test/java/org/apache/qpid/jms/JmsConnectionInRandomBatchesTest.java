@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import javax.jms.Connection;
+import jakarta.jms.Connection;
 
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.junit.After;

@@ -18,8 +18,8 @@ package org.apache.qpid.jms.message.foreign;
 
 import java.util.Enumeration;
 
-import javax.jms.JMSException;
-import javax.jms.MapMessage;
+import jakarta.jms.JMSException;
+import jakarta.jms.MapMessage;
 
 import org.apache.qpid.jms.message.JmsMapMessage;
 import org.apache.qpid.jms.message.facade.test.JmsTestMapMessageFacade;

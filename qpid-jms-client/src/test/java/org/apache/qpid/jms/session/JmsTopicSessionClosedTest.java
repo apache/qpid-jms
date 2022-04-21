@@ -16,12 +16,12 @@
  */
 package org.apache.qpid.jms.session;
 
-import javax.jms.Session;
-import javax.jms.Topic;
-import javax.jms.TopicConnection;
-import javax.jms.TopicPublisher;
-import javax.jms.TopicSession;
-import javax.jms.TopicSubscriber;
+import jakarta.jms.Session;
+import jakarta.jms.Topic;
+import jakarta.jms.TopicConnection;
+import jakarta.jms.TopicPublisher;
+import jakarta.jms.TopicSession;
+import jakarta.jms.TopicSubscriber;
 
 import org.apache.qpid.jms.JmsConnectionTestSupport;
 import org.junit.Before;
@@ -62,32 +62,32 @@ public class JmsTopicSessionClosedTest extends JmsConnectionTestSupport {
         session.close();
     }
 
-    @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
+    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
     public void testCreatePublisher() throws Exception {
         session.createPublisher(destination);
     }
 
-    @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
+    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
     public void testCreateSubscriber() throws Exception {
         session.createSubscriber(destination);
     }
 
-    @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
+    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
     public void testCreateSubscriberWithSelector() throws Exception {
         session.createSubscriber(destination, "color = blue", false);
     }
 
-    @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
+    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
     public void testCreateDurableSubscriber() throws Exception {
         session.createDurableSubscriber(destination, "foo");
     }
 
-    @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
+    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
     public void testCreateDurableSubscriberWithSelector() throws Exception {
         session.createDurableSubscriber(destination, "foo", "color = blue", false);
     }
 
-    @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
+    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
     public void testCreateDurableConsumerWithSelector() throws Exception {
         session.createDurableConsumer(destination, "foo", "color = blue", false);
     }
@@ -104,12 +104,12 @@ public class JmsTopicSessionClosedTest extends JmsConnectionTestSupport {
         publisher.close();
     }
 
-    @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
+    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
     public void testSubscriberGetTopicFails() throws Exception {
         subscriber.getTopic();
     }
 
-    @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
+    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
     public void testPublisherGetTopicFails() throws Exception {
         publisher.getTopic();
     }

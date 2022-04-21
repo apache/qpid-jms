@@ -18,7 +18,7 @@ package org.apache.qpid.jms.message.facade;
 
 import java.util.Set;
 
-import javax.jms.JMSException;
+import jakarta.jms.JMSException;
 
 import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.tracing.TraceableMessage;

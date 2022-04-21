@@ -18,7 +18,7 @@ package org.apache.qpid.jms.message.facade;
 
 import java.util.Enumeration;
 
-import javax.jms.JMSException;
+import jakarta.jms.JMSException;
 
 /**
  * Interface for a message Facade that wraps a MapMessage style provider

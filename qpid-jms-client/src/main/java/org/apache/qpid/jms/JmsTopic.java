@@ -16,7 +16,7 @@
  */
 package org.apache.qpid.jms;
 
-import javax.jms.Topic;
+import jakarta.jms.Topic;
 
 /**
  * JMS Topic object.
@@ -33,7 +33,7 @@ public class JmsTopic extends JmsDestination implements Topic {
 
     /**
      * @return the name
-     * @see javax.jms.Topic#getTopicName()
+     * @see jakarta.jms.Topic#getTopicName()
      */
     @Override
     public String getTopicName() {

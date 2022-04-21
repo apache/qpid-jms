@@ -16,7 +16,7 @@
  */
 package org.apache.qpid.jms;
 
-import javax.jms.JMSException;
+import jakarta.jms.JMSException;
 
 import org.apache.qpid.jms.meta.JmsAbstractResourceId;
 import org.apache.qpid.jms.meta.JmsResource;

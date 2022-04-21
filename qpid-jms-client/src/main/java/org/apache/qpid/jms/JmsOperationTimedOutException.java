@@ -16,7 +16,7 @@
  */
 package org.apache.qpid.jms;
 
-import javax.jms.JMSException;
+import jakarta.jms.JMSException;
 
 /**
  * Exception that indicates a blocking operation timed out while waiting

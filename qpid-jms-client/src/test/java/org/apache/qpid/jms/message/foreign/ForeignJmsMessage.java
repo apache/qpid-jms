@@ -18,9 +18,9 @@ package org.apache.qpid.jms.message.foreign;
 
 import java.util.Enumeration;
 
-import javax.jms.Destination;
-import javax.jms.JMSException;
-import javax.jms.Message;
+import jakarta.jms.Destination;
+import jakarta.jms.JMSException;
+import jakarta.jms.Message;
 
 import org.apache.qpid.jms.message.JmsMessage;
 import org.apache.qpid.jms.message.facade.test.JmsTestMessageFactory;

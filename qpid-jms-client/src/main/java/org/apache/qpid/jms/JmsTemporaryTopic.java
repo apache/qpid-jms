@@ -16,8 +16,8 @@
  */
 package org.apache.qpid.jms;
 
-import javax.jms.JMSException;
-import javax.jms.TemporaryTopic;
+import jakarta.jms.JMSException;
+import jakarta.jms.TemporaryTopic;
 
 /**
  * Temporary Topic Object
@@ -33,7 +33,7 @@ public class JmsTemporaryTopic extends JmsTemporaryDestination implements Tempor
     }
 
     /**
-     * @see javax.jms.TemporaryTopic#delete()
+     * @see jakarta.jms.TemporaryTopic#delete()
      */
     @Override
     public void delete() throws JMSException {
@@ -42,7 +42,7 @@ public class JmsTemporaryTopic extends JmsTemporaryDestination implements Tempor
 
     /**
      * @return name
-     * @see javax.jms.Topic#getTopicName()
+     * @see jakarta.jms.Topic#getTopicName()
      */
     @Override
     public String getTopicName() {

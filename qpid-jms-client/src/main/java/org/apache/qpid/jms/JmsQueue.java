@@ -16,7 +16,7 @@
  */
 package org.apache.qpid.jms;
 
-import javax.jms.Queue;
+import jakarta.jms.Queue;
 
 /**
  * JMS Queue implementation
@@ -33,7 +33,7 @@ public class JmsQueue extends JmsDestination implements Queue {
 
     /**
      * @return name
-     * @see javax.jms.Queue#getQueueName()
+     * @see jakarta.jms.Queue#getQueueName()
      */
     @Override
     public String getQueueName() {

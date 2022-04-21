@@ -29,8 +29,8 @@ import static org.mockito.ArgumentMatchers.anySet;
 
 import java.util.Set;
 
-import javax.jms.JMSException;
-import javax.jms.MessageFormatException;
+import jakarta.jms.JMSException;
+import jakarta.jms.MessageFormatException;
 
 import org.junit.Test;
 import org.mockito.Mockito;

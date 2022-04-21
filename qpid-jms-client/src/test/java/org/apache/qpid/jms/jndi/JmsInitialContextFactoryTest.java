@@ -30,7 +30,7 @@ import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Properties;
 
-import javax.jms.ConnectionFactory;
+import jakarta.jms.ConnectionFactory;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NameNotFoundException;

@@ -19,7 +19,7 @@ package org.apache.qpid.jms.message.facade.test;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.jms.MessageEOFException;
+import jakarta.jms.MessageEOFException;
 
 import org.apache.qpid.jms.message.facade.JmsStreamMessageFacade;
 

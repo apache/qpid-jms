@@ -22,9 +22,9 @@ import static org.mockito.ArgumentMatchers.anyLong;
 
 import java.util.Map;
 
-import javax.jms.IllegalStateException;
-import javax.jms.IllegalStateRuntimeException;
-import javax.jms.JMSException;
+import jakarta.jms.IllegalStateException;
+import jakarta.jms.IllegalStateRuntimeException;
+import jakarta.jms.JMSException;
 
 import org.apache.qpid.jms.JmsConsumer;
 import org.apache.qpid.jms.JmsMessageConsumer;

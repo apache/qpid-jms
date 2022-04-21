@@ -16,7 +16,7 @@
  */
 package org.apache.qpid.jms.provider.exceptions;
 
-import javax.jms.InvalidDestinationException;
+import jakarta.jms.InvalidDestinationException;
 
 import org.apache.qpid.jms.provider.ProviderException;
 

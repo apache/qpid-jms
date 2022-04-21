@@ -29,8 +29,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import javax.jms.JMSException;
-import javax.jms.MessageNotReadableException;
+import jakarta.jms.JMSException;
+import jakarta.jms.MessageNotReadableException;
 
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsMessage;

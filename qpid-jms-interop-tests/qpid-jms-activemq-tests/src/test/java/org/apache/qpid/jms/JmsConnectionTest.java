@@ -23,15 +23,15 @@ import static org.junit.Assert.fail;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import javax.jms.DeliveryMode;
-import javax.jms.ExceptionListener;
-import javax.jms.InvalidClientIDException;
-import javax.jms.JMSException;
-import javax.jms.JMSSecurityException;
-import javax.jms.Message;
-import javax.jms.MessageProducer;
-import javax.jms.Queue;
-import javax.jms.Session;
+import jakarta.jms.DeliveryMode;
+import jakarta.jms.ExceptionListener;
+import jakarta.jms.InvalidClientIDException;
+import jakarta.jms.JMSException;
+import jakarta.jms.JMSSecurityException;
+import jakarta.jms.Message;
+import jakarta.jms.MessageProducer;
+import jakarta.jms.Queue;
+import jakarta.jms.Session;
 
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.junit.Test;

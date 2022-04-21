@@ -16,10 +16,10 @@
  */
 package org.apache.qpid.jms;
 
-import javax.jms.IllegalStateException;
-import javax.jms.JMSException;
-import javax.jms.Queue;
-import javax.jms.QueueReceiver;
+import jakarta.jms.IllegalStateException;
+import jakarta.jms.JMSException;
+import jakarta.jms.Queue;
+import jakarta.jms.QueueReceiver;
 
 import org.apache.qpid.jms.meta.JmsConsumerId;
 
@@ -47,7 +47,7 @@ public class JmsQueueReceiver extends JmsMessageConsumer implements AutoCloseabl
     }
 
     /**
-     * @see javax.jms.QueueReceiver#getQueue()
+     * @see jakarta.jms.QueueReceiver#getQueue()
      */
     @Override
     public Queue getQueue() throws IllegalStateException {

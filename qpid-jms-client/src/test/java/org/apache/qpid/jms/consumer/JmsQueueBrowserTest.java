@@ -23,11 +23,11 @@ import static org.junit.Assert.fail;
 
 import java.util.Enumeration;
 
-import javax.jms.IllegalStateException;
-import javax.jms.Message;
-import javax.jms.Queue;
-import javax.jms.QueueBrowser;
-import javax.jms.Session;
+import jakarta.jms.IllegalStateException;
+import jakarta.jms.Message;
+import jakarta.jms.Queue;
+import jakarta.jms.QueueBrowser;
+import jakarta.jms.Session;
 
 import org.apache.qpid.jms.JmsConnectionTestSupport;
 import org.junit.Before;

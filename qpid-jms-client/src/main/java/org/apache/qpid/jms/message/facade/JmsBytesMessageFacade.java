@@ -19,8 +19,8 @@ package org.apache.qpid.jms.message.facade;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import javax.jms.IllegalStateException;
-import javax.jms.JMSException;
+import jakarta.jms.IllegalStateException;
+import jakarta.jms.JMSException;
 
 /**
  * Interface for a Message Facade that wraps a BytesMessage based message

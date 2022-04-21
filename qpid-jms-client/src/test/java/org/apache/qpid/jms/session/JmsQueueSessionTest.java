@@ -18,10 +18,10 @@ package org.apache.qpid.jms.session;
 
 import static org.junit.Assert.assertNotNull;
 
-import javax.jms.IllegalStateException;
-import javax.jms.JMSException;
-import javax.jms.QueueSession;
-import javax.jms.Session;
+import jakarta.jms.IllegalStateException;
+import jakarta.jms.JMSException;
+import jakarta.jms.QueueSession;
+import jakarta.jms.Session;
 
 import org.apache.qpid.jms.JmsConnectionTestSupport;
 import org.apache.qpid.jms.JmsQueue;
@@ -117,7 +117,7 @@ public class JmsQueueSessionTest extends JmsConnectionTestSupport {
     /**
      * Test that a call to <code>createDurableSubscriber()</code> method
      * on a <code>QueueSession</code> throws a
-     * <code>javax.jms.IllegalStateException</code>.
+     * <code>jakarta.jms.IllegalStateException</code>.
      * (see JMS 1.1 specs, table 4-1).
      *
      * @since JMS 1.1
@@ -167,7 +167,7 @@ public class JmsQueueSessionTest extends JmsConnectionTestSupport {
     /**
      * Test that a call to <code>createTemporaryTopic()</code> method
      * on a <code>QueueSession</code> throws a
-     * <code>javax.jms.IllegalStateException</code>.
+     * <code>jakarta.jms.IllegalStateException</code>.
      * (see JMS 1.1 specs, table 4-1).
      *
      * @since JMS 1.1
@@ -182,7 +182,7 @@ public class JmsQueueSessionTest extends JmsConnectionTestSupport {
     /**
      * Test that a call to <code>createTopic()</code> method
      * on a <code>QueueSession</code> throws a
-     * <code>javax.jms.IllegalStateException</code>.
+     * <code>jakarta.jms.IllegalStateException</code>.
      * (see JMS 1.1 specs, table 4-1).
      *
      * @since JMS 1.1
@@ -197,7 +197,7 @@ public class JmsQueueSessionTest extends JmsConnectionTestSupport {
     /**
      * Test that a call to <code>unsubscribe()</code> method
      * on a <code>QueueSession</code> throws a
-     * <code>javax.jms.IllegalStateException</code>.
+     * <code>jakarta.jms.IllegalStateException</code>.
      * (see JMS 1.1 specs, table 4-1).
      *
      * @since JMS 1.1

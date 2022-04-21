@@ -33,11 +33,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.concurrent.atomic.AtomicReference;
 
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.JMSException;
-import javax.jms.JMSSecurityException;
-import javax.jms.JMSSecurityRuntimeException;
+import jakarta.jms.Connection;
+import jakarta.jms.ConnectionFactory;
+import jakarta.jms.JMSException;
+import jakarta.jms.JMSSecurityException;
+import jakarta.jms.JMSSecurityRuntimeException;
 import javax.net.ssl.SSLContext;
 
 import org.apache.qpid.jms.JmsConnectionExtensions;

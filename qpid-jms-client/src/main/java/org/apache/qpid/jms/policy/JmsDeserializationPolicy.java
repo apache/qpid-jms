@@ -16,7 +16,7 @@
  */
 package org.apache.qpid.jms.policy;
 
-import javax.jms.ObjectMessage;
+import jakarta.jms.ObjectMessage;
 
 import org.apache.qpid.jms.JmsDestination;
 

@@ -24,9 +24,9 @@ import static org.junit.Assert.fail;
 
 import java.io.IOException;
 
-import javax.jms.JMSException;
-import javax.jms.MessageNotReadableException;
-import javax.jms.MessageNotWriteableException;
+import jakarta.jms.JMSException;
+import jakarta.jms.MessageNotReadableException;
+import jakarta.jms.MessageNotWriteableException;
 
 import org.apache.qpid.jms.message.facade.test.JmsTestMessageFactory;
 import org.junit.Test;

@@ -20,8 +20,8 @@ import static org.junit.Assert.fail;
 
 import java.net.ServerSocket;
 
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
+import jakarta.jms.Connection;
+import jakarta.jms.ConnectionFactory;
 import javax.net.ServerSocketFactory;
 
 import org.apache.qpid.jms.JmsConnectionFactory;

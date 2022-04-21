@@ -16,7 +16,7 @@
  */
 package org.apache.qpid.jms;
 
-import javax.jms.Message;
+import jakarta.jms.Message;
 
 import org.apache.qpid.jms.message.JmsMessage;
 

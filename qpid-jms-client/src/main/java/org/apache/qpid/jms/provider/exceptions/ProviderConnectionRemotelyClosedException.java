@@ -16,7 +16,7 @@
  */
 package org.apache.qpid.jms.provider.exceptions;
 
-import javax.jms.JMSException;
+import jakarta.jms.JMSException;
 
 import org.apache.qpid.jms.JmsConnectionRemotelyClosedException;
 

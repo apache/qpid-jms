@@ -28,7 +28,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import javax.jms.JMSRuntimeException;
+import jakarta.jms.JMSRuntimeException;
 
 import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.meta.JmsConsumerInfo;

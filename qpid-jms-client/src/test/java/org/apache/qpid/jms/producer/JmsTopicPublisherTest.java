@@ -21,12 +21,12 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.fail;
 
-import javax.jms.Destination;
-import javax.jms.InvalidDestinationException;
-import javax.jms.Message;
-import javax.jms.Session;
-import javax.jms.Topic;
-import javax.jms.TopicPublisher;
+import jakarta.jms.Destination;
+import jakarta.jms.InvalidDestinationException;
+import jakarta.jms.Message;
+import jakarta.jms.Session;
+import jakarta.jms.Topic;
+import jakarta.jms.TopicPublisher;
 
 import org.apache.qpid.jms.JmsConnectionTestSupport;
 import org.apache.qpid.jms.JmsTopicSession;

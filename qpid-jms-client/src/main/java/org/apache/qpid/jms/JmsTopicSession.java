@@ -16,16 +16,16 @@
  */
 package org.apache.qpid.jms;
 
-import javax.jms.Destination;
-import javax.jms.IllegalStateException;
-import javax.jms.JMSException;
-import javax.jms.MessageConsumer;
-import javax.jms.MessageProducer;
-import javax.jms.Queue;
-import javax.jms.QueueBrowser;
-import javax.jms.QueueReceiver;
-import javax.jms.QueueSender;
-import javax.jms.TemporaryQueue;
+import jakarta.jms.Destination;
+import jakarta.jms.IllegalStateException;
+import jakarta.jms.JMSException;
+import jakarta.jms.MessageConsumer;
+import jakarta.jms.MessageProducer;
+import jakarta.jms.Queue;
+import jakarta.jms.QueueBrowser;
+import jakarta.jms.QueueReceiver;
+import jakarta.jms.QueueSender;
+import jakarta.jms.TemporaryQueue;
 
 import org.apache.qpid.jms.meta.JmsSessionId;
 
@@ -39,7 +39,7 @@ public class JmsTopicSession extends JmsSession implements AutoCloseable {
     }
 
     /**
-     * @see javax.jms.Session#createBrowser(javax.jms.Queue)
+     * @see jakarta.jms.Session#createBrowser(jakarta.jms.Queue)
      */
     @Override
     public QueueBrowser createBrowser(Queue queue) throws JMSException {
@@ -47,7 +47,7 @@ public class JmsTopicSession extends JmsSession implements AutoCloseable {
     }
 
     /**
-     * @see javax.jms.Session#createBrowser(javax.jms.Queue, java.lang.String)
+     * @see jakarta.jms.Session#createBrowser(jakarta.jms.Queue, java.lang.String)
      */
     @Override
     public QueueBrowser createBrowser(Queue queue, String messageSelector) throws JMSException {
@@ -55,7 +55,7 @@ public class JmsTopicSession extends JmsSession implements AutoCloseable {
     }
 
     /**
-     * @see javax.jms.Session#createConsumer(javax.jms.Destination)
+     * @see jakarta.jms.Session#createConsumer(jakarta.jms.Destination)
      */
     @Override
     public MessageConsumer createConsumer(Destination destination) throws JMSException {
@@ -66,7 +66,7 @@ public class JmsTopicSession extends JmsSession implements AutoCloseable {
     }
 
     /**
-     * @see javax.jms.Session#createConsumer(javax.jms.Destination, java.lang.String)
+     * @see jakarta.jms.Session#createConsumer(jakarta.jms.Destination, java.lang.String)
      */
     @Override
     public MessageConsumer createConsumer(Destination destination, String messageSelector) throws JMSException {
@@ -77,7 +77,7 @@ public class JmsTopicSession extends JmsSession implements AutoCloseable {
     }
 
     /**
-     * @see javax.jms.Session#createConsumer(javax.jms.Destination, java.lang.String)
+     * @see jakarta.jms.Session#createConsumer(jakarta.jms.Destination, java.lang.String)
      */
     @Override
     public MessageConsumer createConsumer(Destination destination, String messageSelector, boolean noLocal) throws JMSException {
@@ -88,7 +88,7 @@ public class JmsTopicSession extends JmsSession implements AutoCloseable {
     }
 
     /**
-     * @see javax.jms.Session#createProducer(javax.jms.Destination)
+     * @see jakarta.jms.Session#createProducer(jakarta.jms.Destination)
      */
     @Override
     public MessageProducer createProducer(Destination destination) throws JMSException {
@@ -99,7 +99,7 @@ public class JmsTopicSession extends JmsSession implements AutoCloseable {
     }
 
     /**
-     * @see javax.jms.Session#createQueue(java.lang.String)
+     * @see jakarta.jms.Session#createQueue(java.lang.String)
      */
     @Override
     public Queue createQueue(String queueName) throws JMSException {
@@ -107,7 +107,7 @@ public class JmsTopicSession extends JmsSession implements AutoCloseable {
     }
 
     /**
-     * @see javax.jms.Session#createTemporaryQueue()
+     * @see jakarta.jms.Session#createTemporaryQueue()
      */
     @Override
     public TemporaryQueue createTemporaryQueue() throws JMSException {
@@ -115,7 +115,7 @@ public class JmsTopicSession extends JmsSession implements AutoCloseable {
     }
 
     /**
-     * @see javax.jms.QueueSession#createReceiver(javax.jms.Queue)
+     * @see jakarta.jms.QueueSession#createReceiver(jakarta.jms.Queue)
      */
     @Override
     public QueueReceiver createReceiver(Queue queue) throws JMSException {
@@ -123,7 +123,7 @@ public class JmsTopicSession extends JmsSession implements AutoCloseable {
     }
 
     /**
-     * @see javax.jms.QueueSession#createReceiver(javax.jms.Queue, java.lang.String)
+     * @see jakarta.jms.QueueSession#createReceiver(jakarta.jms.Queue, java.lang.String)
      */
     @Override
     public QueueReceiver createReceiver(Queue queue, String messageSelector) throws JMSException {
@@ -131,7 +131,7 @@ public class JmsTopicSession extends JmsSession implements AutoCloseable {
     }
 
     /**
-     * @see javax.jms.QueueSession#createSender(javax.jms.Queue)
+     * @see jakarta.jms.QueueSession#createSender(jakarta.jms.Queue)
      */
     @Override
     public QueueSender createSender(Queue queue) throws JMSException {

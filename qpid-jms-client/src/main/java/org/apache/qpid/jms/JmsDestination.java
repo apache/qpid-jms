@@ -29,7 +29,7 @@ import org.apache.qpid.jms.jndi.JNDIStorable;
 /**
  * Jms Destination
  */
-public abstract class JmsDestination extends JNDIStorable implements Externalizable, javax.jms.Destination, Comparable<JmsDestination> {
+public abstract class JmsDestination extends JNDIStorable implements Externalizable, jakarta.jms.Destination, Comparable<JmsDestination> {
     private static final String NAME_PROP = "address";
     private static final String LEGACY_NAME_PROP = "name";
 

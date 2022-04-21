@@ -16,7 +16,7 @@
  */
 package org.apache.qpid.jms.provider.exceptions;
 
-import javax.jms.ResourceAllocationException;
+import jakarta.jms.ResourceAllocationException;
 
 public class ProviderResourceAllocationException extends ProviderResourceClosedException {
 

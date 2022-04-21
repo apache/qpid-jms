@@ -24,8 +24,8 @@ import static org.junit.Assert.assertNotNull;
 
 import java.util.UUID;
 
-import javax.jms.JMSContext;
-import javax.jms.JMSProducer;
+import jakarta.jms.JMSContext;
+import jakarta.jms.JMSProducer;
 
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;

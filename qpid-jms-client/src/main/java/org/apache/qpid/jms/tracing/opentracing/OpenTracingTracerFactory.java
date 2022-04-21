@@ -18,7 +18,7 @@ package org.apache.qpid.jms.tracing.opentracing;
 
 import java.net.URI;
 
-import javax.jms.Connection;
+import jakarta.jms.Connection;
 
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.tracing.JmsTracer;

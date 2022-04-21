@@ -21,7 +21,7 @@ import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_O
 import java.io.IOException;
 import java.io.Serializable;
 
-import javax.jms.JMSException;
+import jakarta.jms.JMSException;
 
 import org.apache.qpid.jms.exceptions.JmsExceptionSupport;
 import org.apache.qpid.jms.message.JmsObjectMessage;

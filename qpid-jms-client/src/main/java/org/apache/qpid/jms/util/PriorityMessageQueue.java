@@ -19,7 +19,7 @@ package org.apache.qpid.jms.util;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
-import javax.jms.JMSException;
+import jakarta.jms.JMSException;
 
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 
@@ -180,7 +180,7 @@ public final class PriorityMessageQueue implements MessageQueue {
     }
 
     private int getPriority(JmsInboundMessageDispatch envelope) {
-        int priority = javax.jms.Message.DEFAULT_PRIORITY;
+        int priority = jakarta.jms.Message.DEFAULT_PRIORITY;
         if (envelope.getMessage() != null) {
             try {
                 priority = Math.max(envelope.getMessage().getJMSPriority(), 0);

@@ -19,7 +19,7 @@ package org.apache.qpid.jms;
 import static org.apache.qpid.jms.message.JmsMessageSupport.ACCEPTED;
 import static org.apache.qpid.jms.message.JmsMessageSupport.lookupAckTypeForDisposition;
 
-import javax.jms.JMSException;
+import jakarta.jms.JMSException;
 
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
@@ -41,7 +41,7 @@ public final class JmsAcknowledgeCallback {
 
     public void acknowledge() throws JMSException {
         if (session.isClosed()) {
-            throw new javax.jms.IllegalStateException("Session closed.");
+            throw new jakarta.jms.IllegalStateException("Session closed.");
         }
 
         ACK_TYPE dispositionType = lookupAckTypeForDisposition(getAckType());

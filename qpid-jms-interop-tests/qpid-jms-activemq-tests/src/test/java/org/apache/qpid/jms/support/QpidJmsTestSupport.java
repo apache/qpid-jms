@@ -27,15 +27,12 @@ import java.util.Set;
 import java.util.Vector;
 import java.util.concurrent.TimeUnit;
 
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.Destination;
-import javax.jms.JMSException;
-import javax.jms.MessageProducer;
-import javax.jms.Queue;
-import javax.jms.Session;
-import javax.jms.TextMessage;
-import javax.jms.Topic;
+import jakarta.jms.Connection;
+import jakarta.jms.Destination;
+import jakarta.jms.JMSException;
+import jakarta.jms.MessageProducer;
+import jakarta.jms.Session;
+import jakarta.jms.TextMessage;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 
@@ -80,6 +77,7 @@ public class QpidJmsTestSupport {
     protected final Vector<Throwable> exceptions = new Vector<Throwable>();
     protected int numberOfMessages;
     protected Connection connection;
+    protected javax.jms.Connection jmsConnection;
 
     @Before
     public void setUp() throws Exception {
@@ -99,6 +97,15 @@ public class QpidJmsTestSupport {
                 connection.close();
             } catch (Exception e) {
                 LOG.warn("Error detected on connection close in tearDown: {}", e.getMessage());
+                firstError = e;
+            }
+        }
+
+        if (jmsConnection != null) {
+            try {
+                jmsConnection.close();
+            } catch (Exception e) {
+                LOG.warn("Error detected on jms connection close in tearDown: {}", e.getMessage());
                 firstError = e;
             }
         }
@@ -281,13 +288,27 @@ public class QpidJmsTestSupport {
         return result;
     }
 
-    public Connection createActiveMQConnection() throws Exception {
+    public javax.jms.Connection createActiveMQConnection() throws Exception {
         return createActiveMQConnection(getBrokerActiveMQClientConnectionURI());
     }
 
-    public Connection createActiveMQConnection(URI brokerURI) throws Exception {
-        ConnectionFactory factory = new ActiveMQConnectionFactory(brokerURI);
+    public javax.jms.Connection createActiveMQConnection(URI brokerURI) throws Exception {
+        javax.jms.ConnectionFactory factory = new ActiveMQConnectionFactory(brokerURI);
         return factory.createConnection();
+    }
+
+    public void sendMessages(javax.jms.Connection connection, javax.jms.Destination destination, int count) throws Exception {
+        javax.jms.Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        javax.jms.MessageProducer p = session.createProducer(destination);
+
+        for (int i = 1; i <= count; i++) {
+            javax.jms.TextMessage message = session.createTextMessage();
+            message.setText("TextMessage: " + i);
+            message.setIntProperty(MESSAGE_NUMBER, i);
+            p.send(message);
+        }
+
+        session.close();
     }
 
     public void sendMessages(Connection connection, Destination destination, int count) throws Exception {
@@ -384,17 +405,17 @@ public class QpidJmsTestSupport {
     }
 
     protected void sendToAmqQueue(int count) throws Exception {
-        Connection activemqConnection = createActiveMQConnection();
-        Session amqSession = activemqConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue amqTestQueue = amqSession.createQueue(name.getMethodName());
+        javax.jms.Connection activemqConnection = createActiveMQConnection();
+        javax.jms.Session amqSession = activemqConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        javax.jms.Queue amqTestQueue = amqSession.createQueue(name.getMethodName());
         sendMessages(activemqConnection, amqTestQueue, count);
         activemqConnection.close();
     }
 
     protected void sendToAmqTopic(int count) throws Exception {
-        Connection activemqConnection = createActiveMQConnection();
-        Session amqSession = activemqConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Topic amqTestTopic = amqSession.createTopic(name.getMethodName());
+        javax.jms.Connection activemqConnection = createActiveMQConnection();
+        javax.jms.Session amqSession = activemqConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        javax.jms.Topic amqTestTopic = amqSession.createTopic(name.getMethodName());
         sendMessages(activemqConnection, amqTestTopic, count);
         activemqConnection.close();
     }

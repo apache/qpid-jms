@@ -16,8 +16,8 @@
  */
 package org.apache.qpid.jms.message;
 
-import javax.jms.Destination;
-import javax.jms.JMSException;
+import jakarta.jms.Destination;
+import jakarta.jms.JMSException;
 
 import org.apache.qpid.jms.JmsDestination;
 

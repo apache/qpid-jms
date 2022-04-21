@@ -16,10 +16,10 @@
  */
 package org.apache.qpid.jms;
 
-import javax.jms.IllegalStateException;
-import javax.jms.JMSException;
-import javax.jms.Topic;
-import javax.jms.TopicSubscriber;
+import jakarta.jms.IllegalStateException;
+import jakarta.jms.JMSException;
+import jakarta.jms.Topic;
+import jakarta.jms.TopicSubscriber;
 
 import org.apache.qpid.jms.meta.JmsConsumerId;
 
@@ -37,7 +37,7 @@ public class JmsTopicSubscriber extends JmsMessageConsumer implements TopicSubsc
     }
 
     /**
-     * @see javax.jms.TopicSubscriber#getTopic()
+     * @see jakarta.jms.TopicSubscriber#getTopic()
      */
     @Override
     public Topic getTopic() throws IllegalStateException {
@@ -46,7 +46,7 @@ public class JmsTopicSubscriber extends JmsMessageConsumer implements TopicSubsc
     }
 
     /**
-     * @see javax.jms.TopicSubscriber#getNoLocal()
+     * @see jakarta.jms.TopicSubscriber#getNoLocal()
      */
     @Override
     public boolean getNoLocal() throws JMSException {

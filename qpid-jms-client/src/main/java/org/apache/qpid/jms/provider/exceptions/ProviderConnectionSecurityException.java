@@ -16,7 +16,7 @@
  */
 package org.apache.qpid.jms.provider.exceptions;
 
-import javax.jms.JMSSecurityException;
+import jakarta.jms.JMSSecurityException;
 
 /**
  * Connection level Security Exception used to indicate a security violation has occurred.

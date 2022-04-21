@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.ListIterator;
 import java.util.concurrent.ScheduledFuture;
 
-import javax.jms.Session;
+import jakarta.jms.Session;
 
 import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;

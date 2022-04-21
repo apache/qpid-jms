@@ -19,7 +19,7 @@ package org.apache.qpid.jms;
 import java.net.URI;
 import java.util.concurrent.atomic.AtomicLong;
 
-import javax.jms.JMSContext;
+import jakarta.jms.JMSContext;
 
 import org.apache.qpid.jms.meta.JmsConnectionId;
 import org.apache.qpid.jms.meta.JmsConnectionInfo;

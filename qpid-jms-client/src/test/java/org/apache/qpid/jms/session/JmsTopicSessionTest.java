@@ -18,10 +18,10 @@ package org.apache.qpid.jms.session;
 
 import static org.junit.Assert.assertNotNull;
 
-import javax.jms.IllegalStateException;
-import javax.jms.JMSException;
-import javax.jms.Session;
-import javax.jms.TopicSession;
+import jakarta.jms.IllegalStateException;
+import jakarta.jms.JMSException;
+import jakarta.jms.Session;
+import jakarta.jms.TopicSession;
 
 import org.apache.qpid.jms.JmsConnectionTestSupport;
 import org.apache.qpid.jms.JmsQueue;
@@ -53,7 +53,7 @@ public class JmsTopicSessionTest extends JmsConnectionTestSupport {
     /**
      * Test that a call to <code>createBrowser()</code> method
      * on a <code>TopicSession</code> throws a
-     * <code>javax.jms.IllegalStateException</code>.
+     * <code>jakarta.jms.IllegalStateException</code>.
      * (see JMS 1.1 specs, table 4-1).
      *
      * @since JMS 1.1
@@ -113,7 +113,7 @@ public class JmsTopicSessionTest extends JmsConnectionTestSupport {
     /**
      * Test that a call to <code>createQueue()</code> method
      * on a <code>TopicSession</code> throws a
-     * <code>javax.jms.IllegalStateException</code>.
+     * <code>jakarta.jms.IllegalStateException</code>.
      * (see JMS 1.1 specs, table 4-1).
      *
      * @since JMS 1.1
@@ -128,7 +128,7 @@ public class JmsTopicSessionTest extends JmsConnectionTestSupport {
     /**
      * Test that a call to <code>createTemporaryQueue()</code> method
      * on a <code>TopicSession</code> throws a
-     * <code>javax.jms.IllegalStateException</code>.
+     * <code>jakarta.jms.IllegalStateException</code>.
      * (see JMS 1.1 specs, table 4-1).
      *
      * @since JMS 1.1

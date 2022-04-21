@@ -20,7 +20,7 @@
 */
 package org.apache.qpid.jms.exceptions;
 
-import javax.jms.JMSSecurityException;
+import jakarta.jms.JMSSecurityException;
 
 public class JMSSecuritySaslException extends JMSSecurityException {
 

@@ -23,7 +23,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import javax.jms.JMSRuntimeException;
+import jakarta.jms.JMSRuntimeException;
 
 import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.meta.JmsConsumerInfo;

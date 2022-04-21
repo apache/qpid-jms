@@ -22,8 +22,8 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import javax.jms.JMSException;
-import javax.jms.TransactionRolledBackException;
+import jakarta.jms.JMSException;
+import jakarta.jms.TransactionRolledBackException;
 
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;

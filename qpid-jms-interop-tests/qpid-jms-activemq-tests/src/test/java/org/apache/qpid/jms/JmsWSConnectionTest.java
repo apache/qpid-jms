@@ -23,13 +23,11 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.URI;
 
-import javax.jms.BytesMessage;
-import javax.jms.Connection;
-import javax.jms.Message;
-import javax.jms.MessageConsumer;
-import javax.jms.MessageProducer;
-import javax.jms.Queue;
-import javax.jms.Session;
+import jakarta.jms.BytesMessage;
+import jakarta.jms.Message;
+import jakarta.jms.MessageConsumer;
+import jakarta.jms.Queue;
+import jakarta.jms.Session;
 import javax.net.ServerSocketFactory;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
@@ -37,7 +35,6 @@ import org.apache.activemq.broker.BrokerService;
 import org.apache.activemq.broker.TransportConnector;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -112,50 +109,22 @@ public class JmsWSConnectionTest {
         }
     }
 
-    @Ignore("Broker is not respecting max binary message size")
-    @Test(timeout = 30000)
-    public void testSendLargeMessageToClientFromAMQP() throws Exception {
-        JmsConnectionFactory factory = new JmsConnectionFactory(getConnectionURI());
-        JmsConnection connection = (JmsConnection) factory.createConnection();
-
-        sendLargeMessageViaAMQP();
-
-        try {
-            Session session = connection.createSession();
-            Queue queue = session.createQueue(getQueueName());
-            connection.start();
-
-            MessageConsumer consumer = session.createConsumer(queue);
-            Message message = consumer.receive(1000);
-
-            assertNotNull(message);
-            assertTrue(message instanceof BytesMessage);
-        } finally {
-            connection.close();
-        }
-    }
-
     protected void sendLargeMessageViaOpenWire() throws Exception {
         ActiveMQConnectionFactory factory = new ActiveMQConnectionFactory("vm://localhost?create=false");
         doSendLargeMessageViaOpenWire(factory.createConnection());
     }
 
-    protected void sendLargeMessageViaAMQP() throws Exception {
-        JmsConnectionFactory factory = new JmsConnectionFactory(getConnectionURI());
-        doSendLargeMessageViaOpenWire(factory.createConnection());
-    }
-
-    protected void doSendLargeMessageViaOpenWire(Connection connection) throws Exception {
+    protected void doSendLargeMessageViaOpenWire(javax.jms.Connection connection) throws Exception {
         try {
-            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            Queue queue = session.createQueue(getQueueName());
-            MessageProducer producer = session.createProducer(queue);
+            javax.jms.Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            javax.jms.Queue queue = session.createQueue(getQueueName());
+            javax.jms.MessageProducer producer = session.createProducer(queue);
 
             byte[] payload = new byte[1024 * 1024];
             for (int i = 0; i < payload.length; ++i) {
                 payload[i] = (byte) (i % 256);
             }
-            BytesMessage message = session.createBytesMessage();
+            javax.jms.BytesMessage message = session.createBytesMessage();
             message.writeBytes(payload);
 
             producer.send(message);

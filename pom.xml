@@ -268,7 +268,7 @@
           <configuration>
             <runOrder>${surefire.runOrder}</runOrder>
             <redirectTestOutputToFile>${maven.test.redirectTestOutputToFile}</redirectTestOutputToFile>
-            <forkCount>1</forkCount>
+            <forkCount>1.5C</forkCount>
             <reuseForks>true</reuseForks>
             <systemPropertyVariables>
                 <java.awt.headless>true</java.awt.headless>

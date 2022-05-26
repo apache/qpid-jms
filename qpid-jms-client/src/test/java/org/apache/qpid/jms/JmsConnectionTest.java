@@ -294,8 +294,8 @@ public class JmsConnectionTest {
 
         assertNotNull(metaData);
         assertEquals(3, metaData.getJMSMajorVersion());
-        assertEquals(0, metaData.getJMSMinorVersion());
-        assertEquals("3.0", metaData.getJMSVersion());
+        assertEquals(1, metaData.getJMSMinorVersion());
+        assertEquals("3.1", metaData.getJMSVersion());
         assertNotNull(metaData.getJMSXPropertyNames());
 
         assertNotNull(metaData.getProviderVersion());

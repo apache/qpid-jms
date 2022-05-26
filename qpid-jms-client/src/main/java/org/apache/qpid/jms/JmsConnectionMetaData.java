@@ -40,7 +40,7 @@ public final class JmsConnectionMetaData implements ConnectionMetaData {
      */
     @Override
     public String getJMSVersion() {
-        return "3.0";
+        return "3.1";
     }
 
     /**
@@ -60,7 +60,7 @@ public final class JmsConnectionMetaData implements ConnectionMetaData {
      */
     @Override
     public int getJMSMinorVersion() {
-        return 0;
+        return 1;
     }
 
     /**

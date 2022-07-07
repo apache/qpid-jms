@@ -444,6 +444,7 @@ public class AmqpReadableBufferTest {
         AmqpReadableBuffer buffer = new AmqpReadableBuffer(byteBuffer);
 
         assertEquals(testString, buffer.readUTF8());
+        assertFalse(buffer.hasRemaining());
     }
 
     @Test
@@ -455,5 +456,6 @@ public class AmqpReadableBufferTest {
         AmqpReadableBuffer buffer = new AmqpReadableBuffer(byteBuffer);
 
         assertEquals(testString, buffer.readString(StandardCharsets.UTF_8.newDecoder()));
+        assertFalse(buffer.hasRemaining());
     }
 }

@@ -209,11 +209,11 @@ public class AmqpReadableBuffer implements ReadableBuffer {
 
     @Override
     public String readUTF8() throws CharacterCodingException {
-        return buffer.toString(StandardCharsets.UTF_8);
+        return buffer.readCharSequence(buffer.readableBytes(), StandardCharsets.UTF_8).toString();
     }
 
     @Override
     public String readString(CharsetDecoder decoder) throws CharacterCodingException {
-        return buffer.toString(StandardCharsets.UTF_8);
+        return buffer.readCharSequence(buffer.readableBytes(), decoder.charset()).toString();
     }
 }

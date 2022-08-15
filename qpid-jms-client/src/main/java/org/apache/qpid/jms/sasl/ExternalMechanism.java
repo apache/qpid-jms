@@ -16,6 +16,7 @@
  */
 package org.apache.qpid.jms.sasl;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 
 /**

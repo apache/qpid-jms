@@ -25,7 +25,11 @@ public class ExternalMechanism extends AbstractMechanism {
 
     @Override
     public byte[] getInitialResponse() {
-        return EMPTY;
+        String username = getUsername();
+        if(username == null || username.isEmpty()){
+            return EMPTY;
+          }
+        return username.getBytes(StandardCharsets.UTF_8);
     }
 
     @Override

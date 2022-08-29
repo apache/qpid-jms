@@ -48,7 +48,6 @@
     <netty-tcnative-version>2.0.53.Final</netty-tcnative-version>
     <activemq-version>5.17.0</activemq-version>
     <junit-version>4.13.2</junit-version>
-    <fuse-joram-tests-version>1.0</fuse-joram-tests-version>
     <jetty-version>9.4.45.v20220203</jetty-version>
     <mockito-version>4.4.0</mockito-version>
     <hamcrest-version>2.2</hamcrest-version>

@@ -60,7 +60,7 @@
     <maven-idea-plugin-version>2.5</maven-idea-plugin-version>
     <maven-bundle-plugin-version>5.1.8</maven-bundle-plugin-version>
     <findbugs-maven-plugin-version>3.0.2</findbugs-maven-plugin-version>
-    <jacoco-plugin-version>0.8.6</jacoco-plugin-version>
+    <jacoco-plugin-version>0.8.8</jacoco-plugin-version>
 
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>

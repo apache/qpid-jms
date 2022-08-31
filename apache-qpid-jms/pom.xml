@@ -94,19 +94,17 @@
               <execution>
                 <id>source-release-checksum</id>
                 <goals>
-                  <goal>files</goal>
+                  <goal>artifacts</goal>
                 </goals>
+                <phase>post-integration-test</phase>
                 <configuration>
-                  <fileSets>
-                    <fileSet>
-                      <directory>${project.build.directory}</directory>
-                      <includes>
-                        <include>apache-qpid-jms-${project.version}-src.tar.gz</include>
-                        <include>apache-qpid-jms-${project.version}-bin.tar.gz</include>
-                      </includes>
-                    </fileSet>
-                  </fileSets>
-                  <failIfNoFiles>true</failIfNoFiles>
+                  <algorithms>
+                    <algorithm>SHA-512</algorithm>
+                  </algorithms>
+                  <includeClassifiers>src,bin</includeClassifiers>
+                  <excludeMainArtifact>true</excludeMainArtifact>
+                  <csvSummary>false</csvSummary>
+                  <attachChecksums>true</attachChecksums>
                 </configuration>
               </execution>
             </executions>

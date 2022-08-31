@@ -48,7 +48,7 @@
     <netty-tcnative-version>2.0.53.Final</netty-tcnative-version>
     <activemq-version>5.17.0</activemq-version>
     <junit-version>4.13.2</junit-version>
-    <jetty-version>9.4.45.v20220203</jetty-version>
+    <jetty-version>9.4.48.v20220622</jetty-version>
     <mockito-version>4.7.0</mockito-version>
     <hamcrest-version>2.2</hamcrest-version>
     <hadoop-minikdc-version>3.3.4</hadoop-minikdc-version>

@@ -52,7 +52,7 @@
     <jetty-version>9.4.45.v20220203</jetty-version>
     <mockito-version>4.7.0</mockito-version>
     <hamcrest-version>2.2</hamcrest-version>
-    <hadoop-minikdc-version>3.3.2</hadoop-minikdc-version>
+    <hadoop-minikdc-version>3.3.4</hadoop-minikdc-version>
     <commons-io-version>2.11.0</commons-io-version>
 
     <!-- Maven Plugin Versions for this Project -->
@@ -241,7 +241,7 @@
         <exclusions>
           <exclusion>
             <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
+            <artifactId>slf4j-reload4j</artifactId>
           </exclusion>
           <exclusion>
             <groupId>com.nimbusds</groupId>

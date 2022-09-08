@@ -321,6 +321,13 @@
           <artifactId>jacoco-maven-plugin</artifactId>
           <version>${jacoco-plugin-version}</version>
         </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <configuration>
+            <noindex>true</noindex>
+          </configuration>
+        </plugin>
       </plugins>
     </pluginManagement>
     <plugins>

@@ -41,6 +41,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import jakarta.jms.BytesMessage;
 import jakarta.jms.CompletionListener;
 import jakarta.jms.DeliveryMode;
 import jakarta.jms.Destination;
@@ -51,9 +52,12 @@ import jakarta.jms.InvalidDestinationRuntimeException;
 import jakarta.jms.JMSException;
 import jakarta.jms.JMSProducer;
 import jakarta.jms.JMSRuntimeException;
+import jakarta.jms.MapMessage;
 import jakarta.jms.Message;
 import jakarta.jms.MessageFormatRuntimeException;
+import jakarta.jms.ObjectMessage;
 import jakarta.jms.Queue;
+import jakarta.jms.TextMessage;
 
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsConnectionTestSupport;
@@ -1004,18 +1008,18 @@ public class JmsProducerTest extends JmsConnectionTestSupport {
         doTestSendAppliesDeliveryModeWithMessageBody(UUID.class);
     }
 
-    public void doTestSendAppliesDeliveryModeWithMessageBody(Class<?> bodyType) throws JMSException {
+    private void doTestSendAppliesDeliveryModeWithMessageBody(Class<?> bodyType) throws JMSException {
         JMSProducer producer = context.createProducer();
 
         producer.setDeliveryMode(DeliveryMode.PERSISTENT);
-        producer.send(JMS_DESTINATION, "text");
+        sendWithBodyOfType(producer, bodyType);
         JmsOutboundMessageDispatch envelope = remotePeer.getLastReceivedMessage();
         assertNotNull(envelope);
         JmsMessage message = envelope.getMessage();
         assertEquals(DeliveryMode.PERSISTENT, message.getJMSDeliveryMode());
 
         producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
-        producer.send(JMS_DESTINATION, "text");
+        sendWithBodyOfType(producer, bodyType);
         envelope = remotePeer.getLastReceivedMessage();
         assertNotNull(envelope);
         message = envelope.getMessage();
@@ -1206,7 +1210,23 @@ public class JmsProducerTest extends JmsConnectionTestSupport {
         JmsOutboundMessageDispatch envelope = remotePeer.getLastReceivedMessage();
         assertNotNull(envelope);
         JmsMessage message = envelope.getMessage();
+        assertTrue(message instanceof TextMessage);
         assertEquals(bodyValue, message.getBody(String.class));
+    }
+
+    @Test
+    public void testStringNullBodyGivesEmptyMessage() throws JMSException {
+        JMSProducer producer = context.createProducer();
+
+        final String nullStringBody = null;
+        producer.send(JMS_DESTINATION, nullStringBody);
+
+        JmsOutboundMessageDispatch envelope = remotePeer.getLastReceivedMessage();
+        assertNotNull(envelope);
+
+        JmsMessage message = envelope.getMessage();
+        assertTrue(message instanceof TextMessage);
+        assertNull(message.getBody(String.class));
     }
 
     @Test
@@ -1222,7 +1242,23 @@ public class JmsProducerTest extends JmsConnectionTestSupport {
         JmsOutboundMessageDispatch envelope = remotePeer.getLastReceivedMessage();
         assertNotNull(envelope);
         JmsMessage message = envelope.getMessage();
+        assertTrue(message instanceof MapMessage);
         assertEquals(bodyValue, message.getBody(Map.class));
+    }
+
+    @Test
+    public void testMapNullBodyGivesEmptyMessage() throws JMSException {
+        JMSProducer producer = context.createProducer();
+
+        final Map<String, Object> nullMapBody = null;
+        producer.send(JMS_DESTINATION, nullMapBody);
+
+        JmsOutboundMessageDispatch envelope = remotePeer.getLastReceivedMessage();
+        assertNotNull(envelope);
+
+        JmsMessage message = envelope.getMessage();
+        assertTrue(message instanceof MapMessage);
+        assertNull(message.getBody(Map.class));
     }
 
     @Test
@@ -1235,6 +1271,7 @@ public class JmsProducerTest extends JmsConnectionTestSupport {
         JmsOutboundMessageDispatch envelope = remotePeer.getLastReceivedMessage();
         assertNotNull(envelope);
         JmsMessage message = envelope.getMessage();
+        assertTrue(message instanceof BytesMessage);
 
         byte[] payload = message.getBody(byte[].class);
         assertNotNull(payload);
@@ -1243,6 +1280,21 @@ public class JmsProducerTest extends JmsConnectionTestSupport {
         for (int i = 0; i < payload.length; ++i) {
             assertEquals(bodyValue[i], payload[i]);
         }
+    }
+
+    @Test
+    public void testBytesNullBodyGivesEmptyMessage() throws JMSException {
+        JMSProducer producer = context.createProducer();
+
+        final byte[] nullBytesBody = null;
+        producer.send(JMS_DESTINATION, nullBytesBody);
+
+        JmsOutboundMessageDispatch envelope = remotePeer.getLastReceivedMessage();
+        assertNotNull(envelope);
+
+        JmsMessage message = envelope.getMessage();
+        assertTrue(message instanceof BytesMessage);
+        assertNull(message.getBody(byte[].class));
     }
 
     @Test
@@ -1255,7 +1307,23 @@ public class JmsProducerTest extends JmsConnectionTestSupport {
         JmsOutboundMessageDispatch envelope = remotePeer.getLastReceivedMessage();
         assertNotNull(envelope);
         JmsMessage message = envelope.getMessage();
+        assertTrue(message instanceof ObjectMessage);
         assertEquals(bodyValue, message.getBody(UUID.class));
+    }
+
+    @Test
+    public void testSerializableNullBodyGivesEmptyMessage() throws JMSException {
+        JMSProducer producer = context.createProducer();
+
+        final UUID nullSerializableBody = null;
+        producer.send(JMS_DESTINATION, nullSerializableBody);
+
+        JmsOutboundMessageDispatch envelope = remotePeer.getLastReceivedMessage();
+        assertNotNull(envelope);
+
+        JmsMessage message = envelope.getMessage();
+        assertTrue(message instanceof ObjectMessage);
+        assertNull(message.getBody(byte[].class));
     }
 
     //----- Test for conversions to JMSRuntimeException ----------------------//

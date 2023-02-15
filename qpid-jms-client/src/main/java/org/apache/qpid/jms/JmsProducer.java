@@ -99,7 +99,9 @@ public class JmsProducer implements JMSProducer {
     public JMSProducer send(Destination destination, byte[] body) {
         try {
             BytesMessage message = session.createBytesMessage();
-            message.writeBytes(body);
+            if (body != null) {
+                message.writeBytes(body);
+            }
             doSend(destination, message);
         } catch (JMSException jmse) {
             throw JmsExceptionSupport.createRuntimeException(jmse);
@@ -112,8 +114,10 @@ public class JmsProducer implements JMSProducer {
     public JMSProducer send(Destination destination, Map<String, Object> body) {
         try {
             MapMessage message = session.createMapMessage();
-            for (Map.Entry<String, Object> entry : body.entrySet()) {
-                message.setObject(entry.getKey(), entry.getValue());
+            if (body != null) {
+                for (Map.Entry<String, Object> entry : body.entrySet()) {
+                    message.setObject(entry.getKey(), entry.getValue());
+                }
             }
 
             doSend(destination, message);

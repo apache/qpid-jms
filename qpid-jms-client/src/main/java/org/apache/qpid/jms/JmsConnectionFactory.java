@@ -21,6 +21,7 @@ import java.net.URISyntaxException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 
@@ -396,28 +397,41 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      * @param remoteURI
      *        the remoteURI to set
      */
-    public void setRemoteURI(String remoteURI) {
+    public void setRemoteURI(final String remoteURI) {
         if (remoteURI == null || remoteURI.isEmpty()) {
             throw new IllegalArgumentException("Invalid URI: cannot be null or empty");
         }
-        this.remoteURI = createURI(remoteURI);
 
-        if (this.remoteURI.getRawUserInfo() != null) {
+        final URI uri = createURI(remoteURI);
+
+        if (uri.getRawUserInfo() != null) {
             throw new IllegalArgumentException("The supplied URI cannot contain a User-Info section");
         }
 
         try {
-            if (URISupport.isCompositeURI(this.remoteURI)) {
-                CompositeData data = URISupport.parseComposite(this.remoteURI);
+            if (URISupport.isCompositeURI(uri)) {
+                final CompositeData data = URISupport.parseComposite(uri);
+
+                final List<URI> components = data.getComponents();
+                components.forEach(component -> {
+                    if (component.getRawUserInfo() != null) {
+                        throw new IllegalArgumentException("The component server URIs cannot contain a User-Info section");
+                    }
+                });
+
                 applyURIOptions(data.getParameters());
                 this.remoteURI = data.toURI();
-            } else if (this.remoteURI.getRawQuery() != null) {
-                Map<String, String> map = PropertyUtil.parseQuery(this.remoteURI);
+            } else if (uri.getRawQuery() != null) {
+                final Map<String, String> map = PropertyUtil.parseQuery(uri);
                 applyURIOptions(map);
-                this.remoteURI = PropertyUtil.replaceQuery(this.remoteURI, map);
+                this.remoteURI = PropertyUtil.replaceQuery(uri, map);
+            } else {
+                this.remoteURI = uri;
             }
+        } catch (IllegalArgumentException iae) {
+            throw iae;
         } catch (Exception e) {
-            throw new IllegalArgumentException(e.getMessage());
+            throw new IllegalArgumentException(e.getMessage(), e);
         }
     }
 

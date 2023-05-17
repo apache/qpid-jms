@@ -23,6 +23,7 @@ package org.apache.qpid.jms.integration;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -185,16 +186,63 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout=20000)
-    public void testCreateAmqpConnectionWithUserInfoThrowsJMSEx() throws Exception {
+    public void testCreateAmqpConnectionFactoryWithUserInfoThrowsIAE() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // DONT create a test fixture, we will drive everything directly.
             String uri = "amqp://user:pass@127.0.0.1:" + testPeer.getServerPort();
             try {
                 new JmsConnectionFactory(uri);
                 fail("Should not be able to create a factory with user info value set.");
-            } catch (Exception ex) {
-                LOG.debug("Caught expected exception on invalid message ID format: {}", ex);
+            } catch (IllegalArgumentException iae) {
+                LOG.debug("Caught expected exception on invalid URI: {}", iae);
+                assertNotNull(iae.getMessage());
+                assertEquals("The supplied URI cannot contain a User-Info section", iae.getMessage());
             }
+
+            testPeer.close();
+            assertNull("Peer should not have accepted any connection", testPeer.getClientSocket());
+        }
+    }
+
+    @Test(timeout=20000)
+    public void testCreateFailoverConnectionFactoryWithComponentUriHavingUserInfoThrowsIAE() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            // DONT create a test fixture, we will drive everything directly.
+            int peerPort = testPeer.getServerPort();
+
+            // Have sole server component URI be invalid
+            final String failoverURIsingle = "failover:(amqp://user:pass@localhost:" + peerPort + ")?failover.maxReconnectAttempts=1";
+            doCreateFailoverConnectionFactoryWithComponentUriHavingUserInfoThrowsIAETestImpl(failoverURIsingle);
+
+            // Have first server component URI be invalid
+            final String failoverURIfirst = "failover:(amqp://user:pass@localhost:" + peerPort + ",amqp://127.0.0.1:" + peerPort + ")?failover.maxReconnectAttempts=1";
+            doCreateFailoverConnectionFactoryWithComponentUriHavingUserInfoThrowsIAETestImpl(failoverURIfirst);
+
+            // Have last server component URI be invalid
+            final String failoverURIlast = "failover:(amqp://127.0.0.1:" + peerPort + ",amqp://user:pass@localhost:" + peerPort + ")?failover.maxReconnectAttempts=1";
+            doCreateFailoverConnectionFactoryWithComponentUriHavingUserInfoThrowsIAETestImpl(failoverURIlast);
+
+            // Have a middle server component URI be invalid
+            final String failoverURImiddle = "failover:(amqp://127.0.0.1:" + peerPort + ",amqp://user:pass@localhost:" + peerPort + ",amqp://127.0.0.1:" + peerPort + ")?failover.maxReconnectAttempts=1";
+            doCreateFailoverConnectionFactoryWithComponentUriHavingUserInfoThrowsIAETestImpl(failoverURImiddle);
+
+            // Have multiple server component URIs be invalid
+            final String failoverURImultiple = "failover:(amqp://user:pass@127.0.0.1:" + peerPort + ",amqp://user:pass@localhost:" + peerPort + ",amqp://user:pass@127.0.0.1:" + peerPort + ")?failover.maxReconnectAttempts=1";
+            doCreateFailoverConnectionFactoryWithComponentUriHavingUserInfoThrowsIAETestImpl(failoverURImultiple);
+
+            testPeer.close();
+            assertNull("Peer should not have accepted any connection", testPeer.getClientSocket());
+        }
+    }
+
+    private void doCreateFailoverConnectionFactoryWithComponentUriHavingUserInfoThrowsIAETestImpl(String failoverURI) {
+        try {
+            new JmsConnectionFactory(failoverURI);
+            fail("Should not be able to create a factory when failover URI contains component entry with user info value set.");
+        } catch (IllegalArgumentException iae) {
+            LOG.debug("Caught expected exception on invalid URI: {}", iae);
+            assertNotNull(iae.getMessage());
+            assertEquals("The component server URIs cannot contain a User-Info section", iae.getMessage());
         }
     }
 

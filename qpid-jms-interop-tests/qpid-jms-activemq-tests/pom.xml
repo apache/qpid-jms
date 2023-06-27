@@ -49,14 +49,6 @@
     <!-- Required Dependencies               -->
     <!-- =================================== -->
 
-    <!-- Adding the JMS 1.1 API jar for these tests explicitly, first,
-         since its whats implemented by ActiveMQ, and also helps to
-         verify the client works when both APIs are on the classpath -->
-    <dependency>
-      <groupId>org.apache.geronimo.specs</groupId>
-      <artifactId>geronimo-jms_1.1_spec</artifactId>
-      <version>1.1.1</version>
-    </dependency>
     <dependency>
       <groupId>org.apache.qpid</groupId>
       <artifactId>qpid-jms-client</artifactId>
@@ -105,6 +97,12 @@
       <artifactId>activemq-broker</artifactId>
       <version>${activemq-version}</version>
       <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>jackson-databind</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.activemq</groupId>
@@ -129,6 +127,12 @@
       <artifactId>activemq-http</artifactId>
       <version>${activemq-version}</version>
       <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.springframework</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.activemq.tooling</groupId>

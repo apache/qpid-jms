@@ -18,8 +18,8 @@ package org.apache.qpid.jms.integration;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import jakarta.jms.Connection;
 import jakarta.jms.Destination;
@@ -42,7 +42,8 @@ import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageHeaderSectionM
 import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompositeMatcher;
 import org.apache.qpid.proton.amqp.DescribedType;
 import org.hamcrest.Matcher;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Test for Session that has been created with a supported NoAck Session Mode
@@ -91,27 +92,32 @@ public class NoAckSessionIntegrationTest extends QpidJmsTestCase {
 
     //----- Test the NoAck Session Mode for consumers ------------------------//
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testNoAckSessionAppliedToTopic() throws Exception {
         doTestConsumerWithPresettleOptions(100, Topic.class);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testNoAckSessionAppliedToTopicAltMode() throws Exception {
         doTestConsumerWithPresettleOptions(257, Topic.class);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testNoAckSessionAppliedToQueue() throws Exception {
         doTestConsumerWithPresettleOptions(100, Queue.class);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testNoAckSessionAppliedToTempTopic() throws Exception {
         doTestConsumerWithPresettleOptions(100, TemporaryTopic.class);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testNoAckSessionAppliedToTempQueue() throws Exception {
         doTestConsumerWithPresettleOptions(100, TemporaryQueue.class);
     }

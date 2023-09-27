@@ -16,7 +16,7 @@
  */
 package org.apache.qpid.jms.provider.failover;
 
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.net.URI;
 import java.util.concurrent.CountDownLatch;
@@ -35,9 +35,11 @@ import org.apache.qpid.jms.meta.JmsResource;
 import org.apache.qpid.jms.meta.JmsSessionInfo;
 import org.apache.qpid.jms.provider.exceptions.ProviderIOException;
 import org.apache.qpid.jms.provider.mock.ResourceLifecycleFilter;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Test that calls into the FailoverProvider when it is not connected works
@@ -51,20 +53,21 @@ public class FailoverProviderOfflineBehaviorTest extends FailoverProviderTestSup
     private CountDownLatch connectionInterrupted;
 
     @Override
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
+        super.setUp(testInfo);
         connectionInterrupted = new CountDownLatch(1);
     }
 
     @Override
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         connection.close();
         super.tearDown();
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testConnectionCloseDoesNotBlock() throws Exception {
         connection = (JmsConnection) factory.createConnection();
         connection.addConnectionListener(new ConnectionInterruptionListener());
@@ -74,7 +77,8 @@ public class FailoverProviderOfflineBehaviorTest extends FailoverProviderTestSup
         connection.close();
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testSessionCloseDoesNotBlock() throws Exception {
         connection = (JmsConnection) factory.createConnection();
         connection.addConnectionListener(new ConnectionInterruptionListener());
@@ -86,14 +90,15 @@ public class FailoverProviderOfflineBehaviorTest extends FailoverProviderTestSup
         connection.close();
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testProducerCloseDoesNotBlock() throws Exception {
         connection = (JmsConnection) factory.createConnection();
         connection.addConnectionListener(new ConnectionInterruptionListener());
         connection.start();
 
         Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-        Queue queue = session.createQueue(_testName.getMethodName());
+        Queue queue = session.createQueue(_testMethodName);
         MessageProducer producer = session.createProducer(queue);
 
         mockPeer.shutdown();
@@ -103,14 +108,15 @@ public class FailoverProviderOfflineBehaviorTest extends FailoverProviderTestSup
         connection.close();
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testConsumerCloseDoesNotBlock() throws Exception {
         connection = (JmsConnection) factory.createConnection();
         connection.addConnectionListener(new ConnectionInterruptionListener());
         connection.start();
 
         Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-        Queue queue = session.createQueue(_testName.getMethodName());
+        Queue queue = session.createQueue(_testMethodName);
         MessageConsumer consumer = session.createConsumer(queue);
 
         mockPeer.shutdown();
@@ -120,7 +126,8 @@ public class FailoverProviderOfflineBehaviorTest extends FailoverProviderTestSup
         connection.close();
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testSessionCloseWhenDestroyCallFailsDoesNotBlock() throws Exception {
         mockPeer.setResourceDestroyFilter(new ResourceLifecycleFilter() {
 
@@ -143,7 +150,8 @@ public class FailoverProviderOfflineBehaviorTest extends FailoverProviderTestSup
         connection.close();
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testSessionCloseWhenProviderSuddenlyClosesDoesNotBlock() throws Exception {
         connection = (JmsConnection) factory.createConnection();
         connection.addConnectionListener(new ConnectionInterruptionListener());
@@ -156,14 +164,15 @@ public class FailoverProviderOfflineBehaviorTest extends FailoverProviderTestSup
         session.close();
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testSessionCloseWithOpenResourcesDoesNotBlock() throws Exception {
         connection = (JmsConnection) factory.createConnection();
         connection.addConnectionListener(new ConnectionInterruptionListener());
         connection.start();
 
         Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-        Queue queue = session.createQueue(_testName.getMethodName());
+        Queue queue = session.createQueue(_testMethodName);
         session.createConsumer(queue);
         session.createProducer(queue);
 
@@ -174,7 +183,8 @@ public class FailoverProviderOfflineBehaviorTest extends FailoverProviderTestSup
         connection.close();
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testSessionRecoverDoesNotBlock() throws Exception {
         connection = (JmsConnection) factory.createConnection();
         connection.addConnectionListener(new ConnectionInterruptionListener());
@@ -188,14 +198,15 @@ public class FailoverProviderOfflineBehaviorTest extends FailoverProviderTestSup
         connection.close();
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testTransactionCommitFails() throws Exception {
         connection = (JmsConnection) factory.createConnection();
         connection.addConnectionListener(new ConnectionInterruptionListener());
         connection.start();
 
         Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
-        Queue queue = session.createQueue(_testName.getMethodName());
+        Queue queue = session.createQueue(_testMethodName);
         MessageProducer producer = session.createProducer(queue);
         producer.send(session.createMessage());
 
@@ -210,14 +221,15 @@ public class FailoverProviderOfflineBehaviorTest extends FailoverProviderTestSup
         connection.close();
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testTransactionRollbackSucceeds() throws Exception {
         connection = (JmsConnection) factory.createConnection();
         connection.addConnectionListener(new ConnectionInterruptionListener());
         connection.start();
 
         Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
-        Queue queue = session.createQueue(_testName.getMethodName());
+        Queue queue = session.createQueue(_testMethodName);
         MessageProducer producer = session.createProducer(queue);
         producer.send(session.createMessage());
 

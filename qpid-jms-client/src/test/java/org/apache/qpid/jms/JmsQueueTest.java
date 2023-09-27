@@ -18,20 +18,20 @@ package org.apache.qpid.jms;
 
 import static org.apache.qpid.jms.SerializationTestSupport.roundTripSerialize;
 import static org.apache.qpid.jms.SerializationTestSupport.serialize;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.qpid.jms.test.QpidJmsTestCase;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class JmsQueueTest extends QpidJmsTestCase {
 
@@ -41,61 +41,61 @@ public class JmsQueueTest extends QpidJmsTestCase {
     @Test
     public void testIsQueue() {
         JmsQueue queue = new JmsQueue("myQueue");
-        assertTrue("should be a queue", queue.isQueue());
+        assertTrue(queue.isQueue(), "should be a queue");
     }
 
     @Test
     public void testIsTopic() {
         JmsQueue queue = new JmsQueue("myQueue");
-        assertFalse("should not be a topic", queue.isTopic());
+        assertFalse(queue.isTopic(), "should not be a topic");
     }
 
     @Test
     public void testIsTemporary() {
         JmsQueue queue = new JmsQueue("myQueue");
-        assertFalse("should not be temporary", queue.isTemporary());
+        assertFalse(queue.isTemporary(), "should not be temporary");
     }
 
     @Test
     public void testEqualsWithNull() {
         JmsQueue queue = new JmsQueue("myQueue");
-        assertFalse("should not be equal", queue.equals(null));
+        assertFalse(queue.equals(null), "should not be equal");
     }
 
     @Test
     public void testEqualsWithDifferentObjectType() {
         JmsQueue queue = new JmsQueue("name");
         JmsTopic otherObject = new JmsTopic("name");
-        assertFalse("should not be equal", queue.equals(otherObject));
+        assertFalse(queue.equals(otherObject), "should not be equal");
     }
 
     @Test
     public void testEqualsWithSameObject() {
         JmsQueue queue = new JmsQueue("name");
-        assertTrue("should be equal to itself", queue.equals(queue));
+        assertTrue(queue.equals(queue), "should be equal to itself");
     }
 
     @Test
     public void testEqualsWithDifferentObject() {
         JmsQueue queue1 = new JmsQueue("name");
         JmsQueue queue2 = new JmsQueue("name");
-        assertTrue("should be equal", queue1.equals(queue2));
-        assertTrue("should still be equal", queue2.equals(queue1));
+        assertTrue(queue1.equals(queue2), "should be equal");
+        assertTrue(queue2.equals(queue1), "should still be equal");
     }
 
     @Test
     public void testEqualsWithTemporaryQueue() {
         JmsQueue queue1 = new JmsQueue("name");
         JmsTemporaryQueue queue2 = new JmsTemporaryQueue("name");
-        assertFalse("should be unequal", queue1.equals(queue2));
-        assertFalse("should still be unequal", queue2.equals(queue1));
+        assertFalse(queue1.equals(queue2), "should be unequal");
+        assertFalse(queue2.equals(queue1), "should still be unequal");
     }
 
     @Test
     public void testHashcodeWithEqualNamedObjects() {
         JmsQueue queue1 = new JmsQueue("name");
         JmsQueue queue2 = new JmsQueue("name");
-        assertEquals("should have same hashcode", queue1.hashCode(), queue2.hashCode());
+        assertEquals(queue1.hashCode(), queue2.hashCode(), "should have same hashcode");
     }
 
     @Test
@@ -104,7 +104,7 @@ public class JmsQueueTest extends QpidJmsTestCase {
         JmsQueue queue2 = new JmsQueue("name2");
 
         // Not strictly a requirement, but expected in this case
-        assertNotEquals("should not have same hashcode", queue1.hashCode(), queue2.hashCode());
+        assertNotEquals(queue1.hashCode(), queue2.hashCode(), "should not have same hashcode");
     }
 
     @Test
@@ -114,9 +114,9 @@ public class JmsQueueTest extends QpidJmsTestCase {
 
         Map<String, String> props = queue.getProperties();
 
-        assertTrue("Property not found: " + NAME_PROP, props.containsKey(NAME_PROP));
-        assertEquals("Unexpected value for property: " + NAME_PROP, name, props.get(NAME_PROP));
-        assertEquals("Unexpected number of properties", 1, props.size());
+        assertTrue(props.containsKey(NAME_PROP), "Property not found: " + NAME_PROP);
+        assertEquals(name, props.get(NAME_PROP), "Unexpected value for property: " + NAME_PROP);
+        assertEquals(1, props.size(), "Unexpected number of properties");
     }
 
     @Test
@@ -138,7 +138,7 @@ public class JmsQueueTest extends QpidJmsTestCase {
         String name = "myQueue";
         JmsQueue queue = new JmsQueue();
 
-        assertNull("Shouldnt have name yet", queue.getQueueName());
+        assertNull(queue.getQueueName(), "Shouldnt have name yet");
 
         Map<String, String> props = new HashMap<String, String>();
         if(addNameProp) {
@@ -151,10 +151,10 @@ public class JmsQueueTest extends QpidJmsTestCase {
 
         Map<String, String> unusedProps = queue.setProperties(props);
 
-        assertEquals("Unexpected value for name", name, queue.getQueueName());
+        assertEquals(name, queue.getQueueName(), "Unexpected value for name");
 
         // Verify the returned map was empty and unmodifiable
-        assertTrue("Map should be empty: " + unusedProps, unusedProps.isEmpty());
+        assertTrue(unusedProps.isEmpty(), "Map should be empty: " + unusedProps);
         try {
             unusedProps.put("a", "b");
             fail("Map should be unmodifiable");
@@ -177,12 +177,12 @@ public class JmsQueueTest extends QpidJmsTestCase {
         Map<String, String> unusedProps = queue.setProperties(props);
 
         // Verify the name property was applied.
-        assertEquals("Unexpected value for name", name, queue.getQueueName());
+        assertEquals(name, queue.getQueueName(), "Unexpected value for name");
 
         //Verify that the unused property was returned
-        assertEquals("Unexpected size of return map", 1, unusedProps.size());
-        assertTrue("Expected property not found in map: " + unusedProps, unusedProps.containsKey(unusedKey));
-        assertEquals("Unexpected property value", unusedValue, unusedProps.get(unusedKey));
+        assertEquals(1, unusedProps.size(), "Unexpected size of return map");
+        assertTrue(unusedProps.containsKey(unusedKey), "Expected property not found in map: " + unusedProps);
+        assertEquals(unusedValue, unusedProps.get(unusedKey), "Unexpected property value");
 
         // Verify the returned map was unmodifiable
         try {
@@ -200,12 +200,12 @@ public class JmsQueueTest extends QpidJmsTestCase {
 
         Object roundTripped = roundTripSerialize(queue);
 
-        assertNotNull("Null destination returned", roundTripped);
-        assertEquals("Unexpected type", JmsQueue.class, roundTripped.getClass());
-        assertEquals("Unexpected name", name, ((JmsQueue)roundTripped).getQueueName());
+        assertNotNull(roundTripped, "Null destination returned");
+        assertEquals(JmsQueue.class, roundTripped.getClass(), "Unexpected type");
+        assertEquals(name, ((JmsQueue)roundTripped).getQueueName(), "Unexpected name");
 
-        assertEquals("Objects were not equal", queue, roundTripped);
-        assertEquals("Object hashCodes were not equal", queue.hashCode(), roundTripped.hashCode());
+        assertEquals(queue, roundTripped, "Objects were not equal");
+        assertEquals(queue.hashCode(), roundTripped.hashCode(), "Object hashCodes were not equal");
     }
 
     @Test
@@ -213,12 +213,12 @@ public class JmsQueueTest extends QpidJmsTestCase {
         JmsQueue queue1 = new JmsQueue("myQueue");
         JmsQueue queue2 = new JmsQueue("myQueue");
 
-        assertEquals("Destinations were not equal", queue1, queue2);
+        assertEquals(queue1, queue2, "Destinations were not equal");
 
         byte[] bytes1 = serialize(queue1);
         byte[] bytes2 = serialize(queue2);
 
-        assertArrayEquals("Serialized bytes were not equal", bytes1, bytes2);
+        assertArrayEquals(bytes1, bytes2, "Serialized bytes were not equal");
     }
 
     @Test
@@ -226,7 +226,7 @@ public class JmsQueueTest extends QpidJmsTestCase {
         JmsQueue queue1 = new JmsQueue("myQueue1");
         JmsQueue queue2 = new JmsQueue("myQueue2");
 
-        assertNotEquals("Destinations were not expected to be equal", queue1, queue2);
+        assertNotEquals(queue1, queue2, "Destinations were not expected to be equal");
 
         byte[] bytes1 = serialize(queue1);
         byte[] bytes2 = serialize(queue2);

@@ -47,7 +47,7 @@
     <!-- Test Dependency Versions for this Project -->
     <netty-tcnative-version>2.0.61.Final</netty-tcnative-version>
     <activemq-version>5.18.1</activemq-version>
-    <junit-version>4.13.2</junit-version>
+    <junit.jupiter.version>5.10.0</junit.jupiter.version>
     <jetty-version>9.4.51.v20230217</jetty-version>
     <mockito-version>5.4.0</mockito-version>
     <hamcrest-version>2.2</hamcrest-version>
@@ -215,9 +215,9 @@
          <scope>test</scope>
       </dependency>
       <dependency>
-        <groupId>junit</groupId>
-        <artifactId>junit</artifactId>
-        <version>${junit-version}</version>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter</artifactId>
+        <version>${junit.jupiter.version}</version>
         <scope>test</scope>
       </dependency>
       <dependency>

@@ -16,6 +16,8 @@
  */
 package org.apache.qpid.jms.consumer;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import jakarta.jms.Session;
 import jakarta.jms.Topic;
 import jakarta.jms.TopicConnection;
@@ -23,8 +25,10 @@ import jakarta.jms.TopicSession;
 import jakarta.jms.TopicSubscriber;
 
 import org.apache.qpid.jms.JmsConnectionTestSupport;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Tests TopicSubscriber method contracts after the TopicSubscriber is closed.
@@ -36,35 +40,47 @@ public class JmsTopicSubscriberClosedTest extends JmsConnectionTestSupport {
     protected void createTestResources() throws Exception {
         connection = createTopicConnectionToMockProvider();
         TopicSession session = ((TopicConnection) connection).createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
-        Topic destination = session.createTopic(_testName.getMethodName());
+        Topic destination = session.createTopic(_testMethodName);
         subscriber = session.createSubscriber(destination);
         subscriber.close();
     }
 
     @Override
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
+        super.setUp(testInfo);
         createTestResources();
     }
 
-    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testGetNoLocalFails() throws Exception {
-        subscriber.getNoLocal();
+        assertThrows(jakarta.jms.IllegalStateException.class, () -> {
+            subscriber.getNoLocal();
+        });
     }
 
-    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testGetMessageListenerFails() throws Exception {
-        subscriber.getMessageListener();
+        assertThrows(jakarta.jms.IllegalStateException.class, () -> {
+            subscriber.getMessageListener();
+        });
     }
 
-    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testGetMessageSelectorFails() throws Exception {
-        subscriber.getMessageSelector();
+        assertThrows(jakarta.jms.IllegalStateException.class, () -> {
+            subscriber.getMessageSelector();
+        });
     }
 
-    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testGetTopicFails() throws Exception {
-        subscriber.getTopic();
+        assertThrows(jakarta.jms.IllegalStateException.class, () -> {
+            subscriber.getTopic();
+        });
     }
 }

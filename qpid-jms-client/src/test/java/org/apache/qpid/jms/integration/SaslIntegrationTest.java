@@ -20,11 +20,11 @@
  */
 package org.apache.qpid.jms.integration;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.net.URI;
 import java.net.URLDecoder;
@@ -48,7 +48,8 @@ import org.apache.qpid.jms.transports.TransportOptions;
 import org.apache.qpid.jms.transports.TransportSupport;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedByte;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,7 +77,8 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
     private static final String CLIENT_JKS_TRUSTSTORE = "src/test/resources/client-jks.truststore";
     private static final String PASSWORD = "password";
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSaslExternalConnection() throws Exception {
         TransportOptions sslOptions = new TransportOptions();
         sslOptions.setKeyStoreLocation(BROKER_PKCS12_KEYSTORE);
@@ -113,7 +115,8 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSaslPlainConnection() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
@@ -140,7 +143,8 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSaslXOauth2Connection() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
@@ -167,7 +171,8 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSaslPlainConnectionWithURIEncodedCredentials() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
@@ -210,7 +215,8 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSaslAnonymousConnection() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // Expect an ANOYMOUS connection
@@ -232,7 +238,8 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSaslFailureCodes() throws Exception {
         doSaslFailureCodesTestImpl(SASL_FAIL_AUTH);
         doSaslFailureCodesTestImpl(SASL_SYS);
@@ -264,42 +271,50 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testWaitForUnexpectedFramesAfterSaslFailure() throws Exception {
         doMechanismSelectedTestImpl(null, null, ANONYMOUS, new Symbol[] {ANONYMOUS}, true);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAnonymousSelectedWhenNoCredentialsWereSupplied() throws Exception {
         doMechanismSelectedTestImpl(null, null, ANONYMOUS, new Symbol[] {CRAM_MD5, PLAIN, ANONYMOUS}, false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAnonymousSelectedWhenNoPasswordWasSupplied() throws Exception {
         doMechanismSelectedTestImpl("username", null, ANONYMOUS, new Symbol[] {CRAM_MD5, PLAIN, ANONYMOUS}, false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCramMd5SelectedWhenCredentialsPresent() throws Exception {
         doMechanismSelectedTestImpl("username", "password", CRAM_MD5, new Symbol[] {CRAM_MD5, PLAIN, ANONYMOUS}, false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testScramSha1SelectedWhenCredentialsPresent() throws Exception {
         doMechanismSelectedTestImpl("username", "password", SCRAM_SHA_1, new Symbol[] {SCRAM_SHA_1, CRAM_MD5, PLAIN, ANONYMOUS}, false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testScramSha256SelectedWhenCredentialsPresent() throws Exception {
         doMechanismSelectedTestImpl("username", "password", SCRAM_SHA_256, new Symbol[] {SCRAM_SHA_256, SCRAM_SHA_1, CRAM_MD5, PLAIN, ANONYMOUS}, false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testScramSha512SelectedWhenCredentialsPresent() throws Exception {
         doMechanismSelectedTestImpl("username", "password", SCRAM_SHA_512, new Symbol[] {SCRAM_SHA_512, SCRAM_SHA_256, SCRAM_SHA_1, CRAM_MD5, PLAIN, ANONYMOUS}, false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testXoauth2SelectedWhenCredentialsPresent() throws Exception {
         String token = Base64.getEncoder().encodeToString("token".getBytes(StandardCharsets.US_ASCII));
         doMechanismSelectedTestImpl("username", token, XOAUTH2, new Symbol[] {XOAUTH2, ANONYMOUS}, false);
@@ -330,12 +345,14 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testExternalSelectedWhenLocalPrincipalPresent() throws Exception {
         doMechanismSelectedExternalTestImpl(true, EXTERNAL, new Symbol[] {EXTERNAL, SCRAM_SHA_512, SCRAM_SHA_256, SCRAM_SHA_1, CRAM_MD5, PLAIN, ANONYMOUS});
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testExternalNotSelectedWhenLocalPrincipalMissing() throws Exception {
         doMechanismSelectedExternalTestImpl(false, ANONYMOUS, new Symbol[] {EXTERNAL, SCRAM_SHA_512, SCRAM_SHA_256, SCRAM_SHA_1, CRAM_MD5, PLAIN, ANONYMOUS});
     }
@@ -375,7 +392,8 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSaslLayerDisabledConnection() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // Expect a connection with no SASL layer.
@@ -396,7 +414,8 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRestrictSaslMechanismsWithSingleMech() throws Exception {
         // Check PLAIN gets picked when we don't specify a restriction
         doMechanismSelectionRestrictedTestImpl("username", "password", PLAIN, new Symbol[] { PLAIN, ANONYMOUS}, null);
@@ -405,7 +424,8 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
         doMechanismSelectionRestrictedTestImpl("username", "password", ANONYMOUS, new Symbol[] { PLAIN, ANONYMOUS}, "ANONYMOUS");
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRestrictSaslMechanismsWithMultipleMechs() throws Exception {
         // Check CRAM-MD5 gets picked when we dont specify a restriction
         doMechanismSelectionRestrictedTestImpl("username", "password", CRAM_MD5, new Symbol[] {CRAM_MD5, PLAIN, ANONYMOUS}, null);
@@ -414,7 +434,8 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
         doMechanismSelectionRestrictedTestImpl("username", "password", PLAIN, new Symbol[] { CRAM_MD5, PLAIN, ANONYMOUS}, "PLAIN,ANONYMOUS");
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRestrictSaslMechanismsWithMultipleMechsNoPassword() throws Exception {
         // Check ANONYMOUS gets picked when we specify a restriction with multiple mechs but don't give a password
         doMechanismSelectionRestrictedTestImpl("username", null, ANONYMOUS, new Symbol[] { CRAM_MD5, PLAIN, ANONYMOUS}, "PLAIN,ANONYMOUS");
@@ -445,12 +466,14 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testMechanismNegotiationFailsToFindMatch() throws Exception {
         doMechanismNegotiationFailsToFindMatchTestImpl(false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testMechanismNegotiationFailsToFindMatchWithJmsContext() throws Exception {
         doMechanismNegotiationFailsToFindMatchTestImpl(true);
     }
@@ -472,8 +495,8 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
                     fail("Excepted exception to be thrown");
                 } catch (JMSSecurityRuntimeException jmssre) {
                     // Expected, we deliberately failed the mechanism negotiation process.
-                    assertNotNull("Expected an exception message", jmssre.getMessage());
-                    assertEquals("Unexpected message details", jmssre.getMessage(), failureMessageBreadcrumb);
+                    assertNotNull(jmssre.getMessage(), "Expected an exception message");
+                    assertEquals(jmssre.getMessage(), failureMessageBreadcrumb, "Unexpected message details");
                 }
             } else {
                 try {
@@ -481,8 +504,8 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
                     fail("Excepted exception to be thrown");
                 } catch (JMSSecurityException jmsse) {
                     // Expected, we deliberately failed the mechanism negotiation process.
-                    assertNotNull("Expected an exception message", jmsse.getMessage());
-                    assertEquals("Unexpected message details", jmsse.getMessage(), failureMessageBreadcrumb);
+                    assertNotNull(jmsse.getMessage(), "Expected an exception message");
+                    assertEquals(jmsse.getMessage(), failureMessageBreadcrumb, "Unexpected message details");
                 }
             }
 
@@ -490,7 +513,8 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testUserOnlyExtensionsApplied() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
@@ -533,7 +557,8 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testPasswordOnlyExtensionsApplied() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
@@ -576,7 +601,8 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testUserAndPasswordExtensionsApplied() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 

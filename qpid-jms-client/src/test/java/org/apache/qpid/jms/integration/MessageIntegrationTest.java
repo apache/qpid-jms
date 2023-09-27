@@ -23,12 +23,12 @@ import static org.apache.qpid.jms.provider.amqp.AmqpSupport.TOPIC_PREFIX;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -77,7 +77,8 @@ import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.apache.qpid.proton.amqp.UnsignedLong;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 public class MessageIntegrationTest extends QpidJmsTestCase
 {
@@ -102,7 +103,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
 
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceiveMessageAndGetBody() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -144,7 +146,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     //==== Application Properties Section ====
     //========================================
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendMessageWithApplicationProperties() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -202,7 +205,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceiveMessageWithApplicationProperties() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -263,12 +267,14 @@ public class MessageIntegrationTest extends QpidJmsTestCase
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceiveMessageWithInvalidPropertyName() throws Exception {
         doReceiveMessageWithInvalidPropertyNameTestImpl(false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceiveMessageWithInvalidPropertyNameAndWithValidationDisabled() throws Exception {
         doReceiveMessageWithInvalidPropertyNameTestImpl(true);
     }
@@ -299,7 +305,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             testPeer.waitForAllHandlersToComplete(3000);
 
             if(!disableValidation) {
-                assertFalse("Expected property to be indicated as not existing", receivedMessage.propertyExists(invalidPropName));
+                assertFalse(receivedMessage.propertyExists(invalidPropName), "Expected property to be indicated as not existing");
 
                 try {
                     receivedMessage.getStringProperty(invalidPropName);
@@ -319,12 +325,14 @@ public class MessageIntegrationTest extends QpidJmsTestCase
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendMessageWithInvalidPropertyName() throws Exception {
         doSendMessageWithInvalidPropertyNameTestImpl(false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendMessageWithInvalidPropertyNameAndWithValidationDisabled() throws Exception {
         doSendMessageWithInvalidPropertyNameTestImpl(true);
     }
@@ -392,7 +400,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceivedMessageFromQueueWithoutToResultsInUseOfConsumerDestinationQueue() throws Exception {
         receivedMessageFromQueueWithoutToResultsInUseOfConsumerDestinationImpl(true);
     }
@@ -404,7 +413,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceivedMessageFromQueueWithoutToResultsInUseOfConsumerDestinationTopic() throws Exception {
         receivedMessageFromQueueWithoutToResultsInUseOfConsumerDestinationImpl(false);
     }
@@ -448,12 +458,12 @@ public class MessageIntegrationTest extends QpidJmsTestCase
 
             Destination dest = receivedMessage.getJMSDestination();
             if (useQueue) {
-                assertNotNull("expected Queue instance, got null", dest);
-                assertTrue("expected Queue instance. Actual type was: " + dest.getClass().getName(), dest instanceof Queue);
+                assertNotNull(dest, "expected Queue instance, got null");
+                assertTrue(dest instanceof Queue, "expected Queue instance. Actual type was: " + dest.getClass().getName());
                 assertEquals(queueName, ((Queue) dest).getQueueName());
             } else {
-                assertNotNull("expected Topic instance, got null", dest);
-                assertTrue("expected Topic instance. Actual type was: " + dest.getClass().getName(), dest instanceof Topic);
+                assertNotNull(dest, "expected Topic instance, got null");
+                assertTrue(dest instanceof Topic, "expected Topic instance. Actual type was: " + dest.getClass().getName());
                 assertEquals(topicName, ((Topic) dest).getTopicName());
             }
         }
@@ -465,7 +475,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceivedMessageFromQueueWithNoReplyToReturnsNull() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -506,7 +517,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceivedMessageWithTopicDestinationsOnConnectionWithTopicPrefix() throws Exception {
         Class<? extends Destination> destType = Topic.class;
         String destPrefix = "t12321-";
@@ -531,7 +543,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceivedMessageWithNoTypeAnnotationAndTopicDestinationsOnConnectionWithTopicPrefix() throws Exception {
         Class<? extends Destination> destType = Topic.class;
         String destPrefix = "t12321-";
@@ -555,7 +568,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceivedMessageWithQueueDestinationsOnConnectionWithQueuePrefix() throws Exception {
         Class<? extends Destination> destType = Queue.class;
         String destPrefix = "q12321-";
@@ -580,7 +594,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceivedMessageWithNoTypeAnnotationAndQueueDestinationsOnConnectionWithQueuePrefix() throws Exception {
         Class<? extends Destination> destType = Queue.class;
         String destPrefix = "q12321-";
@@ -604,7 +619,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceivedMessageWithTemporaryQueueDestinationsOnConnectionWithPrefixes() throws Exception {
         Class<? extends Destination> destType = TemporaryQueue.class;
         String destPrefix = "q12321-";
@@ -628,7 +644,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceivedMessageWithTemporaryTopicDestinationsOnConnectionWithPrefixes() throws Exception {
         Class<? extends Destination> destType = TemporaryTopic.class;
         String destPrefix = "q12321-";
@@ -727,8 +744,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             Destination jmsDest = receivedMessage.getJMSDestination();
             Destination jmsReplyTo = receivedMessage.getJMSReplyTo();
 
-            assertNotNull("Expected JMSDestination but got null", jmsDest);
-            assertNotNull("Expected JMSReplyTo but got null", jmsReplyTo);
+            assertNotNull(jmsDest, "Expected JMSDestination but got null");
+            assertNotNull(jmsReplyTo, "Expected JMSReplyTo but got null");
 
             // Verify destination/replyto names on received message
             String recievedName = null;
@@ -741,12 +758,12 @@ public class MessageIntegrationTest extends QpidJmsTestCase
                 recievedReplyName = ((Queue) jmsReplyTo).getQueueName();
             }
 
-            assertEquals("Unexpected name for JMSDestination", destName, recievedName);
-            assertEquals("Unexpected name for JMSReplyTo", replyName, recievedReplyName);
+            assertEquals(destName, recievedName, "Unexpected name for JMSDestination");
+            assertEquals(replyName, recievedReplyName, "Unexpected name for JMSReplyTo");
 
             if (destType == TemporaryQueue.class || destType == TemporaryTopic.class) {
-                assertEquals("Temporary destination name and address should be equal", destName, destAddress);
-                assertEquals("Temporary replyto name and address should be equal", replyName, replyAddress);
+                assertEquals(destName, destAddress, "Temporary destination name and address should be equal");
+                assertEquals(replyName, replyAddress, "Temporary replyto name and address should be equal");
             }
 
             testPeer.expectClose();
@@ -762,7 +779,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendMessageWithTopicDestinationsOnConnectionWithTopicPrefix() throws Exception {
         Class<? extends Destination> destType = Topic.class;
         String destPrefix = "t12321-";
@@ -779,7 +797,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendMessageWithQueueDestinationsOnConnectionWithQueuePrefix() throws Exception {
         Class<? extends Destination> destType = Queue.class;
         String destPrefix = "q12321-";
@@ -796,7 +815,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendMessageWithTemporaryQueueDestinationsOnConnectionWithDestinationPrefixes() throws Exception {
         Class<? extends Destination> destType = TemporaryQueue.class;
         String destPrefix = "q12321-";
@@ -813,7 +833,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendMessageWithTemporaryTopicDestinationsOnConnectionWithDestinationPrefixes() throws Exception {
         Class<? extends Destination> destType = TemporaryTopic.class;
         String destPrefix = "q12321-";
@@ -909,7 +930,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceivedMessageWithTopicDestinationsOnConnectionWithBrokerDefinedPrefixProperties() throws Exception {
         Class<? extends Destination> destType = Topic.class;
         String destPrefix = "t-broker-provided-prefix-";
@@ -933,7 +955,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceivedMessageWithQueueDestinationsOnConnectionWithBrokerDefinedPrefixProperties() throws Exception {
         Class<? extends Destination> destType = Queue.class;
         String destPrefix = "q-broker-provided-prefix-";
@@ -1017,8 +1040,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             Destination jmsDest = receivedMessage.getJMSDestination();
             Destination jmsReplyTo = receivedMessage.getJMSReplyTo();
 
-            assertNotNull("Expected JMSDestination but got null", jmsDest);
-            assertNotNull("Expected JMSReplyTo but got null", jmsReplyTo);
+            assertNotNull(jmsDest, "Expected JMSDestination but got null");
+            assertNotNull(jmsReplyTo, "Expected JMSReplyTo but got null");
 
             // Verify destination/replyto names on received message
             String recievedName = null;
@@ -1031,8 +1054,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
                 recievedReplyName = ((Queue) jmsReplyTo).getQueueName();
             }
 
-            assertEquals("Unexpected name for JMSDestination", destName, recievedName);
-            assertEquals("Unexpected name for JMSReplyTo", replyName, recievedReplyName);
+            assertEquals(destName, recievedName, "Unexpected name for JMSDestination");
+            assertEquals(replyName, recievedReplyName, "Unexpected name for JMSReplyTo");
 
             testPeer.expectClose();
             connection.close();
@@ -1047,7 +1070,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendMessageWithQueueDestinationsOnConnectionWithBrokerDefinedPrefixProperties() throws Exception {
         Class<? extends Destination> destType = Queue.class;
         String destPrefix = "q-broker-provided-prefix-";
@@ -1064,7 +1088,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendMessageWithTopicDestinationsOnConnectionWithBrokerDefinedPrefixProperties() throws Exception {
         Class<? extends Destination> destType = Topic.class;
         String destPrefix = "t-broker-provided-prefix-";
@@ -1151,7 +1176,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceivedMessageFromTopicWithReplyToWithoutTypeAnnotationResultsInUseOfConsumerDestinationType() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1180,8 +1206,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             assertNotNull(receivedMessage);
 
             Destination dest = receivedMessage.getJMSReplyTo();
-            assertNotNull("JMSReplyTo should not be null", dest);
-            assertTrue("Destination not of expected type: " + dest.getClass(), dest instanceof Topic);
+            assertNotNull(dest, "JMSReplyTo should not be null");
+            assertTrue(dest instanceof Topic, "Destination not of expected type: " + dest.getClass());
             assertEquals(myReplyTopicAddress, ((Topic)dest).getTopicName());
 
             testPeer.expectClose();
@@ -1199,7 +1225,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSentMessageContainsToTypeAnnotationByte() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1241,7 +1268,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSentMessageContainsReplyToTypeAnnotationByte() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1291,7 +1319,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceivedMessageFromQueueWithToLegacyTypeAnnotationForTopic() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1322,8 +1351,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             assertNotNull(receivedMessage);
 
             Destination dest = receivedMessage.getJMSDestination();
-            assertNotNull("Expected Topic destination but got null", dest);
-            assertTrue("Expected Topic instance but did not get one. Actual type was: " + dest.getClass().getName(), dest instanceof Topic);
+            assertNotNull(dest, "Expected Topic destination but got null");
+            assertTrue(dest instanceof Topic, "Expected Topic instance but did not get one. Actual type was: " + dest.getClass().getName());
             assertEquals(myTopicAddress, ((Topic)dest).getTopicName());
 
             testPeer.expectClose();
@@ -1340,7 +1369,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceivedMessageFromQueueWithLegacyReplyToTypeAnnotationForTopic() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1390,7 +1420,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceivedMessageFromQueueWithNoAbsoluteExpiryOrTtlReturnsJMSExpirationZero() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1430,7 +1461,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceivedMessageFromQueueWithAbsoluteExpiryReturnsJMSExpirationNonZero() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             //Disable local expiration checking in consumer
@@ -1471,7 +1503,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     //==== MessageID and CorrelationID Handling ====
     //==============================================
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceiveMessageWithoutMessageId() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1507,7 +1540,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceivedMessageWithStringMessageIdReturnsExpectedJMSMessageID() throws Exception {
         String messageId = "ID:myTestMessageIdString";
         receivedMessageWithMessageIdTestImpl(messageId, messageId);
@@ -1519,7 +1553,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceivedMessageWithStringMessageIdNoPrefixReturnsExpectedJMSMessageID() throws Exception {
         String messageIdNoPrefix = "myTestMessageIdString";
         String expected = "ID:AMQP_NO_PREFIX:" + messageIdNoPrefix;
@@ -1532,7 +1567,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceivedMessageWithUUIDMessageIdReturnsExpectedJMSMessageID() throws Exception {
         UUID uuid = UUID.randomUUID();
         String expected = "ID:AMQP_UUID:" + uuid.toString();
@@ -1545,7 +1581,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceivedMessageWithUnsignedLongMessageIdReturnsExpectedJMSMessageID() throws Exception {
         UnsignedLong ulong = UnsignedLong.valueOf(123456789L);
         String expected = "ID:AMQP_ULONG:123456789";
@@ -1558,7 +1595,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceivedMessageWithBinaryMessageIdReturnsExpectedJMSMessageID() throws Exception {
         Binary binary = new Binary(new byte[]{(byte)0x02, (byte)0x20, (byte) 0xAE, (byte) 0x00});
         String expected = "ID:AMQP_BINARY:0220AE00";
@@ -1606,7 +1644,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceivedMessageWithStringCorrelationIdReturnsExpectedJMSCorrelationID() throws Exception {
         String underlyingCorrelationId = "ID:myTestCorrelationIdString";
         String expected = underlyingCorrelationId;
@@ -1620,7 +1659,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceivedMessageWithAppSpecificStringCorrelationIdReturnsExpectedJMSCorrelationID() throws Exception {
         String underlyingCorrelationId = "myTestCorrelationIdString";
         String expected = underlyingCorrelationId;
@@ -1633,7 +1673,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceivedMessageWithUUIDCorrelationIdReturnsExpectedJMSCorrelationID() throws Exception {
         UUID underlyingCorrelationId = UUID.randomUUID();
         String expected = "ID:AMQP_UUID:" + underlyingCorrelationId.toString();
@@ -1646,7 +1687,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceivedMessageWithLongCorrelationIdReturnsExpectedJMSCorrelationID() throws Exception {
         UnsignedLong underlyingCorrelationId = UnsignedLong.valueOf(123456789L);
         String expected = "ID:AMQP_ULONG:" + underlyingCorrelationId.toString();
@@ -1695,7 +1737,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSentMessageWithUUIDCorrelationId() throws Exception {
         UUID uuid = UUID.randomUUID();
         String stringCorrelationId = AmqpMessageIdHelper.JMS_ID_PREFIX + AmqpMessageIdHelper.AMQP_UUID_PREFIX +  uuid.toString();
@@ -1709,7 +1752,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSentMessageWithBinaryCorrelationId() throws Exception
     {
         Binary bin = new Binary(new byte[]{(byte)0x01, (byte)0x23, (byte) 0xAF, (byte) 0x00});
@@ -1724,7 +1768,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSentMessageWithUlongCorrelationId() throws Exception {
         UnsignedLong ulong = UnsignedLong.valueOf(Long.MAX_VALUE);
         String stringCorrelationId = AmqpMessageIdHelper.JMS_ID_PREFIX + AmqpMessageIdHelper.AMQP_ULONG_PREFIX +  ulong.toString();
@@ -1738,7 +1783,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSentMessageWithStringCorrelationId() throws Exception {
         String stringCorrelationId = "ID:myTestMessageIdString";
         sentMessageWithCorrelationIdTestImpl(stringCorrelationId, stringCorrelationId);
@@ -1752,7 +1798,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSentMessageWithNoPrefixEncodedStringCorrelationId() throws Exception {
         String idSuffix = "myNoIdPrefixString";
         String stringCorrelationId = "ID:" + AmqpMessageIdHelper.AMQP_NO_PREFIX + idSuffix;
@@ -1765,7 +1812,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSentMessageWithAppSpecificStringCorrelationId() throws Exception {
         String stringCorrelationId = "myTestAppSpecificString";
         sentMessageWithCorrelationIdTestImpl(stringCorrelationId, stringCorrelationId);
@@ -1815,7 +1863,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceivedMessageWithStringMessageIdAndSendValueAsCorrelationId() throws Exception {
         String string = "ID:myStringMessageId";
         recieveMessageIdSendCorrelationIdTestImpl(string, string);
@@ -1828,7 +1877,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceivedMessageWithStringNoPrefixMessageIdAndSendValueAsCorrelationId() throws Exception {
         String stringNoPrefix = "myStringMessageId";
         String expected = "ID:AMQP_NO_PREFIX:" + stringNoPrefix;
@@ -1842,7 +1892,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceivedMessageWithUUIDMessageIdAndSendValueAsCorrelationId() throws Exception {
         UUID uuid = UUID.randomUUID();
         String expected = "ID:AMQP_UUID:" +  uuid.toString();
@@ -1856,7 +1907,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceivedMessageWithUlongMessageIdAndSendValueAsCorrelationId() throws Exception {
         UnsignedLong ulong = UnsignedLong.valueOf(123456789L);
         String expected = "ID:AMQP_ULONG:123456789";
@@ -1870,7 +1922,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceivedMessageWithBinaryMessageIdAndSendValueAsCorrelationId() throws Exception {
         Binary binary = new Binary(new byte[]{(byte)0x00, (byte)0xCD, (byte) 0xEF, (byte) 0x01});
         String expected = "ID:AMQP_BINARY:00CDEF01";
@@ -1902,7 +1955,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             assertNotNull(receivedMessage);
 
             String jmsMessageID = receivedMessage.getJMSMessageID();
-            assertEquals("Unexpected value for JMSMessageID", expectedMessageId, jmsMessageID);
+            assertEquals(expectedMessageId, jmsMessageID, "Unexpected value for JMSMessageID");
 
             //Now take the received JMSMessageID, and send a message with it set
             //as the JMSCorrelationID and verify we send the same AMQP id as we started with.
@@ -1946,7 +1999,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceivedMessageWithGroupRelatedPropertiesSet() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1978,14 +2032,14 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             Message receivedMessage = messageConsumer.receive(3000);
             testPeer.waitForAllHandlersToComplete(3000);
 
-            assertNotNull("did not receive the message", receivedMessage);
+            assertNotNull(receivedMessage, "did not receive the message");
 
             boolean foundGroupId = false;
             boolean foundGroupSeq = false;
             boolean foundReplyToGroupId = false;
 
             Enumeration<?> names = receivedMessage.getPropertyNames();
-            assertTrue("Message had no property names", names.hasMoreElements());
+            assertTrue(names.hasMoreElements(), "Message had no property names");
             while (names.hasMoreElements()) {
                 Object element = names.nextElement();
 
@@ -2002,17 +2056,17 @@ public class MessageIntegrationTest extends QpidJmsTestCase
                 }
             }
 
-            assertTrue("JMSXGroupID not in property names", foundGroupId);
-            assertTrue("JMSXGroupSeq  not in property names", foundGroupSeq);
-            assertTrue("JMS_AMQP_REPLY_TO_GROUP_ID not in property names", foundReplyToGroupId);
+            assertTrue(foundGroupId, "JMSXGroupID not in property names");
+            assertTrue(foundGroupSeq, "JMSXGroupSeq  not in property names");
+            assertTrue(foundReplyToGroupId, "JMS_AMQP_REPLY_TO_GROUP_ID not in property names");
 
-            assertTrue("JMSXGroupID does not exist", receivedMessage.propertyExists(JmsClientProperties.JMSXGROUPID));
-            assertTrue("JMSXGroupSeq does not exist", receivedMessage.propertyExists(JmsClientProperties.JMSXGROUPSEQ));
-            assertTrue("JMS_AMQP_REPLY_TO_GROUP_ID does not exist", receivedMessage.propertyExists(AmqpMessageSupport.JMS_AMQP_REPLY_TO_GROUP_ID));
+            assertTrue(receivedMessage.propertyExists(JmsClientProperties.JMSXGROUPID), "JMSXGroupID does not exist");
+            assertTrue(receivedMessage.propertyExists(JmsClientProperties.JMSXGROUPSEQ), "JMSXGroupSeq does not exist");
+            assertTrue(receivedMessage.propertyExists(AmqpMessageSupport.JMS_AMQP_REPLY_TO_GROUP_ID), "JMS_AMQP_REPLY_TO_GROUP_ID does not exist");
 
-            assertEquals("did not get the expected JMSXGroupID", expectedGroupId, receivedMessage.getStringProperty(JmsClientProperties.JMSXGROUPID));
-            assertEquals("did not get the expected JMSXGroupSeq", expectedGroupSeq, receivedMessage.getIntProperty(JmsClientProperties.JMSXGROUPSEQ));
-            assertEquals("did not get the expected JMS_AMQP_REPLY_TO_GROUP_ID", expectedReplyToGroupId, receivedMessage.getStringProperty(AmqpMessageSupport.JMS_AMQP_REPLY_TO_GROUP_ID));
+            assertEquals(expectedGroupId, receivedMessage.getStringProperty(JmsClientProperties.JMSXGROUPID), "did not get the expected JMSXGroupID");
+            assertEquals(expectedGroupSeq, receivedMessage.getIntProperty(JmsClientProperties.JMSXGROUPSEQ), "did not get the expected JMSXGroupSeq");
+            assertEquals(expectedReplyToGroupId, receivedMessage.getStringProperty(AmqpMessageSupport.JMS_AMQP_REPLY_TO_GROUP_ID), "did not get the expected JMS_AMQP_REPLY_TO_GROUP_ID");
 
             testPeer.expectClose();
             connection.close();
@@ -2028,7 +2082,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendMessageWithGroupRelatedPropertiesSet() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -2073,7 +2128,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAsyncSendDoesNotMarkMessageReadOnly() throws Exception {
         try(TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
@@ -2171,7 +2227,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAsyncCompletionSendMarksMessageReadOnly() throws Exception {
         try(TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
@@ -2271,25 +2328,29 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     //==== DeliveryTime Handling ====
     //===============================
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceivedMessageWithDeliveryTimeAnnotation() throws Exception {
         long deliveryTime = System.currentTimeMillis() + 13526;
         doReceivedMessageDeliveryTimeTestImpl(true, deliveryTime);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceivedMessageWithDeliveryTimeAnnotationTimestampValue() throws Exception {
         Date deliveryTime = new Date(System.currentTimeMillis() + 13526);
         doReceivedMessageDeliveryTimeTestImpl(true, deliveryTime);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceivedMessageWithDeliveryTimeAnnotationUnsignedLongValue() throws Exception {
         UnsignedLong deliveryTime = new UnsignedLong(System.currentTimeMillis() + 13526);
         doReceivedMessageDeliveryTimeTestImpl(true, deliveryTime);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceivedMessageWithoutDeliveryTimeAnnotation() throws Exception {
         doReceivedMessageDeliveryTimeTestImpl(false, null);
     }
@@ -2344,9 +2405,9 @@ public class MessageIntegrationTest extends QpidJmsTestCase
 
             testPeer.waitForAllHandlersToComplete(3000);
 
-            assertNotNull("should have recieved a message", receivedMessage);
+            assertNotNull(receivedMessage, "should have recieved a message");
 
-            assertEquals("Unexpected delivery time", expectedDeliveryTime, receivedMessage.getJMSDeliveryTime());
+            assertEquals(expectedDeliveryTime, receivedMessage.getJMSDeliveryTime(), "Unexpected delivery time");
         }
     }
 }

@@ -16,10 +16,10 @@
  */
 package org.apache.qpid.jms.sasl;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class GssapiMechanismTest {
 
@@ -27,13 +27,13 @@ public class GssapiMechanismTest {
     public void testIsApplicableWithoutCredentials() {
         GssapiMechanism mech = new GssapiMechanism();
 
-        assertTrue("Should be applicable without credentials", mech.isApplicable(null, null, null));
+        assertTrue(mech.isApplicable(null, null, null), "Should be applicable without credentials");
     }
 
     @Test
     public void testIsNotEnabledByDefault() {
         GssapiMechanism mech = new GssapiMechanism();
 
-        assertFalse("Should not be enabled by default", mech.isEnabledByDefault());
+        assertFalse(mech.isEnabledByDefault(), "Should not be enabled by default");
     }
 }

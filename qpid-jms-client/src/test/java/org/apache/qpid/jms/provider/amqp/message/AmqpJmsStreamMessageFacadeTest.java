@@ -21,12 +21,13 @@
 package org.apache.qpid.jms.provider.amqp.message;
 
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_STREAM_MESSAGE;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,14 +41,14 @@ import org.apache.qpid.proton.amqp.messaging.Data;
 import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
 import org.apache.qpid.proton.amqp.messaging.Section;
 import org.apache.qpid.proton.message.Message;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class AmqpJmsStreamMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
 
     @Test
     public void testNewMessageToSendReportsNoBody() throws Exception {
         AmqpJmsStreamMessageFacade amqpStreamMessageFacade = createNewStreamMessageFacade();
-        assertFalse("Message should report no body", amqpStreamMessageFacade.hasBody());
+        assertFalse(amqpStreamMessageFacade.hasBody(), "Message should report no body");
     }
 
     @Test
@@ -56,7 +57,7 @@ public class AmqpJmsStreamMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
 
         MessageAnnotations annotations = amqpStreamMessageFacade.getMessageAnnotations();
 
-        assertNull("MessageAnnotations section was not present", annotations);
+        assertNull(annotations, "MessageAnnotations section was not present");
         assertEquals(JMS_STREAM_MESSAGE, amqpStreamMessageFacade.getJmsMsgType());
     }
 
@@ -66,20 +67,24 @@ public class AmqpJmsStreamMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
 
         Section body = amqpStreamMessageFacade.getBody();
 
-        assertNotNull("Body section was not present", body);
-        assertTrue("Body section was not of expected type: " + body.getClass(), body instanceof AmqpSequence);
+        assertNotNull(body, "Body section was not present");
+        assertTrue(body instanceof AmqpSequence, "Body section was not of expected type: " + body.getClass());
     }
 
-    @Test(expected = MessageEOFException.class)
+    @Test
     public void testPeekWithNewMessageToSendThrowsMEOFE() throws Exception {
-        AmqpJmsStreamMessageFacade amqpStreamMessageFacade = createNewStreamMessageFacade();
-        amqpStreamMessageFacade.peek();
+        assertThrows(MessageEOFException.class, () -> {
+            AmqpJmsStreamMessageFacade amqpStreamMessageFacade = createNewStreamMessageFacade();
+            amqpStreamMessageFacade.peek();
+        });
     }
 
-    @Test(expected = MessageEOFException.class)
+    @Test
     public void testPopWithNewMessageToSendThrowsMEOFE() throws Exception {
-        AmqpJmsStreamMessageFacade amqpStreamMessageFacade = createNewStreamMessageFacade();
-        amqpStreamMessageFacade.pop();
+        assertThrows(MessageEOFException.class, () -> {
+            AmqpJmsStreamMessageFacade amqpStreamMessageFacade = createNewStreamMessageFacade();
+            amqpStreamMessageFacade.pop();
+        });
     }
 
     @Test
@@ -91,7 +96,7 @@ public class AmqpJmsStreamMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
 
         AmqpJmsStreamMessageFacade amqpStreamMessageFacade = createReceivedStreamMessageFacade(createMockAmqpConsumer(), message);
 
-        assertEquals("Unexpected value retrieved", Boolean.FALSE, amqpStreamMessageFacade.peek());
+        assertEquals(Boolean.FALSE, amqpStreamMessageFacade.peek(), "Unexpected value retrieved");
     }
 
     @Test
@@ -103,7 +108,7 @@ public class AmqpJmsStreamMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
 
         AmqpJmsStreamMessageFacade amqpStreamMessageFacade = createReceivedStreamMessageFacade(createMockAmqpConsumer(), message);
 
-        assertEquals("Unexpected value retrieved", Boolean.FALSE, amqpStreamMessageFacade.peek());
+        assertEquals(Boolean.FALSE, amqpStreamMessageFacade.peek(), "Unexpected value retrieved");
     }
 
     @Test
@@ -116,9 +121,9 @@ public class AmqpJmsStreamMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
 
         AmqpJmsStreamMessageFacade amqpStreamMessageFacade = createReceivedStreamMessageFacade(createMockAmqpConsumer(), message);
 
-        assertTrue("Message should report that it contains a body", amqpStreamMessageFacade.hasBody());
-        assertEquals("Unexpected value retrieved", Boolean.FALSE, amqpStreamMessageFacade.peek());
-        assertEquals("Unexpected value retrieved", Boolean.FALSE, amqpStreamMessageFacade.peek());
+        assertTrue(amqpStreamMessageFacade.hasBody(), "Message should report that it contains a body");
+        assertEquals(Boolean.FALSE, amqpStreamMessageFacade.peek(), "Unexpected value retrieved");
+        assertEquals(Boolean.FALSE, amqpStreamMessageFacade.peek(), "Unexpected value retrieved");
     }
 
     @Test
@@ -131,9 +136,9 @@ public class AmqpJmsStreamMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
 
         AmqpJmsStreamMessageFacade amqpStreamMessageFacade = createReceivedStreamMessageFacade(createMockAmqpConsumer(), message);
 
-        assertEquals("Unexpected value retrieved", Boolean.FALSE, amqpStreamMessageFacade.peek());
+        assertEquals(Boolean.FALSE, amqpStreamMessageFacade.peek(), "Unexpected value retrieved");
         amqpStreamMessageFacade.pop();
-        assertEquals("Unexpected value retrieved", Boolean.TRUE, amqpStreamMessageFacade.peek());
+        assertEquals(Boolean.TRUE, amqpStreamMessageFacade.peek(), "Unexpected value retrieved");
     }
 
     @Test
@@ -146,15 +151,15 @@ public class AmqpJmsStreamMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
 
         AmqpJmsStreamMessageFacade amqpStreamMessageFacade = createReceivedStreamMessageFacade(createMockAmqpConsumer(), message);
 
-        assertEquals("Unexpected value retrieved", Boolean.FALSE, amqpStreamMessageFacade.peek());
+        assertEquals(Boolean.FALSE, amqpStreamMessageFacade.peek(), "Unexpected value retrieved");
         amqpStreamMessageFacade.pop();
 
         amqpStreamMessageFacade.reset();
 
-        assertEquals("Unexpected value retrieved", Boolean.FALSE, amqpStreamMessageFacade.peek());
+        assertEquals(Boolean.FALSE, amqpStreamMessageFacade.peek(), "Unexpected value retrieved");
         amqpStreamMessageFacade.pop();
 
-        assertEquals("Unexpected value retrieved", Boolean.TRUE, amqpStreamMessageFacade.peek());
+        assertEquals(Boolean.TRUE, amqpStreamMessageFacade.peek(), "Unexpected value retrieved");
         amqpStreamMessageFacade.pop();
     }
 
@@ -168,9 +173,9 @@ public class AmqpJmsStreamMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
 
         AmqpJmsStreamMessageFacade amqpStreamMessageFacade = createReceivedStreamMessageFacade(createMockAmqpConsumer(), message);
 
-        assertEquals("Unexpected value retrieved", Boolean.FALSE, amqpStreamMessageFacade.peek());
+        assertEquals(Boolean.FALSE, amqpStreamMessageFacade.peek(), "Unexpected value retrieved");
         amqpStreamMessageFacade.pop();
-        assertEquals("Unexpected value retrieved", Boolean.TRUE, amqpStreamMessageFacade.peek());
+        assertEquals(Boolean.TRUE, amqpStreamMessageFacade.peek(), "Unexpected value retrieved");
         amqpStreamMessageFacade.pop();
 
         try {
@@ -182,26 +187,26 @@ public class AmqpJmsStreamMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
 
         amqpStreamMessageFacade.reset();
 
-        assertEquals("Unexpected value retrieved", Boolean.FALSE, amqpStreamMessageFacade.peek());
+        assertEquals(Boolean.FALSE, amqpStreamMessageFacade.peek(), "Unexpected value retrieved");
         amqpStreamMessageFacade.pop();
-        assertEquals("Unexpected value retrieved", Boolean.TRUE, amqpStreamMessageFacade.peek());
+        assertEquals(Boolean.TRUE, amqpStreamMessageFacade.peek(), "Unexpected value retrieved");
     }
 
     @Test
     public void testHasNext() throws Exception {
         AmqpJmsStreamMessageFacade amqpStreamMessageFacade = createNewStreamMessageFacade();
 
-        assertFalse("unexpected value", amqpStreamMessageFacade.hasNext());
+        assertFalse(amqpStreamMessageFacade.hasNext(), "unexpected value");
 
         // add some things
         amqpStreamMessageFacade.put(Boolean.TRUE);
         amqpStreamMessageFacade.put(Boolean.FALSE);
 
-        assertTrue("unexpected value", amqpStreamMessageFacade.hasNext());
+        assertTrue(amqpStreamMessageFacade.hasNext(), "unexpected value");
         amqpStreamMessageFacade.pop();
-        assertTrue("unexpected value", amqpStreamMessageFacade.hasNext());
+        assertTrue(amqpStreamMessageFacade.hasNext(), "unexpected value");
         amqpStreamMessageFacade.pop();
-        assertFalse("unexpected value", amqpStreamMessageFacade.hasNext());
+        assertFalse(amqpStreamMessageFacade.hasNext(), "unexpected value");
     }
 
     @Test
@@ -213,7 +218,7 @@ public class AmqpJmsStreamMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
         amqpStreamMessageFacade.put(Boolean.FALSE);
 
         // retrieve only some of it, leaving some unread
-        assertEquals("unexpected value", Boolean.TRUE, amqpStreamMessageFacade.peek());
+        assertEquals(Boolean.TRUE, amqpStreamMessageFacade.peek(), "unexpected value");
         amqpStreamMessageFacade.pop();
 
         // clear
@@ -223,7 +228,7 @@ public class AmqpJmsStreamMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
         amqpStreamMessageFacade.put(Character.valueOf('c'));
 
         // check we can get it alone before another IOOBE (i.e position was reset, other contents cleared)
-        assertEquals("unexpected value", Character.valueOf('c'), amqpStreamMessageFacade.peek());
+        assertEquals(Character.valueOf('c'), amqpStreamMessageFacade.peek(), "unexpected value");
         amqpStreamMessageFacade.pop();
 
         try {
@@ -243,7 +248,7 @@ public class AmqpJmsStreamMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
 
         AmqpJmsStreamMessageFacade amqpStreamMessageFacade = createReceivedStreamMessageFacade(createMockAmqpConsumer(), message);
 
-        assertEquals("Unexpected value retrieved", Boolean.FALSE, amqpStreamMessageFacade.peek());
+        assertEquals(Boolean.FALSE, amqpStreamMessageFacade.peek(), "Unexpected value retrieved");
         amqpStreamMessageFacade.pop();
 
         try {

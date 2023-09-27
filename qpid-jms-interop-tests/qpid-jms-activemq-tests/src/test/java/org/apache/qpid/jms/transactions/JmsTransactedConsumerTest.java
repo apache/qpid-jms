@@ -16,10 +16,10 @@
  */
 package org.apache.qpid.jms.transactions;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -43,7 +43,8 @@ import org.apache.qpid.jms.JmsConnectionListener;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.apache.qpid.jms.support.QpidJmsTestSupport;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Test consumer behavior for Transacted Session Consumers.
@@ -53,7 +54,8 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
     private final String MSG_NUM = "MSG_NUM";
     private final int MSG_COUNT = 1000;
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testCreateConsumerFromTxSession() throws Exception {
         connection = createAmqpConnection();
         connection.start();
@@ -62,12 +64,13 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
         assertNotNull(session);
         assertTrue(session.getTransacted());
 
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         MessageConsumer consumer = session.createConsumer(queue);
         assertNotNull(consumer);
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testConsumedInTxAreAcked() throws Exception {
         connection = createAmqpConnection();
         connection.start();
@@ -75,13 +78,13 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
         sendToAmqQueue(1);
 
         Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         MessageConsumer consumer = session.createConsumer(queue);
 
         Message message = consumer.receive(5000);
         assertNotNull(message);
 
-        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        QueueViewMBean proxy = getProxyToQueue(testMethodName);
         assertEquals(1, proxy.getQueueSize());
 
         session.commit();
@@ -89,7 +92,8 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
         assertEquals(0, proxy.getQueueSize());
     }
 
-    @Test(timeout=30000)
+    @Test
+    @Timeout(30)
     public void testRollbackRececeivedMessageAndClose() throws Exception {
 
         connection = createAmqpConnection();
@@ -112,18 +116,19 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
         connection.close();
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testReceiveAndRollback() throws Exception {
         connection = createAmqpConnection();
         connection.start();
 
         sendToAmqQueue(2);
 
-        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        QueueViewMBean proxy = getProxyToQueue(testMethodName);
         assertEquals(2, proxy.getQueueSize());
 
         Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         MessageConsumer consumer = session.createConsumer(queue);
 
         Message message = consumer.receive(3000);
@@ -141,24 +146,25 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
 
         // Consume again.. the prev message should get redelivered.
         message = consumer.receive(5000);
-        assertNotNull("Should have re-received the message again!", message);
+        assertNotNull(message, "Should have re-received the message again!");
         session.commit();
 
         assertEquals(0, proxy.getQueueSize());
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testReceiveTwoThenRollback() throws Exception {
         connection = createAmqpConnection();
         connection.start();
 
         sendToAmqQueue(2);
 
-        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        QueueViewMBean proxy = getProxyToQueue(testMethodName);
         assertEquals(2, proxy.getQueueSize());
 
         Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         MessageConsumer consumer = session.createConsumer(queue);
 
         Message message = consumer.receive(3000);
@@ -171,26 +177,27 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
 
         // Consume again.. the prev message should get redelivered.
         message = consumer.receive(5000);
-        assertNotNull("Should have re-received the message again!", message);
+        assertNotNull(message, "Should have re-received the message again!");
         message = consumer.receive(5000);
-        assertNotNull("Should have re-received the message again!", message);
+        assertNotNull(message, "Should have re-received the message again!");
         session.commit();
 
         assertEquals(0, proxy.getQueueSize());
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testReceiveTwoThenCloseSessionToRollback() throws Exception {
         connection = createAmqpConnection();
         connection.start();
 
         sendToAmqQueue(2);
 
-        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        QueueViewMBean proxy = getProxyToQueue(testMethodName);
         assertEquals(2, proxy.getQueueSize());
 
         Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         MessageConsumer consumer = session.createConsumer(queue);
 
         Message message = consumer.receive(3000);
@@ -203,16 +210,17 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
 
         // Consume again.. the prev message should get redelivered.
         message = consumer.receive(5000);
-        assertNotNull("Should have re-received the message again!", message);
+        assertNotNull(message, "Should have re-received the message again!");
         message = consumer.receive(5000);
-        assertNotNull("Should have re-received the message again!", message);
+        assertNotNull(message, "Should have re-received the message again!");
 
         session.close();
 
         assertEquals(2, proxy.getQueueSize());
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testReceiveSomeThenRollback() throws Exception {
         connection = createAmqpConnection();
         connection.start();
@@ -221,17 +229,17 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
         int consumeBeforeRollback = 2;
         sendToAmqQueue(totalCount);
 
-        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        QueueViewMBean proxy = getProxyToQueue(testMethodName);
         assertEquals(totalCount, proxy.getQueueSize());
 
         Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         MessageConsumer consumer = session.createConsumer(queue);
 
         for(int i = 1; i <= consumeBeforeRollback; i++) {
             Message message = consumer.receive(3000);
             assertNotNull(message);
-            assertEquals("Unexpected message number", i, message.getIntProperty(QpidJmsTestSupport.MESSAGE_NUMBER));
+            assertEquals(i, message.getIntProperty(QpidJmsTestSupport.MESSAGE_NUMBER), "Unexpected message number");
         }
 
         session.rollback();
@@ -243,34 +251,35 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
         List<Integer> messageNumbers = new ArrayList<Integer>();
         for(int i = 1; i <= totalCount; i++) {
             Message message = consumer.receive(3000);
-            assertNotNull("Failed to receive message: " + i, message);
+            assertNotNull(message, "Failed to receive message: " + i);
             int msgNum = message.getIntProperty(QpidJmsTestSupport.MESSAGE_NUMBER);
             messageNumbers.add(msgNum);
         }
 
         session.commit();
 
-        assertEquals("Unexpected size of list", totalCount, messageNumbers.size());
+        assertEquals(totalCount, messageNumbers.size(), "Unexpected size of list");
         for(int i = 0; i < messageNumbers.size(); i++)
         {
-            assertEquals("Unexpected order of messages: " + messageNumbers, Integer.valueOf(i + 1), messageNumbers.get(i));
+            assertEquals(Integer.valueOf(i + 1), messageNumbers.get(i), "Unexpected order of messages: " + messageNumbers);
         }
 
         assertEquals(0, proxy.getQueueSize());
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testCloseConsumerBeforeCommit() throws Exception {
         connection = createAmqpConnection();
         connection.start();
 
         sendToAmqQueue(2);
 
-        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        QueueViewMBean proxy = getProxyToQueue(testMethodName);
         assertEquals(2, proxy.getQueueSize());
 
         Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         MessageConsumer consumer = session.createConsumer(queue);
         TextMessage message = (TextMessage) consumer.receive(5000);
         assertNotNull(message);
@@ -289,14 +298,15 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
         assertEquals(0, proxy.getQueueSize());
     }
 
-    @Test(timeout=60000)
+    @Test
+    @Timeout(60)
     public void testJMSXDeliveryCount() throws Exception {
         sendToAmqQueue(1);
 
         connection = createAmqpConnection();
         Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
         assertEquals(true, session.getTransacted());
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         MessageConsumer consumer = session.createConsumer(queue);
         connection.start();
 
@@ -328,7 +338,8 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
         session.commit();
     }
 
-    @Test(timeout=30000)
+    @Test
+    @Timeout(30)
     public void testSessionTransactedCommitWithLocalPriorityReordering() throws Exception {
         connection = createAmqpConnection();
         ((JmsConnection) connection).setLocalMessagePriority(true);
@@ -398,7 +409,7 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
         session.commit();
 
         // Wait for them all to arrive at the consumer
-        assertTrue("Messages didnt all arrive in given time.", messagesArrived.await(5, TimeUnit.SECONDS));
+        assertTrue(messagesArrived.await(5, TimeUnit.SECONDS), "Messages didnt all arrive in given time.");
 
         // Receive the other messages. Expect higher priority messages first.
         msg = consumer.receive(3000);
@@ -429,7 +440,8 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
         session.close();
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testSingleConsumedMessagePerTxCase() throws Exception {
         connection = createAmqpConnection();
         connection.start();
@@ -467,7 +479,8 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
         session.close();
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testConsumeAllMessagesInSingleTxCase() throws Exception {
         connection = createAmqpConnection();
         connection.start();
@@ -505,13 +518,14 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
         session.close();
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testConsumerClosesAfterItsTXCommits() throws Exception {
         connection = createAmqpConnection();
         connection.start();
 
         Session mgmtSession = connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
-        Queue queue = mgmtSession.createQueue(name.getMethodName());
+        Queue queue = mgmtSession.createQueue(testMethodName);
 
         // Send a message that will be rolled back.
         Session senderSession = connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
@@ -524,7 +538,7 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
         Session txSession = connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
         MessageConsumer consumer = txSession.createConsumer(queue);
         Message received = consumer.receive(1000);
-        assertNotNull("Consumer didn't receive the message", received);
+        assertNotNull(received, "Consumer didn't receive the message");
         txSession.rollback();
         consumer.close();
 
@@ -532,13 +546,14 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
         Session nonTxSession = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         consumer = nonTxSession.createConsumer(queue);
         received = consumer.receive(1000);
-        assertNotNull("receiver3 didn't received the message", received);
+        assertNotNull(received, "receiver3 didn't received the message");
         consumer.close();
 
         connection.close();
     }
 
-    @Test(timeout = 90000)
+    @Test
+    @Timeout(90)
     public void testConsumerMessagesInOrder() throws Exception {
 
         final int ITERATIONS = 5;

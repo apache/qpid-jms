@@ -18,7 +18,7 @@
  */
 package org.apache.qpid.jms.integration;
 
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.util.Map;
 

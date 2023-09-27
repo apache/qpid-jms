@@ -26,17 +26,18 @@ import org.apache.qpid.jms.provider.amqp.AmqpConnection;
 import org.apache.qpid.jms.provider.amqp.AmqpConsumer;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.proton.message.Message;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInfo;
 import org.mockito.Mockito;
 
 public class AmqpJmsMessageTypesTestCase extends QpidJmsTestCase {
 
     private JmsDestination consumerDestination;
 
-    @Before
+    @BeforeEach
     @Override
-    public void setUp() throws Exception {
-        super.setUp();
+    public void setUp(TestInfo testInfo) throws Exception {
+        super.setUp(testInfo);
         consumerDestination = new JmsTopic("TestTopic");
     };
 

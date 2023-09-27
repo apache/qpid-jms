@@ -16,16 +16,16 @@
  */
 package org.apache.qpid.jms.provider.amqp.message;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.qpid.proton.amqp.UnsignedByte;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.apache.qpid.proton.amqp.messaging.Header;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test the AmqpHeader implementation
@@ -102,7 +102,7 @@ public class AmqpHeaderTest {
     public void testGetHeaderReturnsNullWhenAllDefault() {
         AmqpHeader header = new AmqpHeader();
 
-        assertNull("Header should not have been created as values are defaulted", header.getHeader());
+        assertNull(header.getHeader(), "Header should not have been created as values are defaulted");
     }
 
     @Test
@@ -111,7 +111,7 @@ public class AmqpHeaderTest {
         amqpHeader.setDurable(true);
 
         Header header = amqpHeader.getHeader();
-        assertNotNull("Header should have been created as values are not all defaulted", header);
+        assertNotNull(header, "Header should have been created as values are not all defaulted");
         assertTrue(header.getDurable());
     }
 
@@ -122,7 +122,7 @@ public class AmqpHeaderTest {
         amqpHeader.setDeliveryCount(count);
 
         Header header = amqpHeader.getHeader();
-        assertNotNull("Header should have been created as values are not all defaulted", header);
+        assertNotNull(header, "Header should have been created as values are not all defaulted");
         assertEquals(UnsignedInteger.valueOf(count), header.getDeliveryCount());
     }
 
@@ -133,7 +133,7 @@ public class AmqpHeaderTest {
         amqpHeader.setPriority(priority);
 
         Header header = amqpHeader.getHeader();
-        assertNotNull("Header should have been created as values are not all defaulted", header);
+        assertNotNull(header, "Header should have been created as values are not all defaulted");
         assertEquals(UnsignedByte.valueOf(priority), header.getPriority());
     }
 
@@ -144,7 +144,7 @@ public class AmqpHeaderTest {
         amqpHeader.setTimeToLive(ttl);
 
         Header header = amqpHeader.getHeader();
-        assertNotNull("Header should have been created as values are not all defaulted", header);
+        assertNotNull(header, "Header should have been created as values are not all defaulted");
         assertEquals(UnsignedInteger.valueOf(ttl), header.getTtl());
     }
 
@@ -154,7 +154,7 @@ public class AmqpHeaderTest {
         amqpHeader.setFirstAcquirer(true);
 
         Header header = amqpHeader.getHeader();
-        assertNotNull("Header should have been created as values are not all defaulted", header);
+        assertNotNull(header, "Header should have been created as values are not all defaulted");
         assertTrue(header.getFirstAcquirer());
     }
 

@@ -34,13 +34,13 @@ import org.apache.activemq.broker.region.policy.PolicyEntry;
 import org.apache.activemq.broker.region.policy.PolicyMap;
 import org.apache.activemq.broker.region.policy.VMPendingQueueMessageStoragePolicy;
 import org.apache.qpid.jms.support.AmqpTestSupport;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 /**
  * Collect some basic throughput data on message producer.
  */
-@Ignore
+@Disabled
 public class ProduceToAMQPTest extends AmqpTestSupport {
 
     private final int MSG_COUNT = 50 * 1000;

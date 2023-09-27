@@ -27,12 +27,13 @@ import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.LEGAC
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.LEGACY_TEMPORARY_ATTRIBUTE;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.LEGACY_TOPIC_ATTRIBUTE;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.LEGACY_TO_TYPE_MSG_ANNOTATION_SYMBOL;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -43,7 +44,7 @@ import org.apache.qpid.jms.JmsTemporaryQueue;
 import org.apache.qpid.jms.JmsTemporaryTopic;
 import org.apache.qpid.jms.JmsTopic;
 import org.apache.qpid.jms.provider.amqp.AmqpConnection;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 public class AmqpDestinationHelperTest {
@@ -699,15 +700,19 @@ public class AmqpDestinationHelperTest {
         Mockito.verify(message).removeMessageAnnotation(JMS_DEST_TYPE_MSG_ANNOTATION_SYMBOL);
     }
 
-    @Test(expected=NullPointerException.class)
+    @Test
     public void testSetToAddressFromDestinationWithNullDestinationAndNullMessage() {
-        AmqpDestinationHelper.setToAddressFromDestination(null, null);
+        assertThrows(NullPointerException.class, () -> {
+            AmqpDestinationHelper.setToAddressFromDestination(null, null);
+        });
     }
 
-    @Test(expected=NullPointerException.class)
+    @Test
     public void testSetToAddressFromDestinationWithNullMessage() {
-        JmsDestination destination = new JmsQueue("testAddress");
-        AmqpDestinationHelper.setToAddressFromDestination(null, destination);
+        assertThrows(NullPointerException.class, () -> {
+            JmsDestination destination = new JmsQueue("testAddress");
+            AmqpDestinationHelper.setToAddressFromDestination(null, destination);
+        });
     }
 
     @Test
@@ -811,15 +816,19 @@ public class AmqpDestinationHelperTest {
         Mockito.verify(message).removeMessageAnnotation(JMS_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL);
     }
 
-    @Test(expected=NullPointerException.class)
+    @Test
     public void testSetReplyToAddressFromDestinationWithNullDestinationAndNullMessage() {
-        AmqpDestinationHelper.setReplyToAddressFromDestination(null, null);
+        assertThrows(NullPointerException.class, () -> {
+            AmqpDestinationHelper.setReplyToAddressFromDestination(null, null);
+        });
     }
 
-    @Test(expected=NullPointerException.class)
+    @Test
     public void testSetReplyToAddressFromDestinationWithNullMessage() {
-        JmsDestination destination = new JmsQueue("testAddress");
-        AmqpDestinationHelper.setReplyToAddressFromDestination(null, destination);
+        assertThrows(NullPointerException.class, () -> {
+            JmsDestination destination = new JmsQueue("testAddress");
+            AmqpDestinationHelper.setReplyToAddressFromDestination(null, destination);
+        });
     }
 
     @Test

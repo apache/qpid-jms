@@ -16,6 +16,8 @@
  */
 package org.apache.qpid.jms.provider.failover;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import java.net.URI;
 import java.util.Collections;
 
@@ -30,8 +32,10 @@ import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.apache.qpid.jms.provider.ProviderException;
 import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.provider.ProviderFutureFactory;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Test that methods of FailoverProvider all fail immediately when it is closed.
@@ -46,9 +50,9 @@ public class FailoverProviderClosedTest extends FailoverProviderTestSupport {
     private JmsConsumerInfo consumer;
 
     @Override
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
+        super.setUp(testInfo);
 
         provider = (FailoverProvider) FailoverProviderFactory.create(new URI("failover:(mock://localhost)"));
         provider.close();
@@ -58,94 +62,137 @@ public class FailoverProviderClosedTest extends FailoverProviderTestSupport {
         consumer = createConsumerInfo(session);
     }
 
-    @Test(timeout=30000)
+    @Test
+    @Timeout(30)
     public void testMultipleCloseCalls() {
         provider.close();
     }
 
-    @Test(timeout=30000, expected=ProviderException.class)
+    @Test
+    @Timeout(30)
     public void testConnect() throws Exception {
-        provider.connect(connection);
+        assertThrows(ProviderException.class, () -> {
+            provider.connect(connection);
+        });
     }
 
-    @Test(timeout=30000, expected=ProviderException.class)
+    @Test
+    @Timeout(30)
     public void testStart() throws Exception {
-        provider.start();
+        assertThrows(ProviderException.class, () -> {
+            provider.start();
+        });
     }
 
-    @Test(timeout=30000, expected=ProviderException.class)
+    @Test
+    @Timeout(30)
     public void testCreateResource() throws Exception {
-        ProviderFuture request = futuresFactory.createFuture();
-        provider.create(connection, request);
+        assertThrows(ProviderException.class, () -> {
+            ProviderFuture request = futuresFactory.createFuture();
+            provider.create(connection, request);
+        });
     }
 
-    @Test(timeout=30000, expected=ProviderException.class)
+    @Test
+    @Timeout(30)
     public void testStartResource() throws Exception {
-        ProviderFuture request = futuresFactory.createFuture();
-        provider.start(session, request);
+        assertThrows(ProviderException.class, () -> {
+            ProviderFuture request = futuresFactory.createFuture();
+            provider.start(session, request);
+        });
     }
 
-    @Test(timeout=30000, expected=ProviderException.class)
+    @Test
+    @Timeout(30)
     public void testStopResource() throws Exception {
-        ProviderFuture request = futuresFactory.createFuture();
-        provider.stop(session, request);
+        assertThrows(ProviderException.class, () -> {
+            ProviderFuture request = futuresFactory.createFuture();
+            provider.stop(session, request);
+        });
     }
 
-    @Test(timeout=30000, expected=ProviderException.class)
+    @Test
+    @Timeout(30)
     public void testDestroyResource() throws Exception {
-        ProviderFuture request = futuresFactory.createFuture();
-        provider.destroy(session, request);
+        assertThrows(ProviderException.class, () -> {
+            ProviderFuture request = futuresFactory.createFuture();
+            provider.destroy(session, request);
+        });
     }
 
-    @Test(timeout=30000, expected=ProviderException.class)
+    @Test
+    @Timeout(30)
     public void testSend() throws Exception {
-        ProviderFuture request = futuresFactory.createFuture();
-        provider.send(new JmsOutboundMessageDispatch(), request);
+        assertThrows(ProviderException.class, () -> {
+            ProviderFuture request = futuresFactory.createFuture();
+            provider.send(new JmsOutboundMessageDispatch(), request);
+        });
     }
 
-    @Test(timeout=30000, expected=ProviderException.class)
+    @Test
+    @Timeout(30)
     public void testSessionAcknowledge() throws Exception {
-        ProviderFuture request = futuresFactory.createFuture();
-        provider.acknowledge(session.getId(), ACK_TYPE.ACCEPTED, request);
+        assertThrows(ProviderException.class, () -> {
+            ProviderFuture request = futuresFactory.createFuture();
+            provider.acknowledge(session.getId(), ACK_TYPE.ACCEPTED, request);
+        });
     }
 
-    @Test(timeout=30000, expected=ProviderException.class)
+    @Test
+    @Timeout(30)
     public void testAcknowledgeMessage() throws Exception {
-        ProviderFuture request = futuresFactory.createFuture();
-        provider.acknowledge(new JmsInboundMessageDispatch(1), ACK_TYPE.ACCEPTED, request);
+        assertThrows(ProviderException.class, () -> {
+            ProviderFuture request = futuresFactory.createFuture();
+            provider.acknowledge(new JmsInboundMessageDispatch(1), ACK_TYPE.ACCEPTED, request);
+        });
     }
 
-    @Test(timeout=30000, expected=ProviderException.class)
+    @Test
+    @Timeout(30)
     public void testCommit() throws Exception {
-        ProviderFuture request = futuresFactory.createFuture();
-        JmsTransactionId txId = new JmsTransactionId(connection.getId(), 1);
-        JmsTransactionInfo txInfo = new JmsTransactionInfo(session.getId(), txId);
-        provider.commit(txInfo, null, request);
+        assertThrows(ProviderException.class, () -> {
+            ProviderFuture request = futuresFactory.createFuture();
+            JmsTransactionId txId = new JmsTransactionId(connection.getId(), 1);
+            JmsTransactionInfo txInfo = new JmsTransactionInfo(session.getId(), txId);
+            provider.commit(txInfo, null, request);
+        });
     }
 
-    @Test(timeout=30000, expected=ProviderException.class)
+    @Test
+    @Timeout(30)
     public void testRollback() throws Exception {
-        ProviderFuture request = futuresFactory.createFuture();
-        JmsTransactionId txId = new JmsTransactionId(connection.getId(), 1);
-        JmsTransactionInfo txInfo = new JmsTransactionInfo(session.getId(), txId);
-        provider.rollback(txInfo, null, request);
+        assertThrows(ProviderException.class, () -> {
+            ProviderFuture request = futuresFactory.createFuture();
+            JmsTransactionId txId = new JmsTransactionId(connection.getId(), 1);
+            JmsTransactionInfo txInfo = new JmsTransactionInfo(session.getId(), txId);
+            provider.rollback(txInfo, null, request);
+        });
     }
 
-    @Test(timeout=30000, expected=ProviderException.class)
+    @Test
+    @Timeout(30)
     public void testRecover() throws Exception {
-        ProviderFuture request = futuresFactory.createFuture();
-        provider.recover(session.getId(), request);
+        assertThrows(ProviderException.class, () -> {
+            ProviderFuture request = futuresFactory.createFuture();
+            provider.recover(session.getId(), request);
+        });
     }
 
-    @Test(timeout=30000, expected=ProviderException.class)
+    @Test
+    @Timeout(30)
     public void testUnsubscribe() throws Exception {
-        ProviderFuture request = futuresFactory.createFuture();
-        provider.unsubscribe("subscription-name", request);
+        assertThrows(ProviderException.class, () -> {
+            ProviderFuture request = futuresFactory.createFuture();
+            provider.unsubscribe("subscription-name", request);
+        });
     }
 
-    @Test(timeout=30000, expected=ProviderException.class)
+    @Test
+    @Timeout(30)
     public void testMessagePull() throws Exception {
-        ProviderFuture request = futuresFactory.createFuture();
-        provider.pull(consumer.getId(), 1, request);
+        assertThrows(ProviderException.class, () -> {
+            ProviderFuture request = futuresFactory.createFuture();
+            provider.pull(consumer.getId(), 1, request);
+        });
     }
 }

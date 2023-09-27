@@ -16,9 +16,10 @@
  */
 package org.apache.qpid.jms.message;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import jakarta.jms.Destination;
 import jakarta.jms.JMSException;
@@ -28,7 +29,7 @@ import jakarta.jms.Topic;
 import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.JmsQueue;
 import org.apache.qpid.jms.JmsTopic;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 public class JmsDefaultUnresolvedDestinationTransformerTest {
@@ -111,9 +112,11 @@ public class JmsDefaultUnresolvedDestinationTransformerTest {
         assertTrue(destination instanceof JmsQueue);
     }
 
-    @Test(expected=JMSException.class)
+    @Test
     public void testTransformStringWithNullThrowsJMSEx() throws JMSException {
-        transformer.transform((String) null);
+        assertThrows(JMSException.class, () -> {
+            transformer.transform((String) null);
+        });
     }
 
     //-------- Custom foreign destination type -------------------------------//

@@ -33,6 +33,7 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -127,7 +128,6 @@ import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
-import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -394,7 +394,7 @@ public class TestAmqpPeer implements AutoCloseable
             message += System.lineSeparator() + "A *potential* reason, peer caught throwable: " + t;
         }
 
-        Assert.assertTrue(message, countedDownOk);
+        assertTrue(countedDownOk, message);
     }
 
     public boolean waitForAllHandlersToCompleteNoAssert(int timeoutMillis) throws InterruptedException

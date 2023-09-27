@@ -16,10 +16,10 @@
  */
 package org.apache.qpid.jms.producer;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import jakarta.jms.Destination;
 import jakarta.jms.InvalidDestinationException;
@@ -32,9 +32,11 @@ import org.apache.qpid.jms.JmsConnectionTestSupport;
 import org.apache.qpid.jms.JmsQueueSession;
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
 import org.apache.qpid.jms.provider.mock.MockRemotePeer;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.Timeout;
 
 public class JmsQueueSenderTest extends JmsConnectionTestSupport {
 
@@ -42,16 +44,16 @@ public class JmsQueueSenderTest extends JmsConnectionTestSupport {
     private final MockRemotePeer remotePeer = new MockRemotePeer();
 
     @Override
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
+        super.setUp(testInfo);
         remotePeer.start();
         connection = createConnectionToMockProvider();
         session = (JmsQueueSession) connection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
     }
 
     @Override
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         try {
             remotePeer.terminate();
@@ -60,7 +62,8 @@ public class JmsQueueSenderTest extends JmsConnectionTestSupport {
         }
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testMultipleCloseCallsNoErrors() throws Exception {
         Queue queue = session.createQueue(getTestName());
         QueueSender sender = session.createSender(queue);
@@ -68,14 +71,16 @@ public class JmsQueueSenderTest extends JmsConnectionTestSupport {
         sender.close();
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testGetQueue() throws Exception {
         Queue queue = session.createQueue(getTestName());
         QueueSender sender = session.createSender(queue);
         assertSame(queue, sender.getQueue());
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testSendToQueueWithNullOnExplicitQueueSender() throws Exception {
         Queue queue = session.createQueue(getTestName());
         QueueSender sender = session.createSender(null);
@@ -89,7 +94,8 @@ public class JmsQueueSenderTest extends JmsConnectionTestSupport {
         assertEquals(queue, destination);
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testSendToQueueWithDeliveryOptsWithNullOnExplicitQueueSender() throws Exception {
         Queue queue = session.createQueue(getTestName());
         QueueSender sender = session.createSender(null);
@@ -103,7 +109,8 @@ public class JmsQueueSenderTest extends JmsConnectionTestSupport {
         assertEquals(queue, destination);
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testSendToQueueWithNullOnExplicitQueueSenderThrowsInvalidDestinationException() throws Exception {
         Queue queue = session.createQueue(getTestName());
         QueueSender sender = session.createSender(queue);
@@ -116,7 +123,8 @@ public class JmsQueueSenderTest extends JmsConnectionTestSupport {
         }
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testSendToQueueWithDeliveryOptsWithNullOnExplicitQueueSenderThrowsInvalidDestinationException() throws Exception {
         Queue queue = session.createQueue(getTestName());
         QueueSender sender = session.createSender(queue);

@@ -16,6 +16,8 @@
  */
 package org.apache.qpid.jms.consumer;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import jakarta.jms.JMSException;
 import jakarta.jms.Message;
 import jakarta.jms.MessageConsumer;
@@ -24,8 +26,10 @@ import jakarta.jms.Queue;
 import jakarta.jms.Session;
 
 import org.apache.qpid.jms.JmsConnectionTestSupport;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Tests MessageConsumer method contracts after the MessageConsumer is closed.
@@ -37,54 +41,73 @@ public class JmsMessageConsumerClosedTest extends JmsConnectionTestSupport {
     protected MessageConsumer createConsumer() throws Exception {
         connection = createConnectionToMockProvider();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue destination = session.createQueue(_testName.getMethodName());
+        Queue destination = session.createQueue(_testMethodName);
         MessageConsumer consumer = session.createConsumer(destination);
         consumer.close();
         return consumer;
     }
 
     @Override
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
+        super.setUp(testInfo);
         consumer = createConsumer();
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testGetMessageSelectorFails() throws Exception {
-        consumer.getMessageSelector();
-    }
-
-    @Test(timeout=30000, expected=JMSException.class)
-    public void testGetMessageListenerFails() throws Exception {
-        consumer.getMessageListener();
-    }
-
-    @Test(timeout=30000, expected=JMSException.class)
-    public void testSetMessageListenerFails() throws Exception {
-        consumer.setMessageListener(new MessageListener() {
-            @Override
-            public void onMessage(Message message) {
-            }
+        assertThrows(JMSException.class, () -> {
+            consumer.getMessageSelector();
         });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
+    public void testGetMessageListenerFails() throws Exception {
+        assertThrows(JMSException.class, () -> {
+            consumer.getMessageListener();
+        });
+    }
+
+    @Test
+    @Timeout(30)
+    public void testSetMessageListenerFails() throws Exception {
+        assertThrows(JMSException.class, () -> {
+            consumer.setMessageListener(new MessageListener() {
+                @Override
+                public void onMessage(Message message) {
+                }
+            });
+        });
+    }
+
+    @Test
+    @Timeout(30)
     public void testRreceiveFails() throws Exception {
-        consumer.receive();
+        assertThrows(JMSException.class, () -> {
+            consumer.receive();
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testRreceiveTimedFails() throws Exception {
-        consumer.receive(11);
+        assertThrows(JMSException.class, () -> {
+            consumer.receive(11);
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testRreceiveNoWaitFails() throws Exception {
-        consumer.receiveNoWait();
+        assertThrows(JMSException.class, () -> {
+            consumer.receiveNoWait();
+        });
     }
 
-    @Test(timeout=30000)
+    @Test
+    @Timeout(30)
     public void testClose() throws Exception {
         consumer.close();
     }

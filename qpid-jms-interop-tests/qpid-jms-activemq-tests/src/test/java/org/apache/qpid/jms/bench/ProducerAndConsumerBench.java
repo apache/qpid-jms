@@ -16,8 +16,8 @@
  */
 package org.apache.qpid.jms.bench;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Vector;
 import java.util.concurrent.ExecutorService;
@@ -40,13 +40,14 @@ import org.apache.activemq.broker.region.policy.PolicyMap;
 import org.apache.activemq.broker.region.policy.VMPendingQueueMessageStoragePolicy;
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.support.AmqpTestSupport;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Ignore
+@Disabled
 public class ProducerAndConsumerBench extends AmqpTestSupport  {
 
     private static final Logger LOG = LoggerFactory.getLogger(ProducerAndConsumerBench.class);
@@ -64,9 +65,9 @@ public class ProducerAndConsumerBench extends AmqpTestSupport  {
     private final long NUM_SENDS = 30000;
 
     @Override
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
+        super.setUp(testInfo);
 
         for (int i = 0; i < PAYLOAD_SIZE; ++i) {
             payload[i] = (byte) (i % 255);
@@ -74,7 +75,7 @@ public class ProducerAndConsumerBench extends AmqpTestSupport  {
     }
 
     @Test
-    public void testProduceConsume() throws Exception {
+    void testProduceConsume() throws Exception {
         this.factory = createAmqpConnectionFactory();
 
         final AtomicLong sharedSendCount = new AtomicLong(NUM_SENDS);
@@ -112,8 +113,8 @@ public class ProducerAndConsumerBench extends AmqpTestSupport  {
 
         executorService.shutdown();
         executorService.awaitTermination(30, TimeUnit.MINUTES);
-        assertTrue("Producers done in time", executorService.isTerminated());
-        assertTrue("No exceptions: " + exceptions, exceptions.isEmpty());
+        assertTrue(executorService.isTerminated(), "Producers done in time");
+        assertTrue(exceptions.isEmpty(), "No exceptions: " + exceptions);
 
         double duration = System.currentTimeMillis() - start;
         LOG.info("Duration:            " + duration + "ms");
@@ -131,7 +132,7 @@ public class ProducerAndConsumerBench extends AmqpTestSupport  {
             if ((count.get() % 10000) == 0) {
                 LOG.info("Received message: {}", NUM_SENDS - count.get());
             }
-            assertNotNull("got message " + v, consumer.receive(15000));
+            assertNotNull(consumer.receive(15000), "got message " + v);
         }
         consumer.close();
     }

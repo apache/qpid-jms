@@ -16,9 +16,9 @@
  */
 package org.apache.qpid.jms.consumer;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import jakarta.jms.Message;
 import jakarta.jms.MessageListener;
@@ -28,8 +28,10 @@ import jakarta.jms.TopicSession;
 import jakarta.jms.TopicSubscriber;
 
 import org.apache.qpid.jms.JmsConnectionTestSupport;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Test the basic contract of the TopicSubscriber
@@ -41,27 +43,30 @@ public class JmsTopicSubscriberTest extends JmsConnectionTestSupport {
     protected TopicSubscriber subscriber;
 
     @Override
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
+        super.setUp(testInfo);
         topicConnection = createTopicConnectionToMockProvider();
         session = topicConnection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
-        topic = session.createTopic(_testName.getMethodName());
+        topic = session.createTopic(_testMethodName);
         subscriber = session.createSubscriber(topic);
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testMultipleCloseCalls() throws Exception {
         subscriber.close();
         subscriber.close();
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testGetQueue() throws Exception {
         assertEquals(topic, subscriber.getTopic());
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testGetMessageListener() throws Exception {
         assertNull(subscriber.getMessageListener());
         subscriber.setMessageListener(new MessageListener() {
@@ -73,7 +78,8 @@ public class JmsTopicSubscriberTest extends JmsConnectionTestSupport {
         assertNotNull(subscriber.getMessageListener());
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testGetMessageSelector() throws Exception {
         assertNull(subscriber.getMessageSelector());
     }

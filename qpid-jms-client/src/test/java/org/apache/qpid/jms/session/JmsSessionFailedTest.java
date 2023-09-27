@@ -16,7 +16,7 @@
  */
 package org.apache.qpid.jms.session;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.concurrent.TimeUnit;
 
@@ -45,7 +45,7 @@ public class JmsSessionFailedTest extends JmsSessionClosedTest {
             public void onException(JMSException exception) {
             }
         });
-        Queue destination = session.createQueue(_testName.getMethodName());
+        Queue destination = session.createQueue(_testMethodName);
 
         sender = session.createProducer(destination);
         receiver = session.createConsumer(destination);

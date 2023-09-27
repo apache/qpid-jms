@@ -16,9 +16,9 @@
  */
 package org.apache.qpid.jms.consumer;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import jakarta.jms.Message;
 import jakarta.jms.MessageListener;
@@ -28,8 +28,10 @@ import jakarta.jms.QueueSession;
 import jakarta.jms.Session;
 
 import org.apache.qpid.jms.JmsConnectionTestSupport;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Test the basic contract of the QueueReceiver
@@ -41,27 +43,30 @@ public class JmsQueueReceiverTest extends JmsConnectionTestSupport {
     protected QueueReceiver receiver;
 
     @Override
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
+        super.setUp(testInfo);
         queueConnection = createQueueConnectionToMockProvider();
         session = queueConnection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
-        queue = session.createQueue(_testName.getMethodName());
+        queue = session.createQueue(_testMethodName);
         receiver = session.createReceiver(queue);
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testMultipleCloseCalls() throws Exception {
         receiver.close();
         receiver.close();
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testGetQueue() throws Exception {
         assertEquals(queue, receiver.getQueue());
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testGetMessageListener() throws Exception {
         assertNull(receiver.getMessageListener());
         receiver.setMessageListener(new MessageListener() {
@@ -73,7 +78,8 @@ public class JmsQueueReceiverTest extends JmsConnectionTestSupport {
         assertNotNull(receiver.getMessageListener());
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testGetMessageSelector() throws Exception {
         assertNull(receiver.getMessageSelector());
     }

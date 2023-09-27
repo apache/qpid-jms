@@ -27,12 +27,12 @@ import static org.apache.qpid.jms.tracing.opentracing.OpenTracingTracer.REDELIVE
 import static org.apache.qpid.jms.tracing.opentracing.OpenTracingTracer.SEND_SPAN_NAME;
 import static org.apache.qpid.jms.tracing.opentracing.OpenTracingTracer.STATE;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -74,7 +74,8 @@ import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.hamcrest.Matchers;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
@@ -89,7 +90,8 @@ import io.opentracing.tag.Tags;
 
 public class OpenTracingIntegrationTest extends QpidJmsTestCase {
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSend() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnectionFactory factory = new JmsConnectionFactory(createPeerURI(testPeer));
@@ -133,41 +135,41 @@ public class OpenTracingIntegrationTest extends QpidJmsTestCase {
             testPeer.waitForAllHandlersToComplete(2000);
 
             List<MockSpan> finishedSpans = mockTracer.finishedSpans();
-            assertEquals("Expected 1 finished span: " + finishedSpans, 1, finishedSpans.size());
+            assertEquals(1, finishedSpans.size(), "Expected 1 finished span: " + finishedSpans);
             Span sendSpan = finishedSpans.get(0);
-            assertEquals("Unexpected span class", MockSpan.class, sendSpan.getClass());
+            assertEquals(MockSpan.class, sendSpan.getClass(), "Unexpected span class");
             MockSpan sendMockSpan = (MockSpan) sendSpan;
 
-            assertEquals("Expected span to have no parent", 0, sendMockSpan.parentId());
-            assertEquals("Unexpected span operation name", SEND_SPAN_NAME, sendMockSpan.operationName());
+            assertEquals(0, sendMockSpan.parentId(), "Expected span to have no parent");
+            assertEquals(SEND_SPAN_NAME, sendMockSpan.operationName(), "Unexpected span operation name");
 
             // Verify tags set on the completed span
             Map<String, Object> spanTags = sendMockSpan.tags();
-            assertFalse("Expected some tags", spanTags.isEmpty());
-            assertFalse("Expected error tag not to be set", spanTags.containsKey(Tags.ERROR.getKey()));
+            assertFalse(spanTags.isEmpty(), "Expected some tags");
+            assertFalse(spanTags.containsKey(Tags.ERROR.getKey()), "Expected error tag not to be set");
             assertEquals(Tags.SPAN_KIND_PRODUCER, spanTags.get(Tags.SPAN_KIND.getKey()));
             assertEquals(queueName, spanTags.get(Tags.MESSAGE_BUS_DESTINATION.getKey()));
             assertEquals(COMPONENT, spanTags.get(Tags.COMPONENT.getKey()));
 
             // Verify log set on the completed span
             List<LogEntry> entries = sendMockSpan.logEntries();
-            assertEquals("Expected 1 log entry: " + entries, 1, entries.size());
+            assertEquals(1, entries.size(), "Expected 1 log entry: " + entries);
 
             Map<String, ?> entryFields = entries.get(0).fields();
-            assertFalse("Expected some log entry fields", entryFields.isEmpty());
-            assertNotNull("Expected a state description", entryFields.get(STATE));
+            assertFalse(entryFields.isEmpty(), "Expected some log entry fields");
+            assertNotNull(entryFields.get(STATE), "Expected a state description");
             assertEquals(DELIVERY_SETTLED, entryFields.get(Fields.EVENT));
 
             // Verify the context sent on the wire matches the original span
             Object obj = msgAnnotationsMatcher.getReceivedAnnotation(Symbol.valueOf(ANNOTATION_KEY));
-            assertTrue("annotation was not a map", obj instanceof Map);
+            assertTrue(obj instanceof Map, "annotation was not a map");
             @SuppressWarnings("unchecked")
             Map<String, String> traceInfo = (Map<String, String>) obj;
-            assertFalse("Expected some content in map", traceInfo.isEmpty());
+            assertFalse(traceInfo.isEmpty(), "Expected some content in map");
 
             SpanContext extractedContext = mockTracer.extract(Format.Builtin.TEXT_MAP, new TextMapAdapter(traceInfo));
-            assertEquals("Unexpected context class", MockContext.class, extractedContext.getClass());
-            assertEquals("Extracted context spanId did not match original", sendMockSpan.context().spanId(), ((MockContext) extractedContext).spanId());
+            assertEquals(MockContext.class, extractedContext.getClass(), "Unexpected context class");
+            assertEquals(sendMockSpan.context().spanId(), ((MockContext) extractedContext).spanId(), "Extracted context spanId did not match original");
 
             testPeer.expectClose();
             connection.close();
@@ -176,7 +178,8 @@ public class OpenTracingIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendPreSettled() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnectionFactory factory = new JmsConnectionFactory(createPeerURI(testPeer, "jms.presettlePolicy.presettleProducers=true"));
@@ -221,44 +224,44 @@ public class OpenTracingIntegrationTest extends QpidJmsTestCase {
             // Await the pre-settled transfer completing (so we can get some details of it from the peer) and span finishing.
             testPeer.waitForAllHandlersToComplete(2000);
             boolean finishedSpanFound = Wait.waitFor(() -> !(mockTracer.finishedSpans().isEmpty()), 3000, 10);
-            assertTrue("Did not get finished span after send", finishedSpanFound);
+            assertTrue(finishedSpanFound, "Did not get finished span after send");
 
             List<MockSpan> finishedSpans = mockTracer.finishedSpans();
-            assertEquals("Expected 1 finished span: " + finishedSpans, 1, finishedSpans.size());
+            assertEquals(1, finishedSpans.size(), "Expected 1 finished span: " + finishedSpans);
             Span sendSpan = finishedSpans.get(0);
-            assertEquals("Unexpected span class", MockSpan.class, sendSpan.getClass());
+            assertEquals(MockSpan.class, sendSpan.getClass(), "Unexpected span class");
             MockSpan sendMockSpan = (MockSpan) sendSpan;
 
-            assertEquals("Expected span to have no parent", 0, sendMockSpan.parentId());
-            assertEquals("Unexpected span operation name", SEND_SPAN_NAME, sendMockSpan.operationName());
+            assertEquals(0, sendMockSpan.parentId(), "Expected span to have no parent");
+            assertEquals(SEND_SPAN_NAME, sendMockSpan.operationName(), "Unexpected span operation name");
 
             // Verify tags set on the completed span
             Map<String, Object> spanTags = sendMockSpan.tags();
-            assertFalse("Expected some tags", spanTags.isEmpty());
-            assertFalse("Expected error tag not to be set", spanTags.containsKey(Tags.ERROR.getKey()));
+            assertFalse(spanTags.isEmpty(), "Expected some tags");
+            assertFalse(spanTags.containsKey(Tags.ERROR.getKey()), "Expected error tag not to be set");
             assertEquals(Tags.SPAN_KIND_PRODUCER, spanTags.get(Tags.SPAN_KIND.getKey()));
             assertEquals(queueName, spanTags.get(Tags.MESSAGE_BUS_DESTINATION.getKey()));
             assertEquals(COMPONENT, spanTags.get(Tags.COMPONENT.getKey()));
 
             // Verify log set on the completed span
             List<LogEntry> entries = sendMockSpan.logEntries();
-            assertEquals("Expected 1 log entry: " + entries, 1, entries.size());
+            assertEquals(1, entries.size(), "Expected 1 log entry: " + entries);
 
             Map<String, ?> entryFields = entries.get(0).fields();
-            assertFalse("Expected some log entry fields", entryFields.isEmpty());
-            assertNotNull("Expected a state description", entryFields.get(STATE));
+            assertFalse(entryFields.isEmpty(), "Expected some log entry fields");
+            assertNotNull(entryFields.get(STATE), "Expected a state description");
             assertEquals(DELIVERY_SETTLED, entryFields.get(Fields.EVENT));
 
             // Verify the context sent on the wire matches the original span
             Object obj = msgAnnotationsMatcher.getReceivedAnnotation(Symbol.valueOf(ANNOTATION_KEY));
-            assertTrue("annotation was not a map", obj instanceof Map);
+            assertTrue(obj instanceof Map, "annotation was not a map");
             @SuppressWarnings("unchecked")
             Map<String, String> traceInfo = (Map<String, String>) obj;
-            assertFalse("Expected some content in map", traceInfo.isEmpty());
+            assertFalse(traceInfo.isEmpty(), "Expected some content in map");
 
             SpanContext extractedContext = mockTracer.extract(Format.Builtin.TEXT_MAP, new TextMapAdapter(traceInfo));
-            assertEquals("Unexpected context class", MockContext.class, extractedContext.getClass());
-            assertEquals("Extracted context spanId did not match original", sendMockSpan.context().spanId(), ((MockContext) extractedContext).spanId());
+            assertEquals(MockContext.class, extractedContext.getClass(), "Unexpected context class");
+            assertEquals(sendMockSpan.context().spanId(), ((MockContext) extractedContext).spanId(), "Extracted context spanId did not match original");
 
             testPeer.expectClose();
             connection.close();
@@ -267,7 +270,8 @@ public class OpenTracingIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceive() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnectionFactory factory = new JmsConnectionFactory(createPeerURI(testPeer));
@@ -293,7 +297,7 @@ public class OpenTracingIntegrationTest extends QpidJmsTestCase {
             Map<String,String> injected = new HashMap<>();
             MockSpan sendSpan = mockTracer.buildSpan(SEND_SPAN_NAME).start();
             mockTracer.inject(sendSpan.context(), Format.Builtin.TEXT_MAP, new TextMapAdapter(injected));
-            assertFalse("Expected inject to add values", injected.isEmpty());
+            assertFalse(injected.isEmpty(), "Expected inject to add values");
 
             MessageAnnotationsDescribedType msgAnnotations = new MessageAnnotationsDescribedType();
             msgAnnotations.setSymbolKeyedAnnotation(ANNOTATION_KEY, injected);
@@ -308,32 +312,32 @@ public class OpenTracingIntegrationTest extends QpidJmsTestCase {
             MessageConsumer messageConsumer = session.createConsumer(queue);
             Message msg = messageConsumer.receive(2000);
 
-            assertNotNull("Did not receive message as expected", msg);
-            assertNull("expected no active span", mockTracer.activeSpan());
+            assertNotNull(msg, "Did not receive message as expected");
+            assertNull(mockTracer.activeSpan(), "expected no active span");
 
             boolean finishedSpanFound = Wait.waitFor(() -> !(mockTracer.finishedSpans().isEmpty()), 3000, 10);
-            assertTrue("Did not get finished span after receive", finishedSpanFound);
+            assertTrue(finishedSpanFound, "Did not get finished span after receive");
 
             List<MockSpan> finishedSpans = mockTracer.finishedSpans();
-            assertEquals("Expected 1 finished span: " + finishedSpans, 1, finishedSpans.size());
+            assertEquals(1, finishedSpans.size(), "Expected 1 finished span: " + finishedSpans);
             Span deliverySpan = finishedSpans.get(0);
-            assertEquals("Unexpected span class", MockSpan.class, deliverySpan.getClass());
+            assertEquals(MockSpan.class, deliverySpan.getClass(), "Unexpected span class");
             MockSpan deliveryMockSpan = (MockSpan) deliverySpan;
 
-            assertEquals("Expected span to be child of the send span", sendSpan.context().spanId(), deliveryMockSpan.parentId());
-            assertEquals("Unexpected span operation name", RECEIVE_SPAN_NAME, deliveryMockSpan.operationName());
+            assertEquals(sendSpan.context().spanId(), deliveryMockSpan.parentId(), "Expected span to be child of the send span");
+            assertEquals(RECEIVE_SPAN_NAME, deliveryMockSpan.operationName(), "Unexpected span operation name");
 
             // Verify tags set on the completed span
             Map<String, Object> spanTags = deliveryMockSpan.tags();
-            assertFalse("Expected some tags", spanTags.isEmpty());
-            assertFalse("Expected error tag not to be set", spanTags.containsKey(Tags.ERROR.getKey()));
+            assertFalse(spanTags.isEmpty(), "Expected some tags");
+            assertFalse(spanTags.containsKey(Tags.ERROR.getKey()), "Expected error tag not to be set");
             assertEquals(Tags.SPAN_KIND_CONSUMER, spanTags.get(Tags.SPAN_KIND.getKey()));
             assertEquals(queueName, spanTags.get(Tags.MESSAGE_BUS_DESTINATION.getKey()));
             assertEquals(COMPONENT, spanTags.get(Tags.COMPONENT.getKey()));
 
             // Verify no log set on the completed span
             List<LogEntry> logEntries = deliveryMockSpan.logEntries();
-            assertTrue("Expected no log entry: " + logEntries, logEntries.isEmpty());
+            assertTrue(logEntries.isEmpty(), "Expected no log entry: " + logEntries);
 
             testPeer.expectClose();
             connection.close();
@@ -342,7 +346,8 @@ public class OpenTracingIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceiveBody() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnectionFactory factory = new JmsConnectionFactory(createPeerURI(testPeer));
@@ -367,7 +372,7 @@ public class OpenTracingIntegrationTest extends QpidJmsTestCase {
             Map<String,String> injected = new HashMap<>();
             MockSpan sendSpan = mockTracer.buildSpan(SEND_SPAN_NAME).start();
             mockTracer.inject(sendSpan.context(), Format.Builtin.TEXT_MAP, new TextMapAdapter(injected));
-            assertFalse("Expected inject to add values", injected.isEmpty());
+            assertFalse(injected.isEmpty(), "Expected inject to add values");
 
             MessageAnnotationsDescribedType msgAnnotations = new MessageAnnotationsDescribedType();
             msgAnnotations.setSymbolKeyedAnnotation(ANNOTATION_KEY, injected);
@@ -383,32 +388,32 @@ public class OpenTracingIntegrationTest extends QpidJmsTestCase {
 
             String body = consumer.receiveBody(String.class, 2000);
 
-            assertEquals("Did not receive message body as expected", msgContent, body);
-            assertNull("expected no active span", mockTracer.activeSpan());
+            assertEquals(msgContent, body, "Did not receive message body as expected");
+            assertNull(mockTracer.activeSpan(), "expected no active span");
 
             boolean finishedSpanFound = Wait.waitFor(() -> !(mockTracer.finishedSpans().isEmpty()), 3000, 10);
-            assertTrue("Did not get finished span after receiveBody", finishedSpanFound);
+            assertTrue(finishedSpanFound, "Did not get finished span after receiveBody");
 
             List<MockSpan> finishedSpans = mockTracer.finishedSpans();
-            assertEquals("Expected 1 finished span: " + finishedSpans, 1, finishedSpans.size());
+            assertEquals(1, finishedSpans.size(), "Expected 1 finished span: " + finishedSpans);
             Span deliverySpan = finishedSpans.get(0);
-            assertEquals("Unexpected span class", MockSpan.class, deliverySpan.getClass());
+            assertEquals(MockSpan.class, deliverySpan.getClass(), "Unexpected span class");
             MockSpan deliveryMockSpan = (MockSpan) deliverySpan;
 
-            assertEquals("Expected span to be child of the send span", sendSpan.context().spanId(), deliveryMockSpan.parentId());
-            assertEquals("Unexpected span operation name", RECEIVE_SPAN_NAME, deliveryMockSpan.operationName());
+            assertEquals(sendSpan.context().spanId(), deliveryMockSpan.parentId(), "Expected span to be child of the send span");
+            assertEquals(RECEIVE_SPAN_NAME, deliveryMockSpan.operationName(), "Unexpected span operation name");
 
             // Verify tags set on the completed span
             Map<String, Object> spanTags = deliveryMockSpan.tags();
-            assertFalse("Expected some tags", spanTags.isEmpty());
-            assertFalse("Expected error tag not to be set", spanTags.containsKey(Tags.ERROR.getKey()));
+            assertFalse(spanTags.isEmpty(), "Expected some tags");
+            assertFalse(spanTags.containsKey(Tags.ERROR.getKey()), "Expected error tag not to be set");
             assertEquals(Tags.SPAN_KIND_CONSUMER, spanTags.get(Tags.SPAN_KIND.getKey()));
             assertEquals(queueName, spanTags.get(Tags.MESSAGE_BUS_DESTINATION.getKey()));
             assertEquals(COMPONENT, spanTags.get(Tags.COMPONENT.getKey()));
 
             // Verify no log set on the completed span
             List<LogEntry> logEntries = deliveryMockSpan.logEntries();
-            assertTrue("Expected no log entry: " + logEntries, logEntries.isEmpty());
+            assertTrue(logEntries.isEmpty(), "Expected no log entry: " + logEntries);
 
             testPeer.expectEnd();
             testPeer.expectClose();
@@ -420,7 +425,8 @@ public class OpenTracingIntegrationTest extends QpidJmsTestCase {
     }
 
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceiveWithoutTraceInfo() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnectionFactory factory = new JmsConnectionFactory(createPeerURI(testPeer));
@@ -453,32 +459,32 @@ public class OpenTracingIntegrationTest extends QpidJmsTestCase {
             MessageConsumer messageConsumer = session.createConsumer(queue);
             Message msg = messageConsumer.receive(2000);
 
-            assertNotNull("Did not receive message as expected", msg);
-            assertNull("expected no active span", mockTracer.activeSpan());
+            assertNotNull(msg, "Did not receive message as expected");
+            assertNull(mockTracer.activeSpan(), "expected no active span");
 
             boolean finishedSpanFound = Wait.waitFor(() -> !(mockTracer.finishedSpans().isEmpty()), 3000, 10);
-            assertTrue("Did not get finished span after receive", finishedSpanFound);
+            assertTrue(finishedSpanFound, "Did not get finished span after receive");
 
             List<MockSpan> finishedSpans = mockTracer.finishedSpans();
-            assertEquals("Expected 1 finished span: " + finishedSpans, 1, finishedSpans.size());
+            assertEquals(1, finishedSpans.size(), "Expected 1 finished span: " + finishedSpans);
             Span deliverySpan = finishedSpans.get(0);
-            assertEquals("Unexpected span class", MockSpan.class, deliverySpan.getClass());
+            assertEquals(MockSpan.class, deliverySpan.getClass(), "Unexpected span class");
             MockSpan deliveryMockSpan = (MockSpan) deliverySpan;
 
-            assertEquals("Expected span to have no parent as incoming message had no context", 0, deliveryMockSpan.parentId());
-            assertEquals("Unexpected span operation name", RECEIVE_SPAN_NAME, deliveryMockSpan.operationName());
+            assertEquals(0, deliveryMockSpan.parentId(), "Expected span to have no parent as incoming message had no context");
+            assertEquals(RECEIVE_SPAN_NAME, deliveryMockSpan.operationName(), "Unexpected span operation name");
 
             // Verify tags set on the completed span
             Map<String, Object> spanTags = deliveryMockSpan.tags();
-            assertFalse("Expected some tags", spanTags.isEmpty());
-            assertFalse("Expected error tag not to be set", spanTags.containsKey(Tags.ERROR.getKey()));
+            assertFalse(spanTags.isEmpty(), "Expected some tags");
+            assertFalse(spanTags.containsKey(Tags.ERROR.getKey()), "Expected error tag not to be set");
             assertEquals(Tags.SPAN_KIND_CONSUMER, spanTags.get(Tags.SPAN_KIND.getKey()));
             assertEquals(queueName, spanTags.get(Tags.MESSAGE_BUS_DESTINATION.getKey()));
             assertEquals(COMPONENT, spanTags.get(Tags.COMPONENT.getKey()));
 
             // Verify no log set on the completed span
             List<LogEntry> logEntries = deliveryMockSpan.logEntries();
-            assertTrue("Expected no log entry: " + logEntries, logEntries.isEmpty());
+            assertTrue(logEntries.isEmpty(), "Expected no log entry: " + logEntries);
 
             testPeer.expectClose();
             connection.close();
@@ -487,7 +493,8 @@ public class OpenTracingIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceiveWithExpiredMessage() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnectionFactory factory = new JmsConnectionFactory(createPeerURI(testPeer));
@@ -513,7 +520,7 @@ public class OpenTracingIntegrationTest extends QpidJmsTestCase {
             Map<String,String> injected1 = new HashMap<>();
             MockSpan sendSpan1 = mockTracer.buildSpan(SEND_SPAN_NAME).start();
             mockTracer.inject(sendSpan1.context(), Format.Builtin.TEXT_MAP, new TextMapAdapter(injected1));
-            assertFalse("Expected inject to add values", injected1.isEmpty());
+            assertFalse(injected1.isEmpty(), "Expected inject to add values");
 
             MessageAnnotationsDescribedType msgAnnotations1 = new MessageAnnotationsDescribedType();
             msgAnnotations1.setSymbolKeyedAnnotation(ANNOTATION_KEY, injected1);
@@ -529,7 +536,7 @@ public class OpenTracingIntegrationTest extends QpidJmsTestCase {
             Map<String,String> injected2 = new HashMap<>();
             MockSpan sendSpan2 = mockTracer.buildSpan(SEND_SPAN_NAME).start();
             mockTracer.inject(sendSpan2.context(), Format.Builtin.TEXT_MAP, new TextMapAdapter(injected2));
-            assertFalse("Expected inject to add values", injected2.isEmpty());
+            assertFalse(injected2.isEmpty(), "Expected inject to add values");
 
             MessageAnnotationsDescribedType msgAnnotations2 = new MessageAnnotationsDescribedType();
             msgAnnotations2.setSymbolKeyedAnnotation(ANNOTATION_KEY, injected2);
@@ -549,59 +556,59 @@ public class OpenTracingIntegrationTest extends QpidJmsTestCase {
             MessageConsumer messageConsumer = session.createConsumer(queue);
             Message msg = messageConsumer.receive(3000);
 
-            assertNotNull("Message should have been received", msg);
+            assertNotNull(msg, "Message should have been received");
             assertTrue(msg instanceof TextMessage);
-            assertEquals("Unexpected message content", liveMsgContent, ((TextMessage)msg).getText());
+            assertEquals(liveMsgContent, ((TextMessage)msg).getText(), "Unexpected message content");
             assertNotEquals(expiredMsgContent, liveMsgContent);
 
-            assertNull("expected no active span", mockTracer.activeSpan());
+            assertNull(mockTracer.activeSpan(), "expected no active span");
 
             boolean finishedSpansFound = Wait.waitFor(() -> (mockTracer.finishedSpans().size() == 2), 3000, 10);
-            assertTrue("Did not get finished spans after receive", finishedSpansFound);
+            assertTrue(finishedSpansFound, "Did not get finished spans after receive");
 
             List<MockSpan> finishedSpans = mockTracer.finishedSpans();
-            assertEquals("Expected 2 finished spans: " + finishedSpans, 2, finishedSpans.size());
+            assertEquals(2, finishedSpans.size(), "Expected 2 finished spans: " + finishedSpans);
 
             Span expiredSpan = finishedSpans.get(0);
-            assertEquals("Unexpected span class", MockSpan.class, expiredSpan.getClass());
+            assertEquals(MockSpan.class, expiredSpan.getClass(), "Unexpected span class");
             MockSpan expiredMockSpan = (MockSpan) expiredSpan;
 
-            assertEquals("Expected expired message span to be child of the first send span", sendSpan1.context().spanId(), expiredMockSpan.parentId());
-            assertEquals("Unexpected span operation name", RECEIVE_SPAN_NAME, expiredMockSpan.operationName());
+            assertEquals(sendSpan1.context().spanId(), expiredMockSpan.parentId(), "Expected expired message span to be child of the first send span");
+            assertEquals(RECEIVE_SPAN_NAME, expiredMockSpan.operationName(), "Unexpected span operation name");
 
             // Verify tags on the span for expired message
             Map<String, Object> expiredSpanTags = expiredMockSpan.tags();
-            assertFalse("Expected some tags", expiredSpanTags.isEmpty());
-            assertFalse("Expected error tag not to be set", expiredSpanTags.containsKey(Tags.ERROR.getKey()));
+            assertFalse(expiredSpanTags.isEmpty(), "Expected some tags");
+            assertFalse(expiredSpanTags.containsKey(Tags.ERROR.getKey()), "Expected error tag not to be set");
             assertEquals(Tags.SPAN_KIND_CONSUMER, expiredSpanTags.get(Tags.SPAN_KIND.getKey()));
             assertEquals(queueName, expiredSpanTags.get(Tags.MESSAGE_BUS_DESTINATION.getKey()));
             assertEquals(COMPONENT, expiredSpanTags.get(Tags.COMPONENT.getKey()));
 
             // Verify log on the span for expired message
             List<LogEntry> expiredLogEntries = expiredMockSpan.logEntries();
-            assertEquals("Expected 1 log entry: " + expiredLogEntries, 1, expiredLogEntries.size());
+            assertEquals(1, expiredLogEntries.size(), "Expected 1 log entry: " + expiredLogEntries);
             Map<String, ?> entryFields = expiredLogEntries.get(0).fields();
-            assertFalse("Expected some log entry fields", entryFields.isEmpty());
+            assertFalse(entryFields.isEmpty(), "Expected some log entry fields");
             assertEquals(MESSAGE_EXPIRED, entryFields.get(Fields.EVENT));
 
             Span deliverySpan = finishedSpans.get(1);
-            assertEquals("Unexpected span class", MockSpan.class, deliverySpan.getClass());
+            assertEquals(MockSpan.class, deliverySpan.getClass(), "Unexpected span class");
             MockSpan deliveryMockSpan = (MockSpan) deliverySpan;
 
-            assertEquals("Expected delivery span to be child of the second send span", sendSpan2.context().spanId(), deliveryMockSpan.parentId());
-            assertEquals("Unexpected span operation name", RECEIVE_SPAN_NAME, deliveryMockSpan.operationName());
+            assertEquals(sendSpan2.context().spanId(), deliveryMockSpan.parentId(), "Expected delivery span to be child of the second send span");
+            assertEquals(RECEIVE_SPAN_NAME, deliveryMockSpan.operationName(), "Unexpected span operation name");
 
             // Verify tags on the span for delivered message
             Map<String, Object> deliveredSpanTags = deliveryMockSpan.tags();
-            assertFalse("Expected some tags", deliveredSpanTags.isEmpty());
-            assertFalse("Expected error tag not to be set", deliveredSpanTags.containsKey(Tags.ERROR.getKey()));
+            assertFalse(deliveredSpanTags.isEmpty(), "Expected some tags");
+            assertFalse(deliveredSpanTags.containsKey(Tags.ERROR.getKey()), "Expected error tag not to be set");
             assertEquals(Tags.SPAN_KIND_CONSUMER, deliveredSpanTags.get(Tags.SPAN_KIND.getKey()));
             assertEquals(queueName, deliveredSpanTags.get(Tags.MESSAGE_BUS_DESTINATION.getKey()));
             assertEquals(COMPONENT, deliveredSpanTags.get(Tags.COMPONENT.getKey()));
 
             // Verify no log on the span for delivered message
             List<LogEntry> deliveredLogEntries = deliveryMockSpan.logEntries();
-            assertTrue("Expected no log entry: " + deliveredLogEntries, deliveredLogEntries.isEmpty());
+            assertTrue(deliveredLogEntries.isEmpty(), "Expected no log entry: " + deliveredLogEntries);
 
             testPeer.expectClose();
             connection.close();
@@ -611,11 +618,12 @@ public class OpenTracingIntegrationTest extends QpidJmsTestCase {
             sendSpan1.finish();
             sendSpan2.finish();
             finishedSpans = mockTracer.finishedSpans();
-            assertEquals("Expected 4 finished spans: " + finishedSpans, 4, finishedSpans.size());
+            assertEquals(4, finishedSpans.size(), "Expected 4 finished spans: " + finishedSpans);
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceiveWithRedeliveryPolicy() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnectionFactory factory = new JmsConnectionFactory(createPeerURI(testPeer, "jms.redeliveryPolicy.maxRedeliveries=1"));
@@ -641,7 +649,7 @@ public class OpenTracingIntegrationTest extends QpidJmsTestCase {
             Map<String,String> injected1 = new HashMap<>();
             MockSpan sendSpan1 = mockTracer.buildSpan(SEND_SPAN_NAME).start();
             mockTracer.inject(sendSpan1.context(), Format.Builtin.TEXT_MAP, new TextMapAdapter(injected1));
-            assertFalse("Expected inject to add values", injected1.isEmpty());
+            assertFalse(injected1.isEmpty(), "Expected inject to add values");
 
             MessageAnnotationsDescribedType msgAnnotations1 = new MessageAnnotationsDescribedType();
             msgAnnotations1.setSymbolKeyedAnnotation(ANNOTATION_KEY, injected1);
@@ -657,7 +665,7 @@ public class OpenTracingIntegrationTest extends QpidJmsTestCase {
             Map<String,String> injected2 = new HashMap<>();
             MockSpan sendSpan2 = mockTracer.buildSpan(SEND_SPAN_NAME).start();
             mockTracer.inject(sendSpan2.context(), Format.Builtin.TEXT_MAP, new TextMapAdapter(injected2));
-            assertFalse("Expected inject to add values", injected2.isEmpty());
+            assertFalse(injected2.isEmpty(), "Expected inject to add values");
 
             MessageAnnotationsDescribedType msgAnnotations2 = new MessageAnnotationsDescribedType();
             msgAnnotations2.setSymbolKeyedAnnotation(ANNOTATION_KEY, injected2);
@@ -677,59 +685,59 @@ public class OpenTracingIntegrationTest extends QpidJmsTestCase {
             MessageConsumer messageConsumer = session.createConsumer(queue);
             Message msg = messageConsumer.receive(3000);
 
-            assertNotNull("Message should have been received", msg);
+            assertNotNull(msg, "Message should have been received");
             assertTrue(msg instanceof TextMessage);
-            assertEquals("Unexpected message content", liveMsgContent, ((TextMessage)msg).getText());
+            assertEquals(liveMsgContent, ((TextMessage)msg).getText(), "Unexpected message content");
             assertNotEquals(redeliveredMsgContent, liveMsgContent);
 
-            assertNull("expected no active span", mockTracer.activeSpan());
+            assertNull(mockTracer.activeSpan(), "expected no active span");
 
             boolean finishedSpansFound = Wait.waitFor(() -> (mockTracer.finishedSpans().size() == 2), 3000, 10);
-            assertTrue("Did not get finished spans after receive", finishedSpansFound);
+            assertTrue(finishedSpansFound, "Did not get finished spans after receive");
 
             List<MockSpan> finishedSpans = mockTracer.finishedSpans();
-            assertEquals("Expected 2 finished spans: " + finishedSpans, 2, finishedSpans.size());
+            assertEquals(2, finishedSpans.size(), "Expected 2 finished spans: " + finishedSpans);
 
             Span redeliveredSpan = finishedSpans.get(0);
-            assertEquals("Unexpected span class", MockSpan.class, redeliveredSpan.getClass());
+            assertEquals(MockSpan.class, redeliveredSpan.getClass(), "Unexpected span class");
             MockSpan redeliveredMockSpan = (MockSpan) redeliveredSpan;
 
-            assertEquals("Expected redelivered message span to be child of the first send span", sendSpan1.context().spanId(), redeliveredMockSpan.parentId());
-            assertEquals("Unexpected span operation name", RECEIVE_SPAN_NAME, redeliveredMockSpan.operationName());
+            assertEquals(sendSpan1.context().spanId(), redeliveredMockSpan.parentId(), "Expected redelivered message span to be child of the first send span");
+            assertEquals(RECEIVE_SPAN_NAME, redeliveredMockSpan.operationName(), "Unexpected span operation name");
 
             // Verify tags on the span for redelivered message
             Map<String, Object> redeliveredSpanTags = redeliveredMockSpan.tags();
-            assertFalse("Expected some tags", redeliveredSpanTags.isEmpty());
-            assertFalse("Expected error tag not to be set", redeliveredSpanTags.containsKey(Tags.ERROR.getKey()));
+            assertFalse(redeliveredSpanTags.isEmpty(), "Expected some tags");
+            assertFalse(redeliveredSpanTags.containsKey(Tags.ERROR.getKey()), "Expected error tag not to be set");
             assertEquals(Tags.SPAN_KIND_CONSUMER, redeliveredSpanTags.get(Tags.SPAN_KIND.getKey()));
             assertEquals(queueName, redeliveredSpanTags.get(Tags.MESSAGE_BUS_DESTINATION.getKey()));
             assertEquals(COMPONENT, redeliveredSpanTags.get(Tags.COMPONENT.getKey()));
 
             // Verify log on the span for redelivered message
             List<LogEntry> redeliveredLogEntries = redeliveredMockSpan.logEntries();
-            assertEquals("Expected 1 log entry: " + redeliveredLogEntries, 1, redeliveredLogEntries.size());
+            assertEquals(1, redeliveredLogEntries.size(), "Expected 1 log entry: " + redeliveredLogEntries);
             Map<String, ?> entryFields = redeliveredLogEntries.get(0).fields();
-            assertFalse("Expected some log entry fields", entryFields.isEmpty());
+            assertFalse(entryFields.isEmpty(), "Expected some log entry fields");
             assertEquals(REDELIVERIES_EXCEEDED, entryFields.get(Fields.EVENT));
 
             Span deliverySpan = finishedSpans.get(1);
-            assertEquals("Unexpected span class", MockSpan.class, deliverySpan.getClass());
+            assertEquals(MockSpan.class, deliverySpan.getClass(), "Unexpected span class");
             MockSpan deliveryMockSpan = (MockSpan) deliverySpan;
 
-            assertEquals("Expected delivery span to be child of the second send span", sendSpan2.context().spanId(), deliveryMockSpan.parentId());
-            assertEquals("Unexpected span operation name", RECEIVE_SPAN_NAME, deliveryMockSpan.operationName());
+            assertEquals(sendSpan2.context().spanId(), deliveryMockSpan.parentId(), "Expected delivery span to be child of the second send span");
+            assertEquals(RECEIVE_SPAN_NAME, deliveryMockSpan.operationName(), "Unexpected span operation name");
 
             // Verify tags on the span for delivered message
             Map<String, Object> deliveredSpanTags = deliveryMockSpan.tags();
-            assertFalse("Expected some tags", deliveredSpanTags.isEmpty());
-            assertFalse("Expected error tag not to be set", deliveredSpanTags.containsKey(Tags.ERROR.getKey()));
+            assertFalse(deliveredSpanTags.isEmpty(), "Expected some tags");
+            assertFalse(deliveredSpanTags.containsKey(Tags.ERROR.getKey()), "Expected error tag not to be set");
             assertEquals(Tags.SPAN_KIND_CONSUMER, deliveredSpanTags.get(Tags.SPAN_KIND.getKey()));
             assertEquals(queueName, deliveredSpanTags.get(Tags.MESSAGE_BUS_DESTINATION.getKey()));
             assertEquals(COMPONENT, deliveredSpanTags.get(Tags.COMPONENT.getKey()));
 
             // Verify no log on the span for delivered message
             List<LogEntry> deliveredLogEntries = deliveryMockSpan.logEntries();
-            assertTrue("Expected no log entry: " + deliveredLogEntries, deliveredLogEntries.isEmpty());
+            assertTrue(deliveredLogEntries.isEmpty(), "Expected no log entry: " + deliveredLogEntries);
 
             testPeer.expectClose();
             connection.close();
@@ -739,11 +747,12 @@ public class OpenTracingIntegrationTest extends QpidJmsTestCase {
             sendSpan1.finish();
             sendSpan2.finish();
             finishedSpans = mockTracer.finishedSpans();
-            assertEquals("Expected 4 finished spans: " + finishedSpans, 4, finishedSpans.size());
+            assertEquals(4, finishedSpans.size(), "Expected 4 finished spans: " + finishedSpans);
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testOnMessage() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnectionFactory factory = new JmsConnectionFactory(createPeerURI(testPeer));
@@ -769,7 +778,7 @@ public class OpenTracingIntegrationTest extends QpidJmsTestCase {
             Map<String,String> injected = new HashMap<>();
             MockSpan sendSpan = mockTracer.buildSpan(SEND_SPAN_NAME).start();
             mockTracer.inject(sendSpan.context(), Format.Builtin.TEXT_MAP, new TextMapAdapter(injected));
-            assertFalse("Expected inject to add values", injected.isEmpty());
+            assertFalse(injected.isEmpty(), "Expected inject to add values");
 
             MessageAnnotationsDescribedType msgAnnotations = new MessageAnnotationsDescribedType();
             msgAnnotations.setSymbolKeyedAnnotation(ANNOTATION_KEY, injected);
@@ -799,34 +808,34 @@ public class OpenTracingIntegrationTest extends QpidJmsTestCase {
                 }
             });
 
-            assertTrue("onMessage did not run in timely fashion: " + throwableRef.get(), deliveryRun.await(3000, TimeUnit.MILLISECONDS));
+            assertTrue(deliveryRun.await(3000, TimeUnit.MILLISECONDS), "onMessage did not run in timely fashion: " + throwableRef.get());
 
             Span deliverySpan = activeSpanRef.get();
-            assertNotNull("expected an active span during onMessage", deliverySpan);
-            assertEquals("Unexpected span class", MockSpan.class, deliverySpan.getClass());
+            assertNotNull(deliverySpan, "expected an active span during onMessage");
+            assertEquals(MockSpan.class, deliverySpan.getClass(), "Unexpected span class");
             MockSpan deliveryMockSpan = (MockSpan) deliverySpan;
 
             boolean finishedSpanFound = Wait.waitFor(() -> !(mockTracer.finishedSpans().isEmpty()), 3000, 10);
-            assertTrue("Did not get finished span after onMessage", finishedSpanFound);
+            assertTrue(finishedSpanFound, "Did not get finished span after onMessage");
 
             List<MockSpan> finishedSpans = mockTracer.finishedSpans();
-            assertEquals("Expected 1 finished span: " + finishedSpans, 1, finishedSpans.size());
-            assertEquals("Unexpected finished span", deliverySpan, finishedSpans.get(0));
+            assertEquals(1, finishedSpans.size(), "Expected 1 finished span: " + finishedSpans);
+            assertEquals(deliverySpan, finishedSpans.get(0), "Unexpected finished span");
 
-            assertEquals("Expected span to be child of the send span", sendSpan.context().spanId(), deliveryMockSpan.parentId());
-            assertEquals("Unexpected span operation name", ONMESSAGE_SPAN_NAME, deliveryMockSpan.operationName());
+            assertEquals(sendSpan.context().spanId(), deliveryMockSpan.parentId(), "Expected span to be child of the send span");
+            assertEquals(ONMESSAGE_SPAN_NAME, deliveryMockSpan.operationName(), "Unexpected span operation name");
 
             // Verify tags set on the completed span
             Map<String, Object> spanTags = deliveryMockSpan.tags();
-            assertFalse("Expected some tags", spanTags.isEmpty());
-            assertFalse("Expected error tag not to be set", spanTags.containsKey(Tags.ERROR.getKey()));
+            assertFalse(spanTags.isEmpty(), "Expected some tags");
+            assertFalse(spanTags.containsKey(Tags.ERROR.getKey()), "Expected error tag not to be set");
             assertEquals(Tags.SPAN_KIND_CONSUMER, spanTags.get(Tags.SPAN_KIND.getKey()));
             assertEquals(queueName, spanTags.get(Tags.MESSAGE_BUS_DESTINATION.getKey()));
             assertEquals(COMPONENT, spanTags.get(Tags.COMPONENT.getKey()));
 
             // Verify no log set on the completed span
             List<LogEntry> logEntries = deliveryMockSpan.logEntries();
-            assertTrue("Expected no log entry: " + logEntries, logEntries.isEmpty());
+            assertTrue(logEntries.isEmpty(), "Expected no log entry: " + logEntries);
 
             testPeer.expectClose();
             connection.close();
@@ -835,13 +844,14 @@ public class OpenTracingIntegrationTest extends QpidJmsTestCase {
 
             sendSpan.finish();
             finishedSpans = mockTracer.finishedSpans();
-            assertEquals("Expected 2 finished spans: " + finishedSpans, 2, finishedSpans.size());
+            assertEquals(2, finishedSpans.size(), "Expected 2 finished spans: " + finishedSpans);
 
-            assertNull("Unexpected error during onMessage", throwableRef.get());
+            assertNull(throwableRef.get(), "Unexpected error during onMessage");
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testOnMessageWithoutTraceInfo() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnectionFactory factory = new JmsConnectionFactory(createPeerURI(testPeer));
@@ -888,45 +898,46 @@ public class OpenTracingIntegrationTest extends QpidJmsTestCase {
                 }
             });
 
-            assertTrue("onMessage did not run in timely fashion: " + throwableRef.get(), deliveryRun.await(3000, TimeUnit.MILLISECONDS));
+            assertTrue(deliveryRun.await(3000, TimeUnit.MILLISECONDS), "onMessage did not run in timely fashion: " + throwableRef.get());
 
             Span deliverySpan = activeSpanRef.get();
-            assertNotNull("expected an active span during onMessage", deliverySpan);
-            assertEquals("Unexpected span class", MockSpan.class, deliverySpan.getClass());
+            assertNotNull(deliverySpan, "expected an active span during onMessage");
+            assertEquals(MockSpan.class, deliverySpan.getClass(), "Unexpected span class");
             MockSpan deliveryMockSpan = (MockSpan) deliverySpan;
 
             boolean finishedSpanFound = Wait.waitFor(() -> !(mockTracer.finishedSpans().isEmpty()), 3000, 10);
-            assertTrue("Did not get finished span after onMessage", finishedSpanFound);
+            assertTrue(finishedSpanFound, "Did not get finished span after onMessage");
 
             List<MockSpan> finishedSpans = mockTracer.finishedSpans();
-            assertEquals("Expected 1 finished span: " + finishedSpans, 1, finishedSpans.size());
-            assertEquals("Unexpected finished span", deliverySpan, finishedSpans.get(0));
+            assertEquals(1, finishedSpans.size(), "Expected 1 finished span: " + finishedSpans);
+            assertEquals(deliverySpan, finishedSpans.get(0), "Unexpected finished span");
 
-            assertEquals("Expected span to have no parent as incoming message had no context", 0, deliveryMockSpan.parentId());
-            assertEquals("Unexpected span operation name", ONMESSAGE_SPAN_NAME, deliveryMockSpan.operationName());
+            assertEquals(0, deliveryMockSpan.parentId(), "Expected span to have no parent as incoming message had no context");
+            assertEquals(ONMESSAGE_SPAN_NAME, deliveryMockSpan.operationName(), "Unexpected span operation name");
 
             // Verify tags set on the completed span
             Map<String, Object> spanTags = deliveryMockSpan.tags();
-            assertFalse("Expected some tags", spanTags.isEmpty());
-            assertFalse("Expected error tag not to be set", spanTags.containsKey(Tags.ERROR.getKey()));
+            assertFalse(spanTags.isEmpty(), "Expected some tags");
+            assertFalse(spanTags.containsKey(Tags.ERROR.getKey()), "Expected error tag not to be set");
             assertEquals(Tags.SPAN_KIND_CONSUMER, spanTags.get(Tags.SPAN_KIND.getKey()));
             assertEquals(queueName, spanTags.get(Tags.MESSAGE_BUS_DESTINATION.getKey()));
             assertEquals(COMPONENT, spanTags.get(Tags.COMPONENT.getKey()));
 
             // Verify no log set on the completed span
             List<LogEntry> logEntries = deliveryMockSpan.logEntries();
-            assertTrue("Expected no log entry: " + logEntries, logEntries.isEmpty());
+            assertTrue(logEntries.isEmpty(), "Expected no log entry: " + logEntries);
 
             testPeer.expectClose();
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(2000);
 
-            assertNull("Unexpected error during onMessage", throwableRef.get());
+            assertNull(throwableRef.get(), "Unexpected error during onMessage");
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testOnMessageThrowingException() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnectionFactory factory = new JmsConnectionFactory(createPeerURI(testPeer));
@@ -952,7 +963,7 @@ public class OpenTracingIntegrationTest extends QpidJmsTestCase {
             Map<String,String> injected = new HashMap<>();
             MockSpan sendSpan = mockTracer.buildSpan(SEND_SPAN_NAME).start();
             mockTracer.inject(sendSpan.context(), Format.Builtin.TEXT_MAP, new TextMapAdapter(injected));
-            assertFalse("Expected inject to add values", injected.isEmpty());
+            assertFalse(injected.isEmpty(), "Expected inject to add values");
 
             MessageAnnotationsDescribedType msgAnnotations = new MessageAnnotationsDescribedType();
             msgAnnotations.setSymbolKeyedAnnotation(ANNOTATION_KEY, injected);
@@ -985,43 +996,43 @@ public class OpenTracingIntegrationTest extends QpidJmsTestCase {
                 }
             });
 
-            assertTrue("onMessage did not run in timely fashion: " + throwableRef.get(), deliveryRun.await(3000, TimeUnit.MILLISECONDS));
+            assertTrue(deliveryRun.await(3000, TimeUnit.MILLISECONDS), "onMessage did not run in timely fashion: " + throwableRef.get());
 
             Span deliverySpan = activeSpanRef.get();
-            assertNotNull("expected an active span during onMessage", deliverySpan);
-            assertEquals("Unexpected span class", MockSpan.class, deliverySpan.getClass());
+            assertNotNull(deliverySpan, "expected an active span during onMessage");
+            assertEquals(MockSpan.class, deliverySpan.getClass(), "Unexpected span class");
             MockSpan deliveryMockSpan = (MockSpan) deliverySpan;
 
             boolean finishedSpanFound = Wait.waitFor(() -> !(mockTracer.finishedSpans().isEmpty()), 3000, 10);
-            assertTrue("Did not get finished span after onMessage", finishedSpanFound);
+            assertTrue(finishedSpanFound, "Did not get finished span after onMessage");
 
             List<MockSpan> finishedSpans = mockTracer.finishedSpans();
-            assertEquals("Expected 1 finished span: " + finishedSpans, 1, finishedSpans.size());
-            assertEquals("Unexpected finished span", deliveryMockSpan, finishedSpans.get(0));
+            assertEquals(1, finishedSpans.size(), "Expected 1 finished span: " + finishedSpans);
+            assertEquals(deliveryMockSpan, finishedSpans.get(0), "Unexpected finished span");
 
-            assertEquals("Expected span to be child of the send span", sendSpan.context().spanId(), deliveryMockSpan.parentId());
-            assertEquals("Unexpected span operation name", ONMESSAGE_SPAN_NAME, deliveryMockSpan.operationName());
+            assertEquals(sendSpan.context().spanId(), deliveryMockSpan.parentId(), "Expected span to be child of the send span");
+            assertEquals(ONMESSAGE_SPAN_NAME, deliveryMockSpan.operationName(), "Unexpected span operation name");
 
             // Verify tags set on the completed span
             Map<String, Object> spanTags = deliveryMockSpan.tags();
-            assertFalse("Expected some tags", spanTags.isEmpty());
-            assertTrue("Expected error tag to be true", (Boolean) spanTags.get(Tags.ERROR.getKey()));
+            assertFalse(spanTags.isEmpty(), "Expected some tags");
+            assertTrue((Boolean) spanTags.get(Tags.ERROR.getKey()), "Expected error tag to be true");
             assertEquals(Tags.SPAN_KIND_CONSUMER, spanTags.get(Tags.SPAN_KIND.getKey()));
             assertEquals(queueName, spanTags.get(Tags.MESSAGE_BUS_DESTINATION.getKey()));
             assertEquals(COMPONENT, spanTags.get(Tags.COMPONENT.getKey()));
 
             // Verify log set on the completed span
             List<LogEntry> logEntries = deliveryMockSpan.logEntries();
-            assertEquals("Expected 1 log entry: " + logEntries, 1, logEntries.size());
+            assertEquals(1, logEntries.size(), "Expected 1 log entry: " + logEntries);
 
             Map<String, ?> entryFields = logEntries.get(0).fields();
-            assertFalse("Expected some log entry fields", entryFields.isEmpty());
+            assertFalse(entryFields.isEmpty(), "Expected some log entry fields");
             assertEquals(ERROR_EVENT, entryFields.get(Fields.EVENT));
             Object messageDesc = entryFields.get(Fields.MESSAGE);
             assertTrue(messageDesc instanceof String);
             assertTrue(((String) messageDesc).contains("thrown from onMessage"));
             Object t = entryFields.get(Fields.ERROR_OBJECT);
-            assertNotNull("Expected error object to be set", t);
+            assertNotNull(t, "Expected error object to be set");
             assertTrue(t instanceof RuntimeException);
             assertTrue(exceptionMessage.equals(((RuntimeException) t).getMessage()));
 
@@ -1032,13 +1043,14 @@ public class OpenTracingIntegrationTest extends QpidJmsTestCase {
 
             sendSpan.finish();
             finishedSpans = mockTracer.finishedSpans();
-            assertEquals("Expected 2 finished spans: " + finishedSpans, 2, finishedSpans.size());
+            assertEquals(2, finishedSpans.size(), "Expected 2 finished spans: " + finishedSpans);
 
-            assertNull("Unexpected error during onMessage", throwableRef.get());
+            assertNull(throwableRef.get(), "Unexpected error during onMessage");
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testOnMessageWithExpiredMessage() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnectionFactory factory = new JmsConnectionFactory(createPeerURI(testPeer));
@@ -1064,7 +1076,7 @@ public class OpenTracingIntegrationTest extends QpidJmsTestCase {
             Map<String,String> injected1 = new HashMap<>();
             MockSpan sendSpan1 = mockTracer.buildSpan(SEND_SPAN_NAME).start();
             mockTracer.inject(sendSpan1.context(), Format.Builtin.TEXT_MAP, new TextMapAdapter(injected1));
-            assertFalse("Expected inject to add values", injected1.isEmpty());
+            assertFalse(injected1.isEmpty(), "Expected inject to add values");
 
             MessageAnnotationsDescribedType msgAnnotations1 = new MessageAnnotationsDescribedType();
             msgAnnotations1.setSymbolKeyedAnnotation(ANNOTATION_KEY, injected1);
@@ -1080,7 +1092,7 @@ public class OpenTracingIntegrationTest extends QpidJmsTestCase {
             Map<String,String> injected2 = new HashMap<>();
             MockSpan sendSpan2 = mockTracer.buildSpan(SEND_SPAN_NAME).start();
             mockTracer.inject(sendSpan2.context(), Format.Builtin.TEXT_MAP, new TextMapAdapter(injected2));
-            assertFalse("Expected inject to add values", injected2.isEmpty());
+            assertFalse(injected2.isEmpty(), "Expected inject to add values");
 
             MessageAnnotationsDescribedType msgAnnotations2 = new MessageAnnotationsDescribedType();
             msgAnnotations2.setSymbolKeyedAnnotation(ANNOTATION_KEY, injected2);
@@ -1115,59 +1127,59 @@ public class OpenTracingIntegrationTest extends QpidJmsTestCase {
                 }
             });
 
-            assertTrue("onMessage did not run in timely fashion: " + throwableRef.get(), deliveryRun.await(3000, TimeUnit.MILLISECONDS));
+            assertTrue(deliveryRun.await(3000, TimeUnit.MILLISECONDS), "onMessage did not run in timely fashion: " + throwableRef.get());
 
             boolean finishedSpansFound = Wait.waitFor(() -> (mockTracer.finishedSpans().size() == 2), 3000, 10);
-            assertTrue("Did not get finished spans after receive", finishedSpansFound);
+            assertTrue(finishedSpansFound, "Did not get finished spans after receive");
 
             Span deliverySpan = activeSpanRef.get();
-            assertNotNull("expected an active span during onMessage", deliverySpan);
-            assertEquals("Unexpected span class", MockSpan.class, deliverySpan.getClass());
+            assertNotNull(deliverySpan, "expected an active span during onMessage");
+            assertEquals(MockSpan.class, deliverySpan.getClass(), "Unexpected span class");
             MockSpan deliveryMockSpan = (MockSpan) deliverySpan;
 
             List<MockSpan> finishedSpans = mockTracer.finishedSpans();
-            assertEquals("Expected 2 finished spans: " + finishedSpans, 2, finishedSpans.size());
+            assertEquals(2, finishedSpans.size(), "Expected 2 finished spans: " + finishedSpans);
 
-            assertEquals("Expected span to be child of the second send span", sendSpan2.context().spanId(), deliveryMockSpan.parentId());
-            assertEquals("Unexpected span operation name", ONMESSAGE_SPAN_NAME, deliveryMockSpan.operationName());
+            assertEquals(sendSpan2.context().spanId(), deliveryMockSpan.parentId(), "Expected span to be child of the second send span");
+            assertEquals(ONMESSAGE_SPAN_NAME, deliveryMockSpan.operationName(), "Unexpected span operation name");
 
             Span expiredSpan = finishedSpans.get(0);
-            assertEquals("Unexpected span class", MockSpan.class, expiredSpan.getClass());
+            assertEquals(MockSpan.class, expiredSpan.getClass(), "Unexpected span class");
             MockSpan expiredMockSpan = (MockSpan) expiredSpan;
 
-            assertEquals("Expected expired message span to be child of the first send span", sendSpan1.context().spanId(), expiredMockSpan.parentId());
-            assertEquals("Unexpected span operation name", ONMESSAGE_SPAN_NAME, expiredMockSpan.operationName());
+            assertEquals(sendSpan1.context().spanId(), expiredMockSpan.parentId(), "Expected expired message span to be child of the first send span");
+            assertEquals(ONMESSAGE_SPAN_NAME, expiredMockSpan.operationName(), "Unexpected span operation name");
 
             // Verify tags on the span for expired message
             Map<String, Object> expiredSpanTags = expiredMockSpan.tags();
-            assertFalse("Expected some tags", expiredSpanTags.isEmpty());
-            assertFalse("Expected error tag not to be set", expiredSpanTags.containsKey(Tags.ERROR.getKey()));
+            assertFalse(expiredSpanTags.isEmpty(), "Expected some tags");
+            assertFalse(expiredSpanTags.containsKey(Tags.ERROR.getKey()), "Expected error tag not to be set");
             assertEquals(Tags.SPAN_KIND_CONSUMER, expiredSpanTags.get(Tags.SPAN_KIND.getKey()));
             assertEquals(queueName, expiredSpanTags.get(Tags.MESSAGE_BUS_DESTINATION.getKey()));
             assertEquals(COMPONENT, expiredSpanTags.get(Tags.COMPONENT.getKey()));
 
             // Verify log on the span for expired message
             List<LogEntry> expiredLogEntries = expiredMockSpan.logEntries();
-            assertEquals("Expected 1 log entry: " + expiredLogEntries, 1, expiredLogEntries.size());
+            assertEquals(1, expiredLogEntries.size(), "Expected 1 log entry: " + expiredLogEntries);
             Map<String, ?> entryFields = expiredLogEntries.get(0).fields();
-            assertFalse("Expected some log entry fields", entryFields.isEmpty());
+            assertFalse(entryFields.isEmpty(), "Expected some log entry fields");
             assertEquals(MESSAGE_EXPIRED, entryFields.get(Fields.EVENT));
 
-            assertEquals("Unexpected second finished span", deliveryMockSpan, finishedSpans.get(1));
-            assertEquals("Expected delivery span to be child of the second send span", sendSpan2.context().spanId(), deliveryMockSpan.parentId());
-            assertEquals("Unexpected span operation name", ONMESSAGE_SPAN_NAME, deliveryMockSpan.operationName());
+            assertEquals(deliveryMockSpan, finishedSpans.get(1), "Unexpected second finished span");
+            assertEquals(sendSpan2.context().spanId(), deliveryMockSpan.parentId(), "Expected delivery span to be child of the second send span");
+            assertEquals(ONMESSAGE_SPAN_NAME, deliveryMockSpan.operationName(), "Unexpected span operation name");
 
             // Verify tags on the span for delivered message
             Map<String, Object> deliveredSpanTags = deliveryMockSpan.tags();
-            assertFalse("Expected some tags", deliveredSpanTags.isEmpty());
-            assertFalse("Expected error tag not to be set", deliveredSpanTags.containsKey(Tags.ERROR.getKey()));
+            assertFalse(deliveredSpanTags.isEmpty(), "Expected some tags");
+            assertFalse(deliveredSpanTags.containsKey(Tags.ERROR.getKey()), "Expected error tag not to be set");
             assertEquals(Tags.SPAN_KIND_CONSUMER, deliveredSpanTags.get(Tags.SPAN_KIND.getKey()));
             assertEquals(queueName, deliveredSpanTags.get(Tags.MESSAGE_BUS_DESTINATION.getKey()));
             assertEquals(COMPONENT, deliveredSpanTags.get(Tags.COMPONENT.getKey()));
 
             // Verify no log on the span for delivered message
             List<LogEntry> deliveredLogEntries = deliveryMockSpan.logEntries();
-            assertTrue("Expected no log entry: " + deliveredLogEntries, deliveredLogEntries.isEmpty());
+            assertTrue(deliveredLogEntries.isEmpty(), "Expected no log entry: " + deliveredLogEntries);
 
             testPeer.expectClose();
             connection.close();
@@ -1177,13 +1189,14 @@ public class OpenTracingIntegrationTest extends QpidJmsTestCase {
             sendSpan1.finish();
             sendSpan2.finish();
             finishedSpans = mockTracer.finishedSpans();
-            assertEquals("Expected 4 finished spans: " + finishedSpans, 4, finishedSpans.size());
+            assertEquals(4, finishedSpans.size(), "Expected 4 finished spans: " + finishedSpans);
 
-            assertNull("Unexpected error during onMessage", throwableRef.get());
+            assertNull(throwableRef.get(), "Unexpected error during onMessage");
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testOnMessageWithRedeliveryPolicy() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnectionFactory factory = new JmsConnectionFactory(createPeerURI(testPeer, "jms.redeliveryPolicy.maxRedeliveries=1"));
@@ -1209,7 +1222,7 @@ public class OpenTracingIntegrationTest extends QpidJmsTestCase {
             Map<String,String> injected1 = new HashMap<>();
             MockSpan sendSpan1 = mockTracer.buildSpan(SEND_SPAN_NAME).start();
             mockTracer.inject(sendSpan1.context(), Format.Builtin.TEXT_MAP, new TextMapAdapter(injected1));
-            assertFalse("Expected inject to add values", injected1.isEmpty());
+            assertFalse(injected1.isEmpty(), "Expected inject to add values");
 
             MessageAnnotationsDescribedType msgAnnotations1 = new MessageAnnotationsDescribedType();
             msgAnnotations1.setSymbolKeyedAnnotation(ANNOTATION_KEY, injected1);
@@ -1225,7 +1238,7 @@ public class OpenTracingIntegrationTest extends QpidJmsTestCase {
             Map<String,String> injected2 = new HashMap<>();
             MockSpan sendSpan2 = mockTracer.buildSpan(SEND_SPAN_NAME).start();
             mockTracer.inject(sendSpan2.context(), Format.Builtin.TEXT_MAP, new TextMapAdapter(injected2));
-            assertFalse("Expected inject to add values", injected2.isEmpty());
+            assertFalse(injected2.isEmpty(), "Expected inject to add values");
 
             MessageAnnotationsDescribedType msgAnnotations2 = new MessageAnnotationsDescribedType();
             msgAnnotations2.setSymbolKeyedAnnotation(ANNOTATION_KEY, injected2);
@@ -1260,59 +1273,59 @@ public class OpenTracingIntegrationTest extends QpidJmsTestCase {
                 }
             });
 
-            assertTrue("onMessage did not run in timely fashion: " + throwableRef.get(), deliveryRun.await(3000, TimeUnit.MILLISECONDS));
+            assertTrue(deliveryRun.await(3000, TimeUnit.MILLISECONDS), "onMessage did not run in timely fashion: " + throwableRef.get());
 
             boolean finishedSpansFound = Wait.waitFor(() -> (mockTracer.finishedSpans().size() == 2), 3000, 10);
-            assertTrue("Did not get finished spans after receive", finishedSpansFound);
+            assertTrue(finishedSpansFound, "Did not get finished spans after receive");
 
             Span deliverySpan = activeSpanRef.get();
-            assertNotNull("expected an active span during onMessage", deliverySpan);
-            assertEquals("Unexpected span class", MockSpan.class, deliverySpan.getClass());
+            assertNotNull(deliverySpan, "expected an active span during onMessage");
+            assertEquals(MockSpan.class, deliverySpan.getClass(), "Unexpected span class");
             MockSpan deliveryMockSpan = (MockSpan) deliverySpan;
 
             List<MockSpan> finishedSpans = mockTracer.finishedSpans();
-            assertEquals("Expected 2 finished spans: " + finishedSpans, 2, finishedSpans.size());
+            assertEquals(2, finishedSpans.size(), "Expected 2 finished spans: " + finishedSpans);
 
-            assertEquals("Expected span to be child of the second send span", sendSpan2.context().spanId(), deliveryMockSpan.parentId());
-            assertEquals("Unexpected span operation name", ONMESSAGE_SPAN_NAME, deliveryMockSpan.operationName());
+            assertEquals(sendSpan2.context().spanId(), deliveryMockSpan.parentId(), "Expected span to be child of the second send span");
+            assertEquals(ONMESSAGE_SPAN_NAME, deliveryMockSpan.operationName(), "Unexpected span operation name");
 
             Span redeliveredSpan = finishedSpans.get(0);
-            assertEquals("Unexpected span class", MockSpan.class, redeliveredSpan.getClass());
+            assertEquals(MockSpan.class, redeliveredSpan.getClass(), "Unexpected span class");
             MockSpan redeliveredMockSpan = (MockSpan) redeliveredSpan;
 
-            assertEquals("Expected redelivered message span to be child of the first send span", sendSpan1.context().spanId(), redeliveredMockSpan.parentId());
-            assertEquals("Unexpected span operation name", ONMESSAGE_SPAN_NAME, redeliveredMockSpan.operationName());
+            assertEquals(sendSpan1.context().spanId(), redeliveredMockSpan.parentId(), "Expected redelivered message span to be child of the first send span");
+            assertEquals(ONMESSAGE_SPAN_NAME, redeliveredMockSpan.operationName(), "Unexpected span operation name");
 
             // Verify tags on the span for redelivered message
             Map<String, Object> redeliveredSpanTags = redeliveredMockSpan.tags();
-            assertFalse("Expected some tags", redeliveredSpanTags.isEmpty());
-            assertFalse("Expected error tag not to be set", redeliveredSpanTags.containsKey(Tags.ERROR.getKey()));
+            assertFalse(redeliveredSpanTags.isEmpty(), "Expected some tags");
+            assertFalse(redeliveredSpanTags.containsKey(Tags.ERROR.getKey()), "Expected error tag not to be set");
             assertEquals(Tags.SPAN_KIND_CONSUMER, redeliveredSpanTags.get(Tags.SPAN_KIND.getKey()));
             assertEquals(topicName, redeliveredSpanTags.get(Tags.MESSAGE_BUS_DESTINATION.getKey()));
             assertEquals(COMPONENT, redeliveredSpanTags.get(Tags.COMPONENT.getKey()));
 
             // Verify log on the span for redelivered message
             List<LogEntry> redeliveredLogEntries = redeliveredMockSpan.logEntries();
-            assertEquals("Expected 1 log entry: " + redeliveredLogEntries, 1, redeliveredLogEntries.size());
+            assertEquals(1, redeliveredLogEntries.size(), "Expected 1 log entry: " + redeliveredLogEntries);
             Map<String, ?> entryFields = redeliveredLogEntries.get(0).fields();
-            assertFalse("Expected some log entry fields", entryFields.isEmpty());
+            assertFalse(entryFields.isEmpty(), "Expected some log entry fields");
             assertEquals(REDELIVERIES_EXCEEDED, entryFields.get(Fields.EVENT));
 
-            assertEquals("Unexpected second finished span", deliveryMockSpan, finishedSpans.get(1));
-            assertEquals("Expected delivery span to be child of the second send span", sendSpan2.context().spanId(), deliveryMockSpan.parentId());
-            assertEquals("Unexpected span operation name", ONMESSAGE_SPAN_NAME, deliveryMockSpan.operationName());
+            assertEquals(deliveryMockSpan, finishedSpans.get(1), "Unexpected second finished span");
+            assertEquals(sendSpan2.context().spanId(), deliveryMockSpan.parentId(), "Expected delivery span to be child of the second send span");
+            assertEquals(ONMESSAGE_SPAN_NAME, deliveryMockSpan.operationName(), "Unexpected span operation name");
 
             // Verify tags on the span for delivered message
             Map<String, Object> deliveredSpanTags = deliveryMockSpan.tags();
-            assertFalse("Expected some tags", deliveredSpanTags.isEmpty());
-            assertFalse("Expected error tag not to be set", deliveredSpanTags.containsKey(Tags.ERROR.getKey()));
+            assertFalse(deliveredSpanTags.isEmpty(), "Expected some tags");
+            assertFalse(deliveredSpanTags.containsKey(Tags.ERROR.getKey()), "Expected error tag not to be set");
             assertEquals(Tags.SPAN_KIND_CONSUMER, deliveredSpanTags.get(Tags.SPAN_KIND.getKey()));
             assertEquals(topicName, deliveredSpanTags.get(Tags.MESSAGE_BUS_DESTINATION.getKey()));
             assertEquals(COMPONENT, deliveredSpanTags.get(Tags.COMPONENT.getKey()));
 
             // Verify no log on the span for delivered message
             List<LogEntry> deliveredLogEntries = deliveryMockSpan.logEntries();
-            assertTrue("Expected no log entry: " + deliveredLogEntries, deliveredLogEntries.isEmpty());
+            assertTrue(deliveredLogEntries.isEmpty(), "Expected no log entry: " + deliveredLogEntries);
 
             testPeer.expectClose();
             connection.close();
@@ -1322,9 +1335,9 @@ public class OpenTracingIntegrationTest extends QpidJmsTestCase {
             sendSpan1.finish();
             sendSpan2.finish();
             finishedSpans = mockTracer.finishedSpans();
-            assertEquals("Expected 4 finished spans: " + finishedSpans, 4, finishedSpans.size());
+            assertEquals(4, finishedSpans.size(), "Expected 4 finished spans: " + finishedSpans);
 
-            assertNull("Unexpected error during onMessage", throwableRef.get());
+            assertNull(throwableRef.get(), "Unexpected error during onMessage");
         }
     }
 

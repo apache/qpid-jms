@@ -20,12 +20,12 @@
  */
 package org.apache.qpid.jms.integration;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.net.URI;
 import java.util.UUID;
@@ -51,7 +51,8 @@ import org.apache.qpid.jms.policy.JmsPresettlePolicy;
 import org.apache.qpid.jms.policy.JmsRedeliveryPolicy;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,7 +60,8 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
 
     private static final Logger LOG = LoggerFactory.getLogger(ConnectionFactoryIntegrationTest.class);
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testCreateConnectionGoodProviderURI() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // Ignore errors from peer close due to not sending any Open / Close frames
@@ -83,7 +85,8 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testCreateConnectionGoodProviderString() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // Ignore errors from peer close due to not sending any Open / Close frames
@@ -107,7 +110,8 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testTopicCreateConnectionGoodProviderString() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // Ignore errors from peer close due to not sending any Open / Close frames
@@ -131,7 +135,8 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testCreateQueueConnectionGoodProviderString() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // Ignore errors from peer close due to not sending any Open / Close frames
@@ -155,7 +160,8 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testUriOptionsAppliedToConnection() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // Ignore errors from peer close due to not sending any Open / Close frames
@@ -185,7 +191,8 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testCreateAmqpConnectionFactoryWithUserInfoThrowsIAE() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // DONT create a test fixture, we will drive everything directly.
@@ -200,11 +207,12 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
             }
 
             testPeer.close();
-            assertNull("Peer should not have accepted any connection", testPeer.getClientSocket());
+            assertNull(testPeer.getClientSocket(), "Peer should not have accepted any connection");
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testCreateFailoverConnectionFactoryWithComponentUriHavingUserInfoThrowsIAE() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // DONT create a test fixture, we will drive everything directly.
@@ -231,7 +239,7 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
             doCreateFailoverConnectionFactoryWithComponentUriHavingUserInfoThrowsIAETestImpl(failoverURImultiple);
 
             testPeer.close();
-            assertNull("Peer should not have accepted any connection", testPeer.getClientSocket());
+            assertNull(testPeer.getClientSocket(), "Peer should not have accepted any connection");
         }
     }
 
@@ -246,7 +254,8 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testSetInvalidMessageIDFormatOption() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // DONT create a test fixture, we will drive everything directly.
@@ -260,7 +269,8 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testSetMessageIDFormatOptionAlteredCase() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // DONT create a test fixture, we will drive everything directly.
@@ -284,7 +294,8 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testMessageIDFormatOptionApplied() throws Exception {
         BUILTIN[] formatters = JmsMessageIDBuilder.BUILTIN.values();
 
@@ -316,7 +327,8 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testSetCustomMessageIDBuilder() throws Exception {
         CustomJmsMessageIdBuilder custom = new CustomJmsMessageIdBuilder();
 
@@ -347,7 +359,8 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testSetCustomMessageIDPolicy() throws Exception {
         CustomJmsMessageIDPolicy custom = new CustomJmsMessageIDPolicy();
 
@@ -378,7 +391,8 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testSetCustomPrefetchPolicy() throws Exception {
         CustomJmsPrefetchPolicy custom = new CustomJmsPrefetchPolicy();
 
@@ -409,7 +423,8 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testSetCustomPresettlePolicy() throws Exception {
         CustomJmsPresettlePolicy custom = new CustomJmsPresettlePolicy();
 
@@ -440,7 +455,8 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testSetCustomRedeliveryPolicy() throws Exception {
         CustomJmsRedeliveryPolicy custom = new CustomJmsRedeliveryPolicy();
 
@@ -471,7 +487,8 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=10000)
+    @Test
+    @Timeout(10)
     public void testMessageIDPolicyCannotBeNulled() throws Exception {
         CustomJmsMessageIDPolicy custom = new CustomJmsMessageIDPolicy();
 
@@ -485,7 +502,8 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
         assertTrue(factory.getMessageIDPolicy() instanceof JmsDefaultMessageIDPolicy);
     }
 
-    @Test(timeout=10000)
+    @Test
+    @Timeout(10)
     public void testPrefetchPolicyCannotBeNulled() throws Exception {
         CustomJmsPrefetchPolicy custom = new CustomJmsPrefetchPolicy();
 
@@ -499,7 +517,8 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
         assertTrue(factory.getPrefetchPolicy() instanceof JmsDefaultPrefetchPolicy);
     }
 
-    @Test(timeout=10000)
+    @Test
+    @Timeout(10)
     public void testPresettlePolicyCannotBeNulled() throws Exception {
         CustomJmsPresettlePolicy custom = new CustomJmsPresettlePolicy();
 
@@ -513,7 +532,8 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
         assertTrue(factory.getPresettlePolicy() instanceof JmsDefaultPresettlePolicy);
     }
 
-    @Test(timeout=10000)
+    @Test
+    @Timeout(10)
     public void testRedeliveryPolicyCannotBeNulled() throws Exception {
         CustomJmsRedeliveryPolicy custom = new CustomJmsRedeliveryPolicy();
 
@@ -527,17 +547,20 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
         assertTrue(factory.getRedeliveryPolicy() instanceof JmsDefaultRedeliveryPolicy);
     }
 
-    @Test(timeout = 20_000)
+    @Test
+    @Timeout(20)
     public void testConfigureFutureFactoryFromURITypeOfProgressive() throws Exception {
         doTestCreateConnectionWithConfiguredFutureFactory("progressive");
     }
 
-    @Test(timeout = 20_000)
+    @Test
+    @Timeout(20)
     public void testConfigureFutureFactoryFromURITypeOfBalanced() throws Exception {
         doTestCreateConnectionWithConfiguredFutureFactory("balanced");
     }
 
-    @Test(timeout = 20_000)
+    @Test
+    @Timeout(20)
     public void testConfigureFutureFactoryFromURITypeOfConservative() throws Exception {
         doTestCreateConnectionWithConfiguredFutureFactory("conservative");
     }
@@ -568,7 +591,8 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20_000)
+    @Test
+    @Timeout(20)
     public void testConfigureFutureFactoryFromURITypeUnknown() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // Ignore errors from peer close due to not sending any Open / Close frames

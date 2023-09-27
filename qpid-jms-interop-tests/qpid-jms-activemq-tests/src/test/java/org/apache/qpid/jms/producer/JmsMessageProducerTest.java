@@ -16,11 +16,11 @@
  */
 package org.apache.qpid.jms.producer;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
@@ -39,14 +39,16 @@ import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.apache.qpid.jms.support.Wait;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Test Various behaviors of the JMS MessageProducer implementation.
  */
 public class JmsMessageProducerTest extends AmqpTestSupport {
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testCreateMessageProducer() throws Exception {
         connection = createAmqpConnection();
         assertNotNull(connection);
@@ -54,14 +56,15 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         session.createProducer(queue);
 
-        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        QueueViewMBean proxy = getProxyToQueue(testMethodName);
         assertEquals(0, proxy.getQueueSize());
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testProducerNotAuthorized() throws Exception {
         connection = createAmqpConnection("guest", "password");
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -74,19 +77,20 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendMultipleMessagesPersistent() throws Exception {
         connection = createAmqpConnection();
         assertNotNull(connection);
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         MessageProducer producer = session.createProducer(queue);
 
         final int MSG_COUNT = 100;
 
-        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        QueueViewMBean proxy = getProxyToQueue(testMethodName);
         assertEquals(0, proxy.getQueueSize());
 
         producer.setDeliveryMode(DeliveryMode.PERSISTENT);
@@ -107,19 +111,20 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
         assertEquals(MSG_COUNT, proxy.getQueueSize());
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendMultipleMessagesNonPersistent() throws Exception {
         connection = createAmqpConnection();
         assertNotNull(connection);
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         MessageProducer producer = session.createProducer(queue);
 
         final int MSG_COUNT = 100;
 
-        final QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        final QueueViewMBean proxy = getProxyToQueue(testMethodName);
         assertEquals(0, proxy.getQueueSize());
 
         producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
@@ -135,18 +140,19 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
             LOG.trace("sent message: {}", i);
         }
 
-        assertTrue("Should all make it to the Queue.", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return proxy.getQueueSize() == MSG_COUNT;
             }
-        }));
+        }), "Should all make it to the Queue.");
 
         producer.close();
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testPersistentSendsAreMarkedPersistent() throws Exception {
         connection = createAmqpConnection();
         assertNotNull(connection);
@@ -154,11 +160,11 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         MessageProducer producer = session.createProducer(queue);
         producer.setDeliveryMode(DeliveryMode.PERSISTENT);
 
-        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        QueueViewMBean proxy = getProxyToQueue(testMethodName);
         assertEquals(0, proxy.getQueueSize());
 
         Message message = session.createMessage();
@@ -172,7 +178,8 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
         assertTrue(message.getJMSDeliveryMode() == DeliveryMode.PERSISTENT);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testProducerWithNoTTLSendsMessagesWithoutTTL() throws Exception {
         connection = createAmqpConnection();
         assertNotNull(connection);
@@ -180,10 +187,10 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         MessageProducer producer = session.createProducer(queue);
 
-        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        QueueViewMBean proxy = getProxyToQueue(testMethodName);
         assertEquals(0, proxy.getQueueSize());
 
         Message message = session.createMessage();
@@ -197,7 +204,8 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
         assertEquals(0, message.getJMSExpiration());
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testProducerWithNoMessageIdCanBeConsumed() throws Exception {
         connection = createAmqpConnection();
         assertNotNull(connection);
@@ -205,11 +213,11 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         MessageProducer producer = session.createProducer(queue);
         producer.setDisableMessageID(true);
 
-        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        QueueViewMBean proxy = getProxyToQueue(testMethodName);
         assertEquals(0, proxy.getQueueSize());
 
         for (int i = 0; i < 10; ++i) {
@@ -238,13 +246,14 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
         return builder.toString();
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testSendLargeMessage() throws Exception {
         connection = createAmqpConnection();
         assertNotNull(connection);
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        String queueName = name.toString();
+        String queueName = testMethodName.toString();
         Queue queue = session.createQueue(queueName);
 
         MessageProducer producer = session.createProducer(queue);
@@ -265,17 +274,20 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
         assertEquals(messageText, textMessage.getText());
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testProducerWithTTL() throws Exception {
         doProducerWithTTLTestImpl(false, null);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testProducerWithTTLDisableTimestamp() throws Exception {
         doProducerWithTTLTestImpl(true, null);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testProducerWithTTLDisableTimestampAndNoAmqpTtl() throws Exception {
         doProducerWithTTLTestImpl(true, 0L);
     }
@@ -287,7 +299,7 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
 
         Message message = session.createMessage();
         if(propJMS_AMQP_TTL != null) {
@@ -310,6 +322,6 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
                     new Object[] { message.getJMSExpiration(), message.getJMSTimestamp(),
                     message.getJMSExpiration() - message.getJMSTimestamp()});
         }
-        assertNull("Unexpected message received, see log for details", message);
+        assertNull(message, "Unexpected message received, see log for details");
     }
 }

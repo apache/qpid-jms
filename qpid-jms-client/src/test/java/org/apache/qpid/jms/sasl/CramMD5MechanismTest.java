@@ -16,18 +16,18 @@
  */
 package org.apache.qpid.jms.sasl;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.security.Principal;
 import java.util.Base64;
 
-import org.junit.Test;
-
 import javax.security.sasl.SaslException;
+
+import org.junit.jupiter.api.Test;
 
 /**
  * The known good used by these tests is taken from the example in RFC 2195 section 2.
@@ -59,68 +59,68 @@ public class CramMD5MechanismTest {
     public void testIsNotApplicableWithNoCredentials() {
         CramMD5Mechanism mech = new CramMD5Mechanism();
 
-        assertFalse("Should not be applicable with no credentials", mech.isApplicable(null, null, null));
+        assertFalse(mech.isApplicable(null, null, null), "Should not be applicable with no credentials");
     }
 
     @Test
     public void testIsNotApplicableWithNoUser() {
         CramMD5Mechanism mech = new CramMD5Mechanism();
 
-        assertFalse("Should not be applicable with no username", mech.isApplicable(null, "pass", null));
+        assertFalse(mech.isApplicable(null, "pass", null), "Should not be applicable with no username");
     }
 
     @Test
     public void testIsNotApplicableWithNoPassword() {
         CramMD5Mechanism mech = new CramMD5Mechanism();
 
-        assertFalse("Should not be applicable with no password", mech.isApplicable("user", null, null));
+        assertFalse(mech.isApplicable("user", null, null), "Should not be applicable with no password");
     }
 
     @Test
     public void testIsNotApplicableWithEmtpyUser() {
         CramMD5Mechanism mech = new CramMD5Mechanism();
 
-        assertFalse("Should not be applicable with empty username", mech.isApplicable("", "pass", null));
+        assertFalse(mech.isApplicable("", "pass", null), "Should not be applicable with empty username");
     }
 
     @Test
     public void testIsNotApplicableWithEmtpyPassword() {
         CramMD5Mechanism mech = new CramMD5Mechanism();
 
-        assertFalse("Should not be applicable with empty password", mech.isApplicable("user", "", null));
+        assertFalse(mech.isApplicable("user", "", null), "Should not be applicable with empty password");
     }
 
     @Test
     public void testIsNotApplicableWithEmtpyUserAndPassword() {
         CramMD5Mechanism mech = new CramMD5Mechanism();
 
-        assertFalse("Should not be applicable with empty user and password", mech.isApplicable("", "", null));
+        assertFalse(mech.isApplicable("", "", null), "Should not be applicable with empty user and password");
     }
 
     @Test
     public void testIsApplicableWithUserAndPassword() {
         CramMD5Mechanism mech = new CramMD5Mechanism();
 
-        assertTrue("Should be applicable with user and password", mech.isApplicable("user", "password", null));
+        assertTrue(mech.isApplicable("user", "password", null), "Should be applicable with user and password");
     }
 
     @Test
     public void testIsApplicableWithUserAndPasswordAndPrincipal() {
         CramMD5Mechanism mech = new CramMD5Mechanism();
 
-        assertTrue("Should be applicable with user and password and principal", mech.isApplicable("user", "password", new Principal() {
+        assertTrue(mech.isApplicable("user", "password", new Principal() {
             @Override
             public String getName() {
                 return "name";
             }
-        }));
+        }), "Should be applicable with user and password and principal");
     }
 
     @Test
     public void testIsEnabledByDefault() {
         CramMD5Mechanism mech = new CramMD5Mechanism();
 
-        assertTrue("Should be enabled by default", mech.isEnabledByDefault());
+        assertTrue(mech.isEnabledByDefault(), "Should be enabled by default");
     }
 
     public void testIncompleteExchange() throws Exception {

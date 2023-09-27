@@ -21,11 +21,12 @@
 package org.apache.qpid.jms.provider.amqp.message;
 
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.encodeMessage;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -65,8 +66,9 @@ import org.apache.qpid.proton.amqp.messaging.Header;
 import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
 import org.apache.qpid.proton.message.Message;
 import org.apache.qpid.proton.message.impl.MessageImpl;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.mockito.Mockito;
 
 import io.netty.buffer.ByteBuf;
@@ -76,10 +78,10 @@ public class AmqpCodecTest extends QpidJmsTestCase {
     private AmqpConsumer mockConsumer;
     private AmqpConnection mockConnection;
 
-    @Before
+    @BeforeEach
     @Override
-    public void setUp() throws Exception {
-        super.setUp();
+    public void setUp(TestInfo testInfo) throws Exception {
+        super.setUp(testInfo);
 
         JmsConsumerId consumerId = new JmsConsumerId("ID:MOCK:1", 1, 1);
         mockConnection = Mockito.mock(AmqpConnection.class);
@@ -165,13 +167,13 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         message.setBody(new AmqpValue("test"));
 
         JmsMessage jmsMessage = AmqpCodec.decodeMessage(mockConsumer, encodeMessage(message)).asJmsMessage();
-        assertNotNull("Message should not be null", jmsMessage);
-        assertEquals("Unexpected message class type", JmsTextMessage.class, jmsMessage.getClass());
+        assertNotNull(jmsMessage, "Message should not be null");
+        assertEquals(JmsTextMessage.class, jmsMessage.getClass(), "Unexpected message class type");
         assertEquals(DeliveryMode.PERSISTENT, jmsMessage.getJMSDeliveryMode());
 
         JmsMessageFacade facade = jmsMessage.getFacade();
-        assertNotNull("Facade should not be null", facade);
-        assertEquals("Unexpected facade class type", AmqpJmsTextMessageFacade.class, facade.getClass());
+        assertNotNull(facade, "Facade should not be null");
+        assertEquals(AmqpJmsTextMessageFacade.class, facade.getClass(), "Unexpected facade class type");
         assertTrue(facade.isPersistent());
     }
 
@@ -182,13 +184,13 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         message.setBody(new AmqpValue("test"));
 
         JmsMessage jmsMessage = AmqpCodec.decodeMessage(mockConsumer, encodeMessage(message)).asJmsMessage();
-        assertNotNull("Message should not be null", jmsMessage);
-        assertEquals("Unexpected message class type", JmsTextMessage.class, jmsMessage.getClass());
+        assertNotNull(jmsMessage, "Message should not be null");
+        assertEquals(JmsTextMessage.class, jmsMessage.getClass(), "Unexpected message class type");
         assertEquals(8, jmsMessage.getJMSPriority());
 
         JmsMessageFacade facade = jmsMessage.getFacade();
-        assertNotNull("Facade should not be null", facade);
-        assertEquals("Unexpected facade class type", AmqpJmsTextMessageFacade.class, facade.getClass());
+        assertNotNull(facade, "Facade should not be null");
+        assertEquals(AmqpJmsTextMessageFacade.class, facade.getClass(), "Unexpected facade class type");
         assertEquals(8, facade.getPriority());
     }
 
@@ -199,12 +201,12 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         message.setBody(new AmqpValue("test"));
 
         JmsMessage jmsMessage = AmqpCodec.decodeMessage(mockConsumer, encodeMessage(message)).asJmsMessage();
-        assertNotNull("Message should not be null", jmsMessage);
-        assertEquals("Unexpected message class type", JmsTextMessage.class, jmsMessage.getClass());
+        assertNotNull(jmsMessage, "Message should not be null");
+        assertEquals(JmsTextMessage.class, jmsMessage.getClass(), "Unexpected message class type");
 
-        assertEquals("Unexpected facade class type", AmqpJmsTextMessageFacade.class, jmsMessage.getFacade().getClass());
+        assertEquals(AmqpJmsTextMessageFacade.class, jmsMessage.getFacade().getClass(), "Unexpected facade class type");
         AmqpJmsTextMessageFacade facade = (AmqpJmsTextMessageFacade) jmsMessage.getFacade();
-        assertNotNull("Facade should not be null", facade);
+        assertNotNull(facade, "Facade should not be null");
         assertTrue(facade.getAmqpHeader().isFirstAcquirer());
     }
 
@@ -215,12 +217,12 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         message.setBody(new AmqpValue("test"));
 
         JmsMessage jmsMessage = AmqpCodec.decodeMessage(mockConsumer, encodeMessage(message)).asJmsMessage();
-        assertNotNull("Message should not be null", jmsMessage);
-        assertEquals("Unexpected message class type", JmsTextMessage.class, jmsMessage.getClass());
+        assertNotNull(jmsMessage, "Message should not be null");
+        assertEquals(JmsTextMessage.class, jmsMessage.getClass(), "Unexpected message class type");
 
-        assertEquals("Unexpected facade class type", AmqpJmsTextMessageFacade.class, jmsMessage.getFacade().getClass());
+        assertEquals(AmqpJmsTextMessageFacade.class, jmsMessage.getFacade().getClass(), "Unexpected facade class type");
         AmqpJmsTextMessageFacade facade = (AmqpJmsTextMessageFacade) jmsMessage.getFacade();
-        assertNotNull("Facade should not be null", facade);
+        assertNotNull(facade, "Facade should not be null");
         assertEquals(65535, facade.getAmqpHeader().getTimeToLive());
     }
 
@@ -231,13 +233,13 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         message.setBody(new AmqpValue("test"));
 
         JmsMessage jmsMessage = AmqpCodec.decodeMessage(mockConsumer, encodeMessage(message)).asJmsMessage();
-        assertNotNull("Message should not be null", jmsMessage);
-        assertEquals("Unexpected message class type", JmsTextMessage.class, jmsMessage.getClass());
+        assertNotNull(jmsMessage, "Message should not be null");
+        assertEquals(JmsTextMessage.class, jmsMessage.getClass(), "Unexpected message class type");
         assertTrue(jmsMessage.getJMSRedelivered());
 
-        assertEquals("Unexpected facade class type", AmqpJmsTextMessageFacade.class, jmsMessage.getFacade().getClass());
+        assertEquals(AmqpJmsTextMessageFacade.class, jmsMessage.getFacade().getClass(), "Unexpected facade class type");
         AmqpJmsTextMessageFacade facade = (AmqpJmsTextMessageFacade) jmsMessage.getFacade();
-        assertNotNull("Facade should not be null", facade);
+        assertNotNull(facade, "Facade should not be null");
         assertEquals(2, facade.getRedeliveryCount());
         assertEquals(2, facade.getAmqpHeader().getDeliveryCount());
         assertEquals(UnsignedInteger.valueOf(2), facade.getHeader().getDeliveryCount());
@@ -253,17 +255,19 @@ public class AmqpCodecTest extends QpidJmsTestCase {
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(expected = IOException.class)
+    @Test
     public void testCreateMessageFromUnknownMessageTypeAnnotationValueThrows() throws Exception {
-        Message message = Proton.message();
+        assertThrows(IOException.class, () -> {
+            Message message = Proton.message();
 
-        Map<Symbol, Object> map = new HashMap<Symbol, Object>();
-        map.put(AmqpMessageSupport.JMS_MSG_TYPE, (byte) -1);
+            Map<Symbol, Object> map = new HashMap<Symbol, Object>();
+            map.put(AmqpMessageSupport.JMS_MSG_TYPE, (byte) -1);
 
-        MessageAnnotations messageAnnotations = new MessageAnnotations(map);
-        message.setMessageAnnotations(messageAnnotations);
+            MessageAnnotations messageAnnotations = new MessageAnnotations(map);
+            message.setMessageAnnotations(messageAnnotations);
 
-        AmqpCodec.decodeMessage(mockConsumer, encodeMessage(message));
+            AmqpCodec.decodeMessage(mockConsumer, encodeMessage(message));
+        });
     }
 
     /**
@@ -284,12 +288,12 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         message.setMessageAnnotations(messageAnnotations);
 
         JmsMessage jmsMessage = AmqpCodec.decodeMessage(mockConsumer, encodeMessage(message)).asJmsMessage();
-        assertNotNull("Message should not be null", jmsMessage);
-        assertEquals("Unexpected message class type", JmsMessage.class, jmsMessage.getClass());
+        assertNotNull(jmsMessage, "Message should not be null");
+        assertEquals(JmsMessage.class, jmsMessage.getClass(), "Unexpected message class type");
 
         JmsMessageFacade facade = jmsMessage.getFacade();
-        assertNotNull("Facade should not be null", facade);
-        assertEquals("Unexpected facade class type", AmqpJmsMessageFacade.class, facade.getClass());
+        assertNotNull(facade, "Facade should not be null");
+        assertEquals(AmqpJmsMessageFacade.class, facade.getClass(), "Unexpected facade class type");
     }
 
     /**
@@ -310,12 +314,12 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         message.setMessageAnnotations(messageAnnotations);
 
         JmsMessage jmsMessage = AmqpCodec.decodeMessage(mockConsumer, encodeMessage(message)).asJmsMessage();
-        assertNotNull("Message should not be null", jmsMessage);
-        assertEquals("Unexpected message class type", JmsBytesMessage.class, jmsMessage.getClass());
+        assertNotNull(jmsMessage, "Message should not be null");
+        assertEquals(JmsBytesMessage.class, jmsMessage.getClass(), "Unexpected message class type");
 
         JmsMessageFacade facade = jmsMessage.getFacade();
-        assertNotNull("Facade should not be null", facade);
-        assertEquals("Unexpected facade class type", AmqpJmsBytesMessageFacade.class, facade.getClass());
+        assertNotNull(facade, "Facade should not be null");
+        assertEquals(AmqpJmsBytesMessageFacade.class, facade.getClass(), "Unexpected facade class type");
     }
 
     /**
@@ -336,12 +340,12 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         message.setMessageAnnotations(messageAnnotations);
 
         JmsMessage jmsMessage = AmqpCodec.decodeMessage(mockConsumer, encodeMessage(message)).asJmsMessage();
-        assertNotNull("Message should not be null", jmsMessage);
-        assertEquals("Unexpected message class type", JmsTextMessage.class, jmsMessage.getClass());
+        assertNotNull(jmsMessage, "Message should not be null");
+        assertEquals(JmsTextMessage.class, jmsMessage.getClass(), "Unexpected message class type");
 
         JmsMessageFacade facade = jmsMessage.getFacade();
-        assertNotNull("Facade should not be null", facade);
-        assertEquals("Unexpected facade class type", AmqpJmsTextMessageFacade.class, facade.getClass());
+        assertNotNull(facade, "Facade should not be null");
+        assertEquals(AmqpJmsTextMessageFacade.class, facade.getClass(), "Unexpected facade class type");
     }
 
     /**
@@ -385,18 +389,18 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         }
 
         JmsMessage jmsMessage = AmqpCodec.decodeMessage(mockConsumer, encodeMessage(message)).asJmsMessage();
-        assertNotNull("Message should not be null", jmsMessage);
-        assertEquals("Unexpected message class type", JmsObjectMessage.class, jmsMessage.getClass());
+        assertNotNull(jmsMessage, "Message should not be null");
+        assertEquals(JmsObjectMessage.class, jmsMessage.getClass(), "Unexpected message class type");
 
         JmsMessageFacade facade = jmsMessage.getFacade();
-        assertNotNull("Facade should not be null", facade);
-        assertEquals("Unexpected facade class type", AmqpJmsObjectMessageFacade.class, facade.getClass());
+        assertNotNull(facade, "Facade should not be null");
+        assertEquals(AmqpJmsObjectMessageFacade.class, facade.getClass(), "Unexpected facade class type");
 
         AmqpObjectTypeDelegate delegate = ((AmqpJmsObjectMessageFacade) facade).getDelegate();
         if (setJavaSerializedContentType) {
-            assertTrue("Unexpected delegate type: " + delegate, delegate instanceof AmqpSerializedObjectDelegate);
+            assertTrue(delegate instanceof AmqpSerializedObjectDelegate, "Unexpected delegate type: " + delegate);
         } else {
-            assertTrue("Unexpected delegate type: " + delegate, delegate instanceof AmqpTypedObjectDelegate);
+            assertTrue(delegate instanceof AmqpTypedObjectDelegate, "Unexpected delegate type: " + delegate);
         }
     }
 
@@ -418,12 +422,12 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         message.setMessageAnnotations(messageAnnotations);
 
         JmsMessage jmsMessage = AmqpCodec.decodeMessage(mockConsumer, encodeMessage(message)).asJmsMessage();
-        assertNotNull("Message should not be null", jmsMessage);
-        assertEquals("Unexpected message class type", JmsStreamMessage.class, jmsMessage.getClass());
+        assertNotNull(jmsMessage, "Message should not be null");
+        assertEquals(JmsStreamMessage.class, jmsMessage.getClass(), "Unexpected message class type");
 
         JmsMessageFacade facade = jmsMessage.getFacade();
-        assertNotNull("Facade should not be null", facade);
-        assertEquals("Unexpected facade class type", AmqpJmsStreamMessageFacade.class, facade.getClass());
+        assertNotNull(facade, "Facade should not be null");
+        assertEquals(AmqpJmsStreamMessageFacade.class, facade.getClass(), "Unexpected facade class type");
     }
 
     // =============== Without The Message Type Annotation =========
@@ -444,12 +448,12 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         message.setContentType(AmqpMessageSupport.OCTET_STREAM_CONTENT_TYPE.toString());
 
         JmsMessage jmsMessage = AmqpCodec.decodeMessage(mockConsumer, encodeMessage(message)).asJmsMessage();
-        assertNotNull("Message should not be null", jmsMessage);
-        assertEquals("Unexpected message class type", JmsBytesMessage.class, jmsMessage.getClass());
+        assertNotNull(jmsMessage, "Message should not be null");
+        assertEquals(JmsBytesMessage.class, jmsMessage.getClass(), "Unexpected message class type");
 
         JmsMessageFacade facade = jmsMessage.getFacade();
-        assertNotNull("Facade should not be null", facade);
-        assertEquals("Unexpected facade class type", AmqpJmsBytesMessageFacade.class, facade.getClass());
+        assertNotNull(facade, "Facade should not be null");
+        assertEquals(AmqpJmsBytesMessageFacade.class, facade.getClass(), "Unexpected facade class type");
     }
 
     /**
@@ -465,12 +469,12 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         assertNull(message.getContentType());
 
         JmsMessage jmsMessage = AmqpCodec.decodeMessage(mockConsumer, encodeMessage(message)).asJmsMessage();
-        assertNotNull("Message should not be null", jmsMessage);
-        assertEquals("Unexpected message class type", JmsBytesMessage.class, jmsMessage.getClass());
+        assertNotNull(jmsMessage, "Message should not be null");
+        assertEquals(JmsBytesMessage.class, jmsMessage.getClass(), "Unexpected message class type");
 
         JmsMessageFacade facade = jmsMessage.getFacade();
-        assertNotNull("Facade should not be null", facade);
-        assertEquals("Unexpected facade class type", AmqpJmsBytesMessageFacade.class, facade.getClass());
+        assertNotNull(facade, "Facade should not be null");
+        assertEquals(AmqpJmsBytesMessageFacade.class, facade.getClass(), "Unexpected facade class type");
     }
 
     /**
@@ -486,15 +490,15 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         message.setContentType(AmqpMessageSupport.SERIALIZED_JAVA_OBJECT_CONTENT_TYPE.toString());
 
         JmsMessage jmsMessage = AmqpCodec.decodeMessage(mockConsumer, encodeMessage(message)).asJmsMessage();
-        assertNotNull("Message should not be null", jmsMessage);
-        assertEquals("Unexpected message class type", JmsObjectMessage.class, jmsMessage.getClass());
+        assertNotNull(jmsMessage, "Message should not be null");
+        assertEquals(JmsObjectMessage.class, jmsMessage.getClass(), "Unexpected message class type");
 
         JmsMessageFacade facade = jmsMessage.getFacade();
-        assertNotNull("Facade should not be null", facade);
-        assertEquals("Unexpected facade class type", AmqpJmsObjectMessageFacade.class, facade.getClass());
+        assertNotNull(facade, "Facade should not be null");
+        assertEquals(AmqpJmsObjectMessageFacade.class, facade.getClass(), "Unexpected facade class type");
 
         AmqpObjectTypeDelegate delegate = ((AmqpJmsObjectMessageFacade) facade).getDelegate();
-        assertTrue("Unexpected delegate type: " + delegate, delegate instanceof AmqpSerializedObjectDelegate);
+        assertTrue(delegate instanceof AmqpSerializedObjectDelegate, "Unexpected delegate type: " + delegate);
     }
 
     @Test
@@ -503,12 +507,12 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         message.setContentType("text/plain");
 
         JmsMessage jmsMessage = AmqpCodec.decodeMessage(mockConsumer, encodeMessage(message)).asJmsMessage();
-        assertNotNull("Message should not be null", jmsMessage);
-        assertEquals("Unexpected message class type", JmsTextMessage.class, jmsMessage.getClass());
+        assertNotNull(jmsMessage, "Message should not be null");
+        assertEquals(JmsTextMessage.class, jmsMessage.getClass(), "Unexpected message class type");
 
         JmsMessageFacade facade = jmsMessage.getFacade();
-        assertNotNull("Facade should not be null", facade);
-        assertEquals("Unexpected facade class type", AmqpJmsTextMessageFacade.class, facade.getClass());
+        assertNotNull(facade, "Facade should not be null");
+        assertEquals(AmqpJmsTextMessageFacade.class, facade.getClass(), "Unexpected facade class type");
     }
 
     /**
@@ -523,12 +527,12 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         message.setContentType("unknown-content-type");
 
         JmsMessage jmsMessage = AmqpCodec.decodeMessage(mockConsumer, encodeMessage(message)).asJmsMessage();
-        assertNotNull("Message should not be null", jmsMessage);
-        assertEquals("Unexpected message class type", JmsMessage.class, jmsMessage.getClass());
+        assertNotNull(jmsMessage, "Message should not be null");
+        assertEquals(JmsMessage.class, jmsMessage.getClass(), "Unexpected message class type");
 
         JmsMessageFacade facade = jmsMessage.getFacade();
-        assertNotNull("Facade should not be null", facade);
-        assertEquals("Unexpected facade class type", AmqpJmsMessageFacade.class, facade.getClass());
+        assertNotNull(facade, "Facade should not be null");
+        assertEquals(AmqpJmsMessageFacade.class, facade.getClass(), "Unexpected facade class type");
     }
 
     // --------- Data Body Section ---------
@@ -548,12 +552,12 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         message.setContentType(AmqpMessageSupport.OCTET_STREAM_CONTENT_TYPE.toString());
 
         JmsMessage jmsMessage = AmqpCodec.decodeMessage(mockConsumer, encodeMessage(message)).asJmsMessage();
-        assertNotNull("Message should not be null", jmsMessage);
-        assertEquals("Unexpected message class type", JmsBytesMessage.class, jmsMessage.getClass());
+        assertNotNull(jmsMessage, "Message should not be null");
+        assertEquals(JmsBytesMessage.class, jmsMessage.getClass(), "Unexpected message class type");
 
         JmsMessageFacade facade = jmsMessage.getFacade();
-        assertNotNull("Facade should not be null", facade);
-        assertEquals("Unexpected facade class type", AmqpJmsBytesMessageFacade.class, facade.getClass());
+        assertNotNull(facade, "Facade should not be null");
+        assertEquals(AmqpJmsBytesMessageFacade.class, facade.getClass(), "Unexpected facade class type");
     }
 
     /**
@@ -570,12 +574,12 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         message.setContentType("unknown-content-type");
 
         JmsMessage jmsMessage = AmqpCodec.decodeMessage(mockConsumer, encodeMessage(message)).asJmsMessage();
-        assertNotNull("Message should not be null", jmsMessage);
-        assertEquals("Unexpected message class type", JmsBytesMessage.class, jmsMessage.getClass());
+        assertNotNull(jmsMessage, "Message should not be null");
+        assertEquals(JmsBytesMessage.class, jmsMessage.getClass(), "Unexpected message class type");
 
         JmsMessageFacade facade = jmsMessage.getFacade();
-        assertNotNull("Facade should not be null", facade);
-        assertEquals("Unexpected facade class type", AmqpJmsBytesMessageFacade.class, facade.getClass());
+        assertNotNull(facade, "Facade should not be null");
+        assertEquals(AmqpJmsBytesMessageFacade.class, facade.getClass(), "Unexpected facade class type");
     }
 
     /**
@@ -594,12 +598,12 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         assertNull(message.getContentType());
 
         JmsMessage jmsMessage = AmqpCodec.decodeMessage(mockConsumer, encodeMessage(message)).asJmsMessage();
-        assertNotNull("Message should not be null", jmsMessage);
-        assertEquals("Unexpected message class type", JmsBytesMessage.class, jmsMessage.getClass());
+        assertNotNull(jmsMessage, "Message should not be null");
+        assertEquals(JmsBytesMessage.class, jmsMessage.getClass(), "Unexpected message class type");
 
         JmsMessageFacade facade = jmsMessage.getFacade();
-        assertNotNull("Facade should not be null", facade);
-        assertEquals("Unexpected facade class type", AmqpJmsBytesMessageFacade.class, facade.getClass());
+        assertNotNull(facade, "Facade should not be null");
+        assertEquals(AmqpJmsBytesMessageFacade.class, facade.getClass(), "Unexpected facade class type");
     }
 
     /**
@@ -617,15 +621,15 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         message.setContentType(AmqpMessageSupport.SERIALIZED_JAVA_OBJECT_CONTENT_TYPE.toString());
 
         JmsMessage jmsMessage = AmqpCodec.decodeMessage(mockConsumer, encodeMessage(message)).asJmsMessage();
-        assertNotNull("Message should not be null", jmsMessage);
-        assertEquals("Unexpected message class type", JmsObjectMessage.class, jmsMessage.getClass());
+        assertNotNull(jmsMessage, "Message should not be null");
+        assertEquals(JmsObjectMessage.class, jmsMessage.getClass(), "Unexpected message class type");
 
         JmsMessageFacade facade = jmsMessage.getFacade();
-        assertNotNull("Facade should not be null", facade);
-        assertEquals("Unexpected facade class type", AmqpJmsObjectMessageFacade.class, facade.getClass());
+        assertNotNull(facade, "Facade should not be null");
+        assertEquals(AmqpJmsObjectMessageFacade.class, facade.getClass(), "Unexpected facade class type");
 
         AmqpObjectTypeDelegate delegate = ((AmqpJmsObjectMessageFacade) facade).getDelegate();
-        assertTrue("Unexpected delegate type: " + delegate, delegate instanceof AmqpSerializedObjectDelegate);
+        assertTrue(delegate instanceof AmqpSerializedObjectDelegate, "Unexpected delegate type: " + delegate);
     }
 
     /**
@@ -730,15 +734,15 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         message.setContentType(contentType);
 
         JmsMessage jmsMessage = AmqpCodec.decodeMessage(mockConsumer, encodeMessage(message)).asJmsMessage();
-        assertNotNull("Message should not be null", jmsMessage);
-        assertEquals("Unexpected message class type", JmsTextMessage.class, jmsMessage.getClass());
+        assertNotNull(jmsMessage, "Message should not be null");
+        assertEquals(JmsTextMessage.class, jmsMessage.getClass(), "Unexpected message class type");
 
         JmsMessageFacade facade = jmsMessage.getFacade();
-        assertNotNull("Facade should not be null", facade);
-        assertEquals("Unexpected facade class type", AmqpJmsTextMessageFacade.class, facade.getClass());
+        assertNotNull(facade, "Facade should not be null");
+        assertEquals(AmqpJmsTextMessageFacade.class, facade.getClass(), "Unexpected facade class type");
 
         AmqpJmsTextMessageFacade textFacade = (AmqpJmsTextMessageFacade) facade;
-        assertEquals("Unexpected character set", expectedCharset, textFacade.getCharset());
+        assertEquals(expectedCharset, textFacade.getCharset(), "Unexpected character set");
     }
 
     // --------- AmqpValue Body Section ---------
@@ -755,12 +759,12 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         message.setBody(new AmqpValue("content"));
 
         JmsMessage jmsMessage = AmqpCodec.decodeMessage(mockConsumer, encodeMessage(message)).asJmsMessage();
-        assertNotNull("Message should not be null", jmsMessage);
-        assertEquals("Unexpected message class type", JmsTextMessage.class, jmsMessage.getClass());
+        assertNotNull(jmsMessage, "Message should not be null");
+        assertEquals(JmsTextMessage.class, jmsMessage.getClass(), "Unexpected message class type");
 
         JmsMessageFacade facade = jmsMessage.getFacade();
-        assertNotNull("Facade should not be null", facade);
-        assertEquals("Unexpected facade class type", AmqpJmsTextMessageFacade.class, facade.getClass());
+        assertNotNull(facade, "Facade should not be null");
+        assertEquals(AmqpJmsTextMessageFacade.class, facade.getClass(), "Unexpected facade class type");
     }
 
     /**
@@ -775,12 +779,12 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         message.setBody(new AmqpValue(null));
 
         JmsMessage jmsMessage = AmqpCodec.decodeMessage(mockConsumer, encodeMessage(message)).asJmsMessage();
-        assertNotNull("Message should not be null", jmsMessage);
-        assertEquals("Unexpected message class type", JmsTextMessage.class, jmsMessage.getClass());
+        assertNotNull(jmsMessage, "Message should not be null");
+        assertEquals(JmsTextMessage.class, jmsMessage.getClass(), "Unexpected message class type");
 
         JmsMessageFacade facade = jmsMessage.getFacade();
-        assertNotNull("Facade should not be null", facade);
-        assertEquals("Unexpected facade class type", AmqpJmsTextMessageFacade.class, facade.getClass());
+        assertNotNull(facade, "Facade should not be null");
+        assertEquals(AmqpJmsTextMessageFacade.class, facade.getClass(), "Unexpected facade class type");
     }
 
     /**
@@ -796,15 +800,15 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         message.setBody(new AmqpValue(map));
 
         JmsMessage jmsMessage = AmqpCodec.decodeMessage(mockConsumer, encodeMessage(message)).asJmsMessage();
-        assertNotNull("Message should not be null", jmsMessage);
-        assertEquals("Unexpected message class type", JmsObjectMessage.class, jmsMessage.getClass());
+        assertNotNull(jmsMessage, "Message should not be null");
+        assertEquals(JmsObjectMessage.class, jmsMessage.getClass(), "Unexpected message class type");
 
         JmsMessageFacade facade = jmsMessage.getFacade();
-        assertNotNull("Facade should not be null", facade);
-        assertEquals("Unexpected facade class type", AmqpJmsObjectMessageFacade.class, facade.getClass());
+        assertNotNull(facade, "Facade should not be null");
+        assertEquals(AmqpJmsObjectMessageFacade.class, facade.getClass(), "Unexpected facade class type");
 
         AmqpObjectTypeDelegate delegate = ((AmqpJmsObjectMessageFacade) facade).getDelegate();
-        assertTrue("Unexpected delegate type: " + delegate, delegate instanceof AmqpTypedObjectDelegate);
+        assertTrue(delegate instanceof AmqpTypedObjectDelegate, "Unexpected delegate type: " + delegate);
     }
 
     /**
@@ -820,15 +824,15 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         message.setBody(new AmqpValue(list));
 
         JmsMessage jmsMessage = AmqpCodec.decodeMessage(mockConsumer, encodeMessage(message)).asJmsMessage();
-        assertNotNull("Message should not be null", jmsMessage);
-        assertEquals("Unexpected message class type", JmsObjectMessage.class, jmsMessage.getClass());
+        assertNotNull(jmsMessage, "Message should not be null");
+        assertEquals(JmsObjectMessage.class, jmsMessage.getClass(), "Unexpected message class type");
 
         JmsMessageFacade facade = jmsMessage.getFacade();
-        assertNotNull("Facade should not be null", facade);
-        assertEquals("Unexpected facade class type", AmqpJmsObjectMessageFacade.class, facade.getClass());
+        assertNotNull(facade, "Facade should not be null");
+        assertEquals(AmqpJmsObjectMessageFacade.class, facade.getClass(), "Unexpected facade class type");
 
         AmqpObjectTypeDelegate delegate = ((AmqpJmsObjectMessageFacade) facade).getDelegate();
-        assertTrue("Unexpected delegate type: " + delegate, delegate instanceof AmqpTypedObjectDelegate);
+        assertTrue(delegate instanceof AmqpTypedObjectDelegate, "Unexpected delegate type: " + delegate);
     }
 
     /**
@@ -844,12 +848,12 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         message.setBody(new AmqpValue(binary));
 
         JmsMessage jmsMessage = AmqpCodec.decodeMessage(mockConsumer, encodeMessage(message)).asJmsMessage();
-        assertNotNull("Message should not be null", jmsMessage);
-        assertEquals("Unexpected message class type", JmsBytesMessage.class, jmsMessage.getClass());
+        assertNotNull(jmsMessage, "Message should not be null");
+        assertEquals(JmsBytesMessage.class, jmsMessage.getClass(), "Unexpected message class type");
 
         JmsMessageFacade facade = jmsMessage.getFacade();
-        assertNotNull("Facade should not be null", facade);
-        assertEquals("Unexpected facade class type", AmqpJmsBytesMessageFacade.class, facade.getClass());
+        assertNotNull(facade, "Facade should not be null");
+        assertEquals(AmqpJmsBytesMessageFacade.class, facade.getClass(), "Unexpected facade class type");
     }
 
     /**
@@ -864,15 +868,15 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         message.setBody(new AmqpValue(UUID.randomUUID()));
 
         JmsMessage jmsMessage = AmqpCodec.decodeMessage(mockConsumer, encodeMessage(message)).asJmsMessage();
-        assertNotNull("Message should not be null", jmsMessage);
-        assertEquals("Unexpected message class type", JmsObjectMessage.class, jmsMessage.getClass());
+        assertNotNull(jmsMessage, "Message should not be null");
+        assertEquals(JmsObjectMessage.class, jmsMessage.getClass(), "Unexpected message class type");
 
         JmsMessageFacade facade = jmsMessage.getFacade();
-        assertNotNull("Facade should not be null", facade);
-        assertEquals("Unexpected facade class type", AmqpJmsObjectMessageFacade.class, facade.getClass());
+        assertNotNull(facade, "Facade should not be null");
+        assertEquals(AmqpJmsObjectMessageFacade.class, facade.getClass(), "Unexpected facade class type");
 
         AmqpObjectTypeDelegate delegate = ((AmqpJmsObjectMessageFacade) facade).getDelegate();
-        assertTrue("Unexpected delegate type: " + delegate, delegate instanceof AmqpTypedObjectDelegate);
+        assertTrue(delegate instanceof AmqpTypedObjectDelegate, "Unexpected delegate type: " + delegate);
     }
 
     // --------- AmqpSequence Body Section ---------
@@ -890,15 +894,15 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         message.setBody(new AmqpSequence(list));
 
         JmsMessage jmsMessage = AmqpCodec.decodeMessage(mockConsumer, encodeMessage(message)).asJmsMessage();
-        assertNotNull("Message should not be null", jmsMessage);
-        assertEquals("Unexpected message class type", JmsObjectMessage.class, jmsMessage.getClass());
+        assertNotNull(jmsMessage, "Message should not be null");
+        assertEquals(JmsObjectMessage.class, jmsMessage.getClass(), "Unexpected message class type");
 
         JmsMessageFacade facade = jmsMessage.getFacade();
-        assertNotNull("Facade should not be null", facade);
-        assertEquals("Unexpected facade class type", AmqpJmsObjectMessageFacade.class, facade.getClass());
+        assertNotNull(facade, "Facade should not be null");
+        assertEquals(AmqpJmsObjectMessageFacade.class, facade.getClass(), "Unexpected facade class type");
 
         AmqpObjectTypeDelegate delegate = ((AmqpJmsObjectMessageFacade) facade).getDelegate();
-        assertTrue("Unexpected delegate type: " + delegate, delegate instanceof AmqpTypedObjectDelegate);
+        assertTrue(delegate instanceof AmqpTypedObjectDelegate, "Unexpected delegate type: " + delegate);
     }
 
     //----- Message Annotation Handling --------------------------------------//

@@ -16,6 +16,8 @@
  */
 package org.apache.qpid.jms.session;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import jakarta.jms.Destination;
 import jakarta.jms.JMSException;
 import jakarta.jms.Message;
@@ -27,8 +29,10 @@ import jakarta.jms.Session;
 import jakarta.jms.Topic;
 
 import org.apache.qpid.jms.JmsConnectionTestSupport;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Tests behavior after a Session is closed.
@@ -42,214 +46,314 @@ public class JmsSessionClosedTest extends JmsConnectionTestSupport {
     protected void createTestResources() throws Exception {
         connection = createConnectionToMockProvider();
         session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue destination = session.createQueue(_testName.getMethodName());
+        Queue destination = session.createQueue(_testMethodName);
         sender = session.createProducer(destination);
         receiver = session.createConsumer(destination);
         session.close();
     }
 
     @Override
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
+        super.setUp(testInfo);
         createTestResources();
     }
 
-    @Test(timeout=30000)
+    @Test
+    @Timeout(30)
     public void testSessionCloseAgain() throws Exception {
         session.close();
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testCreateMessageFails() throws Exception {
-        session.createMessage();
+        assertThrows(JMSException.class, () -> {
+            session.createMessage();
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testCreateTextMessageFails() throws Exception {
-        session.createTextMessage();
+        assertThrows(JMSException.class, () -> {
+            session.createTextMessage();
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testCreateTextMessageWithTextFails() throws Exception {
-        session.createTextMessage("TEST");
+        assertThrows(JMSException.class, () -> {
+            session.createTextMessage("TEST");
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testCreateMapMessageFails() throws Exception {
-        session.createMapMessage();
+        assertThrows(JMSException.class, () -> {
+            session.createMapMessage();
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testCreateStreamMessageFails() throws Exception {
-        session.createStreamMessage();
+        assertThrows(JMSException.class, () -> {
+            session.createStreamMessage();
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testCreateBytesMessageFails() throws Exception {
-        session.createBytesMessage();
+        assertThrows(JMSException.class, () -> {
+            session.createBytesMessage();
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testCreateObjectMessageFails() throws Exception {
-        session.createObjectMessage();
+        assertThrows(JMSException.class, () -> {
+            session.createObjectMessage();
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testCreateObjectMessageWithObjectFails() throws Exception {
-        session.createObjectMessage("TEST");
+        assertThrows(JMSException.class, () -> {
+            session.createObjectMessage("TEST");
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testGetTransactedFails() throws Exception {
-        session.getTransacted();
+        assertThrows(JMSException.class, () -> {
+            session.getTransacted();
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testGetAcknowledgeModeFails() throws Exception {
-        session.getAcknowledgeMode();
+        assertThrows(JMSException.class, () -> {
+            session.getAcknowledgeMode();
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testCommitFails() throws Exception {
-        session.commit();
+        assertThrows(JMSException.class, () -> {
+            session.commit();
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testRollbackFails() throws Exception {
-        session.rollback();
+        assertThrows(JMSException.class, () -> {
+            session.rollback();
+        });
     }
 
-    @Test(timeout=30000)
+    @Test
+    @Timeout(30)
     public void testCloseDoesNotFail() throws Exception {
         session.close();
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testRecoverFails() throws Exception {
-        session.recover();
+        assertThrows(JMSException.class, () -> {
+            session.recover();
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testGetMessageListenerFails() throws Exception {
-        session.getMessageListener();
+        assertThrows(JMSException.class, () -> {
+            session.getMessageListener();
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testSetMessageListenerFails() throws Exception {
-        MessageListener listener = new MessageListener() {
-            @Override
-            public void onMessage(Message message) {
-            }
-        };
-        session.setMessageListener(listener);
+        assertThrows(JMSException.class, () -> {
+            MessageListener listener = new MessageListener() {
+                @Override
+                public void onMessage(Message message) {
+                }
+            };
+            session.setMessageListener(listener);
+        });
     }
 
-    @Test(timeout=30000, expected=RuntimeException.class)
+    @Test
+    @Timeout(30)
     public void testRunFails() throws Exception {
-        session.run();
+        assertThrows(RuntimeException.class, () -> {
+            session.run();
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testCreateProducerFails() throws Exception {
-        Destination destination = session.createQueue("test");
-        session.createProducer(destination);
+        assertThrows(JMSException.class, () -> {
+            Destination destination = session.createQueue("test");
+            session.createProducer(destination);
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testCreateConsumerDestinatioFails() throws Exception {
-        Destination destination = session.createQueue("test");
-        session.createConsumer(destination);
+        assertThrows(JMSException.class, () -> {
+            Destination destination = session.createQueue("test");
+            session.createConsumer(destination);
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testCreateConsumerDestinatioSelectorFails() throws Exception {
-        Destination destination = session.createQueue("test");
-        session.createConsumer(destination, "a = b");
+        assertThrows(JMSException.class, () -> {
+            Destination destination = session.createQueue("test");
+            session.createConsumer(destination, "a = b");
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testCreateConsumerDestinatioSelectorBooleanFails() throws Exception {
-        Destination destination = session.createQueue("test");
-        session.createConsumer(destination, "a = b", true);
+        assertThrows(JMSException.class, () -> {
+            Destination destination = session.createQueue("test");
+            session.createConsumer(destination, "a = b", true);
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testCreateQueueFails() throws Exception {
-        session.createQueue("TEST");
+        assertThrows(JMSException.class, () -> {
+            session.createQueue("TEST");
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testCreateTopicFails() throws Exception {
-        session.createTopic("TEST");
+        assertThrows(JMSException.class, () -> {
+            session.createTopic("TEST");
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testCreateTemporaryQueueFails() throws Exception {
-        session.createTemporaryQueue();
+        assertThrows(JMSException.class, () -> {
+            session.createTemporaryQueue();
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testCreateTemporaryTopicFails() throws Exception {
-        session.createTemporaryQueue();
+        assertThrows(JMSException.class, () -> {
+            session.createTemporaryQueue();
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testCreateDurableSubscriberFails() throws Exception {
-        Topic destination = session.createTopic("TEST");
-        session.createDurableSubscriber(destination, "test");
+        assertThrows(JMSException.class, () -> {
+            Topic destination = session.createTopic("TEST");
+            session.createDurableSubscriber(destination, "test");
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testCreateDurableSubscriberSelectorBooleanFails() throws Exception {
-        Topic destination = session.createTopic("TEST");
-        session.createDurableSubscriber(destination, "test", "a = b", false);
+        assertThrows(JMSException.class, () -> {
+            Topic destination = session.createTopic("TEST");
+            session.createDurableSubscriber(destination, "test", "a = b", false);
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testCreateDurableConsumerSelectorBooleanFails() throws Exception {
-        Topic destination = session.createTopic("TEST");
-        session.createDurableConsumer(destination, "test", "a = b", false);
+        assertThrows(JMSException.class, () -> {
+            Topic destination = session.createTopic("TEST");
+            session.createDurableConsumer(destination, "test", "a = b", false);
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testCreateQueueBrowserFails() throws Exception {
-        Queue destination = session.createQueue("test");
-        session.createBrowser(destination);
+        assertThrows(JMSException.class, () -> {
+            Queue destination = session.createQueue("test");
+            session.createBrowser(destination);
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testCreateQueueBrowserWithSelectorFails() throws Exception {
-        Queue destination = session.createQueue("test");
-        session.createBrowser(destination, "a = b");
+        assertThrows(JMSException.class, () -> {
+            Queue destination = session.createQueue("test");
+            session.createBrowser(destination, "a = b");
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testUnsubscribeFails() throws Exception {
-        session.unsubscribe("test");
+        assertThrows(JMSException.class, () -> {
+            session.unsubscribe("test");
+        });
     }
 
     // --- Test effects on consumer/producer opened previously on the session ---
 
-    @Test(timeout=30000)
+    @Test
+    @Timeout(30)
     public void testConsumerCloseAgain() throws Exception {
         // Close it again (closing the session should have closed it already).
         receiver.close();
     }
 
-    @Test(timeout=30000)
+    @Test
+    @Timeout(30)
     public void testProducerCloseAgain() throws Exception {
         // Close it again (closing the session should have closed it already).
         sender.close();
     }
 
-    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testConsumerGetMessageListenerFails() throws Exception {
-        receiver.getMessageListener();
+        assertThrows(jakarta.jms.IllegalStateException.class, () -> {
+            receiver.getMessageListener();
+        });
     }
 
-    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testProducerGetDestinationFails() throws Exception {
-        sender.getDestination();
+        assertThrows(jakarta.jms.IllegalStateException.class, () -> {
+            sender.getDestination();
+        });
     }
 }

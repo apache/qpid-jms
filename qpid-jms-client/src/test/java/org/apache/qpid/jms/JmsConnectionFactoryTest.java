@@ -18,16 +18,17 @@ package org.apache.qpid.jms;
 
 import static org.apache.qpid.jms.SerializationTestSupport.roundTripSerialize;
 import static org.apache.qpid.jms.SerializationTestSupport.serialize;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.net.URI;
 import java.util.HashMap;
@@ -46,7 +47,8 @@ import org.apache.qpid.jms.policy.JmsDefaultPresettlePolicy;
 import org.apache.qpid.jms.policy.JmsDefaultRedeliveryPolicy;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.util.IdGenerator;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -249,7 +251,7 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
 
         JmsConnection connection = (JmsConnection) factory.createConnection();
         assertNotNull(connection);
-        assertTrue("Connection ID = " + connection.getId(), connection.getId().toString().startsWith("TEST-ID:"));
+        assertTrue(connection.getId().toString().startsWith("TEST-ID:"), "Connection ID = " + connection.getId());
 
         connection.close();
     }
@@ -261,7 +263,7 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
 
         JmsConnection connection = (JmsConnection) factory.createConnection();
         assertNotNull(connection);
-        assertTrue("Connection ID = " + connection.getId(), connection.getId().toString().startsWith("TEST-ID:"));
+        assertTrue(connection.getId().toString().startsWith("TEST-ID:"), "Connection ID = " + connection.getId());
 
         connection.close();
     }
@@ -277,7 +279,7 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         connection.start();
 
         assertNotNull(connection);
-        assertTrue("Connection ID = " + connection.getClientID(), connection.getClientID().startsWith("TEST-ID:"));
+        assertTrue(connection.getClientID().startsWith("TEST-ID:"), "Connection ID = " + connection.getClientID());
 
         connection.close();
     }
@@ -291,7 +293,7 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         connection.start();
 
         assertNotNull(connection);
-        assertTrue("Client ID = " + connection.getClientID(), connection.getClientID().startsWith("TEST-ID:"));
+        assertTrue(connection.getClientID().startsWith("TEST-ID:"), "Client ID = " + connection.getClientID());
 
         connection.close();
     }
@@ -320,9 +322,11 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test
     public void testBadUriOptionCausesFail() throws Exception {
-        new JmsConnectionFactory("amqp://localhost:1234?jms.badOption=true");
+        assertThrows(IllegalArgumentException.class, () -> {
+            new JmsConnectionFactory("amqp://localhost:1234?jms.badOption=true");
+        });
     }
 
     @Test
@@ -337,9 +341,9 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         JmsConnectionFactory cf = new JmsConnectionFactory();
 
         // Verify the outcome conditions have not been met already
-        assertNotEquals("value should not match yet", clientID, cf.getClientID());
-        assertNotEquals("value should not match yet", queuePrefix, cf.getQueuePrefix());
-        assertNotEquals("value should not match yet", baseUri, cf.getRemoteURI());
+        assertNotEquals(clientID, cf.getClientID(), "value should not match yet");
+        assertNotEquals(queuePrefix, cf.getQueuePrefix(), "value should not match yet");
+        assertNotEquals(baseUri, cf.getRemoteURI(), "value should not match yet");
 
         // Set the properties
         Map<String, String> props = new HashMap<String, String>();
@@ -350,14 +354,14 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         Map<String, String> unusedProps = cf.setProperties(props);
 
         // Verify the clientID property option from the URI was applied.
-        assertEquals("uri property query option not applied as expected", clientID, cf.getClientID());
+        assertEquals(clientID, cf.getClientID(), "uri property query option not applied as expected");
         // Verify the direct property was applied
-        assertEquals("direct property not applied as expected", queuePrefix, cf.getQueuePrefix());
+        assertEquals(queuePrefix, cf.getQueuePrefix(), "direct property not applied as expected");
         // Verify the URI was filtered to remove the applied options
-        assertEquals("URI was filtered to remove options that were applied", baseUri, cf.getRemoteURI());
+        assertEquals(baseUri, cf.getRemoteURI(), "URI was filtered to remove options that were applied");
 
         // Verify the returned map was empty and unmodifiable
-        assertTrue("Map should be empty: " + unusedProps, unusedProps.isEmpty());
+        assertTrue(unusedProps.isEmpty(), "Map should be empty: " + unusedProps);
         try {
             unusedProps.put("a", "b");
             fail("Map should be unmodifiable");
@@ -376,7 +380,7 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         JmsConnectionFactory cf = new JmsConnectionFactory();
 
         // Verify the outcome conditions have not been met already
-        assertNotEquals("value should not match yet", uri, cf.getRemoteURI());
+        assertNotEquals(uri, cf.getRemoteURI(), "value should not match yet");
 
         // Set the properties
         Map<String, String> props = new HashMap<String, String>();
@@ -387,12 +391,12 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         Map<String, String> unusedProps = cf.setProperties(props);
 
         // Verify the URI property was applied.
-        assertEquals("uri property option not applied as expected", uri, cf.getRemoteURI());
+        assertEquals(uri, cf.getRemoteURI(), "uri property option not applied as expected");
 
         //Verify that the unused property was returned
-        assertEquals("Unexpected size of return map", 1, unusedProps.size());
-        assertTrue("Expected property not found in map: " + unusedProps, unusedProps.containsKey(unusedKey));
-        assertEquals("Unexpected property value", unusedValue, unusedProps.get(unusedKey));
+        assertEquals(1, unusedProps.size(), "Unexpected size of return map");
+        assertTrue(unusedProps.containsKey(unusedKey), "Expected property not found in map: " + unusedProps);
+        assertEquals(unusedValue, unusedProps.get(unusedKey), "Unexpected property value");
 
         // Verify the returned map was unmodifiable
         try {
@@ -438,10 +442,10 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         Map<String, String> props = cf.getProperties();
 
         // Verify the clientID property option from the URI was applied.
-        assertTrue(CLIENT_ID_PROP + " property not found", props.containsKey(CLIENT_ID_PROP));
-        assertEquals("clientID uri property query option not applied as expected", clientID, props.get(CLIENT_ID_PROP));
-        assertTrue(QUEUE_PREFIX_PROP + " property not found", props.containsKey(QUEUE_PREFIX_PROP));
-        assertEquals("queue prefix property not applied as expected", queuePrefix, props.get(QUEUE_PREFIX_PROP));
+        assertTrue(props.containsKey(CLIENT_ID_PROP), CLIENT_ID_PROP + " property not found");
+        assertEquals(clientID, props.get(CLIENT_ID_PROP), "clientID uri property query option not applied as expected");
+        assertTrue(props.containsKey(QUEUE_PREFIX_PROP), QUEUE_PREFIX_PROP + " property not found");
+        assertEquals(queuePrefix, props.get(QUEUE_PREFIX_PROP), "queue prefix property not applied as expected");
     }
 
     @Test
@@ -453,12 +457,12 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
 
         Object roundTripped = roundTripSerialize(cf);
 
-        assertNotNull("Null object returned", roundTripped);
-        assertEquals("Unexpected type", JmsConnectionFactory.class, roundTripped.getClass());
-        assertEquals("Unexpected uri", uri, ((JmsConnectionFactory)roundTripped).getRemoteURI());
+        assertNotNull(roundTripped, "Null object returned");
+        assertEquals(JmsConnectionFactory.class, roundTripped.getClass(), "Unexpected type");
+        assertEquals(uri, ((JmsConnectionFactory)roundTripped).getRemoteURI(), "Unexpected uri");
 
         Map<String, String> props2 = ((JmsConnectionFactory)roundTripped).getProperties();
-        assertEquals("Properties were not equal", props, props2);
+        assertEquals(props, props2, "Properties were not equal");
     }
 
     /**
@@ -477,19 +481,19 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         JmsConnectionFactory cf = new JmsConnectionFactory(uri);
         Map<String, String> props = cf.getProperties();
 
-        assertTrue("Props dont contain expected prefetch policy change", props.containsKey(topicPrefetchKey));
-        assertEquals("Unexpected value", topicPrefetchValue, props.get(topicPrefetchKey));
+        assertTrue(props.containsKey(topicPrefetchKey), "Props dont contain expected prefetch policy change");
+        assertEquals(topicPrefetchValue, props.get(topicPrefetchKey), "Unexpected value");
 
         Object roundTripped = roundTripSerialize(cf);
 
-        assertNotNull("Null object returned", roundTripped);
-        assertEquals("Unexpected type", JmsConnectionFactory.class, roundTripped.getClass());
+        assertNotNull(roundTripped, "Null object returned");
+        assertEquals(JmsConnectionFactory.class, roundTripped.getClass(), "Unexpected type");
 
         Map<String, String> props2 = ((JmsConnectionFactory)roundTripped).getProperties();
-        assertTrue("Props dont contain expected prefetch policy change", props2.containsKey(topicPrefetchKey));
-        assertEquals("Unexpected value", topicPrefetchValue, props2.get(topicPrefetchKey));
+        assertTrue(props2.containsKey(topicPrefetchKey), "Props dont contain expected prefetch policy change");
+        assertEquals(topicPrefetchValue, props2.get(topicPrefetchKey), "Unexpected value");
 
-        assertEquals("Properties were not equal", props, props2);
+        assertEquals(props, props2, "Properties were not equal");
     }
 
     /**
@@ -508,19 +512,19 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         JmsConnectionFactory cf = new JmsConnectionFactory(uri);
         Map<String, String> props = cf.getProperties();
 
-        assertTrue("Props dont contain expected redelivery policy change", props.containsKey(maxRedeliveryKey));
-        assertEquals("Unexpected value", maxRedeliveryValue, props.get(maxRedeliveryKey));
+        assertTrue(props.containsKey(maxRedeliveryKey), "Props dont contain expected redelivery policy change");
+        assertEquals(maxRedeliveryValue, props.get(maxRedeliveryKey), "Unexpected value");
 
         Object roundTripped = roundTripSerialize(cf);
 
-        assertNotNull("Null object returned", roundTripped);
-        assertEquals("Unexpected type", JmsConnectionFactory.class, roundTripped.getClass());
+        assertNotNull(roundTripped, "Null object returned");
+        assertEquals(JmsConnectionFactory.class, roundTripped.getClass(), "Unexpected type");
 
         Map<String, String> props2 = ((JmsConnectionFactory)roundTripped).getProperties();
-        assertTrue("Props dont contain expected redelivery policy change", props2.containsKey(maxRedeliveryKey));
-        assertEquals("Unexpected value", maxRedeliveryValue, props2.get(maxRedeliveryKey));
+        assertTrue(props2.containsKey(maxRedeliveryKey), "Props dont contain expected redelivery policy change");
+        assertEquals(maxRedeliveryValue, props2.get(maxRedeliveryKey), "Unexpected value");
 
-        assertEquals("Properties were not equal", props, props2);
+        assertEquals(props, props2, "Properties were not equal");
     }
 
     /**
@@ -539,19 +543,19 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         JmsConnectionFactory cf = new JmsConnectionFactory(uri);
         Map<String, String> props = cf.getProperties();
 
-        assertTrue("Props dont contain expected presettle policy change", props.containsKey(presettleAllKey));
-        assertEquals("Unexpected value", presettleAllValue, props.get(presettleAllKey));
+        assertTrue(props.containsKey(presettleAllKey), "Props dont contain expected presettle policy change");
+        assertEquals(presettleAllValue, props.get(presettleAllKey), "Unexpected value");
 
         Object roundTripped = roundTripSerialize(cf);
 
-        assertNotNull("Null object returned", roundTripped);
-        assertEquals("Unexpected type", JmsConnectionFactory.class, roundTripped.getClass());
+        assertNotNull(roundTripped, "Null object returned");
+        assertEquals(JmsConnectionFactory.class, roundTripped.getClass(), "Unexpected type");
 
         Map<String, String> props2 = ((JmsConnectionFactory)roundTripped).getProperties();
-        assertTrue("Props dont contain expected presettle policy change", props2.containsKey(presettleAllKey));
-        assertEquals("Unexpected value", presettleAllValue, props2.get(presettleAllKey));
+        assertTrue(props2.containsKey(presettleAllKey), "Props dont contain expected presettle policy change");
+        assertEquals(presettleAllValue, props2.get(presettleAllKey), "Unexpected value");
 
-        assertEquals("Properties were not equal", props, props2);
+        assertEquals(props, props2, "Properties were not equal");
     }
 
     /**
@@ -570,19 +574,19 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         JmsConnectionFactory cf = new JmsConnectionFactory(uri);
         Map<String, String> props = cf.getProperties();
 
-        assertTrue("Props dont contain expected message ID policy change", props.containsKey(messageIDTypeKey));
-        assertEquals("Unexpected value", messageIDTypeValue, props.get(messageIDTypeKey));
+        assertTrue(props.containsKey(messageIDTypeKey), "Props dont contain expected message ID policy change");
+        assertEquals(messageIDTypeValue, props.get(messageIDTypeKey), "Unexpected value");
 
         Object roundTripped = roundTripSerialize(cf);
 
-        assertNotNull("Null object returned", roundTripped);
-        assertEquals("Unexpected type", JmsConnectionFactory.class, roundTripped.getClass());
+        assertNotNull(roundTripped, "Null object returned");
+        assertEquals(JmsConnectionFactory.class, roundTripped.getClass(), "Unexpected type");
 
         Map<String, String> props2 = ((JmsConnectionFactory)roundTripped).getProperties();
-        assertTrue("Props dont contain expected message ID policy change", props2.containsKey(messageIDTypeKey));
-        assertEquals("Unexpected value", messageIDTypeValue, props2.get(messageIDTypeKey));
+        assertTrue(props2.containsKey(messageIDTypeKey), "Props dont contain expected message ID policy change");
+        assertEquals(messageIDTypeValue, props2.get(messageIDTypeKey), "Unexpected value");
 
-        assertEquals("Properties were not equal", props, props2);
+        assertEquals(props, props2, "Properties were not equal");
     }
 
     /**
@@ -608,25 +612,25 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         JmsConnectionFactory cf = new JmsConnectionFactory(uri);
         Map<String, String> props = cf.getProperties();
 
-        assertTrue("Props dont contain expected deserialization policy change", props.containsKey(allowListKey));
-        assertEquals("Unexpected value", allowListValue, props.get(allowListKey));
+        assertTrue(props.containsKey(allowListKey), "Props dont contain expected deserialization policy change");
+        assertEquals(allowListValue, props.get(allowListKey), "Unexpected value");
 
-        assertTrue("Props dont contain expected deserialization policy change", props.containsKey(denyListKey));
-        assertEquals("Unexpected value", denyListValue, props.get(denyListKey));
+        assertTrue(props.containsKey(denyListKey), "Props dont contain expected deserialization policy change");
+        assertEquals(denyListValue, props.get(denyListKey), "Unexpected value");
 
         Object roundTripped = roundTripSerialize(cf);
 
-        assertNotNull("Null object returned", roundTripped);
-        assertEquals("Unexpected type", JmsConnectionFactory.class, roundTripped.getClass());
+        assertNotNull(roundTripped, "Null object returned");
+        assertEquals(JmsConnectionFactory.class, roundTripped.getClass(), "Unexpected type");
 
         Map<String, String> props2 = ((JmsConnectionFactory)roundTripped).getProperties();
-        assertTrue("Props dont contain expected deserialization policy change", props2.containsKey(allowListKey));
-        assertEquals("Unexpected value", allowListValue, props2.get(allowListKey));
+        assertTrue(props2.containsKey(allowListKey), "Props dont contain expected deserialization policy change");
+        assertEquals(allowListValue, props2.get(allowListKey), "Unexpected value");
 
-        assertTrue("Props dont contain expected deserialization policy change", props2.containsKey(denyListKey));
-        assertEquals("Unexpected value", denyListValue, props2.get(denyListKey));
+        assertTrue(props2.containsKey(denyListKey), "Props dont contain expected deserialization policy change");
+        assertEquals(denyListValue, props2.get(denyListKey), "Unexpected value");
 
-        assertEquals("Properties were not equal", props, props2);
+        assertEquals(props, props2, "Properties were not equal");
     }
 
     /**
@@ -649,25 +653,25 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         JmsConnectionFactory cf = new JmsConnectionFactory(uri);
         Map<String, String> props = cf.getProperties();
 
-        assertTrue("Props dont contain expected deserialization policy change", props.containsKey(allowListKey));
-        assertEquals("Unexpected value", allowListValue, props.get(allowListKey));
+        assertTrue(props.containsKey(allowListKey), "Props dont contain expected deserialization policy change");
+        assertEquals(allowListValue, props.get(allowListKey), "Unexpected value");
 
-        assertTrue("Props dont contain expected deserialization policy change", props.containsKey(denyListKey));
-        assertEquals("Unexpected value", denyListValue, props.get(denyListKey));
+        assertTrue(props.containsKey(denyListKey), "Props dont contain expected deserialization policy change");
+        assertEquals(denyListValue, props.get(denyListKey), "Unexpected value");
 
         Object roundTripped = roundTripSerialize(cf);
 
-        assertNotNull("Null object returned", roundTripped);
-        assertEquals("Unexpected type", JmsConnectionFactory.class, roundTripped.getClass());
+        assertNotNull(roundTripped, "Null object returned");
+        assertEquals(JmsConnectionFactory.class, roundTripped.getClass(), "Unexpected type");
 
         Map<String, String> props2 = ((JmsConnectionFactory)roundTripped).getProperties();
-        assertTrue("Props dont contain expected deserialization policy change", props2.containsKey(allowListKey));
-        assertEquals("Unexpected value", allowListValue, props2.get(allowListKey));
+        assertTrue(props2.containsKey(allowListKey), "Props dont contain expected deserialization policy change");
+        assertEquals(allowListValue, props2.get(allowListKey), "Unexpected value");
 
-        assertTrue("Props dont contain expected deserialization policy change", props2.containsKey(denyListKey));
-        assertEquals("Unexpected value", denyListValue, props2.get(denyListKey));
+        assertTrue(props2.containsKey(denyListKey), "Props dont contain expected deserialization policy change");
+        assertEquals(denyListValue, props2.get(denyListKey), "Unexpected value");
 
-        assertEquals("Properties were not equal", props, props2);
+        assertEquals(props, props2, "Properties were not equal");
     }
 
     @Test
@@ -795,17 +799,18 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
 
         Object roundTripped = roundTripSerialize(cf);
 
-        assertNotNull("Null object returned", roundTripped);
-        assertEquals("Unexpected type", JmsConnectionFactory.class, roundTripped.getClass());
-        assertEquals("Unexpected uri", uri, ((JmsConnectionFactory)roundTripped).getRemoteURI());
+        assertNotNull(roundTripped, "Null object returned");
+        assertEquals(JmsConnectionFactory.class, roundTripped.getClass(), "Unexpected type");
+        assertEquals(uri, ((JmsConnectionFactory)roundTripped).getRemoteURI(), "Unexpected uri");
 
         Map<String, String> props2 = ((JmsConnectionFactory)roundTripped).getProperties();
 
-        assertFalse("Properties map should not contain ExceptionListener", props.containsKey("exceptionListener"));
-        assertEquals("Properties were not equal", props, props2);
+        assertFalse(props.containsKey("exceptionListener"), "Properties map should not contain ExceptionListener");
+        assertEquals(props, props2, "Properties were not equal");
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void testCreateConnectionWithPortOutOfRange() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory("amqp://127.0.0.1:567564562");
 
@@ -826,7 +831,8 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(5)
     public void testURIOptionPopulateJMSXUserID() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(
             "amqp://127.0.0.1:5672?jms.populateJMSXUserID=true");

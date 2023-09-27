@@ -29,12 +29,12 @@ import static org.hamcrest.Matchers.isA;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -92,28 +92,25 @@ import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageHeaderSectionM
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessagePropertiesSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompositeMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedAmqpValueMatcher;
-import org.apache.qpid.jms.util.QpidJMSTestRunner;
-import org.apache.qpid.jms.util.Repeat;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedByte;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.hamcrest.Matcher;
-import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@RunWith(QpidJMSTestRunner.class)
 public class ProducerIntegrationTest extends QpidJmsTestCase {
 
     private static final Logger LOG = LoggerFactory.getLogger(ProducerIntegrationTest.class);
 
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCloseSender() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -134,7 +131,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCloseSenderTimesOut() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
@@ -162,7 +160,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSentTextMessageCanBeModified() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -199,7 +198,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testDefaultDeliveryModeProducesDurableMessages() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -230,7 +230,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testProducerOverridesMessageDeliveryMode() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -273,14 +274,16 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendingMessageNonPersistentProducerSetDurableFalse() throws Exception {
         doSendingMessageNonPersistentTestImpl(false, true, true);
     }
 
 
     //As above but with an anonymous producer.
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendingMessageNonPersistentProducerSetDurableFalseAnonymousProducer() throws Exception {
         doSendingMessageNonPersistentTestImpl(true, true, true);
     }
@@ -292,13 +295,15 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendingMessageNonPersistentSendSetDurableFalse() throws Exception {
         doSendingMessageNonPersistentTestImpl(false, true, false);
     }
 
     //As above but with an anonymous producer.
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendingMessageNonPersistentSendSetDurableFalseAnonymousProducer() throws Exception {
         doSendingMessageNonPersistentTestImpl(true, true, false);
     }
@@ -310,13 +315,15 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendingMessageNonPersistentProducerOmitsHeader() throws Exception {
         doSendingMessageNonPersistentTestImpl(false, false, true);
     }
 
     //As above but with an anonymous producer.
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendingMessageNonPersistentProducerOmitsHeaderAnonymousProducer() throws Exception {
         doSendingMessageNonPersistentTestImpl(true, false, true);
     }
@@ -328,13 +335,15 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendingMessageNonPersistentSendOmitsHeader() throws Exception {
         doSendingMessageNonPersistentTestImpl(false, false, false);
     }
 
     //As above but with an anonymous producer.
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendingMessageNonPersistentSendOmitsHeaderAnonymousProducer() throws Exception {
         doSendingMessageNonPersistentTestImpl(true, false, false);
     }
@@ -386,7 +395,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
             Message message = session.createTextMessage(text);
 
-            assertNull("Should not yet have a JMSDestination", message.getJMSDestination());
+            assertNull(message.getJMSDestination(), "Should not yet have a JMSDestination");
 
             if(setOnProducer) {
                 producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
@@ -407,7 +416,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
                 }
             }
 
-            assertEquals("Should have NON_PERSISTENT delivery mode set", DeliveryMode.NON_PERSISTENT, message.getJMSDeliveryMode());
+            assertEquals(DeliveryMode.NON_PERSISTENT, message.getJMSDeliveryMode(), "Should have NON_PERSISTENT delivery mode set");
 
             connection.close();
 
@@ -421,7 +430,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendingMessageSetsJMSDestination() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -447,11 +457,11 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
             Message message = session.createTextMessage(text);
 
-            assertNull("Should not yet have a JMSDestination", message.getJMSDestination());
+            assertNull(message.getJMSDestination(), "Should not yet have a JMSDestination");
 
             producer.send(message);
 
-            assertEquals("Should have had JMSDestination set", queue, message.getJMSDestination());
+            assertEquals(queue, message.getJMSDestination(), "Should have had JMSDestination set");
 
             connection.close();
 
@@ -459,7 +469,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendingMessageSetsJMSTimestamp() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -506,7 +517,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendingMessageWithDisableMessageTimestampHint() throws Exception {
         try(TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -533,7 +545,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
             Message message = session.createTextMessage(text);
 
-            assertEquals("JMSTimestamp should not yet be set", 0, message.getJMSTimestamp());
+            assertEquals(0, message.getJMSTimestamp(), "JMSTimestamp should not yet be set");
 
             producer.setDisableMessageTimestamp(true);
             producer.send(message);
@@ -542,11 +554,12 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
             testPeer.waitForAllHandlersToComplete(1000);
 
-            assertEquals("JMSTimestamp should still not be set", 0, message.getJMSTimestamp());
+            assertEquals(0, message.getJMSTimestamp(), "JMSTimestamp should still not be set");
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendingMessageSetsJMSExpirationRelatedAbsoluteExpiryAndTtlFields() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -592,12 +605,14 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendingMessageWithJMS_AMQP_TTLSetPositive() throws Exception {
         sendingMessageWithJMS_AMQP_TTLSetTestImpl(100_000, 20_000);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendingMessageWithJMS_AMQP_TTLSetZero() throws Exception {
         sendingMessageWithJMS_AMQP_TTLSetTestImpl(50_000, 0);
     }
@@ -657,7 +672,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testDefaultPriorityProducesMessagesWithoutPriorityField() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -698,7 +714,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testNonDefaultPriorityProducesMessagesWithPriorityFieldAndSetsJMSPriority() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -741,7 +758,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendingMessageSetsJMSMessageID() throws Exception {
         try(TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -767,13 +785,13 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
             Message message = session.createTextMessage(text);
 
-            assertNull("JMSMessageID should not yet be set", message.getJMSMessageID());
+            assertNull(message.getJMSMessageID(), "JMSMessageID should not yet be set");
 
             producer.send(message);
 
             String jmsMessageID = message.getJMSMessageID();
-            assertNotNull("JMSMessageID should be set", jmsMessageID);
-            assertTrue("JMS 'ID:' prefix not found", jmsMessageID.startsWith("ID:"));
+            assertNotNull(jmsMessageID, "JMSMessageID should be set");
+            assertTrue(jmsMessageID.startsWith("ID:"), "JMS 'ID:' prefix not found");
 
             connection.close();
 
@@ -781,12 +799,13 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             testPeer.waitForAllHandlersToComplete(1000);
             Object receivedMessageId = propsMatcher.getReceivedMessageId();
 
-            assertTrue("Expected string message id to be sent", receivedMessageId instanceof String);
-            assertTrue("Expected JMSMessageId value to be present in AMQP message", jmsMessageID.equals(receivedMessageId));
+            assertTrue(receivedMessageId instanceof String, "Expected string message id to be sent");
+            assertTrue(jmsMessageID.equals(receivedMessageId), "Expected JMSMessageId value to be present in AMQP message");
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testSendingMessageWithUUIDStringMessageIdFormat() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // DONT create a test fixture, we will drive everything directly.
@@ -819,15 +838,15 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
             Message message = session.createTextMessage(text);
 
-            assertNull("JMSMessageID should not yet be set", message.getJMSMessageID());
+            assertNull(message.getJMSMessageID(), "JMSMessageID should not yet be set");
 
             producer.send(message);
 
             String jmsMessageID = message.getJMSMessageID();
-            assertNotNull("JMSMessageID should be set", jmsMessageID);
-            assertTrue("JMS 'ID:' prefix not found", jmsMessageID.startsWith("ID:"));
+            assertNotNull(jmsMessageID, "JMSMessageID should be set");
+            assertTrue(jmsMessageID.startsWith("ID:"), "JMS 'ID:' prefix not found");
             String noIdPrefix = AmqpMessageIdHelper.JMS_ID_PREFIX + AmqpMessageIdHelper.AMQP_NO_PREFIX;
-            assertTrue("The 'No ID prefix' encoding hint was not found", jmsMessageID.startsWith(noIdPrefix));
+            assertTrue(jmsMessageID.startsWith(noIdPrefix), "The 'No ID prefix' encoding hint was not found");
 
             connection.close();
             testPeer.waitForAllHandlersToComplete(1000);
@@ -839,12 +858,13 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
             String expected = jmsMessageID.substring(noIdPrefix.length());
             UUID.fromString(expected);
-            assertTrue("Expected String message id to be sent", receivedMessageId instanceof String);
-            assertEquals("Expected UUID toString value to be present in AMQP message", expected, receivedMessageId);
+            assertTrue(receivedMessageId instanceof String, "Expected String message id to be sent");
+            assertEquals(expected, receivedMessageId, "Expected UUID toString value to be present in AMQP message");
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testSendingMessageWithUUIDMessageIdFormat() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // DONT create a test fixture, we will drive everything directly.
@@ -877,15 +897,15 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
             Message message = session.createTextMessage(text);
 
-            assertNull("JMSMessageID should not yet be set", message.getJMSMessageID());
+            assertNull(message.getJMSMessageID(), "JMSMessageID should not yet be set");
 
             producer.send(message);
 
             String jmsMessageID = message.getJMSMessageID();
-            assertNotNull("JMSMessageID should be set", jmsMessageID);
-            assertTrue("JMS 'ID:' prefix not found", jmsMessageID.startsWith("ID:"));
+            assertNotNull(jmsMessageID, "JMSMessageID should be set");
+            assertTrue(jmsMessageID.startsWith("ID:"), "JMS 'ID:' prefix not found");
             String uuidEncodingPrefix = AmqpMessageIdHelper.JMS_ID_PREFIX + AmqpMessageIdHelper.AMQP_UUID_PREFIX;
-            assertTrue("The 'UUID prefix' encoding hint was not found", jmsMessageID.startsWith(uuidEncodingPrefix));
+            assertTrue(jmsMessageID.startsWith(uuidEncodingPrefix), "The 'UUID prefix' encoding hint was not found");
 
             connection.close();
 
@@ -894,12 +914,13 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
             Object receivedMessageId = propsMatcher.getReceivedMessageId();
 
-            assertTrue("Expected UUID message id to be sent", receivedMessageId instanceof UUID);
-            assertTrue("Expected JMSMessageId value to be present in AMQP message", jmsMessageID.endsWith(receivedMessageId.toString()));
+            assertTrue(receivedMessageId instanceof UUID, "Expected UUID message id to be sent");
+            assertTrue(jmsMessageID.endsWith(receivedMessageId.toString()), "Expected JMSMessageId value to be present in AMQP message");
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testSendingMessageWithPrefixedUUIDStringMessageIdFormat() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // DONT create a test fixture, we will drive everything directly.
@@ -932,13 +953,13 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
             Message message = session.createTextMessage(text);
 
-            assertNull("JMSMessageID should not yet be set", message.getJMSMessageID());
+            assertNull(message.getJMSMessageID(), "JMSMessageID should not yet be set");
 
             producer.send(message);
 
             String jmsMessageID = message.getJMSMessageID();
-            assertNotNull("JMSMessageID should be set", jmsMessageID);
-            assertTrue("JMS 'ID:' prefix not found", jmsMessageID.startsWith("ID:"));
+            assertNotNull(jmsMessageID, "JMSMessageID should be set");
+            assertTrue(jmsMessageID.startsWith("ID:"), "JMS 'ID:' prefix not found");
 
             connection.close();
             testPeer.waitForAllHandlersToComplete(1000);
@@ -950,8 +971,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
             String uuidToString = jmsMessageID.substring("ID:".length());
             UUID.fromString(uuidToString);
-            assertTrue("Expected String message id to be sent", receivedMessageId instanceof String);
-            assertEquals("Expected UUID toString value to be present in AMQP message", jmsMessageID, receivedMessageId);
+            assertTrue(receivedMessageId instanceof String, "Expected String message id to be sent");
+            assertEquals(jmsMessageID, receivedMessageId, "Expected UUID toString value to be present in AMQP message");
         }
     }
 
@@ -961,7 +982,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendingMessageWithDisableMessageIDHint() throws Exception {
         doSendingMessageWithDisableMessageIDHintTestImpl(false);
     }
@@ -973,7 +995,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendingMessageWithDisableMessageIDHintAndExistingMessageID() throws Exception {
         doSendingMessageWithDisableMessageIDHintTestImpl(true);
     }
@@ -1004,19 +1027,19 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
             Message message = session.createTextMessage(text);
 
-            assertNull("JMSMessageID should not yet be set", message.getJMSMessageID());
+            assertNull(message.getJMSMessageID(), "JMSMessageID should not yet be set");
 
             if (existingId) {
                 // [erroneously] set a JMSMessageID value
                 String existingMessageId = "ID:this-should-be-overwritten-in-send";
                 message.setJMSMessageID(existingMessageId);
-                assertEquals("JMSMessageID should now be set", existingMessageId, message.getJMSMessageID());
+                assertEquals(existingMessageId, message.getJMSMessageID(), "JMSMessageID should now be set");
             }
 
             producer.setDisableMessageID(true);
             producer.send(message);
 
-            assertNull("JMSMessageID should be null", message.getJMSMessageID());
+            assertNull(message.getJMSMessageID(), "JMSMessageID should be null");
 
             connection.close();
 
@@ -1024,7 +1047,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRemotelyCloseProducer() throws Exception {
         final String BREAD_CRUMB = "ErrorMessageBreadCrumb";
 
@@ -1050,7 +1074,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
             // Verify the producer gets marked closed
             testPeer.waitForAllHandlersToComplete(1000);
-            assertTrue("producer never closed.", Wait.waitFor(new Wait.Condition() {
+            assertTrue(Wait.waitFor(new Wait.Condition() {
                 @Override
                 public boolean isSatisfied() throws Exception {
                     try {
@@ -1069,9 +1093,9 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
                     return false;
                 }
-            }, 10000, 10));
+            }, 10000, 10), "producer never closed.");
 
-            assertTrue("Producer closed callback didn't trigger", producerClosed.await(10, TimeUnit.SECONDS));
+            assertTrue(producerClosed.await(10, TimeUnit.SECONDS), "Producer closed callback didn't trigger");
 
             // Try closing it explicitly, should effectively no-op in client.
             // The test peer will throw during close if it sends anything.
@@ -1079,7 +1103,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRemotelyCloseProducerDuringSyncSend() throws Exception {
         final String BREAD_CRUMB = "ErrorMessageBreadCrumb";
 
@@ -1118,8 +1143,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
                 fail("Expected exception to be thrown");
             } catch (JMSException jmse) {
                 // Expected
-                assertNotNull("Expected exception to have a message", jmse.getMessage());
-                assertTrue("Expected breadcrumb to be present in message", jmse.getMessage().contains(BREAD_CRUMB));
+                assertNotNull(jmse.getMessage(), "Expected exception to have a message");
+                assertTrue(jmse.getMessage().contains(BREAD_CRUMB), "Expected breadcrumb to be present in message");
             }
 
             connection.close();
@@ -1128,8 +1153,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRemotelyCloseProducerWithSendWaitingForCredit() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1164,7 +1189,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRemotelyEndProducerCompletesAsyncSends() throws Exception {
         final String BREAD_CRUMB = "ErrorMessage";
 
@@ -1213,7 +1239,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             assertEquals(MSG_COUNT, listener.errorCount);
 
             // Verify the producer gets marked closed
-            assertTrue("Producer closed callback didn't trigger", producerClosed.await(5, TimeUnit.SECONDS));
+            assertTrue(producerClosed.await(5, TimeUnit.SECONDS), "Producer closed callback didn't trigger");
             try {
                 producer.getDeliveryMode();
                 fail("Expected ISE to be thrown due to being closed");
@@ -1234,8 +1260,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRemotelyCloseConnectionDuringSyncSend() throws Exception {
         final String BREAD_CRUMB = "ErrorMessageBreadCrumb";
 
@@ -1273,8 +1299,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
                 fail("Expected exception to be thrown");
             } catch (JMSException jmse) {
                 // Expected
-                assertNotNull("Expected exception to have a message", jmse.getMessage());
-                assertTrue("Expected breadcrumb to be present in message", jmse.getMessage().contains(BREAD_CRUMB));
+                assertNotNull(jmse.getMessage(), "Expected exception to have a message");
+                assertTrue(jmse.getMessage().contains(BREAD_CRUMB), "Expected breadcrumb to be present in message");
             }
 
             testPeer.waitForAllHandlersToComplete(3000);
@@ -1283,8 +1309,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRemotelyCloseConnectionAndDropDuringSyncSend() throws Exception {
         final String BREAD_CRUMB = "ErrorMessageBreadCrumb";
 
@@ -1323,8 +1349,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
                 fail("Expected exception to be thrown");
             } catch (JMSException jmse) {
                 // Expected
-                assertNotNull("Expected exception to have a message", jmse.getMessage());
-                assertTrue("Expected breadcrumb to be present in message", jmse.getMessage().contains(BREAD_CRUMB));
+                assertNotNull(jmse.getMessage(), "Expected exception to have a message");
+                assertTrue(jmse.getMessage().contains(BREAD_CRUMB), "Expected breadcrumb to be present in message");
             }
 
             testPeer.waitForAllHandlersToComplete(3000);
@@ -1333,7 +1359,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendWhenLinkCreditIsDelayed() throws Exception {
         try(TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?amqp.traceFrames=true&amqp.traceBytes=true");
@@ -1362,7 +1389,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendWhenLinkCreditIsZeroAndTimeout() throws Exception {
         try(TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
@@ -1398,7 +1426,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendTimesOutWhenNoDispostionArrives() throws Exception {
         try(TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
@@ -1437,7 +1466,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAsyncCompletionGetsTimedOutErrorWhenNoDispostionArrives() throws Exception {
         try(TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
@@ -1469,7 +1499,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
                 fail("Send should not fail for async.");
             }
 
-            assertTrue("Did not get async callback", listener.awaitCompletion(5, TimeUnit.SECONDS));
+            assertTrue(listener.awaitCompletion(5, TimeUnit.SECONDS), "Did not get async callback");
             assertNotNull(listener.exception);
             assertTrue(listener.exception instanceof JmsSendTimedOutException);
             assertNotNull(listener.message);
@@ -1480,17 +1510,20 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSyncSendMessageRejected() throws Exception {
         doSyncSendMessageNotAcceptedTestImpl(new Rejected());
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSyncSendMessageReleased() throws Exception {
         doSyncSendMessageNotAcceptedTestImpl(new Released());
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSyncSendMessageModifiedDeliveryFailed() throws Exception {
         Modified modified = new Modified();
         modified.setDeliveryFailed(true);
@@ -1498,7 +1531,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         doSyncSendMessageNotAcceptedTestImpl(modified);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSyncSendMessageModifiedUndeliverable() throws Exception {
         Modified modified = new Modified();
         modified.setUndeliverableHere(true);
@@ -1506,7 +1540,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         doSyncSendMessageNotAcceptedTestImpl(modified);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSyncSendMessageModifiedDeliveryFailedUndeliverable() throws Exception {
         Modified modified = new Modified();
         modified.setDeliveryFailed(true);
@@ -1529,7 +1564,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             testPeer.expectTransfer(new TransferPayloadCompositeMatcher(), nullValue(), responseState, true);
             testPeer.expectClose();
 
-            assertNull("Should not yet have a JMSDestination", message.getJMSDestination());
+            assertNull(message.getJMSDestination(), "Should not yet have a JMSDestination");
 
             try {
                 producer.send(message);
@@ -1545,17 +1580,20 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAsyncSendMessageRejected() throws Exception {
         doAsyncSendMessageNotAcceptedTestImpl(new Rejected());
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAsyncSendMessageReleased() throws Exception {
         doAsyncSendMessageNotAcceptedTestImpl(new Released());
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAsyncSendMessageModifiedDeliveryFailed() throws Exception {
         Modified modified = new Modified();
         modified.setDeliveryFailed(true);
@@ -1563,7 +1601,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         doAsyncSendMessageNotAcceptedTestImpl(modified);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAsyncSendMessageModifiedUndeliverable() throws Exception {
         Modified modified = new Modified();
         modified.setUndeliverableHere(true);
@@ -1571,7 +1610,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         doAsyncSendMessageNotAcceptedTestImpl(modified);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAsyncSendMessageModifiedDeliveryFailedUndeliverable() throws Exception {
         Modified modified = new Modified();
         modified.setDeliveryFailed(true);
@@ -1613,7 +1653,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
             testPeer.expectTransfer(new TransferPayloadCompositeMatcher(), nullValue(), responseState, true);
 
-            assertNull("Should not yet have a JMSDestination", message.getJMSDestination());
+            assertNull(message.getJMSDestination(), "Should not yet have a JMSDestination");
 
             try {
                 producer.send(message);
@@ -1622,7 +1662,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
                 fail("No expected exception for this send.");
             }
 
-            assertTrue("Should get a non-fatal error", asyncError.await(10, TimeUnit.SECONDS));
+            assertTrue(asyncError.await(10, TimeUnit.SECONDS), "Should get a non-fatal error");
 
             testPeer.expectTransfer(new TransferPayloadCompositeMatcher());
             testPeer.expectClose();
@@ -1640,7 +1680,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendWorksWhenConnectionNotStarted() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1669,7 +1710,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendWorksAfterConnectionStopped() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1704,7 +1746,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreditDrainedAfterSend() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
@@ -1748,7 +1791,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testUserIdSetWhenConfiguredForInclusion() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
@@ -1792,7 +1836,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testUserIdNotSetWhenNotConfiguredForInclusion() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
@@ -1835,7 +1880,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testUserIdNotSpoofedWhenConfiguredForInclusion() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
@@ -1882,7 +1928,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testUserIdNotSpoofedWhenNotConfiguredForInclusion() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
@@ -1954,7 +2001,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testUserIdNotSpoofedWhenConfiguredForInclusionWithForgeinMessage() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
@@ -2001,7 +2049,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testUserIdNotSpoofedWhenNotConfiguredForInclusionWithForeignMessage() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
@@ -2045,7 +2094,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendFailsWhenDelayedDeliveryIsNotSupported() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
@@ -2086,7 +2136,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendWorksWhenDelayedDeliveryIsSupported() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
@@ -2128,9 +2179,9 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
             // Create a message, [erroneously] set a JMSDeliveryTime value, expect it to be overwritten
             Message message = session.createMessage();
-            assertEquals("JMSDeliveryTime should not yet be set", 0, message.getJMSDeliveryTime());
+            assertEquals(0, message.getJMSDeliveryTime(), "JMSDeliveryTime should not yet be set");
             message.setJMSDeliveryTime(1234);
-            assertEquals("JMSDeliveryTime should now (erroneously) be set", 1234, message.getJMSDeliveryTime());
+            assertEquals(1234, message.getJMSDeliveryTime(), "JMSDeliveryTime should now (erroneously) be set");
 
             MessageProducer producer = session.createProducer(dest);
             producer.setDeliveryDelay(deliveryDelay);
@@ -2141,7 +2192,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             testPeer.waitForAllHandlersToComplete(3000);
 
             // Now verify the local message also has the deliveryTime set as expected
-            MatcherAssert.assertThat("JMSDeliveryTime should now be set in expected range", message.getJMSDeliveryTime(), inRange);
+            assertThat("JMSDeliveryTime should now be set in expected range", message.getJMSDeliveryTime(), inRange);
 
             testPeer.expectClose();
             connection.close();
@@ -2150,7 +2201,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendWorksWhenDelayedDeliveryIsSupportedOnlyLinkCapability() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
@@ -2192,7 +2244,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAsyncCompletionAfterSendMessageGetDispoation() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -2214,7 +2267,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
             producer.send(message, listener);
 
-            assertTrue("Did not get async callback", listener.awaitCompletion(5, TimeUnit.SECONDS));
+            assertTrue(listener.awaitCompletion(5, TimeUnit.SECONDS), "Did not get async callback");
             assertNull(listener.exception);
             assertNotNull(listener.message);
             assertTrue(listener.message instanceof TextMessage);
@@ -2225,7 +2278,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAsyncCompletionGetsNotifiedWhenProducerClosed() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
@@ -2253,7 +2307,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             producer.send(message, listener);
             producer.close();
 
-            assertTrue("Did not get async callback", listener.awaitCompletion(5, TimeUnit.SECONDS));
+            assertTrue(listener.awaitCompletion(5, TimeUnit.SECONDS), "Did not get async callback");
             assertNotNull(listener.exception);
             assertNotNull(listener.message);
             assertTrue(listener.message instanceof TextMessage);
@@ -2264,7 +2318,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAsyncCompletionGetsNotifiedWhenSessionClosed() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
@@ -2290,7 +2345,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
             session.close();
 
-            assertTrue("Did not get async callback", listener.awaitCompletion(5, TimeUnit.SECONDS));
+            assertTrue(listener.awaitCompletion(5, TimeUnit.SECONDS), "Did not get async callback");
             assertNotNull(listener.exception);
             assertNotNull(listener.message);
             assertTrue(listener.message instanceof TextMessage);
@@ -2301,7 +2356,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAsyncCompletionGetsNotifiedWhenConnectionClosed() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
@@ -2326,7 +2382,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
             connection.close();
 
-            assertTrue("Did not get async callback", listener.awaitCompletion(5, TimeUnit.SECONDS));
+            assertTrue(listener.awaitCompletion(5, TimeUnit.SECONDS), "Did not get async callback");
             assertNotNull(listener.exception);
             assertNotNull(listener.message);
             assertTrue(listener.message instanceof TextMessage);
@@ -2335,7 +2391,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAsyncCompletionResetsBytesMessage() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -2359,7 +2416,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
             producer.send(message, listener);
 
-            assertTrue("Did not get async callback", listener.awaitCompletion(5, TimeUnit.SECONDS));
+            assertTrue(listener.awaitCompletion(5, TimeUnit.SECONDS), "Did not get async callback");
             assertNull(listener.exception);
             assertNotNull(listener.message);
             assertTrue(listener.message instanceof BytesMessage);
@@ -2375,17 +2432,20 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAsyncCompletionSendMessageRejected() throws Exception {
         doAsyncCompletionSendMessageNotAcceptedTestImpl(new Rejected());
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAsyncCompletionSendMessageReleased() throws Exception {
         doAsyncCompletionSendMessageNotAcceptedTestImpl(new Released());
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAsyncCompletionSendMessageModifiedDeliveryFailed() throws Exception {
         Modified modified = new Modified();
         modified.setDeliveryFailed(true);
@@ -2393,7 +2453,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         doAsyncCompletionSendMessageNotAcceptedTestImpl(modified);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAsyncCompletionSendMessageModifiedUndeliverable() throws Exception {
         Modified modified = new Modified();
         modified.setUndeliverableHere(true);
@@ -2401,7 +2462,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         doAsyncCompletionSendMessageNotAcceptedTestImpl(modified);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAsyncCompletionSendMessageModifiedDeliveryFailedUndeliverable() throws Exception {
         Modified modified = new Modified();
         modified.setDeliveryFailed(true);
@@ -2443,7 +2505,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
             testPeer.expectTransfer(new TransferPayloadCompositeMatcher(), nullValue(), responseState, true);
 
-            assertNull("Should not yet have a JMSDestination", message.getJMSDestination());
+            assertNull(message.getJMSDestination(), "Should not yet have a JMSDestination");
 
             TestJmsCompletionListener listener = new TestJmsCompletionListener();
             try {
@@ -2453,7 +2515,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
                 fail("No expected exception for this send.");
             }
 
-            assertTrue("Did not get async callback", listener.awaitCompletion(5, TimeUnit.SECONDS));
+            assertTrue(listener.awaitCompletion(5, TimeUnit.SECONDS), "Did not get async callback");
             assertNotNull(listener.exception);
             assertNotNull(listener.message);
             assertTrue(listener.message instanceof TextMessage);
@@ -2469,7 +2531,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
                 fail("No expected exception for this send.");
             }
 
-            assertTrue("Did not get async callback", listener.awaitCompletion(5, TimeUnit.SECONDS));
+            assertTrue(listener.awaitCompletion(5, TimeUnit.SECONDS), "Did not get async callback");
             assertNull(listener.exception);
             assertNotNull(listener.message);
             assertTrue(listener.message instanceof TextMessage);
@@ -2480,7 +2542,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAsyncCompletionSessionCloseThrowsIllegalStateException() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -2515,7 +2578,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
             producer.send(message, listener);
 
-            assertTrue("Did not get async callback", listener.awaitCompletion(5, TimeUnit.SECONDS));
+            assertTrue(listener.awaitCompletion(5, TimeUnit.SECONDS), "Did not get async callback");
             assertNull(listener.exception);
             assertNotNull(listener.message);
             assertTrue(listener.message instanceof TextMessage);
@@ -2528,7 +2591,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAsyncCompletionConnectionCloseThrowsIllegalStateException() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             final Connection connection = testFixture.establishConnecton(testPeer);
@@ -2564,7 +2628,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
             producer.send(message, listener);
 
-            assertTrue("Did not get async callback", listener.awaitCompletion(5, TimeUnit.SECONDS));
+            assertTrue(listener.awaitCompletion(5, TimeUnit.SECONDS), "Did not get async callback");
             assertNull(listener.exception);
             assertNotNull(listener.message);
             assertNotNull(closeError.get());
@@ -2576,7 +2640,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAsyncCompletionSessionCommitThrowsIllegalStateException() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             final Connection connection = testFixture.establishConnecton(testPeer);
@@ -2635,7 +2700,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
             producer.send(message, listener);
 
-            assertTrue("Did not get async callback", listener.awaitCompletion(5, TimeUnit.SECONDS));
+            assertTrue(listener.awaitCompletion(5, TimeUnit.SECONDS), "Did not get async callback");
             assertNull(listener.exception);
             assertNotNull(listener.message);
             assertNotNull(commitError.get());
@@ -2647,7 +2712,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAsyncCompletionSessionRollbackThrowsIllegalStateException() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             final Connection connection = testFixture.establishConnecton(testPeer);
@@ -2706,7 +2772,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
             producer.send(message, listener);
 
-            assertTrue("Did not get async callback", listener.awaitCompletion(5, TimeUnit.SECONDS));
+            assertTrue(listener.awaitCompletion(5, TimeUnit.SECONDS), "Did not get async callback");
             assertNull(listener.exception);
             assertNotNull(listener.message);
             assertNotNull(rollback.get());
@@ -2718,12 +2784,14 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendingMessageSetsJMSDeliveryTimeWithDelay() throws Exception {
         doSendingMessageSetsJMSDeliveryTimeTestImpl(true);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendingMessageSetsJMSDeliveryTimeWithoutDelay() throws Exception {
         doSendingMessageSetsJMSDeliveryTimeTestImpl(false);
     }
@@ -2776,15 +2844,16 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             testPeer.waitForAllHandlersToComplete(1000);
 
             if (!deliveryDelay) {
-                assertFalse("Message should not have delivery time annotation",
-                        msgAnnotationsMatcher.keyExistsInReceivedAnnotations(DELIVERY_TIME));
+                assertFalse(msgAnnotationsMatcher.keyExistsInReceivedAnnotations(DELIVERY_TIME),
+                        "Message should not have delivery time annotation");
             }
 
             assertThat(message.getJMSDeliveryTime(), inRange);
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRemotelyCloseOneProducerDoesNotCompleteAsyncSendFromAnotherProducer() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
@@ -2812,7 +2881,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             // will use to send a message.
             testPeer.remotelyDetachLastOpenedLinkOnLastOpenedSession(true, true);
 
-            assertNull("Should not yet have a JMSDestination", message.getJMSDestination());
+            assertNull(message.getJMSDestination(), "Should not yet have a JMSDestination");
 
             TestJmsCompletionListener listener = new TestJmsCompletionListener();
             try {
@@ -2824,21 +2893,21 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
             testPeer.waitForAllHandlersToComplete(2000);
 
-            assertFalse("Should not get async callback", listener.awaitCompletion(10, TimeUnit.MILLISECONDS));
+            assertFalse(listener.awaitCompletion(10, TimeUnit.MILLISECONDS), "Should not get async callback");
 
             // Closing the session should complete the send with an exception
             testPeer.expectEnd();
             session.close();
 
-            assertTrue("Did not get async callback", listener.awaitCompletion(5, TimeUnit.SECONDS));
+            assertTrue(listener.awaitCompletion(5, TimeUnit.SECONDS), "Did not get async callback");
             assertNotNull(listener.exception);
             assertNotNull(listener.message);
             assertTrue(listener.message instanceof TextMessage);
 
             // Message should be readable
-            assertNotNull("Should have a readable JMSDestination", message.getJMSDestination());
-            assertEquals("Message body not as expected", "content", ((TextMessage) message).getText());
-            assertEquals("Message property not as expected", 1, message.getIntProperty("test"));
+            assertNotNull(message.getJMSDestination(), "Should have a readable JMSDestination");
+            assertEquals("content", ((TextMessage) message).getText(), "Message body not as expected");
+            assertEquals(1, message.getIntProperty("test"), "Message property not as expected");
 
             testPeer.expectClose();
             connection.close();
@@ -2847,7 +2916,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRemotelyCloseProducerAndAttemptAsyncCompletionSendThrowsAndLeavesMessageReadable() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
@@ -2872,12 +2942,12 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             Message message = session.createTextMessage("content");
             message.setIntProperty("test", 1);
 
-            assertNull("Should not yet have a JMSDestination", message.getJMSDestination());
+            assertNull(message.getJMSDestination(), "Should not yet have a JMSDestination");
 
             MessageProducer producer = session.createProducer(queue);
             testPeer.waitForAllHandlersToComplete(2000);
 
-            assertTrue("Producer should have been closed", producerClosed.await(2, TimeUnit.SECONDS));
+            assertTrue(producerClosed.await(2, TimeUnit.SECONDS), "Producer should have been closed");
 
             TestJmsCompletionListener listener = new TestJmsCompletionListener();
             try {
@@ -2887,12 +2957,12 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
                 LOG.trace("Caught expected exception: {}", e.getMessage());
             }
 
-            assertFalse("Should not get async callback", listener.awaitCompletion(5, TimeUnit.MILLISECONDS));
+            assertFalse(listener.awaitCompletion(5, TimeUnit.MILLISECONDS), "Should not get async callback");
 
             // Message should be readable but not carry a destination as it wasn't actually sent anywhere
-            assertNull("Should not have a readable JMSDestination", message.getJMSDestination());
-            assertEquals("Message body not as expected", "content", ((TextMessage) message).getText());
-            assertEquals("Message property not as expected", 1, message.getIntProperty("test"));
+            assertNull(message.getJMSDestination(), "Should not have a readable JMSDestination");
+            assertEquals("content", ((TextMessage) message).getText(), "Message body not as expected");
+            assertEquals(1, message.getIntProperty("test"), "Message property not as expected");
 
             testPeer.expectClose();
             connection.close();
@@ -2901,7 +2971,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRemotelyCloseSessionAndAttemptAsyncCompletionSendThrowsAndLeavesMessageReadable() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
@@ -2926,12 +2997,12 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             Message message = session.createTextMessage("content");
             message.setIntProperty("test", 1);
 
-            assertNull("Should not yet have a JMSDestination", message.getJMSDestination());
+            assertNull(message.getJMSDestination(), "Should not yet have a JMSDestination");
 
             MessageProducer producer = session.createProducer(queue);
             testPeer.waitForAllHandlersToComplete(2000);
 
-            assertTrue("Session should have been closed", sessionClosed.await(2, TimeUnit.SECONDS));
+            assertTrue(sessionClosed.await(2, TimeUnit.SECONDS), "Session should have been closed");
 
             TestJmsCompletionListener listener = new TestJmsCompletionListener();
             try {
@@ -2941,12 +3012,12 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
                 LOG.trace("Caught expected exception: {}", e.getMessage());
             }
 
-            assertFalse("Should not get async callback", listener.awaitCompletion(5, TimeUnit.MILLISECONDS));
+            assertFalse(listener.awaitCompletion(5, TimeUnit.MILLISECONDS), "Should not get async callback");
 
             // Message should be readable but not carry a destination as it wasn't actually sent anywhere
-            assertNull("Should not have a readable JMSDestination", message.getJMSDestination());
-            assertEquals("Message body not as expected", "content", ((TextMessage) message).getText());
-            assertEquals("Message property not as expected", 1, message.getIntProperty("test"));
+            assertNull(message.getJMSDestination(), "Should not have a readable JMSDestination");
+            assertEquals("content", ((TextMessage) message).getText(), "Message body not as expected");
+            assertEquals(1, message.getIntProperty("test"), "Message property not as expected");
 
             testPeer.expectClose();
             connection.close();
@@ -2998,7 +3069,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailedSendToOfflineConnectionMessageCanBeResentToNewConnection() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer finalPeer = new TestAmqpPeer();) {
@@ -3027,7 +3099,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             // initial producer which will be sent to after connection fails
             MessageProducer producer = session.createProducer(queue);
 
-            assertTrue("Connection should have been remotely closed", connectionFailed.await(10, TimeUnit.SECONDS));
+            assertTrue(connectionFailed.await(10, TimeUnit.SECONDS), "Connection should have been remotely closed");
 
             try {
                 producer.send(message);
@@ -3056,7 +3128,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendTimeoutDoesNotRecycleDeliveryTag() throws Exception {
         try(TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
@@ -3106,8 +3179,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception
      */
-    @Repeat(repetitions = 1)
-    @Test(timeout = 35000)
+    @Test
+    @Timeout(35)
     public void testSendToRemotelyClosedProducerFailsIfSendAfterDetached() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
@@ -3154,7 +3227,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             });
 
             executor.shutdown();
-            assertTrue("send + close didnt complete in given time", executor.awaitTermination(20, TimeUnit.SECONDS));
+            assertTrue(executor.awaitTermination(20, TimeUnit.SECONDS), "send + close didnt complete in given time");
 
             session.close();
 

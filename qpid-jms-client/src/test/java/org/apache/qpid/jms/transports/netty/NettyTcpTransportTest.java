@@ -18,15 +18,15 @@ package org.apache.qpid.jms.transports.netty;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -41,7 +41,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
-import io.netty.channel.EventLoopGroup;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.Wait;
 import org.apache.qpid.jms.test.proxy.TestProxy;
@@ -49,17 +48,16 @@ import org.apache.qpid.jms.test.proxy.TestProxy.ProxyType;
 import org.apache.qpid.jms.transports.Transport;
 import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.transports.TransportOptions;
-import org.apache.qpid.jms.util.QpidJMSTestRunner;
 import org.apache.qpid.jms.util.QpidJMSThreadFactory;
-import org.apache.qpid.jms.util.Repeat;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.Epoll;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.kqueue.KQueue;
@@ -73,7 +71,6 @@ import io.netty.util.ResourceLeakDetector.Level;
 /**
  * Test basic functionality of the Netty based TCP transport.
  */
-@RunWith(QpidJMSTestRunner.class)
 public class NettyTcpTransportTest extends QpidJmsTestCase {
 
     private static final Logger LOG = LoggerFactory.getLogger(NettyTcpTransportTest.class);
@@ -87,7 +84,8 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
 
     protected final TransportListener testListener = new NettyTransportListener(false);
 
-    @Test(timeout = 60 * 1000)
+    @Test
+    @Timeout(60)
     public void testCloseOnNeverConnectedTransport() throws Exception {
         URI serverLocation = new URI("tcp://localhost:5762");
 
@@ -101,7 +99,8 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
         assertTrue(data.isEmpty());
     }
 
-    @Test(timeout = 60 * 1000)
+    @Test
+    @Timeout(60)
     public void testCreateWithNullOptionsThrowsIAE() throws Exception {
         URI serverLocation = new URI("tcp://localhost:5762");
 
@@ -112,7 +111,8 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testConnectWithCustomThreadFactoryConfigured() throws Exception {
         try (NettyEchoServer server = createEchoServer(createServerOptions())) {
             server.start();
@@ -148,7 +148,8 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
         assertTrue(data.isEmpty());
     }
 
-    @Test(timeout = 60 * 1000)
+    @Test
+    @Timeout(60)
     public void testConnectWithoutRunningServer() throws Exception {
         try (NettyEchoServer server = createEchoServer(createServerOptions())) {
             server.start();
@@ -176,7 +177,8 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
         assertTrue(data.isEmpty());
     }
 
-    @Test(timeout = 60 * 1000)
+    @Test
+    @Timeout(60)
     public void testConnectWithoutListenerFails() throws Exception {
         try (NettyEchoServer server = createEchoServer(createServerOptions())) {
             server.start();
@@ -198,7 +200,8 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 60 * 1000)
+    @Test
+    @Timeout(60)
     public void testConnectAfterListenerSetWorks() throws Exception {
         try (NettyEchoServer server = createEchoServer(createServerOptions())) {
             server.start();
@@ -224,7 +227,8 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 60 * 1000)
+    @Test
+    @Timeout(60)
     public void testConnectToServer() throws Exception {
         try (NettyEchoServer server = createEchoServer(createServerOptions())) {
             server.start();
@@ -248,7 +252,8 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
         assertTrue(data.isEmpty());
     }
 
-    @Test(timeout = 60 * 1000)
+    @Test
+    @Timeout(60)
     public void testMultipleConnectionsToServer() throws Exception {
         final int CONNECTION_COUNT = 10;
 
@@ -277,7 +282,8 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
         assertTrue(data.isEmpty());
     }
 
-    @Test(timeout = 60 * 1000)
+    @Test
+    @Timeout(60)
     public void testMultipleConnectionsSendReceive() throws Exception {
         final int CONNECTION_COUNT = 10;
         final int FRAME_SIZE = 8;
@@ -322,7 +328,8 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
         assertTrue(exceptions.isEmpty());
     }
 
-    @Test(timeout = 60 * 1000)
+    @Test
+    @Timeout(60)
     public void testDetectServerClose() throws Exception {
         Transport transport = null;
 
@@ -356,7 +363,8 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 60 * 1000)
+    @Test
+    @Timeout(60)
     public void testZeroSizedSentNoErrors() throws Exception {
         try (NettyEchoServer server = createEchoServer(createServerOptions())) {
             server.start();
@@ -378,7 +386,8 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
         assertTrue(data.isEmpty());
     }
 
-    @Test(timeout = 60 * 1000)
+    @Test
+    @Timeout(60)
     public void testCannotDereferenceSharedClosedEventLoopGroup() throws Exception {
         try (NettyEchoServer server = createEchoServer(createServerOptions())) {
             server.start();
@@ -414,7 +423,8 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
         assertTrue(data.isEmpty());
     }
 
-    @Test(timeout = 60 * 1000)
+    @Test
+    @Timeout(60)
     public void testSharedEventLoopGroups() throws Exception {
         final Set<Transport> transports = new HashSet<>();
         try (NettyEchoServer server = createEchoServer(createServerOptions())) {
@@ -452,7 +462,8 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
         assertTrue(data.isEmpty());
     }
 
-    @Test(timeout = 60 * 1000)
+    @Test
+    @Timeout(60)
     public void testSharedEventLoopGroupsOfDifferentSizes() throws Exception {
         final Set<Transport> transports = new HashSet<>();
         try (NettyEchoServer server = createEchoServer(createServerOptions())) {
@@ -496,7 +507,8 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
         assertTrue(data.isEmpty());
     }
 
-    @Test(timeout = 60 * 1000)
+    @Test
+    @Timeout(60)
     public void testUnsharedEventLoopGroups() throws Exception {
         final Set<Transport> transports = new HashSet<>();
         try (NettyEchoServer server = createEchoServer(createServerOptions())) {
@@ -535,7 +547,8 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
         assertTrue(data.isEmpty());
     }
 
-    @Test(timeout = 60 * 1000)
+    @Test
+    @Timeout(60)
     public void testDataSentIsReceived() throws Exception {
         try (NettyEchoServer server = createEchoServer(createServerOptions())) {
             server.start();
@@ -570,12 +583,14 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
         assertTrue(exceptions.isEmpty());
     }
 
-    @Test(timeout = 60 * 1000)
+    @Test
+    @Timeout(60)
     public void testMultipleDataPacketsSentAreReceived() throws Exception {
         doMultipleDataPacketsSentAndReceive(SEND_BYTE_COUNT, 1);
     }
 
-    @Test(timeout = 60 * 1000)
+    @Test
+    @Timeout(60)
     public void testMultipleDataPacketsSentAreReceivedRepeatedly() throws Exception {
         doMultipleDataPacketsSentAndReceive(SEND_BYTE_COUNT, 10);
     }
@@ -615,7 +630,8 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
         assertTrue(exceptions.isEmpty());
     }
 
-    @Test(timeout = 60 * 1000)
+    @Test
+    @Timeout(60)
     public void testSendToClosedTransportFails() throws Exception {
         try (NettyEchoServer server = createEchoServer(createServerOptions())) {
             server.start();
@@ -638,7 +654,8 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testConnectRunsInitializationMethod() throws Exception {
         try (NettyEchoServer server = createEchoServer(createServerOptions())) {
             server.start();
@@ -667,8 +684,8 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
         assertTrue(data.isEmpty());
     }
 
-    @Test(timeout = 60000)
-    @Repeat(repetitions = 1)
+    @Test
+    @Timeout(60)
     public void testFailureInInitializationRoutineFailsConnect() throws Exception {
         try (NettyEchoServer server = createEchoServer(createServerOptions())) {
             server.start();
@@ -684,8 +701,8 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
                 LOG.info("Failed to connect to server:{} as expected", serverLocation);
             }
 
-            assertFalse("Should not be connected", transport.isConnected());
-            assertEquals("Server location is incorrect", serverLocation, transport.getRemoteLocation());
+            assertFalse(transport.isConnected(), "Should not be connected");
+            assertEquals(serverLocation, transport.getRemoteLocation(), "Server location is incorrect");
 
             transport.close();
         }
@@ -695,8 +712,9 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
         assertTrue(data.isEmpty());
     }
 
-    @Ignore("Used for checking for transport level leaks, my be unstable on CI.")
-    @Test(timeout = 60 * 1000)
+    @Disabled("Used for checking for transport level leaks, my be unstable on CI.")
+    @Test
+    @Timeout(60)
     public void testSendToClosedTransportFailsButDoesNotLeak() throws Exception {
         Transport transport = null;
 
@@ -729,17 +747,20 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 60 * 1000)
+    @Test
+    @Timeout(60)
     public void testConnectToServerWithEpollEnabled() throws Exception {
         doTestEpollSupport(true);
     }
 
-    @Test(timeout = 60 * 1000)
+    @Test
+    @Timeout(60)
     public void testConnectToServerWithEpollDisabled() throws Exception {
         doTestEpollSupport(false);
     }
 
-    @Test(timeout = 60 * 1000)
+    @Test
+    @Timeout(60)
     public void testConnectToServerViaProxy() throws Exception {
         try (TestProxy testProxy = new TestProxy(ProxyType.SOCKS5);
              NettyEchoServer server = createEchoServer(createServerOptions())) {
@@ -838,7 +859,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
             }
         }
 
-        assertNotNull("Transport implementation unknown", groupRefField);
+        assertNotNull(groupRefField, "Transport implementation unknown");
 
         groupRefField.setAccessible(true);
         return (EventLoopGroupRef) groupRefField.get(transport);
@@ -850,12 +871,14 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
         assertThat(message, groupRef.group(), instanceOf(eventLoopGroupClass));
     }
 
-    @Test(timeout = 60 * 1000)
+    @Test
+    @Timeout(60)
     public void testConnectToServerWithKQueueEnabled() throws Exception {
         doTestKQueueSupport(true);
     }
 
-    @Test(timeout = 60 * 1000)
+    @Test
+    @Timeout(60)
     public void testConnectToServerWithKQueueDisabled() throws Exception {
         doTestKQueueSupport(false);
     }

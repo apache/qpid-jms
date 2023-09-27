@@ -16,8 +16,8 @@
  */
 package org.apache.qpid.jms;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -27,7 +27,11 @@ import java.util.concurrent.TimeUnit;
 import jakarta.jms.Session;
 
 import org.apache.qpid.jms.support.AmqpTestSupport;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.Timeout;
 
 public class JmsConnectionConcurrentCloseCallsTest extends AmqpTestSupport {
 
@@ -35,13 +39,15 @@ public class JmsConnectionConcurrentCloseCallsTest extends AmqpTestSupport {
     private ExecutorService executor;
     private final int size = 200;
 
+    @BeforeEach
     @Override
-    public void setUp() throws Exception {
-        super.setUp();
+    public void setUp(TestInfo testInfo) throws Exception {
+        super.setUp(testInfo);
 
         executor = Executors.newFixedThreadPool(20);
     }
 
+    @AfterEach
     @Override
     public void tearDown() throws Exception {
         try {
@@ -57,7 +63,8 @@ public class JmsConnectionConcurrentCloseCallsTest extends AmqpTestSupport {
         super.tearDown();
     }
 
-    @Test(timeout=200000)
+    @Test
+    @Timeout(200)
     public void testCloseMultipleTimes() throws Exception {
         connection = (JmsConnection) createAmqpConnection();
         connection.start();
@@ -86,7 +93,7 @@ public class JmsConnectionConcurrentCloseCallsTest extends AmqpTestSupport {
         }
 
         boolean zero = latch.await(200, TimeUnit.SECONDS);
-        assertTrue("Should complete all", zero);
+        assertTrue(zero, "Should complete all");
 
         // should not fail calling again
         connection.close();

@@ -21,10 +21,9 @@ package org.apache.qpid.jms.test;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.rules.TestName;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,8 +34,7 @@ public class QpidJmsTestCase {
 
     private final Map<String, String> _propertiesSetForTest = new HashMap<String, String>();
 
-    @Rule
-    public TestName _testName = new TestName();
+    public String _testMethodName;
 
     /**
      * Set a System property for duration of this test only. The tearDown will guarantee to reset the property to its
@@ -83,18 +81,20 @@ public class QpidJmsTestCase {
         }
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws java.lang.Exception {
         _logger.info("========== tearDown " + getTestName() + " ==========");
         revertTestSystemProperties();
     }
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
+        _testMethodName = testInfo.getTestMethod().get().getName();
+
         _logger.info("========== start " + getTestName() + " ==========");
     }
 
     protected String getTestName() {
-        return getClass().getSimpleName() + "." + _testName.getMethodName();
+        return getClass().getSimpleName() + "." + _testMethodName;
     }
 }

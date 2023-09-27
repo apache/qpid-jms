@@ -29,12 +29,12 @@ import javax.jms.Topic;
 
 import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.apache.qpid.jms.support.AmqpTestSupport;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Ignore
+@Disabled
 public class ProduceToOpenWireTest extends AmqpTestSupport {
 
     protected static final Logger LOG = LoggerFactory.getLogger(ProduceToOpenWireTest.class);

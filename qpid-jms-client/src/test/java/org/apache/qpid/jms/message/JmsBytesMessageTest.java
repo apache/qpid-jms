@@ -16,11 +16,12 @@
  */
 package org.apache.qpid.jms.message;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -41,7 +42,7 @@ import jakarta.jms.MessageNotWriteableException;
 import org.apache.qpid.jms.message.facade.JmsBytesMessageFacade;
 import org.apache.qpid.jms.message.facade.test.JmsTestBytesMessageFacade;
 import org.apache.qpid.jms.message.facade.test.JmsTestMessageFactory;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 /**
@@ -71,7 +72,7 @@ public class JmsBytesMessageTest {
         JmsBytesMessage bytesMessage = factory.createBytesMessage();
         bytesMessage.writeBytes(bytes);
         bytesMessage.reset();
-        assertEquals("Message reports unexpected length", bytes.length, bytesMessage.getBodyLength());
+        assertEquals(bytes.length, bytesMessage.getBodyLength(), "Message reports unexpected length");
     }
 
     /**
@@ -80,10 +81,12 @@ public class JmsBytesMessageTest {
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(expected = MessageNotReadableException.class)
+    @Test
     public void testGetBodyLengthOnNewMessageThrowsMessageNotReadableException() throws Exception {
-        JmsBytesMessage bytesMessage = factory.createBytesMessage();
-        bytesMessage.getBodyLength();
+        assertThrows(MessageNotReadableException.class, () -> {
+            JmsBytesMessage bytesMessage = factory.createBytesMessage();
+            bytesMessage.getBodyLength();
+        });
     }
 
     @Test
@@ -91,7 +94,7 @@ public class JmsBytesMessageTest {
         JmsBytesMessage bytesMessage = factory.createBytesMessage();
         bytesMessage.onDispatch();
         //verify attempting to read bytes returns -1, i.e EOS
-        assertEquals("Expected input stream to be at end but data was returned", END_OF_STREAM, bytesMessage.readBytes(new byte[1]));
+        assertEquals(END_OF_STREAM, bytesMessage.readBytes(new byte[1]), "Expected input stream to be at end but data was returned");
     }
 
     @Test
@@ -108,10 +111,9 @@ public class JmsBytesMessageTest {
         assertTrue(Arrays.equals(content, receivedBytes));
 
         // verify no more bytes remain, i.e EOS
-        assertEquals("Expected input stream to be at end but data was returned",
-                     END_OF_STREAM, bytesMessage.readBytes(new byte[1]));
+        assertEquals(END_OF_STREAM, bytesMessage.readBytes(new byte[1]), "Expected input stream to be at end but data was returned");
 
-        assertEquals("Message reports unexpected length", content.length, bytesMessage.getBodyLength());
+        assertEquals(content.length, bytesMessage.getBodyLength(), "Message reports unexpected length");
     }
 
     /**
@@ -120,14 +122,16 @@ public class JmsBytesMessageTest {
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(expected = MessageNotWriteableException.class)
+    @Test
     public void testReceivedBytesMessageThrowsMessageNotWriteableExceptionOnWriteBytes() throws Exception {
-        byte[] content = "myBytesData".getBytes();
-        JmsTestBytesMessageFacade facade = new JmsTestBytesMessageFacade(content);
+        assertThrows(MessageNotWriteableException.class, () -> {
+            byte[] content = "myBytesData".getBytes();
+            JmsTestBytesMessageFacade facade = new JmsTestBytesMessageFacade(content);
 
-        JmsBytesMessage bytesMessage = new JmsBytesMessage(facade);
-        bytesMessage.onDispatch();
-        bytesMessage.writeBytes(content);
+            JmsBytesMessage bytesMessage = new JmsBytesMessage(facade);
+            bytesMessage.onDispatch();
+            bytesMessage.writeBytes(content);
+        });
     }
 
     /**
@@ -136,11 +140,13 @@ public class JmsBytesMessageTest {
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(expected = MessageNotReadableException.class)
+    @Test
     public void testNewBytesMessageThrowsMessageNotReadableOnReadBytes() throws Exception {
-        JmsBytesMessage bytesMessage = factory.createBytesMessage();
-        byte[] receivedBytes = new byte[1];
-        bytesMessage.readBytes(receivedBytes);
+        assertThrows(MessageNotReadableException.class, () -> {
+            JmsBytesMessage bytesMessage = factory.createBytesMessage();
+            byte[] receivedBytes = new byte[1];
+            bytesMessage.readBytes(receivedBytes);
+        });
     }
 
     /**
@@ -156,9 +162,9 @@ public class JmsBytesMessageTest {
 
         JmsBytesMessage bytesMessage = new JmsBytesMessage(facade);
         bytesMessage.onDispatch();
-        assertTrue("Message should not be writable", bytesMessage.isReadOnlyBody());
+        assertTrue(bytesMessage.isReadOnlyBody(), "Message should not be writable");
         bytesMessage.clearBody();
-        assertFalse("Message should be writable", bytesMessage.isReadOnlyBody());
+        assertFalse(bytesMessage.isReadOnlyBody(), "Message should be writable");
     }
 
     /**
@@ -175,11 +181,11 @@ public class JmsBytesMessageTest {
         JmsBytesMessage bytesMessage = new JmsBytesMessage(facade);
         bytesMessage.onDispatch();
 
-        assertTrue("Expected message content but none was present", facade.getBodyLength() > 0);
-        assertEquals("Expected data from facade", 1, facade.getInputStream().read(new byte[1]));
+        assertTrue(facade.getBodyLength() > 0, "Expected message content but none was present");
+        assertEquals(1, facade.getInputStream().read(new byte[1]), "Expected data from facade");
         bytesMessage.clearBody();
-        assertTrue("Expected no message content from facade", facade.getBodyLength() == 0);
-        assertEquals("Expected no data from facade, but got some", END_OF_STREAM, facade.getInputStream().read(new byte[1]));
+        assertTrue(facade.getBodyLength() == 0, "Expected no message content from facade");
+        assertEquals(END_OF_STREAM, facade.getInputStream().read(new byte[1]), "Expected no data from facade, but got some");
     }
 
     /**
@@ -195,7 +201,7 @@ public class JmsBytesMessageTest {
 
         JmsBytesMessage bytesMessage = new JmsBytesMessage(facade);
         bytesMessage.onDispatch();
-        assertEquals("Unexpected message length", content.length, bytesMessage.getBodyLength());
+        assertEquals(content.length, bytesMessage.getBodyLength(), "Unexpected message length");
         bytesMessage.clearBody();
 
         try {
@@ -247,10 +253,10 @@ public class JmsBytesMessageTest {
 
         JmsBytesMessage bytesMessage = new JmsBytesMessage(facade);
 
-        assertFalse("Message should be writable", bytesMessage.isReadOnlyBody());
+        assertFalse(bytesMessage.isReadOnlyBody(), "Message should be writable");
         bytesMessage.writeBytes(content);
         bytesMessage.reset();
-        assertTrue("Message should not be writable", bytesMessage.isReadOnlyBody());
+        assertTrue(bytesMessage.isReadOnlyBody(), "Message should not be writable");
 
         // retrieve the bytes, check they match
         byte[] resetBytes = new byte[content.length];
@@ -268,7 +274,7 @@ public class JmsBytesMessageTest {
     public void testReadBytesWithZeroLengthDestination() throws Exception {
         JmsBytesMessage bytesMessage = factory.createBytesMessage();
         bytesMessage.reset();
-        assertEquals("Did not expect any bytes to be read", 0, bytesMessage.readBytes(new byte[0]));
+        assertEquals(0, bytesMessage.readBytes(new byte[0]), "Did not expect any bytes to be read");
     }
 
     /**
@@ -277,12 +283,14 @@ public class JmsBytesMessageTest {
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(expected=IndexOutOfBoundsException.class)
+    @Test
     public void testReadBytesWithNegativeLengthThrowsIOOBE() throws Exception
     {
-        JmsBytesMessage bytesMessage = factory.createBytesMessage();
-        bytesMessage.reset();
-        bytesMessage.readBytes(new byte[0], -1);
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            JmsBytesMessage bytesMessage = factory.createBytesMessage();
+            bytesMessage.reset();
+            bytesMessage.readBytes(new byte[0], -1);
+        });
     }
 
     /**
@@ -292,11 +300,13 @@ public class JmsBytesMessageTest {
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(expected=IndexOutOfBoundsException.class)
+    @Test
     public void testReadBytesWithLengthGreatThanArraySizeThrowsIOOBE() throws Exception {
-        JmsBytesMessage bytesMessage = factory.createBytesMessage();
-        bytesMessage.reset();
-        bytesMessage.readBytes(new byte[1], 2);
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            JmsBytesMessage bytesMessage = factory.createBytesMessage();
+            bytesMessage.reset();
+            bytesMessage.readBytes(new byte[1], 2);
+        });
     }
 
     /**
@@ -305,10 +315,12 @@ public class JmsBytesMessageTest {
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(expected=NullPointerException.class)
+    @Test
     public void testWriteObjectWithNullThrowsNPE() throws Exception {
-        JmsBytesMessage bytesMessage = factory.createBytesMessage();
-        bytesMessage.writeObject(null);
+        assertThrows(NullPointerException.class, () -> {
+            JmsBytesMessage bytesMessage = factory.createBytesMessage();
+            bytesMessage.writeObject(null);
+        });
     }
 
     /**
@@ -317,10 +329,12 @@ public class JmsBytesMessageTest {
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(expected=MessageFormatException.class)
+    @Test
     public void testWriteObjectWithIllegalTypeThrowsMFE() throws Exception {
-        JmsBytesMessage bytesMessage = factory.createBytesMessage();
-        bytesMessage.writeObject(new Object());
+        assertThrows(MessageFormatException.class, () -> {
+            JmsBytesMessage bytesMessage = factory.createBytesMessage();
+            bytesMessage.writeObject(new Object());
+        });
     }
 
     @Test

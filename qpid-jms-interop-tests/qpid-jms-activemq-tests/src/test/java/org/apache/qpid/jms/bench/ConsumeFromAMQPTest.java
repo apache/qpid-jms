@@ -16,9 +16,9 @@
  */
 package org.apache.qpid.jms.bench;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,13 +41,13 @@ import org.apache.activemq.broker.region.policy.PolicyEntry;
 import org.apache.activemq.broker.region.policy.PolicyMap;
 import org.apache.activemq.broker.region.policy.VMPendingQueueMessageStoragePolicy;
 import org.apache.qpid.jms.support.AmqpTestSupport;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 /**
  *
  */
-@Ignore
+@Disabled
 public class ConsumeFromAMQPTest extends AmqpTestSupport {
 
     private final int MSG_COUNT = 50 * 1000;
@@ -94,14 +94,14 @@ public class ConsumeFromAMQPTest extends AmqpTestSupport {
         producer.close();
 
         QueueViewMBean queueView = getProxyToQueue(getDestinationName());
-        assertEquals("Queue should have a message", 1, queueView.getQueueSize());
+        assertEquals(1, queueView.getQueueSize(), "Queue should have a message");
 
         MessageConsumer consumer = session.createConsumer(queue);
         Message received = consumer.receive(7000);
         assertNotNull(received);
         consumer.close();
 
-        assertEquals("Queue should have ano messages", 0, queueView.getQueueSize());
+        assertEquals(0, queueView.getQueueSize(), "Queue should have ano messages");
     }
 
     @Test
@@ -171,7 +171,7 @@ public class ConsumeFromAMQPTest extends AmqpTestSupport {
         long startTime = System.currentTimeMillis();
         for (int i = 0; i < msgCount; ++i) {
             Message message = consumer.receive(7000);
-            assertNotNull("Failed to receive message " + i, message);
+            assertNotNull(message, "Failed to receive message " + i);
         }
         long result = (System.currentTimeMillis() - startTime);
 

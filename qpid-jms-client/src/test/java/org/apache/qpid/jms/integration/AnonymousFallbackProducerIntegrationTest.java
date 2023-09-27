@@ -18,12 +18,12 @@ package org.apache.qpid.jms.integration;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -56,10 +56,8 @@ import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageHeaderSectionM
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessagePropertiesSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompositeMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedAmqpValueMatcher;
-import org.apache.qpid.jms.util.QpidJMSTestRunner;
-import org.apache.qpid.jms.util.Repeat;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,14 +66,14 @@ import org.slf4j.LoggerFactory;
  *
  * DO NOT add capability to indicate server support for ANONYMOUS-RELAY for any of these tests
  */
-@RunWith(QpidJMSTestRunner.class)
 public class AnonymousFallbackProducerIntegrationTest extends QpidJmsTestCase {
 
     private static final Logger LOG = LoggerFactory.getLogger(AnonymousFallbackProducerIntegrationTest.class);
 
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCloseSenderWithNoActiveFallbackProducers() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
@@ -93,14 +91,14 @@ public class AnonymousFallbackProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRemotelyCloseProducerDuringSyncSendNoCache() throws Exception {
         doTestRemotelyCloseProducerDuringSyncSend(0);
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRemotelyCloseProducerDuringSyncSendOneCached() throws Exception {
         doTestRemotelyCloseProducerDuringSyncSend(1);
     }
@@ -148,8 +146,8 @@ public class AnonymousFallbackProducerIntegrationTest extends QpidJmsTestCase {
                 LOG.trace("JMSException thrown from send: ", jmse);
                 // Expected but requires some context to be correct.
                 assertTrue(jmse instanceof ResourceAllocationException);
-                assertNotNull("Expected exception to have a message", jmse.getMessage());
-                assertTrue("Expected breadcrumb to be present in message", jmse.getMessage().contains(BREAD_CRUMB));
+                assertNotNull(jmse.getMessage(), "Expected exception to have a message");
+                assertTrue(jmse.getMessage().contains(BREAD_CRUMB), "Expected breadcrumb to be present in message");
             }
 
             connection.close();
@@ -158,14 +156,14 @@ public class AnonymousFallbackProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRemotelyCloseProducerWithSendWaitingForCreditNoCache() throws Exception {
         doTestRemotelyCloseProducerWithSendWaitingForCredit(0);
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRemotelyCloseProducerWithSendWaitingForCreditOneCached() throws Exception {
         doTestRemotelyCloseProducerWithSendWaitingForCredit(1);
     }
@@ -206,14 +204,14 @@ public class AnonymousFallbackProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRemotelyCloseConnectionDuringSyncSendNoCache() throws Exception {
         doTestRemotelyCloseConnectionDuringSyncSend(0);
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRemotelyCloseConnectionDuringSyncSendOneCached() throws Exception {
         doTestRemotelyCloseConnectionDuringSyncSend(1);
     }
@@ -258,8 +256,8 @@ public class AnonymousFallbackProducerIntegrationTest extends QpidJmsTestCase {
             } catch (JMSException jmse) {
                 // Expected exception with specific context
                 assertTrue(jmse instanceof ResourceAllocationException);
-                assertNotNull("Expected exception to have a message", jmse.getMessage());
-                assertTrue("Expected breadcrumb to be present in message", jmse.getMessage().contains(BREAD_CRUMB));
+                assertNotNull(jmse.getMessage(), "Expected exception to have a message");
+                assertTrue(jmse.getMessage().contains(BREAD_CRUMB), "Expected breadcrumb to be present in message");
             }
 
             testPeer.waitForAllHandlersToComplete(3000);
@@ -268,14 +266,14 @@ public class AnonymousFallbackProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendWhenLinkCreditIsZeroAndTimeoutNoCache() throws Exception {
         doTestSendWhenLinkCreditIsZeroAndTimeout(0);
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendWhenLinkCreditIsZeroAndTimeoutCacheOne() throws Exception {
         doTestSendWhenLinkCreditIsZeroAndTimeout(1);
     }
@@ -320,8 +318,8 @@ public class AnonymousFallbackProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSyncSendFailureHandled() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
@@ -341,7 +339,7 @@ public class AnonymousFallbackProducerIntegrationTest extends QpidJmsTestCase {
 
             // Create an anonymous producer
             MessageProducer producer = session.createProducer(null);
-            assertNotNull("Producer object was null", producer);
+            assertNotNull(producer, "Producer object was null");
 
             // Expect a new message sent by the above producer to cause creation of a new
             // sender link to the given destination, then closing the link after the message is sent.
@@ -382,8 +380,8 @@ public class AnonymousFallbackProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAsyncSendFailureHandled() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
@@ -411,7 +409,7 @@ public class AnonymousFallbackProducerIntegrationTest extends QpidJmsTestCase {
 
             //Create an anonymous producer
             MessageProducer producer = session.createProducer(null);
-            assertNotNull("Producer object was null", producer);
+            assertNotNull(producer, "Producer object was null");
 
             // Expect a new message sent by the above producer to cause creation of a new
             // sender link to the given destination, then closing the link after the message is sent.
@@ -450,7 +448,7 @@ public class AnonymousFallbackProducerIntegrationTest extends QpidJmsTestCase {
             testPeer.expectTransfer(messageMatcher);
             testPeer.expectDetach(true, true, true);
 
-            assertTrue("Send failure not reported to exception handler", sendFailureReportedToListener.await(5, TimeUnit.SECONDS));
+            assertTrue(sendFailureReportedToListener.await(5, TimeUnit.SECONDS), "Send failure not reported to exception handler");
             assertNotNull(sendFailureError.get());
             assertTrue(sendFailureError.get() instanceof ResourceAllocationException);
             assertTrue(sendFailureError.get().getMessage().contains(BREAD_CRUMB));
@@ -467,8 +465,8 @@ public class AnonymousFallbackProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAsyncCompletionListenerSendFailureHandled() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer,
@@ -487,7 +485,7 @@ public class AnonymousFallbackProducerIntegrationTest extends QpidJmsTestCase {
 
             //Create an anonymous producer
             MessageProducer producer = session.createProducer(null);
-            assertNotNull("Producer object was null", producer);
+            assertNotNull(producer, "Producer object was null");
 
             // Expect a new message sent by the above producer to cause creation of a new
             // sender link to the given destination, then closing the link after the message is sent.
@@ -530,7 +528,7 @@ public class AnonymousFallbackProducerIntegrationTest extends QpidJmsTestCase {
             testPeer.expectTransfer(messageMatcher);
             testPeer.expectDetach(true, true, true);
 
-            assertTrue("Send failure not reported to exception handler", completionListener.awaitCompletion(5, TimeUnit.SECONDS));
+            assertTrue(completionListener.awaitCompletion(5, TimeUnit.SECONDS), "Send failure not reported to exception handler");
             assertNotNull(completionListener.exception);
             assertTrue(completionListener.exception instanceof ResourceAllocationException);
             assertTrue(completionListener.exception.getMessage().contains(BREAD_CRUMB));
@@ -539,7 +537,7 @@ public class AnonymousFallbackProducerIntegrationTest extends QpidJmsTestCase {
 
             producer.send(dest, message, completionListener2);
 
-            assertTrue("Did not get completion callback", completionListener2.awaitCompletion(5, TimeUnit.SECONDS));
+            assertTrue(completionListener2.awaitCompletion(5, TimeUnit.SECONDS), "Did not get completion callback");
             assertNull(completionListener2.exception);
             Message receivedMessage2 = completionListener2.message;
             assertNotNull(receivedMessage2);
@@ -556,8 +554,8 @@ public class AnonymousFallbackProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAsyncCompletionListenerSendWhenNoCacheConfigured() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer,
@@ -576,7 +574,7 @@ public class AnonymousFallbackProducerIntegrationTest extends QpidJmsTestCase {
 
             //Create an anonymous producer
             MessageProducer producer = session.createProducer(null);
-            assertNotNull("Producer object was null", producer);
+            assertNotNull(producer, "Producer object was null");
 
             // Expect a new message sent by the above producer to cause creation of a new
             // sender link to the given destination, then closing the link after the message is sent.
@@ -601,7 +599,7 @@ public class AnonymousFallbackProducerIntegrationTest extends QpidJmsTestCase {
 
             producer.send(dest, message, completionListener);
 
-            assertTrue("Did not get completion callback", completionListener.awaitCompletion(5, TimeUnit.SECONDS));
+            assertTrue(completionListener.awaitCompletion(5, TimeUnit.SECONDS), "Did not get completion callback");
             assertNull(completionListener.exception);
             Message receivedMessage = completionListener.message;
             assertNotNull(receivedMessage);
@@ -617,7 +615,7 @@ public class AnonymousFallbackProducerIntegrationTest extends QpidJmsTestCase {
 
             producer.send(dest, message, completionListener2);
 
-            assertTrue("Did not get completion callback", completionListener2.awaitCompletion(5, TimeUnit.SECONDS));
+            assertTrue(completionListener2.awaitCompletion(5, TimeUnit.SECONDS), "Did not get completion callback");
             assertNull(completionListener2.exception);
             Message receivedMessage2 = completionListener2.message;
             assertNotNull(receivedMessage2);
@@ -631,8 +629,8 @@ public class AnonymousFallbackProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRemotelyEndFallbackProducerCompletesAsyncSends() throws Exception {
         final String BREAD_CRUMB = "ErrorMessage";
 
@@ -682,7 +680,7 @@ public class AnonymousFallbackProducerIntegrationTest extends QpidJmsTestCase {
             assertEquals(MSG_COUNT, listener.errorCount);
 
             // Verify the producer gets marked closed
-            assertTrue("Producer closed callback didn't trigger", producerClosed.await(5, TimeUnit.SECONDS));
+            assertTrue(producerClosed.await(5, TimeUnit.SECONDS), "Producer closed callback didn't trigger");
             try {
                 producer.getDeliveryMode();
                 fail("Expected ISE to be thrown due to being closed");
@@ -703,8 +701,8 @@ public class AnonymousFallbackProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRemotelyCloseSessionAndAttemptAsyncCompletionSendThrowsAndLeavesMessageReadable() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer,
@@ -748,13 +746,13 @@ public class AnonymousFallbackProducerIntegrationTest extends QpidJmsTestCase {
 
             Message message1 = session.createTextMessage(content);
             Message message2 = session.createTextMessage(content);
-            assertNull("Should not yet have a JMSDestination", message1.getJMSDestination());
-            assertNull("Should not yet have a JMSDestination", message2.getJMSDestination());
+            assertNull(message1.getJMSDestination(), "Should not yet have a JMSDestination");
+            assertNull(message2.getJMSDestination(), "Should not yet have a JMSDestination");
             producer.send(queue, message1);
 
             testPeer.waitForAllHandlersToComplete(2000);
 
-            assertTrue("Session should have been closed", sessionClosed.await(2, TimeUnit.SECONDS));
+            assertTrue(sessionClosed.await(2, TimeUnit.SECONDS), "Session should have been closed");
 
             TestJmsCompletionListener listener = new TestJmsCompletionListener();
             try {
@@ -764,11 +762,11 @@ public class AnonymousFallbackProducerIntegrationTest extends QpidJmsTestCase {
                 LOG.trace("Caught expected exception: {}", e.getMessage());
             }
 
-            assertFalse("Should not get async callback", listener.awaitCompletion(5, TimeUnit.MILLISECONDS));
+            assertFalse(listener.awaitCompletion(5, TimeUnit.MILLISECONDS), "Should not get async callback");
 
             // Message should be readable but not carry a destination as it wasn't actually sent anywhere
-            assertNull("Should not have a readable JMSDestination", message2.getJMSDestination());
-            assertEquals("Message body not as expected", content, ((TextMessage) message2).getText());
+            assertNull(message2.getJMSDestination(), "Should not have a readable JMSDestination");
+            assertEquals(content, ((TextMessage) message2).getText(), "Message body not as expected");
 
             testPeer.expectClose();
             connection.close();
@@ -777,8 +775,8 @@ public class AnonymousFallbackProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFallbackProducerRecoversFromRefusalOfSenderOpenOnNextSend() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
@@ -797,7 +795,7 @@ public class AnonymousFallbackProducerIntegrationTest extends QpidJmsTestCase {
 
             // Create an anonymous producer
             MessageProducer producer = session.createProducer(null);
-            assertNotNull("Producer object was null", producer);
+            assertNotNull(producer, "Producer object was null");
 
             // Expect a new message sent by the above producer to cause creation of a new
             // sender link to the given destination.
@@ -842,8 +840,8 @@ public class AnonymousFallbackProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testRepeatedSendToSameAddressWhenCacheSizeOfOneKeepsFallbackProducerInCache() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
@@ -864,7 +862,7 @@ public class AnonymousFallbackProducerIntegrationTest extends QpidJmsTestCase {
 
             // Create an anonymous producer
             MessageProducer producer = session.createProducer(null);
-            assertNotNull("Producer object was null", producer);
+            assertNotNull(producer, "Producer object was null");
 
             // Expect a new message sent by the above producer to cause creation of a new
             // sender link to the given destination.
@@ -910,8 +908,8 @@ public class AnonymousFallbackProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendToMultipleDestinationsOpensNewSendersWhenCaching() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
@@ -932,7 +930,7 @@ public class AnonymousFallbackProducerIntegrationTest extends QpidJmsTestCase {
 
             // Create an anonymous producer
             MessageProducer producer = session.createProducer(null);
-            assertNotNull("Producer object was null", producer);
+            assertNotNull(producer, "Producer object was null");
 
             MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true);
             MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
@@ -989,8 +987,8 @@ public class AnonymousFallbackProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testCachedFallbackProducersAreTimedOut() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
@@ -1011,7 +1009,7 @@ public class AnonymousFallbackProducerIntegrationTest extends QpidJmsTestCase {
 
             // Create an anonymous producer
             MessageProducer producer = session.createProducer(null);
-            assertNotNull("Producer object was null", producer);
+            assertNotNull(producer, "Producer object was null");
 
             // First round of sends should open and cache sender links
             for (int i = 1; i <= CACHE_SIZE; ++i) {
@@ -1055,8 +1053,8 @@ public class AnonymousFallbackProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCachedFallbackProducerEvictedBySendToUncachedAddress() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
@@ -1077,7 +1075,7 @@ public class AnonymousFallbackProducerIntegrationTest extends QpidJmsTestCase {
 
             // Create an anonymous producer
             MessageProducer producer = session.createProducer(null);
-            assertNotNull("Producer object was null", producer);
+            assertNotNull(producer, "Producer object was null");
 
             MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true);
             MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
@@ -1138,8 +1136,8 @@ public class AnonymousFallbackProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCachedFallbackProducerEvictedBySendToUncachedAddressHandlesDelayedResponse() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
@@ -1158,7 +1156,7 @@ public class AnonymousFallbackProducerIntegrationTest extends QpidJmsTestCase {
 
             // Create an anonymous producer
             MessageProducer producer = session.createProducer(null);
-            assertNotNull("Producer object was null", producer);
+            assertNotNull(producer, "Producer object was null");
 
             MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true);
             MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
@@ -1210,8 +1208,8 @@ public class AnonymousFallbackProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRemotelyCloseCachedFallbackProducerFreesSlotInCache() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
@@ -1232,7 +1230,7 @@ public class AnonymousFallbackProducerIntegrationTest extends QpidJmsTestCase {
 
             // Create an anonymous producer
             MessageProducer producer = session.createProducer(null);
-            assertNotNull("Producer object was null", producer);
+            assertNotNull(producer, "Producer object was null");
 
             MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true);
             MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
@@ -1311,8 +1309,8 @@ public class AnonymousFallbackProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailureOfOneCacheProducerCloseOnPropagatedToMainProducerClose() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
@@ -1333,7 +1331,7 @@ public class AnonymousFallbackProducerIntegrationTest extends QpidJmsTestCase {
 
             // Create an anonymous producer
             MessageProducer producer = session.createProducer(null);
-            assertNotNull("Producer object was null", producer);
+            assertNotNull(producer, "Producer object was null");
 
             MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true);
             MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);

@@ -16,8 +16,8 @@
  */
 package org.apache.qpid.jms.consumer;
 
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.anyLong;
 
 import java.util.Map;
@@ -29,7 +29,7 @@ import jakarta.jms.JMSException;
 import org.apache.qpid.jms.JmsConsumer;
 import org.apache.qpid.jms.JmsMessageConsumer;
 import org.apache.qpid.jms.JmsSession;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 /**

@@ -16,9 +16,9 @@
  */
 package org.apache.qpid.jms.discovery;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.net.URI;
 import java.util.concurrent.CountDownLatch;
@@ -39,8 +39,10 @@ import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.apache.qpid.jms.support.MulticastTestSupport;
 import org.apache.qpid.jms.support.MulticastTestSupport.MulticastSupportResult;
 import org.apache.qpid.jms.support.Wait;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,20 +69,21 @@ public class JmsAmqpDiscoveryTest extends AmqpTestSupport implements JmsConnecti
     private JmsConnection jmsConnection;
 
     @Override
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
         // Check assumptions *before* trying to start
         // the broker, which may fail otherwise
-        assumeTrue("Multicast does not seem to be working, skip!", multicastWorking);
+        assumeTrue(multicastWorking, "Multicast does not seem to be working, skip!");
 
-        super.setUp();
+        super.setUp(testInfo);
 
         connected = new CountDownLatch(1);
         interrupted = new CountDownLatch(1);
         restored = new CountDownLatch(1);
     }
 
-    @Test(timeout=10000)
+    @Test
+    @Timeout(10)
     public void testFailureToDiscoverLeadsToConnectionFailure() throws Exception {
         // We are using a different group to ensure failure,
         // but shut down the broker anyway.
@@ -93,51 +96,54 @@ public class JmsAmqpDiscoveryTest extends AmqpTestSupport implements JmsConnecti
         }
     }
 
-    @Test(timeout=30000)
+    @Test
+    @Timeout(30)
     public void testRunningBrokerIsDiscovered() throws Exception {
         connection = createConnection();
         connection.start();
 
-        assertTrue("connection never connected.", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return jmsConnection.isConnected();
             }
-        }));
+        }), "connection never connected.");
     }
 
-    @Test(timeout=30000)
+    @Test
+    @Timeout(30)
     public void testConnectionFailsWhenBrokerGoesDown() throws Exception {
         connection = createConnection();
         connection.start();
 
-        assertTrue("connection never connected.", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return jmsConnection.isConnected();
             }
-        }));
+        }), "connection never connected.");
 
         LOG.info("Connection established, stopping broker.");
         stopPrimaryBroker();
 
-        assertTrue("Interrupted event never fired", interrupted.await(10, TimeUnit.SECONDS));
+        assertTrue(interrupted.await(10, TimeUnit.SECONDS), "Interrupted event never fired");
     }
 
-    @Test(timeout=30000)
+    @Test
+    @Timeout(30)
     public void testConnectionRestoresAfterBrokerRestarted() throws Exception {
         connection = createConnection();
         connection.start();
 
-        assertTrue("connection never connected.", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return jmsConnection.isConnected();
             }
-        }));
+        }), "connection never connected.");
 
         stopPrimaryBroker();
         assertTrue(interrupted.await(10, TimeUnit.SECONDS));
@@ -145,18 +151,19 @@ public class JmsAmqpDiscoveryTest extends AmqpTestSupport implements JmsConnecti
         assertTrue(restored.await(10, TimeUnit.SECONDS));
     }
 
-    @Test(timeout=30000)
+    @Test
+    @Timeout(30)
     public void testDiscoversAndReconnectsToSecondaryBroker() throws Exception {
         connection = createConnection();
         connection.start();
 
-        assertTrue("connection never connected.", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return jmsConnection.isConnected();
             }
-        }));
+        }), "connection never connected.");
 
         startNewBroker();
         stopPrimaryBroker();

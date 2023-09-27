@@ -16,9 +16,10 @@
  */
 package org.apache.qpid.jms.discovery;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.IOException;
 import java.net.URI;
@@ -30,11 +31,10 @@ import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.provider.discovery.DiscoveryProviderFactory;
 import org.apache.qpid.jms.support.MulticastTestSupport;
 import org.apache.qpid.jms.support.MulticastTestSupport.MulticastSupportResult;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TestName;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,15 +53,13 @@ public class JmsDiscoveryProviderTest {
         multicastWorking = msr.isMulticastWorking();
     }
 
-    @Rule public TestName name = new TestName();
-
     private BrokerService broker;
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         // Check assumptions *before* trying to start
         // the broker, which may fail otherwise
-        assumeTrue("Multicast does not seem to be working, skip!", multicastWorking);
+        assumeTrue(multicastWorking, "Multicast does not seem to be working, skip!");
 
         broker = createBroker();
         try {
@@ -76,7 +74,7 @@ public class JmsDiscoveryProviderTest {
         }
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         if (broker != null) {
             broker.stop();
@@ -85,7 +83,8 @@ public class JmsDiscoveryProviderTest {
         }
     }
 
-    @Test(timeout=30000)
+    @Test
+    @Timeout(30)
     public void testCreateDiscoveryProvider() throws Exception {
         URI discoveryUri = new URI("discovery:multicast://default");
         Provider provider = DiscoveryProviderFactory.create(discoveryUri);
@@ -97,7 +96,8 @@ public class JmsDiscoveryProviderTest {
         provider.close();
     }
 
-    @Test(timeout=30000)
+    @Test
+    @Timeout(30)
     public void testStartFailsWithNoListener() throws Exception {
         URI discoveryUri = new URI("discovery:multicast://default");
         Provider provider =
@@ -113,11 +113,14 @@ public class JmsDiscoveryProviderTest {
         provider.close();
     }
 
-    @Test(timeout=30000, expected=IOException.class)
+    @Test
+    @Timeout(30)
     public void testCreateFailsWithUnknownAgent() throws Exception {
-        URI discoveryUri = new URI("discovery:unknown://default");
-        Provider provider = DiscoveryProviderFactory.create(discoveryUri);
-        provider.close();
+        assertThrows(IOException.class, () -> {
+            URI discoveryUri = new URI("discovery:unknown://default");
+            Provider provider = DiscoveryProviderFactory.create(discoveryUri);
+            provider.close();
+        });
     }
 
     protected BrokerService createBroker() throws Exception {

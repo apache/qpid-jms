@@ -16,10 +16,10 @@
  */
 package org.apache.qpid.jms.producer;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,14 +37,16 @@ import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.apache.activemq.broker.jmx.TopicViewMBean;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.apache.qpid.jms.util.StopWatch;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Test JMS Anonymous Producer functionality.
  */
 public class JmsAnonymousProducerTest extends AmqpTestSupport {
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testCreateProducer() throws Exception {
         connection = createAmqpConnection();
         assertNotNull(connection);
@@ -57,32 +59,34 @@ public class JmsAnonymousProducerTest extends AmqpTestSupport {
         assertTrue(brokerService.getAdminView().getTotalProducerCount() == 0);
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testAnonymousSend() throws Exception {
         connection = createAmqpConnection();
         assertNotNull(connection);
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         assertNotNull(session);
         MessageProducer producer = session.createProducer(null);
 
         Message message = session.createMessage();
         producer.send(queue, message);
 
-        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        QueueViewMBean proxy = getProxyToQueue(testMethodName);
         assertEquals(1, proxy.getQueueSize());
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testAnonymousSendToTopic() throws Exception {
         connection = createAmqpConnection();
         assertNotNull(connection);
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Topic topic = session.createTopic(name.getMethodName());
+        Topic topic = session.createTopic(testMethodName);
         assertNotNull(session);
         MessageProducer producer = session.createProducer(null);
         assertNotNull(producer);
@@ -92,32 +96,36 @@ public class JmsAnonymousProducerTest extends AmqpTestSupport {
         Message message = session.createMessage();
         producer.send(topic, message);
 
-        TopicViewMBean proxy = getProxyToTopic(name.getMethodName());
+        TopicViewMBean proxy = getProxyToTopic(testMethodName);
         assertEquals(1, proxy.getEnqueueCount());
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testAnonymousSendToThreeDestinations() throws Exception {
         StopWatch timer = new StopWatch();
         doTestAnonymousProducerSendToMultipleDests(3, 1);
         LOG.info("Time to send to three destinations: {} ms", timer.taken());
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testAnonymousSendToTenDestinations() throws Exception {
         StopWatch timer = new StopWatch();
         doTestAnonymousProducerSendToMultipleDests(10, 1);
         LOG.info("Time to send to ten destinations: {} ms", timer.taken());
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testAnonymousSendToOneHundredDestinations() throws Exception {
         StopWatch timer = new StopWatch();
         doTestAnonymousProducerSendToMultipleDests(100, 1);
         LOG.info("Time to send to one hundred destinations: {} ms", timer.taken());
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testAnonymousSendToTenDestinationsTenTimes() throws Exception {
         StopWatch timer = new StopWatch();
         doTestAnonymousProducerSendToMultipleDests(10, 10);
@@ -133,7 +141,7 @@ public class JmsAnonymousProducerTest extends AmqpTestSupport {
 
         List<Queue> queues = new ArrayList<Queue>(numDestinations);
         for (int i = 0; i < numDestinations; ++i) {
-            queues.add(session.createQueue(name.getMethodName() + i));
+            queues.add(session.createQueue(testMethodName + i));
         }
 
         assertNotNull(session);
@@ -153,7 +161,8 @@ public class JmsAnonymousProducerTest extends AmqpTestSupport {
     }
 
     // TODO - Should only get JMSSecurityException on ActiveMQ 5.12.2+
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testAnonymousProducerNotAuthorized() throws Exception {
         connection = createAmqpConnection("guest", "password");
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);

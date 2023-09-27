@@ -16,9 +16,9 @@
  */
 package org.apache.qpid.jms.destinations;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import jakarta.jms.Connection;
 import jakarta.jms.IllegalStateException;
@@ -30,7 +30,8 @@ import jakarta.jms.Session;
 import jakarta.jms.TemporaryTopic;
 
 import org.apache.qpid.jms.support.AmqpTestSupport;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +42,8 @@ public class JmsTemporaryTopicTest extends AmqpTestSupport {
 
     protected static final Logger LOG = LoggerFactory.getLogger(JmsTemporaryTopicTest.class);
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testCreateTemporaryTopic() throws Exception {
         connection = createAmqpConnection();
         connection.start();
@@ -54,7 +56,8 @@ public class JmsTemporaryTopicTest extends AmqpTestSupport {
         assertEquals(1, brokerService.getAdminView().getTemporaryTopics().length);
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testCantConsumeFromTemporaryTopicCreatedOnAnotherConnection() throws Exception {
         connection = createAmqpConnection();
         connection.start();
@@ -77,7 +80,8 @@ public class JmsTemporaryTopicTest extends AmqpTestSupport {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testCantSendToTemporaryTopicFromClosedConnection() throws Exception {
         connection = createAmqpConnection();
         connection.start();
@@ -105,7 +109,8 @@ public class JmsTemporaryTopicTest extends AmqpTestSupport {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testCantDeleteTemporaryTopicWithConsumers() throws Exception {
         connection = createAmqpConnection();
         connection.start();

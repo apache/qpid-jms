@@ -16,10 +16,10 @@
  */
 package org.apache.qpid.jms.consumer;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.URI;
 import java.util.concurrent.CountDownLatch;
@@ -35,7 +35,8 @@ import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsConnectionListener;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.support.AmqpTestSupport;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Test for Message priority ordering.
@@ -44,7 +45,8 @@ public class JmsConsumerPriorityDispatchTest extends AmqpTestSupport {
 
     private final int MSG_COUNT = 10;
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testPrefetchedMessageArePriorityOrdered() throws Exception {
 
         final CountDownLatch received = new CountDownLatch(MSG_COUNT);
@@ -91,7 +93,7 @@ public class JmsConsumerPriorityDispatchTest extends AmqpTestSupport {
 
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         MessageProducer producer = session.createProducer(queue);
         MessageConsumer consumer = session.createConsumer(queue);
         Message message = null;
@@ -103,7 +105,7 @@ public class JmsConsumerPriorityDispatchTest extends AmqpTestSupport {
         }
 
         // We need to make sure that all messages are in the prefetch buffer.
-        assertTrue("Failed to receive all messages", received.await(10, TimeUnit.SECONDS));
+        assertTrue(received.await(10, TimeUnit.SECONDS), "Failed to receive all messages");
 
         for (int i = MSG_COUNT - 1; i >= 0; i--) {
             message = consumer.receive(5000);
@@ -112,7 +114,8 @@ public class JmsConsumerPriorityDispatchTest extends AmqpTestSupport {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testPrefetchedMessageAreNotPriorityOrdered() throws Exception {
         // We are assuming that Broker side priority support is not enabled in the create broker
         // method in AmqpTestSupport.  If that changes then this test will sometimes fail.
@@ -157,12 +160,12 @@ public class JmsConsumerPriorityDispatchTest extends AmqpTestSupport {
             }
         });
 
-        assertFalse("Client side priority ordering expected to be disabled for this test",
-                    jmsConnection.isLocalMessagePriority());
+        assertFalse(jmsConnection.isLocalMessagePriority(),
+                    "Client side priority ordering expected to be disabled for this test");
 
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         MessageProducer producer = session.createProducer(queue);
         MessageConsumer consumer = session.createConsumer(queue);
         Message message = null;
@@ -174,7 +177,7 @@ public class JmsConsumerPriorityDispatchTest extends AmqpTestSupport {
         }
 
         // We need to make sure that all messages are in the prefetch buffer.
-        assertTrue("Failed to receive all messages", received.await(10, TimeUnit.SECONDS));
+        assertTrue(received.await(10, TimeUnit.SECONDS), "Failed to receive all messages");
 
         for (int i = 0; i < 10; i++) {
             message = consumer.receive(5000);

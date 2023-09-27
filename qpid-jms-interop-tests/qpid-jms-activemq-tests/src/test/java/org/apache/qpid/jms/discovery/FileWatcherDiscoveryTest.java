@@ -16,12 +16,14 @@
  */
 package org.apache.qpid.jms.discovery;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -35,10 +37,11 @@ import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.JmsConnectionListener;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.support.AmqpTestSupport;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,8 +53,8 @@ public class FileWatcherDiscoveryTest extends AmqpTestSupport {
 
     private static final Logger LOG = LoggerFactory.getLogger(FileWatcherDiscoveryTest.class);
 
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder(new File("./target"));
+    @TempDir
+    public Path folder;
 
     private CountDownLatch connected;
     private CountDownLatch interrupted;
@@ -62,53 +65,56 @@ public class FileWatcherDiscoveryTest extends AmqpTestSupport {
     private File secondaryBrokerList;
 
     @Override
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
+        super.setUp(testInfo);
 
         connected = new CountDownLatch(1);
         interrupted = new CountDownLatch(1);
         restored = new CountDownLatch(1);
 
-        primaryBrokerList = folder.newFile("primaryBrokerURIsFile.txt");
-        secondaryBrokerList = folder.newFile("secondaryBrokerURIsFile.txt");
+        primaryBrokerList = Files.createFile(folder.resolve("primaryBrokerURIsFile.txt")).toFile();
+        secondaryBrokerList =  Files.createFile(folder.resolve("secondaryBrokerURIsFile.txt")).toFile();
 
         LOG.info("Broker URIs going to file: {}", primaryBrokerList);
 
         writeOutBrokerURIsToFile(primaryBrokerList);
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testConnectedToStoredBrokerURI() throws Exception {
         assertTrue(primaryBrokerList.exists());
 
         connection = createConnection();
         connection.start();
 
-        assertTrue("connection never connected.", connected.await(30, TimeUnit.SECONDS));
+        assertTrue(connected.await(30, TimeUnit.SECONDS), "connection never connected.");
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testReconnectWhenURIUpdates() throws Exception {
         assertTrue(primaryBrokerList.exists());
 
         connection = createConnection();
         connection.start();
 
-        assertTrue("connection never connected.", connected.await(30, TimeUnit.SECONDS));
+        assertTrue(connected.await(30, TimeUnit.SECONDS), "connection never connected.");
 
         stopPrimaryBroker();
 
-        assertTrue("connection should be interrupted.", interrupted.await(30, TimeUnit.SECONDS));
+        assertTrue(interrupted.await(30, TimeUnit.SECONDS), "connection should be interrupted.");
 
         startPrimaryBroker();
 
         writeOutBrokerURIsToFile(primaryBrokerList);
 
-        assertTrue("connection should have been reestablished.", restored.await(30, TimeUnit.SECONDS));
+        assertTrue(restored.await(30, TimeUnit.SECONDS), "connection should have been reestablished.");
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testReconnectUsingTwoFiles() throws Exception {
         assertTrue(primaryBrokerList.exists());
         assertTrue(secondaryBrokerList.exists());
@@ -116,45 +122,46 @@ public class FileWatcherDiscoveryTest extends AmqpTestSupport {
         connection = createConnection(new File[]{ primaryBrokerList, secondaryBrokerList });
         connection.start();
 
-        assertTrue("connection never connected.", connected.await(30, TimeUnit.SECONDS));
+        assertTrue(connected.await(30, TimeUnit.SECONDS), "connection never connected.");
 
         stopPrimaryBroker();
 
-        assertTrue("connection should be interrupted.", interrupted.await(30, TimeUnit.SECONDS));
+        assertTrue(interrupted.await(30, TimeUnit.SECONDS), "connection should be interrupted.");
 
         startPrimaryBroker();
 
         writeOutBrokerURIsToFile(secondaryBrokerList);
 
-        assertTrue("connection should have been reestablished.", restored.await(30, TimeUnit.SECONDS));
+        assertTrue(restored.await(30, TimeUnit.SECONDS), "connection should have been reestablished.");
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testWithInitiallyNonExistingFile() throws Exception {
         assertTrue(primaryBrokerList.exists());
 
         final String FILENAME = "nonExistentFile.txt";
 
-        File nonExistentFile = new File(folder.getRoot(), FILENAME);
+        File nonExistentFile = new File(folder.toFile(), FILENAME);
         assertFalse(nonExistentFile.exists());
 
         connection = createConnection(new File[]{ primaryBrokerList, nonExistentFile });
         connection.start();
 
-        assertTrue("connection never connected.", connected.await(30, TimeUnit.SECONDS));
+        assertTrue(connected.await(30, TimeUnit.SECONDS), "connection never connected.");
 
         stopPrimaryBroker();
 
-        assertTrue("connection should be interrupted.", interrupted.await(30, TimeUnit.SECONDS));
+        assertTrue(interrupted.await(30, TimeUnit.SECONDS), "connection should be interrupted.");
 
         startPrimaryBroker();
 
-        folder.newFile(FILENAME);
+        Files.createFile(folder.resolve(FILENAME));
         assertTrue(nonExistentFile.exists());
 
         writeOutBrokerURIsToFile(nonExistentFile);
 
-        assertTrue("connection should have been reestablished.", restored.await(30, TimeUnit.SECONDS));
+        assertTrue(restored.await(30, TimeUnit.SECONDS), "connection should have been reestablished.");
     }
 
     protected Connection createConnection() throws Exception {

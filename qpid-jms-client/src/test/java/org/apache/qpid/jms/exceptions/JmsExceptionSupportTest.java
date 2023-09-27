@@ -16,9 +16,10 @@
  */
 package org.apache.qpid.jms.exceptions;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
 
@@ -45,7 +46,7 @@ import jakarta.jms.TransactionInProgressRuntimeException;
 import jakarta.jms.TransactionRolledBackException;
 import jakarta.jms.TransactionRolledBackRuntimeException;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests for various utility methods in the Exception support class.
@@ -154,63 +155,87 @@ public class JmsExceptionSupportTest {
         assertNull(result.getLinkedException());
     }
 
-    @Test(expected = JMSRuntimeException.class)
+    @Test
     public void testConvertsJMSExceptionToJMSRuntimeException() {
-        throw JmsExceptionSupport.createRuntimeException(new JMSException("error"));
+        assertThrows(JMSRuntimeException.class, () -> {
+            throw JmsExceptionSupport.createRuntimeException(new JMSException("error"));
+        });
     }
 
-    @Test(expected = IllegalStateRuntimeException.class)
+    @Test
     public void testConvertsIllegalStateExceptionToIlleglStateRuntimeException() {
-        throw JmsExceptionSupport.createRuntimeException(new IllegalStateException("error"));
+        assertThrows(IllegalStateRuntimeException.class, () -> {
+            throw JmsExceptionSupport.createRuntimeException(new IllegalStateException("error"));
+        });
     }
 
-    @Test(expected = InvalidClientIDRuntimeException.class)
+    @Test
     public void testConvertsInvalidClientIDExceptionToInvalidClientIDRuntimeException() {
-        throw JmsExceptionSupport.createRuntimeException(new InvalidClientIDException("error"));
+        assertThrows(InvalidClientIDRuntimeException.class, () -> {
+            throw JmsExceptionSupport.createRuntimeException(new InvalidClientIDException("error"));
+        });
     }
 
-    @Test(expected = InvalidDestinationRuntimeException.class)
+    @Test
     public void testConvertsInvalidDestinationExceptionToInvalidDestinationRuntimeException() {
-        throw JmsExceptionSupport.createRuntimeException(new InvalidDestinationException("error"));
+        assertThrows(InvalidDestinationRuntimeException.class, () -> {
+            throw JmsExceptionSupport.createRuntimeException(new InvalidDestinationException("error"));
+        });
     }
 
-    @Test(expected = InvalidSelectorRuntimeException.class)
+    @Test
     public void testConvertsInvalidSelectorExceptionToInvalidSelectorRuntimeException() {
-        throw JmsExceptionSupport.createRuntimeException(new InvalidSelectorException("error"));
+        assertThrows(InvalidSelectorRuntimeException.class, () -> {
+            throw JmsExceptionSupport.createRuntimeException(new InvalidSelectorException("error"));
+        });
     }
 
-    @Test(expected = JMSSecurityRuntimeException.class)
+    @Test
     public void testConvertsJMSSecurityExceptionToJMSSecurityRuntimeException() {
-        throw JmsExceptionSupport.createRuntimeException(new JMSSecurityException("error"));
+        assertThrows(JMSSecurityRuntimeException.class, () -> {
+            throw JmsExceptionSupport.createRuntimeException(new JMSSecurityException("error"));
+        });
     }
 
-    @Test(expected = MessageFormatRuntimeException.class)
+    @Test
     public void testConvertsMessageFormatExceptionToMessageFormatRuntimeException() {
-        throw JmsExceptionSupport.createRuntimeException(new MessageFormatException("error"));
+        assertThrows(MessageFormatRuntimeException.class, () -> {
+            throw JmsExceptionSupport.createRuntimeException(new MessageFormatException("error"));
+        });
     }
 
-    @Test(expected = MessageNotWriteableRuntimeException.class)
+    @Test
     public void testConvertsMessageNotWriteableExceptionToMessageNotWriteableRuntimeException() {
-        throw JmsExceptionSupport.createRuntimeException(new MessageNotWriteableException("error"));
+        assertThrows(MessageNotWriteableRuntimeException.class, () -> {
+            throw JmsExceptionSupport.createRuntimeException(new MessageNotWriteableException("error"));
+        });
     }
 
-    @Test(expected = ResourceAllocationRuntimeException.class)
+    @Test
     public void testConvertsResourceAllocationExceptionToResourceAllocationRuntimeException() {
-        throw JmsExceptionSupport.createRuntimeException(new ResourceAllocationException("error"));
+        assertThrows(ResourceAllocationRuntimeException.class, () -> {
+            throw JmsExceptionSupport.createRuntimeException(new ResourceAllocationException("error"));
+        });
     }
 
-    @Test(expected = TransactionInProgressRuntimeException.class)
+    @Test
     public void testConvertsTransactionInProgressExceptionToTransactionInProgressRuntimeException() {
-        throw JmsExceptionSupport.createRuntimeException(new TransactionInProgressException("error"));
+        assertThrows(TransactionInProgressRuntimeException.class, () -> {
+            throw JmsExceptionSupport.createRuntimeException(new TransactionInProgressException("error"));
+        });
     }
 
-    @Test(expected = TransactionRolledBackRuntimeException.class)
+    @Test
     public void testConvertsTransactionRolledBackExceptionToTransactionRolledBackRuntimeException() {
-        throw JmsExceptionSupport.createRuntimeException(new TransactionRolledBackException("error"));
+        assertThrows(TransactionRolledBackRuntimeException.class, () -> {
+            throw JmsExceptionSupport.createRuntimeException(new TransactionRolledBackException("error"));
+        });
     }
 
-    @Test(expected = JMSRuntimeException.class)
+    @Test
     public void testConvertsNonJMSExceptionToJMSRuntimeException() {
-        throw JmsExceptionSupport.createRuntimeException(new IOException());
+        assertThrows(JMSRuntimeException.class, () -> {
+            throw JmsExceptionSupport.createRuntimeException(new IOException());
+        });
     }
 }

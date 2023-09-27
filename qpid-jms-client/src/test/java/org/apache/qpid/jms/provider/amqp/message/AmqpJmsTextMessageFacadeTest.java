@@ -17,12 +17,12 @@
 package org.apache.qpid.jms.provider.amqp.message;
 
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_TEXT_MESSAGE;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -35,7 +35,7 @@ import org.apache.qpid.proton.amqp.messaging.AmqpSequence;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Data;
 import org.apache.qpid.proton.message.Message;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests for class AmqpJmsTextMessageFacade
@@ -48,7 +48,7 @@ public class AmqpJmsTextMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
     public void testNewMessageToSendDoesNotContainMessageTypeAnnotation() throws Exception {
         AmqpJmsTextMessageFacade amqpTextMessageFacade = createNewTextMessageFacade();
 
-        assertNull("MessageAnnotations section was not present", amqpTextMessageFacade.getMessageAnnotations());
+        assertNull(amqpTextMessageFacade.getMessageAnnotations(), "MessageAnnotations section was not present");
         assertEquals(JMS_TEXT_MESSAGE, amqpTextMessageFacade.getJmsMsgType());
     }
 
@@ -134,7 +134,7 @@ public class AmqpJmsTextMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         Message message = Message.Factory.create();
         AmqpJmsTextMessageFacade amqpTextMessageFacade = createReceivedTextMessageFacade(createMockAmqpConsumer(), message);
 
-        assertNull("expected null string", amqpTextMessageFacade.getText());
+        assertNull(amqpTextMessageFacade.getText(), "expected null string");
     }
 
     @Test
@@ -144,7 +144,7 @@ public class AmqpJmsTextMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
 
         AmqpJmsTextMessageFacade amqpTextMessageFacade = createReceivedTextMessageFacade(createMockAmqpConsumer(), message);
 
-        assertNull("expected null string", amqpTextMessageFacade.getText());
+        assertNull(amqpTextMessageFacade.getText(), "expected null string");
     }
 
     @Test
@@ -156,7 +156,7 @@ public class AmqpJmsTextMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         // have a null value in them, they would have an empty byte array, but just in case...
         AmqpJmsTextMessageFacade amqpTextMessageFacade = createReceivedTextMessageFacade(createMockAmqpConsumer(), message);
 
-        assertEquals("expected zero-length string", "", amqpTextMessageFacade.getText());
+        assertEquals("", amqpTextMessageFacade.getText(), "expected zero-length string");
     }
 
     @Test
@@ -170,7 +170,7 @@ public class AmqpJmsTextMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         assertEquals(decoded, b.getLength());
         AmqpJmsTextMessageFacade amqpTextMessageFacade = createReceivedTextMessageFacade(createMockAmqpConsumer(), message);
 
-        assertEquals("expected zero-length string", "", amqpTextMessageFacade.getText());
+        assertEquals("", amqpTextMessageFacade.getText(), "expected zero-length string");
     }
 
     @Test

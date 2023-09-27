@@ -16,10 +16,10 @@
  */
 package org.apache.qpid.jms.consumer;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Enumeration;
 import java.util.concurrent.TimeUnit;
@@ -36,7 +36,8 @@ import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;
 import org.apache.qpid.jms.support.AmqpTestSupport;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,7 +49,8 @@ public class JmsQueueBrowserTest extends AmqpTestSupport {
 
     protected static final Logger LOG = LoggerFactory.getLogger(JmsQueueBrowserTest.class);
 
-    @Test(timeout = 40000)
+    @Test
+    @Timeout(40)
     public void testCreateQueueBrowser() throws Exception {
         connection = createAmqpConnection();
         connection.start();
@@ -65,7 +67,8 @@ public class JmsQueueBrowserTest extends AmqpTestSupport {
         assertEquals(0, proxy.getQueueSize());
     }
 
-    @Test(timeout = 40000)
+    @Test
+    @Timeout(40)
     public void testNoMessagesBrowserHasNoElements() throws Exception {
         connection = createAmqpConnection();
         connection.start();
@@ -85,7 +88,8 @@ public class JmsQueueBrowserTest extends AmqpTestSupport {
         assertFalse(enumeration.hasMoreElements());
     }
 
-    @Test(timeout=30000)
+    @Test
+    @Timeout(30)
     public void testBroseOneInQueue() throws Exception {
         connection = createAmqpConnection();
         connection.start();
@@ -112,7 +116,8 @@ public class JmsQueueBrowserTest extends AmqpTestSupport {
         assertTrue(msg instanceof TextMessage);
     }
 
-    @Test(timeout = 40000)
+    @Test
+    @Timeout(40)
     public void testBrowseAllInQueue() throws Exception {
         connection = createAmqpConnection();
         connection.start();
@@ -140,7 +145,8 @@ public class JmsQueueBrowserTest extends AmqpTestSupport {
         assertEquals(5, count);
     }
 
-    @Test(timeout = 40000)
+    @Test
+    @Timeout(40)
     public void testBrowseAllInQueuePrefetchOne() throws Exception {
         connection = createAmqpConnection();
 
@@ -171,7 +177,8 @@ public class JmsQueueBrowserTest extends AmqpTestSupport {
         assertEquals(5, count);
     }
 
-    @Test(timeout = 40000)
+    @Test
+    @Timeout(40)
     public void testBrowseAllInQueueZeroPrefetch() throws Exception {
         connection = createAmqpConnection();
 
@@ -202,7 +209,8 @@ public class JmsQueueBrowserTest extends AmqpTestSupport {
         assertEquals(5, count);
     }
 
-    @Test(timeout = 40000)
+    @Test
+    @Timeout(40)
     public void testBrowseAllInQueueTxSession() throws Exception {
         connection = createAmqpConnection();
         connection.start();
@@ -229,7 +237,8 @@ public class JmsQueueBrowserTest extends AmqpTestSupport {
         assertEquals(5, count);
     }
 
-    @Test(timeout = 40000)
+    @Test
+    @Timeout(40)
     public void testQueueBrowserInTxSessionLeavesOtherWorkUnaffected() throws Exception {
         connection = createAmqpConnection();
         connection.start();
@@ -272,7 +281,8 @@ public class JmsQueueBrowserTest extends AmqpTestSupport {
         assertEquals(10, proxy.getQueueSize());
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testBrowseAllInQueueSmallPrefetch() throws Exception {
         connection = createAmqpConnection();
         ((JmsDefaultPrefetchPolicy) ((JmsConnection) connection).getPrefetchPolicy()).setQueueBrowserPrefetch(1);

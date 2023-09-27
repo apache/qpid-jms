@@ -22,12 +22,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -72,9 +72,11 @@ import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
 import org.apache.qpid.jms.meta.JmsSessionId;
 import org.apache.qpid.jms.provider.mock.MockRemotePeer;
 import org.hamcrest.Matcher;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.Timeout;
 import org.mockito.Mockito;
 
 /**
@@ -119,16 +121,16 @@ public class JmsProducerTest extends JmsConnectionTestSupport {
     private final String JMS_TYPE_STRING = "TestType";
 
     @Override
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
+        super.setUp(testInfo);
 
         remotePeer.start();
         context = createJMSContextToMockProvider();
     }
 
     @Override
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         try {
             context.close();
@@ -791,7 +793,8 @@ public class JmsProducerTest extends JmsConnectionTestSupport {
         assertEquals(DeliveryMode.NON_PERSISTENT, producer.getDeliveryMode());
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testDeliveryModeConfigurationWithInvalidMode() throws Exception {
         JMSProducer producer = context.createProducer();
 
@@ -852,7 +855,8 @@ public class JmsProducerTest extends JmsConnectionTestSupport {
         assertEquals(4, producer.getPriority());
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testPriorityConfigurationWithInvalidPriorityValues() throws Exception {
         JMSProducer producer = context.createProducer();
 

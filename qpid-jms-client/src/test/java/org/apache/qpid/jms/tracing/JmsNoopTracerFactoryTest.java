@@ -16,12 +16,12 @@
  */
 package org.apache.qpid.jms.tracing;
 
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.net.URI;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class JmsNoopTracerFactoryTest {
 
@@ -29,14 +29,14 @@ public class JmsNoopTracerFactoryTest {
     public void testCreate() {
         JmsTracer tracer  = JmsNoOpTracerFactory.create();
 
-        assertSame("Unexpected tracer instance", JmsNoOpTracer.INSTANCE, tracer);
+        assertSame(JmsNoOpTracer.INSTANCE, tracer, "Unexpected tracer instance");
     }
 
     @Test
     public void testCreateURIAndTypeName() throws Exception {
         JmsTracer tracer  = JmsNoOpTracerFactory.create(new URI("amqp://localhost:1234"), JmsNoOpTracerFactory.TYPE_NAME);
 
-        assertSame("Unexpected tracer instance", JmsNoOpTracer.INSTANCE, tracer);
+        assertSame(JmsNoOpTracer.INSTANCE, tracer, "Unexpected tracer instance");
     }
 
     @Test

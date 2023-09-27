@@ -20,12 +20,12 @@
  */
 package org.apache.qpid.jms.provider.amqp.message;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.UUID;
 
@@ -33,7 +33,7 @@ import org.apache.qpid.jms.exceptions.IdConversionException;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.UnsignedLong;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class AmqpMessageIdHelperTest extends QpidJmsTestCase {
 
@@ -43,7 +43,7 @@ public class AmqpMessageIdHelperTest extends QpidJmsTestCase {
     @Test
     public void testHasIdPrefixWithPrefix() {
         String myId = "ID:something";
-        assertTrue("'ID:' prefix should have been identified", AmqpMessageIdHelper.hasMessageIdPrefix(myId));
+        assertTrue(AmqpMessageIdHelper.hasMessageIdPrefix(myId), "'ID:' prefix should have been identified");
     }
 
     /**
@@ -52,7 +52,7 @@ public class AmqpMessageIdHelperTest extends QpidJmsTestCase {
     @Test
     public void testHasIdPrefixWithIDButNoColonPrefix() {
         String myIdNoColon = "IDsomething";
-        assertFalse("'ID' prefix should not have been identified without trailing colon", AmqpMessageIdHelper.hasMessageIdPrefix(myIdNoColon));
+        assertFalse(AmqpMessageIdHelper.hasMessageIdPrefix(myIdNoColon), "'ID' prefix should not have been identified without trailing colon");
     }
 
     /**
@@ -61,7 +61,7 @@ public class AmqpMessageIdHelperTest extends QpidJmsTestCase {
     @Test
     public void testHasIdPrefixWithNull() {
         String nullString = null;
-        assertFalse("null string should not result in identification as having the prefix", AmqpMessageIdHelper.hasMessageIdPrefix(nullString));
+        assertFalse(AmqpMessageIdHelper.hasMessageIdPrefix(nullString), "null string should not result in identification as having the prefix");
     }
 
     /**
@@ -70,7 +70,7 @@ public class AmqpMessageIdHelperTest extends QpidJmsTestCase {
     @Test
     public void testHasIdPrefixWithoutPrefix() {
         String myNonId = "something";
-        assertFalse("string without 'ID:' anywhere should not have been identified as having the prefix", AmqpMessageIdHelper.hasMessageIdPrefix(myNonId));
+        assertFalse(AmqpMessageIdHelper.hasMessageIdPrefix(myNonId), "string without 'ID:' anywhere should not have been identified as having the prefix");
     }
 
     /**
@@ -79,7 +79,7 @@ public class AmqpMessageIdHelperTest extends QpidJmsTestCase {
     @Test
     public void testHasIdPrefixWithLowercaseID() {
         String myLowerCaseNonId = "id:something";
-        assertFalse("lowercase 'id:' prefix should not result in identification as having 'ID:' prefix", AmqpMessageIdHelper.hasMessageIdPrefix(myLowerCaseNonId));
+        assertFalse(AmqpMessageIdHelper.hasMessageIdPrefix(myLowerCaseNonId), "lowercase 'id:' prefix should not result in identification as having 'ID:' prefix");
     }
 
     /**
@@ -87,7 +87,7 @@ public class AmqpMessageIdHelperTest extends QpidJmsTestCase {
      */
     @Test
     public void testToMessageIdStringWithNull() {
-        assertNull("null string should have been returned", AmqpMessageIdHelper.toMessageIdString(null));
+        assertNull(AmqpMessageIdHelper.toMessageIdString(null), "null string should have been returned");
     }
 
     /**
@@ -105,8 +105,8 @@ public class AmqpMessageIdHelperTest extends QpidJmsTestCase {
 
     private void doToMessageIdTestImpl(Object idObject, String expected) {
         String idString = AmqpMessageIdHelper.toMessageIdString(idObject);
-        assertNotNull("null string should not have been returned", idString);
-        assertEquals("expected id string was not returned", expected, idString);
+        assertNotNull(idString, "null string should not have been returned");
+        assertEquals(expected, idString, "expected id string was not returned");
     }
 
     /**
@@ -311,7 +311,7 @@ public class AmqpMessageIdHelperTest extends QpidJmsTestCase {
      */
     @Test
     public void testToCorrelationIdStringWithNull() {
-        assertNull("null string should have been returned", AmqpMessageIdHelper.toCorrelationIdString(null));
+        assertNull(AmqpMessageIdHelper.toCorrelationIdString(null), "null string should have been returned");
     }
 
     /**
@@ -329,8 +329,8 @@ public class AmqpMessageIdHelperTest extends QpidJmsTestCase {
 
     private void doToCorrelationIDTestImpl(Object idObject, String expected) {
         String idString = AmqpMessageIdHelper.toCorrelationIdString(idObject);
-        assertNotNull("null string should not have been returned", idString);
-        assertEquals("expected id string was not returned", expected, idString);
+        assertNotNull(idString, "null string should not have been returned");
+        assertEquals(expected, idString, "expected id string was not returned");
     }
 
     /**
@@ -525,8 +525,8 @@ public class AmqpMessageIdHelperTest extends QpidJmsTestCase {
 
     private void doToIdObjectTestImpl(String idString, Object expected) throws IdConversionException {
         Object idObject = AmqpMessageIdHelper.toIdObject(idString);
-        assertNotNull("null object should not have been returned", idObject);
-        assertEquals("expected id object was not returned", expected, idObject);
+        assertNotNull(idObject, "null object should not have been returned");
+        assertEquals(expected, idObject, "expected id object was not returned");
     }
 
     /**
@@ -567,7 +567,7 @@ public class AmqpMessageIdHelperTest extends QpidJmsTestCase {
      */
     @Test
     public void testToIdObjectWithNull() throws Exception {
-        assertNull("null object should have been returned", AmqpMessageIdHelper.toIdObject(null));
+        assertNull(AmqpMessageIdHelper.toIdObject(null), "null object should have been returned");
     }
 
     /**
@@ -687,7 +687,7 @@ public class AmqpMessageIdHelperTest extends QpidJmsTestCase {
         } catch (IdConversionException iae) {
             // expected
             String msg = iae.getCause().getMessage();
-            assertTrue("Message was not as expected: " + msg, msg.contains("even length"));
+            assertTrue(msg.contains("even length"), "Message was not as expected: " + msg);
         }
     }
 
@@ -710,7 +710,7 @@ public class AmqpMessageIdHelperTest extends QpidJmsTestCase {
         } catch (IdConversionException ice) {
             // expected
             String msg = ice.getCause().getMessage();
-            assertTrue("Message was not as expected: " + msg, msg.contains("non-hex"));
+            assertTrue(msg.contains("non-hex"), "Message was not as expected: " + msg);
         }
 
         // char after '9', before 'A'
@@ -723,7 +723,7 @@ public class AmqpMessageIdHelperTest extends QpidJmsTestCase {
         } catch (IdConversionException ice) {
             // expected
             String msg = ice.getCause().getMessage();
-            assertTrue("Message was not as expected: " + msg, msg.contains("non-hex"));
+            assertTrue(msg.contains("non-hex"), "Message was not as expected: " + msg);
         }
 
         // char after 'F', before 'a'
@@ -736,7 +736,7 @@ public class AmqpMessageIdHelperTest extends QpidJmsTestCase {
         } catch (IdConversionException ice) {
             // expected
             String msg = ice.getCause().getMessage();
-            assertTrue("Message was not as expected: " + msg, msg.contains("non-hex"));
+            assertTrue(msg.contains("non-hex"), "Message was not as expected: " + msg);
         }
 
         // char after 'f'
@@ -749,7 +749,7 @@ public class AmqpMessageIdHelperTest extends QpidJmsTestCase {
         } catch (IdConversionException ice) {
             // expected
             String msg = ice.getCause().getMessage();
-            assertTrue("Message was not as expected: " + msg, msg.contains("non-hex"));
+            assertTrue(msg.contains("non-hex"), "Message was not as expected: " + msg);
         }
     }
 }

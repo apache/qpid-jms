@@ -16,13 +16,14 @@
  */
 package org.apache.qpid.jms.message;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.math.BigInteger;
 import java.net.URI;
@@ -38,7 +39,7 @@ import jakarta.jms.StreamMessage;
 import org.apache.qpid.jms.message.facade.JmsStreamMessageFacade;
 import org.apache.qpid.jms.message.facade.test.JmsTestMessageFactory;
 import org.apache.qpid.jms.message.facade.test.JmsTestStreamMessageFacade;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class JmsStreamMessageTest {
 
@@ -77,7 +78,7 @@ public class JmsStreamMessageTest {
         streamMessage.reset();
 
         // check we get only the value added after the clear
-        assertFalse("expected value added after the clear", streamMessage.readBoolean());
+        assertFalse(streamMessage.readBoolean(), "expected value added after the clear");
 
         try {
             streamMessage.readBoolean();
@@ -132,9 +133,9 @@ public class JmsStreamMessageTest {
         byte[] retrievedByteArray = new byte[bytes.length];
         int readBytesLength = streamMessage.readBytes(retrievedByteArray);
 
-        assertEquals("Number of bytes read did not match original array length", bytes.length, readBytesLength);
-        assertArrayEquals("Expected array to equal retrieved bytes", bytes, retrievedByteArray);
-        assertEquals("Expected completion return value", -1, streamMessage.readBytes(retrievedByteArray));
+        assertEquals(bytes.length, readBytesLength, "Number of bytes read did not match original array length");
+        assertArrayEquals(bytes, retrievedByteArray, "Expected array to equal retrieved bytes");
+        assertEquals(-1, streamMessage.readBytes(retrievedByteArray), "Expected completion return value");
     }
 
     /**
@@ -157,7 +158,7 @@ public class JmsStreamMessageTest {
 
         assertGetStreamEntryThrowsMessageFormatException(streamMessage, byte[].class);
 
-        assertEquals("Expected written string", stringVal, streamMessage.readString());
+        assertEquals(stringVal, streamMessage.readString(), "Expected written string");
     }
 
     /**
@@ -288,17 +289,17 @@ public class JmsStreamMessageTest {
 
         streamMessage.reset();
 
-        assertEquals("Got unexpected value from stream", nullEntryValue, streamMessage.readObject());
-        assertEquals("Got unexpected value from stream", boolEntryValue, streamMessage.readObject());
-        assertEquals("Got unexpected value from stream", byteEntryValue, streamMessage.readObject());
-        assertEquals("Got unexpected value from stream", shortEntryValue, streamMessage.readObject());
-        assertEquals("Got unexpected value from stream", intEntryValue, streamMessage.readObject());
-        assertEquals("Got unexpected value from stream", longEntryValue, streamMessage.readObject());
-        assertEquals("Got unexpected value from stream", floatEntryValue, streamMessage.readObject());
-        assertEquals("Got unexpected value from stream", doubleEntryValue, streamMessage.readObject());
-        assertEquals("Got unexpected value from stream", stringEntryValue, streamMessage.readObject());
-        assertEquals("Got unexpected value from stream", charEntryValue, streamMessage.readObject());
-        assertArrayEquals("Got unexpected value from stream", bytes, (byte[]) streamMessage.readObject());
+        assertEquals(nullEntryValue, streamMessage.readObject(), "Got unexpected value from stream");
+        assertEquals(boolEntryValue, streamMessage.readObject(), "Got unexpected value from stream");
+        assertEquals(byteEntryValue, streamMessage.readObject(), "Got unexpected value from stream");
+        assertEquals(shortEntryValue, streamMessage.readObject(), "Got unexpected value from stream");
+        assertEquals(intEntryValue, streamMessage.readObject(), "Got unexpected value from stream");
+        assertEquals(longEntryValue, streamMessage.readObject(), "Got unexpected value from stream");
+        assertEquals(floatEntryValue, streamMessage.readObject(), "Got unexpected value from stream");
+        assertEquals(doubleEntryValue, streamMessage.readObject(), "Got unexpected value from stream");
+        assertEquals(stringEntryValue, streamMessage.readObject(), "Got unexpected value from stream");
+        assertEquals(charEntryValue, streamMessage.readObject(), "Got unexpected value from stream");
+        assertArrayEquals(bytes, (byte[]) streamMessage.readObject(), "Got unexpected value from stream");
     }
 
     // ======= bytes =========
@@ -320,8 +321,8 @@ public class JmsStreamMessageTest {
         byte[] dest = new byte[value.length];
 
         int readBytesLength = streamMessage.readBytes(dest);
-        assertEquals("Number of bytes read did not match expectation", value.length, readBytesLength);
-        assertArrayEquals("value not as expected", value, dest);
+        assertEquals(value.length, readBytesLength, "Number of bytes read did not match expectation");
+        assertArrayEquals(value, dest, "value not as expected");
     }
 
     /**
@@ -357,7 +358,7 @@ public class JmsStreamMessageTest {
 
         streamMessage.reset();
 
-        assertEquals("Expected immediate completion signal", -1, streamMessage.readBytes(new byte[1]));
+        assertEquals(-1, streamMessage.readBytes(new byte[1]), "Expected immediate completion signal");
     }
 
     @Test
@@ -370,7 +371,7 @@ public class JmsStreamMessageTest {
 
         byte[] fullRetrievedBytes = new byte[1];
 
-        assertEquals("Expected no bytes to be read, as none were written", 0, streamMessage.readBytes(fullRetrievedBytes));
+        assertEquals(0, streamMessage.readBytes(fullRetrievedBytes), "Expected no bytes to be read, as none were written");
     }
 
     @Test
@@ -385,10 +386,10 @@ public class JmsStreamMessageTest {
         byte[] zeroDestination = new byte[0];
         byte[] fullRetrievedBytes = new byte[bytes.length];
 
-        assertEquals("Expected no bytes to be read", 0, streamMessage.readBytes(zeroDestination));
-        assertEquals("Expected all bytes to be read", bytes.length, streamMessage.readBytes(fullRetrievedBytes));
-        assertArrayEquals("Expected arrays to be equal", bytes, fullRetrievedBytes);
-        assertEquals("Expected completion signal", -1, streamMessage.readBytes(zeroDestination));
+        assertEquals(0, streamMessage.readBytes(zeroDestination), "Expected no bytes to be read");
+        assertEquals(bytes.length, streamMessage.readBytes(fullRetrievedBytes), "Expected all bytes to be read");
+        assertArrayEquals(bytes, fullRetrievedBytes, "Expected arrays to be equal");
+        assertEquals(-1, streamMessage.readBytes(zeroDestination), "Expected completion signal");
     }
 
     @Test
@@ -402,8 +403,8 @@ public class JmsStreamMessageTest {
 
         byte[] retrievedBytes = (byte[]) streamMessage.readObject();
 
-        assertNotSame("Expected different array objects", bytes, retrievedBytes);
-        assertArrayEquals("Expected arrays to be equal", bytes, retrievedBytes);
+        assertNotSame(bytes, retrievedBytes, "Expected different array objects");
+        assertArrayEquals(bytes, retrievedBytes, "Expected arrays to be equal");
     }
 
     @Test
@@ -411,7 +412,7 @@ public class JmsStreamMessageTest {
         JmsStreamMessage streamMessage = factory.createStreamMessage();
 
         byte[] bytes = new byte[] { (byte) 3, (byte) 78, (byte) 253, (byte) 26, (byte) 8 };
-        assertEquals("bytes should be odd length", 1, bytes.length % 2);
+        assertEquals(1, bytes.length % 2, "bytes should be odd length");
         int undersizedLength = 2;
         int remaining = 1;
 
@@ -421,16 +422,16 @@ public class JmsStreamMessageTest {
         byte[] undersizedDestination = new byte[undersizedLength];
         byte[] fullRetrievedBytes = new byte[bytes.length];
 
-        assertEquals("Number of bytes read did not match destination array length", undersizedLength, streamMessage.readBytes(undersizedDestination));
+        assertEquals(undersizedLength, streamMessage.readBytes(undersizedDestination), "Number of bytes read did not match destination array length");
         int read = undersizedLength;
         System.arraycopy(undersizedDestination, 0, fullRetrievedBytes, 0, undersizedLength);
-        assertEquals("Number of bytes read did not match destination array length", undersizedLength, streamMessage.readBytes(undersizedDestination));
+        assertEquals(undersizedLength, streamMessage.readBytes(undersizedDestination), "Number of bytes read did not match destination array length");
         System.arraycopy(undersizedDestination, 0, fullRetrievedBytes, read, undersizedLength);
         read += undersizedLength;
-        assertEquals("Number of bytes read did not match expectation", remaining, streamMessage.readBytes(undersizedDestination));
+        assertEquals(remaining, streamMessage.readBytes(undersizedDestination), "Number of bytes read did not match expectation");
         System.arraycopy(undersizedDestination, 0, fullRetrievedBytes, read, remaining);
         read += remaining;
-        assertArrayEquals("Expected array to equal retrieved bytes", bytes, fullRetrievedBytes);
+        assertArrayEquals(bytes, fullRetrievedBytes, "Expected array to equal retrieved bytes");
     }
 
     @Test
@@ -445,9 +446,9 @@ public class JmsStreamMessageTest {
         byte[] retrievedByteArray = new byte[bytes.length];
         int readBytesLength = streamMessage.readBytes(retrievedByteArray);
 
-        assertEquals("Number of bytes read did not match original array length", bytes.length, readBytesLength);
-        assertArrayEquals("Expected array to equal retrieved bytes", bytes, retrievedByteArray);
-        assertEquals("Expected completion return value", -1, streamMessage.readBytes(retrievedByteArray));
+        assertEquals(bytes.length, readBytesLength, "Number of bytes read did not match original array length");
+        assertArrayEquals(bytes, retrievedByteArray, "Expected array to equal retrieved bytes");
+        assertEquals(-1, streamMessage.readBytes(retrievedByteArray), "Expected completion return value");
     }
 
     @Test
@@ -462,8 +463,8 @@ public class JmsStreamMessageTest {
         byte[] oversizedDestination = new byte[bytes.length + 1];
         int readBytesLength = streamMessage.readBytes(oversizedDestination);
 
-        assertEquals("Number of bytes read did not match original array length", bytes.length, readBytesLength);
-        assertArrayEquals("Expected array subset to equal retrieved bytes", bytes, Arrays.copyOfRange(oversizedDestination, 0, readBytesLength));
+        assertEquals(bytes.length, readBytesLength, "Number of bytes read did not match original array length");
+        assertArrayEquals(bytes, Arrays.copyOfRange(oversizedDestination, 0, readBytesLength), "Expected array subset to equal retrieved bytes");
     }
 
     /**
@@ -497,7 +498,7 @@ public class JmsStreamMessageTest {
         int readBytesLength = streamMessage.readBytes(retrievedByteArray);
 
         assertEquals(partialLength, readBytesLength);
-        assertArrayEquals("Expected array subset to equal retrieved bytes", Arrays.copyOf(bytes, partialLength), retrievedByteArray);
+        assertArrayEquals(Arrays.copyOf(bytes, partialLength), retrievedByteArray, "Expected array subset to equal retrieved bytes");
 
         // check that using readObject does not return the full/remaining bytes as a new array
         try {
@@ -510,8 +511,9 @@ public class JmsStreamMessageTest {
         // finish reading via reaBytes to ensure it can be completed
         readBytesLength = streamMessage.readBytes(retrievedByteArray);
         assertEquals(bytes.length - partialLength, readBytesLength);
-        assertArrayEquals("Expected array subset to equal retrieved bytes", Arrays.copyOfRange(bytes, partialLength, bytes.length),
-            Arrays.copyOfRange(retrievedByteArray, 0, readBytesLength));
+        assertArrayEquals(Arrays.copyOfRange(bytes, partialLength, bytes.length),
+            Arrays.copyOfRange(retrievedByteArray, 0, readBytesLength),
+            "Expected array subset to equal retrieved bytes");
     }
 
     /**
@@ -554,7 +556,7 @@ public class JmsStreamMessageTest {
         streamMessage.writeBoolean(value);
         streamMessage.reset();
 
-        assertEquals("Value not as expected", value, streamMessage.readBoolean());
+        assertEquals(value, streamMessage.readBoolean(), "Value not as expected");
     }
 
     /**
@@ -612,7 +614,7 @@ public class JmsStreamMessageTest {
         streamMessage.writeString(value);
         streamMessage.reset();
 
-        assertEquals("Value not as expected", value, streamMessage.readString());
+        assertEquals(value, streamMessage.readString(), "Value not as expected");
     }
 
     /**
@@ -708,7 +710,7 @@ public class JmsStreamMessageTest {
         streamMessage.writeByte(value);
         streamMessage.reset();
 
-        assertEquals("Value not as expected", value, streamMessage.readByte());
+        assertEquals(value, streamMessage.readByte(), "Value not as expected");
     }
 
     /**
@@ -766,7 +768,7 @@ public class JmsStreamMessageTest {
         streamMessage.writeShort(value);
         streamMessage.reset();
 
-        assertEquals("Value not as expected", value, streamMessage.readShort());
+        assertEquals(value, streamMessage.readShort(), "Value not as expected");
     }
 
     /**
@@ -824,7 +826,7 @@ public class JmsStreamMessageTest {
         streamMessage.writeChar(value);
         streamMessage.reset();
 
-        assertEquals("Value not as expected", value, streamMessage.readChar());
+        assertEquals(value, streamMessage.readChar(), "Value not as expected");
     }
 
     /**
@@ -882,7 +884,7 @@ public class JmsStreamMessageTest {
         streamMessage.writeInt(value);
         streamMessage.reset();
 
-        assertEquals("Value not as expected", value, streamMessage.readInt());
+        assertEquals(value, streamMessage.readInt(), "Value not as expected");
     }
 
     /**
@@ -940,7 +942,7 @@ public class JmsStreamMessageTest {
         streamMessage.writeLong(value);
         streamMessage.reset();
 
-        assertEquals("Value not as expected", value, streamMessage.readLong());
+        assertEquals(value, streamMessage.readLong(), "Value not as expected");
     }
 
     /**
@@ -998,7 +1000,7 @@ public class JmsStreamMessageTest {
         streamMessage.writeFloat(value);
         streamMessage.reset();
 
-        assertEquals("Value not as expected", value, streamMessage.readFloat(), 0.0);
+        assertEquals(value, streamMessage.readFloat(), 0.0, "Value not as expected");
     }
 
     /**
@@ -1056,7 +1058,7 @@ public class JmsStreamMessageTest {
         streamMessage.writeDouble(value);
         streamMessage.reset();
 
-        assertEquals("Value not as expected", value, streamMessage.readDouble(), 0.0);
+        assertEquals(value, streamMessage.readDouble(), 0.0, "Value not as expected");
     }
 
     /**
@@ -1105,11 +1107,13 @@ public class JmsStreamMessageTest {
 
     // ========= read failures ========
 
-    @Test(expected=NullPointerException.class)
+    @Test
     public void testReadBytesWithNullArrayThrowsNPE() throws JMSException {
-        JmsStreamMessage streamMessage = factory.createStreamMessage();
-        streamMessage.reset();
-        streamMessage.readBytes(null);
+        assertThrows(NullPointerException.class, () -> {
+            JmsStreamMessage streamMessage = factory.createStreamMessage();
+            streamMessage.reset();
+            streamMessage.readBytes(null);
+        });
     }
 
     @Test

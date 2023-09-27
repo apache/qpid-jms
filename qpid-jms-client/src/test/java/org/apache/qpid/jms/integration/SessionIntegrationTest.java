@@ -24,13 +24,13 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -88,8 +88,6 @@ import org.apache.qpid.jms.test.testpeer.matchers.TransactionalStateMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageAnnotationsSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageHeaderSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompositeMatcher;
-import org.apache.qpid.jms.util.QpidJMSTestRunner;
-import org.apache.qpid.jms.util.Repeat;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
@@ -98,12 +96,11 @@ import org.apache.qpid.proton.amqp.messaging.Modified;
 import org.apache.qpid.proton.amqp.messaging.Released;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@RunWith(QpidJMSTestRunner.class)
 public class SessionIntegrationTest extends QpidJmsTestCase {
 
     private static final Logger LOG = LoggerFactory.getLogger(SessionIntegrationTest.class);
@@ -112,13 +109,14 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCloseSession() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
             testPeer.expectBegin();
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            assertNotNull("Session should not be null", session);
+            assertNotNull(session, "Session should not be null");
             testPeer.expectEnd();
             testPeer.expectClose();
 
@@ -133,7 +131,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCloseSessionTimesOut() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
@@ -144,7 +143,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             testPeer.expectClose();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            assertNotNull("Session should not be null", session);
+            assertNotNull(session, "Session should not be null");
 
             try {
                 session.close();
@@ -159,7 +158,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateProducer() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -179,7 +179,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateProducerLinkSupportedSourceOutcomes() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -210,7 +211,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateConsumer() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -233,7 +235,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateConsumerWithEmptySelector() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -264,7 +267,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateConsumerWithNullSelector() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -295,7 +299,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateConsumerWithInvalidSelector() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -320,17 +325,20 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateConsumerWithSimpleSelector() throws Exception {
         doCreateConsumerWithSelectorTestImpl("myvar=42", false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateConsumerWithQuotedVariableSelector() throws Exception {
         doCreateConsumerWithSelectorTestImpl("\"my.quoted-var\"='some-value'", false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateConsumerWithInvalidSelectorAndDisableValidation() throws Exception {
         // Verifies that with the local validation disabled, the selector filter is still created
         // and sent on the source terminus, containing the desired non-JMS selector string.
@@ -370,12 +378,14 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateConsumerFailsWhenLinkRefusedAndAttachResponseWriteIsNotDeferred() throws Exception {
         doCreateConsumerFailsWhenLinkRefusedTestImpl(false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateConsumerFailsWhenLinkRefusedAndAttachResponseWriteIsDeferred() throws Exception {
         doCreateConsumerFailsWhenLinkRefusedTestImpl(true);
     }
@@ -416,7 +426,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateConsumerFailsWhenLinkRefusalResponseNotSent() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -457,7 +468,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateBrowserFailsWhenLinkRefusalResponseNotSent() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -493,22 +505,26 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateTemporaryQueueFailsWhenLinkRefusedAndAttachResponseWriteIsNotDeferred() throws Exception {
         doCreateTemporaryDestinationFailsWhenLinkRefusedTestImpl(false, false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateTemporaryQueueFailsWhenLinkRefusedAndAttachResponseWriteIsDeferred() throws Exception {
         doCreateTemporaryDestinationFailsWhenLinkRefusedTestImpl(false, true);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateTemporaryTopicFailsWhenLinkRefusedAndAttachResponseWriteIsNotDeferred() throws Exception {
         doCreateTemporaryDestinationFailsWhenLinkRefusedTestImpl(true, false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateTemporaryTopicFailsWhenLinkRefusedAndAttachResponseWriteIsDeferred() throws Exception {
         doCreateTemporaryDestinationFailsWhenLinkRefusedTestImpl(true, true);
     }
@@ -547,7 +563,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateTemporaryQueue() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -560,9 +577,9 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             testPeer.expectTempQueueCreationAttach(dynamicAddress);
 
             TemporaryQueue tempQueue = session.createTemporaryQueue();
-            assertNotNull("TemporaryQueue object was null", tempQueue);
-            assertNotNull("TemporaryQueue queue name was null", tempQueue.getQueueName());
-            assertEquals("TemporaryQueue name not as expected", dynamicAddress, tempQueue.getQueueName());
+            assertNotNull(tempQueue, "TemporaryQueue object was null");
+            assertNotNull(tempQueue.getQueueName(), "TemporaryQueue queue name was null");
+            assertEquals(dynamicAddress, tempQueue.getQueueName(), "TemporaryQueue name not as expected");
 
             testPeer.expectClose();
             connection.close();
@@ -571,7 +588,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateTemporaryQueueTimesOut() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
@@ -598,7 +616,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateAndDeleteTemporaryQueue() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -622,7 +641,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testDeleteTemporaryQueueTimesOut() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
@@ -654,7 +674,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateTemporaryTopic() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -667,9 +688,9 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             testPeer.expectTempTopicCreationAttach(dynamicAddress);
 
             TemporaryTopic tempTopic = session.createTemporaryTopic();
-            assertNotNull("TemporaryTopic object was null", tempTopic);
-            assertNotNull("TemporaryTopic name was null", tempTopic.getTopicName());
-            assertEquals("TemporaryTopic name not as expected", dynamicAddress, tempTopic.getTopicName());
+            assertNotNull(tempTopic, "TemporaryTopic object was null");
+            assertNotNull(tempTopic.getTopicName(), "TemporaryTopic name was null");
+            assertEquals(dynamicAddress, tempTopic.getTopicName(), "TemporaryTopic name not as expected");
 
             testPeer.expectClose();
             connection.close();
@@ -678,7 +699,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateTemporaryTopicTimesOut() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
@@ -705,7 +727,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateAndDeleteTemporaryTopic() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -729,7 +752,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testDeleteTemporaryTopicTimesOut() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
@@ -761,7 +785,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendToDeletedTemporaryTopicFails() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -795,7 +820,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendToDeletedTemporaryQueueFails() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -829,7 +855,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCannotDeleteTemporaryQueueInUse() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -867,7 +894,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCannotDeleteTemporaryTopicInUse() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -905,42 +933,50 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateConsumerSourceContainsQueueCapability() throws Exception {
         doCreateConsumerSourceContainsCapabilityTestImpl(Queue.class, true);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateConsumerSourceContainsQueueCapabilityWithoutClientID() throws Exception {
         doCreateConsumerSourceContainsCapabilityTestImpl(Queue.class, false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateConsumerSourceContainsTopicCapability() throws Exception {
         doCreateConsumerSourceContainsCapabilityTestImpl(Topic.class, true);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateConsumerSourceContainsTopicCapabilityWithoutClientID() throws Exception {
         doCreateConsumerSourceContainsCapabilityTestImpl(Topic.class, false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateConsumerSourceContainsTempQueueCapability() throws Exception {
         doCreateConsumerSourceContainsCapabilityTestImpl(TemporaryQueue.class, true);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateConsumerSourceContainsTempQueueCapabilityWithoutClientID() throws Exception {
         doCreateConsumerSourceContainsCapabilityTestImpl(TemporaryQueue.class, false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateConsumerSourceContainsTempTopicCapability() throws Exception {
         doCreateConsumerSourceContainsCapabilityTestImpl(TemporaryTopic.class, true);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateConsumerSourceContainsTempTopicCapabilityWithoutClientID() throws Exception {
         doCreateConsumerSourceContainsCapabilityTestImpl(TemporaryTopic.class, false);
     }
@@ -989,7 +1025,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testConsumerNotAuthorized() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1017,7 +1054,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testProducerNotAuthorized() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1045,22 +1083,26 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateProducerTargetContainsQueueCapability() throws Exception {
         doCreateProducerTargetContainsCapabilityTestImpl(Queue.class);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateProducerTargetContainsTopicCapability() throws Exception {
         doCreateProducerTargetContainsCapabilityTestImpl(Topic.class);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateProducerTargetContainsTempQueueCapability() throws Exception {
         doCreateProducerTargetContainsCapabilityTestImpl(TemporaryQueue.class);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateProducerTargetContainsTempTopicCapability() throws Exception {
         doCreateProducerTargetContainsCapabilityTestImpl(TemporaryTopic.class);
     }
@@ -1108,7 +1150,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateAnonymousProducerTargetContainsNoTypeCapabilityWhenAnonymousRelayNodeIsSupported() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
@@ -1132,7 +1175,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
             //Create an anonymous producer
             MessageProducer producer = session.createProducer(null);
-            assertNotNull("Producer object was null", producer);
+            assertNotNull(producer, "Producer object was null");
 
             testPeer.expectClose();
             connection.close();
@@ -1141,26 +1184,26 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateAnonymousProducerTargetContainsQueueCapabilityWhenAnonymousRelayNodeIsNotSupported() throws Exception {
         doCreateAnonymousProducerTargetContainsCapabilityWhenAnonymousRelayNodeIsNotSupportedTestImpl(Queue.class);
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateAnonymousProducerTargetContainsTopicCapabilityWhenAnonymousRelayNodeIsNotSupported() throws Exception {
         doCreateAnonymousProducerTargetContainsCapabilityWhenAnonymousRelayNodeIsNotSupportedTestImpl(Topic.class);
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateAnonymousProducerTargetContainsTempQueueCapabilityWhenAnonymousRelayNodeIsNotSupported() throws Exception {
         doCreateAnonymousProducerTargetContainsCapabilityWhenAnonymousRelayNodeIsNotSupportedTestImpl(TemporaryQueue.class);
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateAnonymousProducerTargetContainsTempTopicCapabilityWhenAnonymousRelayNodeIsNotSupported() throws Exception {
         doCreateAnonymousProducerTargetContainsCapabilityWhenAnonymousRelayNodeIsNotSupportedTestImpl(TemporaryQueue.class);
     }
@@ -1203,7 +1246,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
             //Create an anonymous producer
             MessageProducer producer = session.createProducer(null);
-            assertNotNull("Producer object was null", producer);
+            assertNotNull(producer, "Producer object was null");
 
             //Expect a new message sent by the above producer to cause creation of a new
             //sender link to the given destination, then closing the link after the message is sent.
@@ -1234,7 +1277,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateDurableTopicSubscriber() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1251,9 +1295,9 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             testPeer.expectLinkFlow();
 
             TopicSubscriber subscriber = session.createDurableSubscriber(dest, subscriptionName);
-            assertNotNull("TopicSubscriber object was null", subscriber);
-            assertFalse("TopicSubscriber should not be no-local", subscriber.getNoLocal());
-            assertNull("TopicSubscriber should not have a selector", subscriber.getMessageSelector());
+            assertNotNull(subscriber, "TopicSubscriber object was null");
+            assertFalse(subscriber.getNoLocal(), "TopicSubscriber should not be no-local");
+            assertNull(subscriber.getMessageSelector(), "TopicSubscriber should not have a selector");
 
             testPeer.expectClose();
             connection.close();
@@ -1262,7 +1306,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCloseSessionWithExistingDurableTopicSubscriberDoesNotCloseSubscriberLink() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1279,7 +1324,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             testPeer.expectLinkFlow();
 
             TopicSubscriber subscriber = session.createDurableSubscriber(dest, subscriptionName);
-            assertNotNull("TopicSubscriber object was null", subscriber);
+            assertNotNull(subscriber, "TopicSubscriber object was null");
 
             testPeer.expectEnd();
             session.close();
@@ -1291,7 +1336,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateDurableConsumer() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1308,8 +1354,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             testPeer.expectLinkFlow();
 
             MessageConsumer consumer = session.createDurableConsumer(dest, subscriptionName);
-            assertNotNull("MessageConsumer object was null", consumer);
-            assertNull("MessageConsumer should not have a selector", consumer.getMessageSelector());
+            assertNotNull(consumer, "MessageConsumer object was null");
+            assertNull(consumer.getMessageSelector(), "MessageConsumer should not have a selector");
 
             testPeer.expectClose();
             connection.close();
@@ -1318,7 +1364,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testDurableSubscriptionUnsubscribeInUseThrowsJMSEx() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1335,7 +1382,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             testPeer.expectLinkFlow();
 
             TopicSubscriber subscriber = session.createDurableSubscriber(dest, subscriptionName);
-            assertNotNull("TopicSubscriber object was null", subscriber);
+            assertNotNull(subscriber, "TopicSubscriber object was null");
 
             try {
                 session.unsubscribe(subscriptionName);
@@ -1354,7 +1401,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateDurableTopicSubscriberFailsIfConnectionDoesntHaveExplicitClientID() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // Create a connection without an explicit clientId
@@ -1384,7 +1432,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
     }
 
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateAnonymousProducerWhenAnonymousRelayNodeIsSupported() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             //Add capability to indicate support for ANONYMOUS-RELAY
@@ -1409,7 +1458,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
             //Create an anonymous producer
             MessageProducer producer = session.createProducer(null);
-            assertNotNull("Producer object was null", producer);
+            assertNotNull(producer, "Producer object was null");
 
             //Expect a new message sent with this producer to use the link to the anonymous relay matched above
             MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true);
@@ -1435,12 +1484,14 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateAnonymousProducerFailsWhenAnonymousRelayNodeIsSupportedButLinkRefusedAndAttachResponseWriteIsNotDeferred() throws Exception {
         doCreateAnonymousProducerFailsWhenAnonymousRelayNodeIsSupportedButLinkRefusedTestImpl(false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateAnonymousProducerFailsWhenAnonymousRelayNodeIsSupportedButLinkRefusedAndAttachResponseWriteIsDeferred() throws Exception {
         doCreateAnonymousProducerFailsWhenAnonymousRelayNodeIsSupportedButLinkRefusedTestImpl(true);
     }
@@ -1480,12 +1531,14 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateProducerFailsWhenLinkRefusedAndAttachResponseWriteIsNotDeferred() throws Exception {
         doCreateProducerFailsWhenLinkRefusedTestImpl(false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateProducerFailsWhenLinkRefusedAndAttachResponseWriteIsDeferred() throws Exception {
         doCreateProducerFailsWhenLinkRefusedTestImpl(true);
     }
@@ -1526,7 +1579,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateProducerFailsWhenLinkRefusedNoDetachSent() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1565,7 +1619,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateAnonymousProducerWhenAnonymousRelayNodeIsNotSupported() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
@@ -1588,7 +1643,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
             // Create an anonymous producer
             MessageProducer producer = session.createProducer(null);
-            assertNotNull("Producer object was null", producer);
+            assertNotNull(producer, "Producer object was null");
 
             // Expect a new message sent by the above producer to cause creation of a new
             // sender link to the given destination, then closing the link after the message is sent.
@@ -1625,7 +1680,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testIncomingMessageExceedsMaxRedeliveries() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             final int COUNT = 5;
@@ -1662,9 +1718,9 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             final MessageConsumer consumer = session.createConsumer(queue);
 
             Message m = consumer.receive(6000);
-            assertNotNull("Should have reiceved the final message", m);
-            assertTrue("Should have received the final message", m instanceof TextMessage);
-            assertEquals("Unexpected content", expectedContent, ((TextMessage)m).getText());
+            assertNotNull(m, "Should have reiceved the final message");
+            assertTrue(m instanceof TextMessage, "Should have received the final message");
+            assertEquals(expectedContent, ((TextMessage)m).getText(), "Unexpected content");
 
             testPeer.expectClose();
             connection.close();
@@ -1673,7 +1729,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testPrefetchPolicyInfluencesCreditFlow() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             final int newPrefetch = 263;
@@ -1697,7 +1754,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testLocallyCloseSessionWithConsumersAndProducers() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1734,8 +1792,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
-    @Repeat(repetitions = 1)
+    @Test
+    @Timeout(20)
     public void testRemotelyEndSessionWithProducers() throws Exception {
         final String BREAD_CRUMB = "ErrorMessage";
 
@@ -1767,7 +1825,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             testPeer.waitForAllHandlersToComplete(1000);
 
             // Verify the producers get marked closed
-            assertTrue("producer never closed.", Wait.waitFor(new Wait.Condition() {
+            assertTrue(Wait.waitFor(new Wait.Condition() {
                 @Override
                 public boolean isSatisfied() throws Exception {
                     try {
@@ -1783,9 +1841,9 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
                     }
                     return false;
                 }
-            }, 6000, 10));
+            }, 6000, 10), "producer never closed.");
 
-            assertTrue("producer2 never closed.", Wait.waitFor(new Wait.Condition() {
+            assertTrue(Wait.waitFor(new Wait.Condition() {
                 @Override
                 public boolean isSatisfied() throws Exception {
                     try {
@@ -1801,9 +1859,9 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
                     }
                     return false;
                 }
-            }, 6000, 10));
+            }, 6000, 10), "producer2 never closed.");
 
-            assertTrue("Session closed callback didn't trigger", sessionClosed.await(10, TimeUnit.SECONDS));
+            assertTrue(sessionClosed.await(10, TimeUnit.SECONDS), "Session closed callback didn't trigger");
 
             // Verify the session is now marked closed
             try {
@@ -1825,7 +1883,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRemotelyEndSessionWithProducerSendWaitingForCredit() throws Exception {
         final String BREAD_CRUMB = "ErrorMessageBreadCrumb";
 
@@ -1852,8 +1911,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
                 fail("Expected exception to be thrown");
             } catch (JMSException jmse) {
                 // Expected
-                assertNotNull("Expected exception to have a message", jmse.getMessage());
-                assertTrue("Expected breadcrumb to be present in message", jmse.getMessage().contains(BREAD_CRUMB));
+                assertNotNull(jmse.getMessage(), "Expected exception to have a message");
+                assertTrue(jmse.getMessage().contains(BREAD_CRUMB), "Expected breadcrumb to be present in message");
             }
 
             connection.close();
@@ -1862,7 +1921,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRemotelyEndSessionWithProducerCompletesAsyncSends() throws Exception {
         final String BREAD_CRUMB = "ErrorMessage";
 
@@ -1911,7 +1971,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             assertEquals(MSG_COUNT, listener.errorCount);
             assertEquals(0, listener.successCount);
 
-            assertTrue("Session closed callback didn't trigger", sessionClosed.await(10, TimeUnit.SECONDS));
+            assertTrue(sessionClosed.await(10, TimeUnit.SECONDS), "Session closed callback didn't trigger");
 
             // Verify the session is now marked closed
             try {
@@ -1932,7 +1992,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRemotelyEndSessionWithConsumers() throws Exception {
         final String BREAD_CRUMB = "ErrorMessage";
 
@@ -1966,7 +2027,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
             // Verify the consumers get marked closed
             testPeer.waitForAllHandlersToComplete(1000);
-            assertTrue("consumer never closed.", Wait.waitFor(new Wait.Condition() {
+            assertTrue(Wait.waitFor(new Wait.Condition() {
                 @Override
                 public boolean isSatisfied() throws Exception {
                     try {
@@ -1982,9 +2043,9 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
                     }
                     return false;
                 }
-            }, 6000, 10));
+            }, 6000, 10), "consumer never closed.");
 
-            assertTrue("consumer2 never closed.", Wait.waitFor(new Wait.Condition() {
+            assertTrue(Wait.waitFor(new Wait.Condition() {
                 @Override
                 public boolean isSatisfied() throws Exception {
                     try {
@@ -2000,9 +2061,9 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
                     }
                     return false;
                 }
-            }, 6000, 10));
+            }, 6000, 10), "consumer2 never closed.");
 
-            assertTrue("Session closed callback didn't trigger", sessionClosed.await(10, TimeUnit.SECONDS));
+            assertTrue(sessionClosed.await(10, TimeUnit.SECONDS), "Session closed callback didn't trigger");
 
             // Verify the session is now marked closed
             try {
@@ -2024,7 +2085,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCloseSessionWithConsumerThatRemoteDetaches() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -2050,7 +2112,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCloseSessionWithConsumerThatRemoteDetachesWithUnackedMessages() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -2080,12 +2143,14 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSessionHasExpectedDefaultOutgoingWindow() throws Exception {
         doSessionHasExpectedOutgoingWindowTestImpl(Integer.MAX_VALUE, null);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSessionHasExpectedConfiguredOutgoingWindow() throws Exception {
         int windowSize = 13579;
         doSessionHasExpectedOutgoingWindowTestImpl(windowSize, "?amqp.sessionOutgoingWindow=" + windowSize);
@@ -2098,14 +2163,15 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             testPeer.expectBegin(equalTo(UnsignedInteger.valueOf(value)), true);
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-            assertNotNull("Session should not be null", session);
+            assertNotNull(session, "Session should not be null");
 
             testPeer.expectClose();
             connection.close();
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAsyncDeliveryOrder() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -2149,8 +2215,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             consumer.setMessageListener(new DeliveryOrderListener(done, index));
 
             testPeer.waitForAllHandlersToComplete(3000);
-            assertTrue("Not all messages received in given time", done.await(10, TimeUnit.SECONDS));
-            assertEquals("Messages were not in expected order, final index was wrong", messageCount - 1, index.get());
+            assertTrue(done.await(10, TimeUnit.SECONDS), "Not all messages received in given time");
+            assertEquals(messageCount - 1, index.get(), "Messages were not in expected order, final index was wrong");
 
             testPeer.expectDischarge(txnId, true);
             testPeer.expectClose();
@@ -2185,7 +2251,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSessionSnapshotsPolicyObjects() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
@@ -2205,7 +2272,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAcknowledgeIndividualMessages()  throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -2227,10 +2295,10 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             Message lastReceivedMessage = null;
             for (int i = 0; i < msgCount; i++) {
                 lastReceivedMessage = messageConsumer.receive(3000);
-                assertNotNull("Message " + i + " was not received", lastReceivedMessage);
+                assertNotNull(lastReceivedMessage, "Message " + i + " was not received");
                 messages.add(lastReceivedMessage);
 
-                assertEquals("unexpected message number property", i, lastReceivedMessage.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER));
+                assertEquals(i, lastReceivedMessage.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER), "unexpected message number property");
             }
 
             // Acknowledge the messages in a random order, verify only that messages disposition arrives each time.
@@ -2284,7 +2352,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCloseConsumerWithUnackedClientAckMessagesThenRecoverSession() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -2303,10 +2372,10 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             MessageConsumer consumer = session.createConsumer(destination);
 
             TextMessage receivedTextMessage = null;
-            assertNotNull("Expected a message", receivedTextMessage = (TextMessage) consumer.receive(3000));
-            assertEquals("Unexpected delivery number", 1,  receivedTextMessage.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER) + 1);
-            assertNotNull("Expected a message", receivedTextMessage = (TextMessage) consumer.receive(3000));
-            assertEquals("Unexpected delivery number", 2,  receivedTextMessage.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER) + 1);
+            assertNotNull(receivedTextMessage = (TextMessage) consumer.receive(3000), "Expected a message");
+            assertEquals(1,  receivedTextMessage.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER) + 1,  "Unexpected delivery number");
+            assertNotNull(receivedTextMessage = (TextMessage) consumer.receive(3000), "Expected a message");
+            assertEquals(2,  receivedTextMessage.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER) + 1,  "Unexpected delivery number");
 
             testPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.valueOf(JmsDefaultPrefetchPolicy.DEFAULT_QUEUE_PREFETCH - msgCount)));
 
@@ -2328,7 +2397,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRecoveredClientAckSessionWithDurableSubscriber() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, false, "?jms.clientID=myClientId", null, null, false);
@@ -2350,16 +2420,16 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             MessageConsumer subscriber = session.createDurableConsumer(topic, subscriptionName);
 
             TextMessage receivedTextMessage = null;
-            assertNotNull("Expected a message", receivedTextMessage = (TextMessage) subscriber.receive(3000));
-            assertEquals("Unexpected delivery number", 1,  receivedTextMessage.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER) + 1);
-            assertNotNull("Expected a message", receivedTextMessage = (TextMessage) subscriber.receive(3000));
-            assertEquals("Unexpected delivery number", 2,  receivedTextMessage.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER) + 1);
+            assertNotNull(receivedTextMessage = (TextMessage) subscriber.receive(3000), "Expected a message");
+            assertEquals(1,  receivedTextMessage.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER) + 1,  "Unexpected delivery number");
+            assertNotNull(receivedTextMessage = (TextMessage) subscriber.receive(3000), "Expected a message");
+            assertEquals(2,  receivedTextMessage.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER) + 1,  "Unexpected delivery number");
 
             session.recover();
 
-            assertNotNull("Expected a message", receivedTextMessage = (TextMessage) subscriber.receive(3000));
+            assertNotNull(receivedTextMessage = (TextMessage) subscriber.receive(3000), "Expected a message");
             int deliveryNumber = receivedTextMessage.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER) + 1;
-            assertEquals("Unexpected delivery number", 1,  deliveryNumber);
+            assertEquals(1,  deliveryNumber,  "Unexpected delivery number");
 
             testPeer.expectDisposition(true, new AcceptedMatcher(), 1, 1);
 
@@ -2384,12 +2454,14 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCloseSessionWithWithUnackedClientAckMessages() throws Exception {
         doCloseWithWithUnackedClientAckMessagesTestImpl(true);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCloseConnectionWithUnackedClientAckMessages() throws Exception {
         doCloseWithWithUnackedClientAckMessagesTestImpl(false);
     }
@@ -2415,10 +2487,10 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             MessageConsumer subscriber = session.createDurableConsumer(topic, subscriptionName);
 
             TextMessage receivedTextMessage = null;
-            assertNotNull("Expected a message", receivedTextMessage = (TextMessage) subscriber.receive(3000));
-            assertEquals("Unexpected delivery number", 1,  receivedTextMessage.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER) + 1);
-            assertNotNull("Expected a message", receivedTextMessage = (TextMessage) subscriber.receive(3000));
-            assertEquals("Unexpected delivery number", 2,  receivedTextMessage.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER) + 1);
+            assertNotNull(receivedTextMessage = (TextMessage) subscriber.receive(3000), "Expected a message");
+            assertEquals(1,  receivedTextMessage.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER) + 1,  "Unexpected delivery number");
+            assertNotNull(receivedTextMessage = (TextMessage) subscriber.receive(3000), "Expected a message");
+            assertEquals(2,  receivedTextMessage.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER) + 1,  "Unexpected delivery number");
 
             testPeer.expectDisposition(true, new ModifiedMatcher().withDeliveryFailed(equalTo(true)), 1, 1);
             testPeer.expectDisposition(true, new ModifiedMatcher().withDeliveryFailed(equalTo(true)), 2, 2);
@@ -2435,49 +2507,57 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCloseConnectionWithRecoveredUndeliveredAndRedeliveredClientAckMessages() throws Exception {
         // Send 6, recover 4, redeliver 2, close connection (and so implicitly, session)
         doCloseWithWithRecoveredUndeliveredClientAckMessagesTestImpl(false, false, 6, 4, 2);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCloseConnectionWithRecoveredUndeliveredClientAckMessages() throws Exception {
         // Send 4, recover 2, redeliver none, close connection (and so implicitly, session)
         doCloseWithWithRecoveredUndeliveredClientAckMessagesTestImpl(false, false, 4, 2, 0);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCloseSessionWithRecoveredUndeliveredAndRedeliveredClientAckMessages() throws Exception {
         // Send 6, recover 4, redeliver 2, close session (then connection)
         doCloseWithWithRecoveredUndeliveredClientAckMessagesTestImpl(false, true, 6, 4, 2);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCloseSessionWithRecoveredUndeliveredClientAckMessages() throws Exception {
         // Send 4, recover 2, redeliver none, close session (then connection)
         doCloseWithWithRecoveredUndeliveredClientAckMessagesTestImpl(false, true, 4, 2, 0);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCloseConsumerWithRecoveredUndeliveredAndRedeliveredClientAckMessages() throws Exception {
         // Send 6, recover 4, redeliver 2, close consumer then connection (and so implicitly, session)
         doCloseWithWithRecoveredUndeliveredClientAckMessagesTestImpl(true, false, 6, 4, 2);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCloseConsumerWithRecoveredUndeliveredClientAckMessages() throws Exception {
         // Send 4, recover 2, redeliver none, close consumer then connection (and so implicitly, session)
         doCloseWithWithRecoveredUndeliveredClientAckMessagesTestImpl(true, false, 4, 2, 0);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCloseConsumerAndSessionWithRecoveredAndRedeliveredUndeliveredClientAckMessages() throws Exception {
         // Send 6, recover 4, redeliver 2, close consumer then session (then connection)
         doCloseWithWithRecoveredUndeliveredClientAckMessagesTestImpl(true, true, 6, 4, 2);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCloseConsumerAndSessionWithRecoveredUndeliveredClientAckMessages() throws Exception {
         // Send 6, recover 4, redeliver 2, close consumer then session (then connection)
         doCloseWithWithRecoveredUndeliveredClientAckMessagesTestImpl(true, true, 4, 2, 0);
@@ -2513,20 +2593,20 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
             TextMessage receivedTextMessage = null;
             for (int i = 1; i <= deliverBeforeRecoverCount; i++) {
-                assertNotNull("Expected message did not arrive: " + i, receivedTextMessage = (TextMessage) consumer.receive(3000));
-                assertEquals("Unexpected delivery number", i,  receivedTextMessage.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER) + 1);
+                assertNotNull(receivedTextMessage = (TextMessage) consumer.receive(3000), "Expected message did not arrive: " + i);
+                assertEquals(i,  receivedTextMessage.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER) + 1,  "Unexpected delivery number");
             }
 
             // Await all incoming messages to arrive at consumer before we recover, ensure deterministic test behaviour.
-            assertTrue("Messages did not arrive in a timely fashion", incoming.await(3, TimeUnit.SECONDS));
+            assertTrue(incoming.await(3, TimeUnit.SECONDS), "Messages did not arrive in a timely fashion");
 
             session.recover();
 
             testPeer.waitForAllHandlersToComplete(1000);
 
             for (int i = 1; i <= deliverAfterRecoverCount; i++) {
-                assertNotNull("Expected message did not arrive after recover: " + i, receivedTextMessage = (TextMessage) consumer.receive(3000));
-                assertEquals("Unexpected delivery number after recover", i,  receivedTextMessage.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER) + 1);
+                assertNotNull(receivedTextMessage = (TextMessage) consumer.receive(3000), "Expected message did not arrive after recover: " + i);
+                assertEquals(i,  receivedTextMessage.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER) + 1,  "Unexpected delivery number after recover");
             }
 
             int deliveredAtAnyPoint = Math.max(deliverBeforeRecoverCount, deliverAfterRecoverCount);
@@ -2592,14 +2672,16 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAcknowledgeAllPreviouslyRecoveredClientAckMessages() throws Exception {
         doAcknowledgePreviouslyRecoveredClientAckMessagesTestImpl(true, false, true);
         doAcknowledgePreviouslyRecoveredClientAckMessagesTestImpl(false, true, true);
         doAcknowledgePreviouslyRecoveredClientAckMessagesTestImpl(false, false, true);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAcknowledgeSomePreviouslyRecoveredClientAckMessages() throws Exception {
         doAcknowledgePreviouslyRecoveredClientAckMessagesTestImpl(true, false, false);
         doAcknowledgePreviouslyRecoveredClientAckMessagesTestImpl(false, true, false);
@@ -2640,20 +2722,20 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
             TextMessage receivedTextMessage = null;
             for (int i = 1; i <= deliverBeforeRecoverCount; i++) {
-                assertNotNull("Expected message did not arrive: " + i, receivedTextMessage = (TextMessage) consumer.receive(3000));
-                assertEquals("Unexpected delivery number", i,  receivedTextMessage.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER) + 1);
+                assertNotNull(receivedTextMessage = (TextMessage) consumer.receive(3000), "Expected message did not arrive: " + i);
+                assertEquals(i,  receivedTextMessage.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER) + 1,  "Unexpected delivery number");
             }
 
             // Await all incoming messages to arrive at consumer before we recover, ensure deterministic test behaviour.
-            assertTrue("Messages did not arrive in a timely fashion", incoming.await(3, TimeUnit.SECONDS));
+            assertTrue(incoming.await(3, TimeUnit.SECONDS), "Messages did not arrive in a timely fashion");
 
             session.recover();
 
             testPeer.waitForAllHandlersToComplete(1000);
 
             for (int i = 1; i <= acknowledgeAfterRecoverCount; i++) {
-                assertNotNull("Expected message did not arrive after recover: " + i, receivedTextMessage = (TextMessage) consumer.receive(3000));
-                assertEquals("Unexpected delivery number after recover", i,  receivedTextMessage.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER) + 1);
+                assertNotNull(receivedTextMessage = (TextMessage) consumer.receive(3000), "Expected message did not arrive after recover: " + i);
+                assertEquals(i,  receivedTextMessage.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER) + 1,  "Unexpected delivery number after recover");
                 testPeer.expectDisposition(true, new AcceptedMatcher(), i, i);
                 receivedTextMessage.acknowledge();
             }
@@ -2691,7 +2773,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRemotelyEndSessionWithMessageListener() throws Exception {
         final String BREAD_CRUMB = "ErrorDescriptionBreadCrumb";
 
@@ -2730,18 +2813,18 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             });
 
             // Verify ExceptionListener fired
-            assertTrue("ExceptionListener did not fire", exceptionListenerFired.await(5, TimeUnit.SECONDS));
+            assertTrue(exceptionListenerFired.await(5, TimeUnit.SECONDS), "ExceptionListener did not fire");
 
             JMSException jmsException = asyncError.get();
-            assertNotNull("Exception from listener was not set", jmsException);
+            assertNotNull(jmsException, "Exception from listener was not set");
             String message = jmsException.getMessage();
             assertTrue(message.contains(AmqpError.RESOURCE_LIMIT_EXCEEDED.toString()) && message.contains(BREAD_CRUMB));
 
             // Verify the session (and  consumer) got marked closed and listener fired
             testPeer.waitForAllHandlersToComplete(1000);
-            assertTrue("Session closed callback did not fire", sessionClosed.await(5, TimeUnit.SECONDS));
-            assertTrue("consumer never closed.", verifyConsumerClosure(BREAD_CRUMB, consumer));
-            assertTrue("session never closed.", verifySessionClosure(BREAD_CRUMB, session));
+            assertTrue(sessionClosed.await(5, TimeUnit.SECONDS), "Session closed callback did not fire");
+            assertTrue(verifyConsumerClosure(BREAD_CRUMB, consumer), "consumer never closed.");
+            assertTrue(verifySessionClosure(BREAD_CRUMB, session), "session never closed.");
 
             // Try closing consumer and session explicitly, should effectively no-op in client.
             // The test peer will throw during close if it sends anything unexpected.

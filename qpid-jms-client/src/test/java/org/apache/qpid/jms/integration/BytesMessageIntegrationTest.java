@@ -19,10 +19,10 @@
 package org.apache.qpid.jms.integration;
 
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -59,12 +59,14 @@ import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedDataMatcher;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.Symbol;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 public class BytesMessageIntegrationTest extends QpidJmsTestCase {
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendBasicBytesMessageWithContent() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -102,27 +104,32 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceiveBytesMessageUsingDataSectionWithContentTypeOctectStream() throws Exception {
         doReceiveBasicBytesMessageUsingDataSectionTestImpl(AmqpMessageSupport.OCTET_STREAM_CONTENT_TYPE, true);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceiveBytesMessageUsingDataSectionWithContentTypeOctectStreamNoTypeAnnotation() throws Exception {
         doReceiveBasicBytesMessageUsingDataSectionTestImpl(AmqpMessageSupport.OCTET_STREAM_CONTENT_TYPE, false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceiveBasicBytesMessageUsingDataSectionWithContentTypeEmptyNoTypeAnnotation() throws Exception {
         doReceiveBasicBytesMessageUsingDataSectionTestImpl(Symbol.valueOf(""), false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceiveBasicBytesMessageUsingDataSectionWithContentTypeUnknownNoTypeAnnotation() throws Exception {
         doReceiveBasicBytesMessageUsingDataSectionTestImpl(Symbol.valueOf("type/unknown"), false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceiveBasicBytesMessageUsingDataSectionWithContentTypeNotSetNoTypeAnnotation() throws Exception {
         doReceiveBasicBytesMessageUsingDataSectionTestImpl(null, false);
     }
@@ -182,7 +189,8 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceiveBytesMessageAndResendAfterResetAndPartialRead() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -241,26 +249,26 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
             testPeer.waitForAllHandlersToComplete(3000);
 
             // verify the content is as expected
-            assertNotNull("Message was not received", receivedMessage);
-            assertTrue("Message was not a BytesMessage", receivedMessage instanceof BytesMessage);
+            assertNotNull(receivedMessage, "Message was not received");
+            assertTrue(receivedMessage instanceof BytesMessage, "Message was not a BytesMessage");
             BytesMessage receivedBytesMessage = (BytesMessage) receivedMessage;
 
-            assertEquals("Unexpected boolean value", myBool, receivedBytesMessage.readBoolean());
-            assertEquals("Unexpected byte value", myByte, receivedBytesMessage.readByte());
+            assertEquals(myBool, receivedBytesMessage.readBoolean(), "Unexpected boolean value");
+            assertEquals(myByte, receivedBytesMessage.readByte(), "Unexpected byte value");
             byte[] readBytes = new byte[myBytes.length];
-            assertEquals("Did not read the expected number of bytes", myBytes.length, receivedBytesMessage.readBytes(readBytes));
-            assertTrue("Read bytes were not as expected: " + Arrays.toString(readBytes), Arrays.equals(myBytes, readBytes));
-            assertEquals("Unexpected char value", myChar, receivedBytesMessage.readChar());
-            assertEquals("Unexpected double value", myDouble, receivedBytesMessage.readDouble(), 0.0);
-            assertEquals("Unexpected float value", myFloat, receivedBytesMessage.readFloat(), 0.0);
-            assertEquals("Unexpected int value", myInt, receivedBytesMessage.readInt());
-            assertEquals("Unexpected long value", myLong, receivedBytesMessage.readLong());
-            assertEquals("Unexpected short value", myShort, receivedBytesMessage.readShort());
-            assertEquals("Unexpected UTF value", myUTF, receivedBytesMessage.readUTF());
+            assertEquals(myBytes.length, receivedBytesMessage.readBytes(readBytes), "Did not read the expected number of bytes");
+            assertTrue(Arrays.equals(myBytes, readBytes), "Read bytes were not as expected: " + Arrays.toString(readBytes));
+            assertEquals(myChar, receivedBytesMessage.readChar(), "Unexpected char value");
+            assertEquals(myDouble, receivedBytesMessage.readDouble(), 0.0, "Unexpected double value");
+            assertEquals(myFloat, receivedBytesMessage.readFloat(), 0.0, "Unexpected float value");
+            assertEquals(myInt, receivedBytesMessage.readInt(), "Unexpected int value");
+            assertEquals(myLong, receivedBytesMessage.readLong(), "Unexpected long value");
+            assertEquals(myShort, receivedBytesMessage.readShort(), "Unexpected short value");
+            assertEquals(myUTF, receivedBytesMessage.readUTF(), "Unexpected UTF value");
 
             // reset and read the first item, leaving message marker in the middle of its content
             receivedBytesMessage.reset();
-            assertEquals("Unexpected boolean value after reset", myBool, receivedBytesMessage.readBoolean());
+            assertEquals(myBool, receivedBytesMessage.readBoolean(), "Unexpected boolean value after reset");
 
             // Send the received message back to the test peer and have it check the result is as expected
             testPeer.expectSenderAttach();
@@ -286,7 +294,8 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testGetBodyBytesMessageFailsWhenWrongTypeRequested() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -357,7 +366,8 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceiveBytesMessageWithAmqpValueAndResendResultsInData() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -412,26 +422,26 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
             testPeer.waitForAllHandlersToComplete(3000);
 
             // verify the content is as expected
-            assertNotNull("Message was not received", receivedMessage);
-            assertTrue("Message was not a BytesMessage", receivedMessage instanceof BytesMessage);
+            assertNotNull(receivedMessage, "Message was not received");
+            assertTrue(receivedMessage instanceof BytesMessage, "Message was not a BytesMessage");
             BytesMessage receivedBytesMessage = (BytesMessage) receivedMessage;
 
-            assertEquals("Unexpected boolean value", myBool, receivedBytesMessage.readBoolean());
-            assertEquals("Unexpected byte value", myByte, receivedBytesMessage.readByte());
+            assertEquals(myBool, receivedBytesMessage.readBoolean(), "Unexpected boolean value");
+            assertEquals(myByte, receivedBytesMessage.readByte(), "Unexpected byte value");
             byte[] readBytes = new byte[myBytes.length];
-            assertEquals("Did not read the expected number of bytes", myBytes.length, receivedBytesMessage.readBytes(readBytes));
-            assertTrue("Read bytes were not as expected: " + Arrays.toString(readBytes), Arrays.equals(myBytes, readBytes));
-            assertEquals("Unexpected char value", myChar, receivedBytesMessage.readChar());
-            assertEquals("Unexpected double value", myDouble, receivedBytesMessage.readDouble(), 0.0);
-            assertEquals("Unexpected float value", myFloat, receivedBytesMessage.readFloat(), 0.0);
-            assertEquals("Unexpected int value", myInt, receivedBytesMessage.readInt());
-            assertEquals("Unexpected long value", myLong, receivedBytesMessage.readLong());
-            assertEquals("Unexpected short value", myShort, receivedBytesMessage.readShort());
-            assertEquals("Unexpected UTF value", myUTF, receivedBytesMessage.readUTF());
+            assertEquals(myBytes.length, receivedBytesMessage.readBytes(readBytes), "Did not read the expected number of bytes");
+            assertTrue(Arrays.equals(myBytes, readBytes), "Read bytes were not as expected: " + Arrays.toString(readBytes));
+            assertEquals(myChar, receivedBytesMessage.readChar(), "Unexpected char value");
+            assertEquals(myDouble, receivedBytesMessage.readDouble(), 0.0, "Unexpected double value");
+            assertEquals(myFloat, receivedBytesMessage.readFloat(), 0.0, "Unexpected float value");
+            assertEquals(myInt, receivedBytesMessage.readInt(), "Unexpected int value");
+            assertEquals(myLong, receivedBytesMessage.readLong(), "Unexpected long value");
+            assertEquals(myShort, receivedBytesMessage.readShort(), "Unexpected short value");
+            assertEquals(myUTF, receivedBytesMessage.readUTF(), "Unexpected UTF value");
 
             // reset and read the first item, leaving message marker in the middle of its content
             receivedBytesMessage.reset();
-            assertEquals("Unexpected boolean value after reset", myBool, receivedBytesMessage.readBoolean());
+            assertEquals(myBool, receivedBytesMessage.readBoolean(), "Unexpected boolean value after reset");
 
             // Send the received message back to the test peer and have it check the result is as expected
             testPeer.expectSenderAttach();
@@ -458,7 +468,8 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAsyncSendDoesNotMarksBytesMessageReadOnly() throws Exception {
         try(TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
@@ -566,7 +577,8 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAsyncCompletionSendMarksBytesMessageReadOnly() throws Exception {
         try(TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);

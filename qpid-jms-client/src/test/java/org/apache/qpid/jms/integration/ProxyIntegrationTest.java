@@ -19,10 +19,10 @@
 package org.apache.qpid.jms.integration;
 
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -54,11 +54,9 @@ import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.transports.TransportOptions;
 import org.apache.qpid.jms.transports.TransportSupport;
 import org.apache.qpid.jms.transports.netty.NettySimpleAmqpServer;
-import org.apache.qpid.jms.util.QpidJMSTestRunner;
-import org.apache.qpid.jms.util.Repeat;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,14 +64,14 @@ import io.netty.handler.proxy.HttpProxyHandler;
 import io.netty.handler.proxy.ProxyHandler;
 import io.netty.handler.proxy.Socks5ProxyHandler;
 
-@RunWith(QpidJMSTestRunner.class)
 public class ProxyIntegrationTest extends QpidJmsTestCase {
     private static final Logger LOG = LoggerFactory.getLogger(ProxyIntegrationTest.class);
     private static final String BROKER_PKCS12_KEYSTORE = "src/test/resources/broker-pkcs12.keystore";
     private static final String CLIENT_JKS_TRUSTSTORE = "src/test/resources/client-jks.truststore";
     private static final String PASSWORD = "password";
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateConnectionViaSocksProxy() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();
              TestProxy testProxy = new TestProxy(ProxyType.SOCKS5)) {
@@ -91,11 +89,12 @@ public class ProxyIntegrationTest extends QpidJmsTestCase {
             connection.close();
 
             assertEquals(1, testProxy.getSuccessCount());
-            assertEquals("Unexpected handler supplier usage count", 1, supplierUsageCount.get());
+            assertEquals(1, supplierUsageCount.get(), "Unexpected handler supplier usage count");
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateSecureConnectionViaSocksProxy() throws Exception {
         TransportOptions sslOptions = new TransportOptions();
         sslOptions.setKeyStoreLocation(BROKER_PKCS12_KEYSTORE);
@@ -124,12 +123,12 @@ public class ProxyIntegrationTest extends QpidJmsTestCase {
             connection.close();
 
             assertEquals(1, testProxy.getSuccessCount());
-            assertEquals("Unexpected handler supplier usage count", 1, supplierUsageCount.get());
+            assertEquals(1, supplierUsageCount.get(), "Unexpected handler supplier usage count");
         }
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailoverCreateConsumerAfterConnectionDropsViaSocksProxy() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer finalPeer = new TestAmqpPeer();
@@ -182,8 +181,8 @@ public class ProxyIntegrationTest extends QpidJmsTestCase {
             });
             connection.start();
 
-            assertTrue("Should connect to original peer", originalConnected.await(5, TimeUnit.SECONDS));
-            assertEquals("Unexpected handler supplier usage count", 1, supplierUsageCount.get());
+            assertTrue(originalConnected.await(5, TimeUnit.SECONDS), "Should connect to original peer");
+            assertEquals(1, supplierUsageCount.get(), "Unexpected handler supplier usage count");
 
             // --- Post Failover Expectations of FinalPeer --- //
 
@@ -204,7 +203,7 @@ public class ProxyIntegrationTest extends QpidJmsTestCase {
             assertNull(consumer.receive(500));
             LOG.info("Receive returned");
 
-            assertTrue("Should connect to final peer", finalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(finalConnected.await(5, TimeUnit.SECONDS), "Should connect to final peer");
 
             LOG.info("Closing consumer");
             consumer.close();
@@ -216,16 +215,18 @@ public class ProxyIntegrationTest extends QpidJmsTestCase {
 
             // connection to originalPeer and finalPeer
             assertEquals(2, testProxy.getSuccessCount());
-            assertEquals("Unexpected handler supplier usage count", 2, supplierUsageCount.get());
+            assertEquals(2, supplierUsageCount.get(), "Unexpected handler supplier usage count");
         }
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testCreateWebSocketConnectionViaHttpProxyAndStart() throws Exception {
         doTestCreateWebSocketConnectionViaHttpProxyAndStart(false);
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testCreateSecureWebSocketConnectionViaHttpProxyAndStart() throws Exception {
         doTestCreateWebSocketConnectionViaHttpProxyAndStart(true);
     }
@@ -274,16 +275,18 @@ public class ProxyIntegrationTest extends QpidJmsTestCase {
             connection.close();
 
             assertEquals(1, testProxy.getSuccessCount());
-            assertTrue("Client did not connect to test server through the proxy.", connectedThroughProxy.get());
+            assertTrue(connectedThroughProxy.get(), "Client did not connect to test server through the proxy.");
         }
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testCreateWebSocketConnectionViaSocksProxyAndStart() throws Exception {
         doTestCreateWebSocketConnectionViaSocksProxyAndStart(false);
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testCreateSecureWebSocketConnectionViaSocksProxyAndStart() throws Exception {
         doTestCreateWebSocketConnectionViaSocksProxyAndStart(true);
     }
@@ -332,7 +335,7 @@ public class ProxyIntegrationTest extends QpidJmsTestCase {
             connection.close();
 
             assertEquals(1, testProxy.getSuccessCount());
-            assertTrue("Client did not connect to test server through the proxy.", connectedThroughProxy.get());
+            assertTrue(connectedThroughProxy.get(), "Client did not connect to test server through the proxy.");
         }
     }
 

@@ -29,8 +29,9 @@ import org.apache.qpid.jms.provider.mock.MockProviderFactory;
 import org.apache.qpid.jms.provider.mock.MockProviderListener;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.util.IdGenerator;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInfo;
 
 /**
  * Base for tests that require a JmsConnection that is created using a
@@ -79,15 +80,15 @@ public class JmsConnectionTestSupport extends QpidJmsTestCase {
     }
 
     @Override
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
+        super.setUp(testInfo);
         connectionInfo = new JmsConnectionInfo(new JmsConnectionId("ID:JCTS(" + CONN_ID_SUFFIX.incrementAndGet() + "):" + getClass().getName()));
         connectionInfo.setClientId(clientIdGenerator.generateId(), false);
     }
 
     @Override
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         super.tearDown();
         if (connection != null) {

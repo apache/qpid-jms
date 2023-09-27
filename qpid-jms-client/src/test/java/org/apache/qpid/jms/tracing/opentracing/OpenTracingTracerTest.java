@@ -27,11 +27,11 @@ import static org.apache.qpid.jms.tracing.opentracing.OpenTracingTracer.RECEIVE_
 import static org.apache.qpid.jms.tracing.opentracing.OpenTracingTracer.SEND_SPAN_CONTEXT_KEY;
 import static org.apache.qpid.jms.tracing.opentracing.OpenTracingTracer.SEND_SPAN_NAME;
 import static org.apache.qpid.jms.tracing.opentracing.OpenTracingTracer.STATE;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashMap;
 import java.util.List;
@@ -41,9 +41,9 @@ import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.tracing.JmsTracer;
 import org.apache.qpid.jms.tracing.JmsTracer.DeliveryOutcome;
 import org.apache.qpid.jms.tracing.TraceableMessage;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mockito;
@@ -70,12 +70,12 @@ public class OpenTracingTracerTest extends QpidJmsTestCase {
     private ArgumentCaptor<Map<String, String>> annotationMapCaptor;
     private AutoCloseable closable;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         closable = MockitoAnnotations.openMocks(this);
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         closable.close();
     }
@@ -114,7 +114,7 @@ public class OpenTracingTracerTest extends QpidJmsTestCase {
         // Start send operation
         jmsTracer.initSend(message, sendDestination);
 
-        assertNull("Did not expect active span to be present", mockTracer.activeSpan());
+        assertNull(mockTracer.activeSpan(), "Did not expect active span to be present");
 
         ArgumentCaptor<Span> sendSpanCapture = ArgumentCaptor.forClass(Span.class);
         Mockito.verify(message).setTracingContext(Mockito.eq(SEND_SPAN_CONTEXT_KEY), sendSpanCapture.capture());
@@ -122,18 +122,18 @@ public class OpenTracingTracerTest extends QpidJmsTestCase {
         Mockito.verifyNoMoreInteractions(message);
 
         Span sendSpan = sendSpanCapture.getValue();
-        assertNotNull("expected a span from send operation", sendSpan);
+        assertNotNull(sendSpan, "expected a span from send operation");
         Mockito.when(message.getTracingContext(SEND_SPAN_CONTEXT_KEY)).thenReturn(sendSpan);
-        assertEquals("Unexpected span class", MockSpan.class, sendSpan.getClass());
+        assertEquals(MockSpan.class, sendSpan.getClass(), "Unexpected span class");
         MockSpan sendMockSpan = (MockSpan) sendSpan;
 
-        assertEquals("Unexpected span operation name", SEND_SPAN_NAME, sendMockSpan.operationName());
+        assertEquals(SEND_SPAN_NAME, sendMockSpan.operationName(), "Unexpected span operation name");
 
         Map<String, String> annotationValue = annotationMapCaptor.getValue();
-        assertNotNull("expected an annotation from the send operation", annotationValue);
+        assertNotNull(annotationValue, "expected an annotation from the send operation");
         Mockito.when(message.getTracingAnnotation(ANNOTATION_KEY)).thenReturn(annotationValue);
 
-        assertTrue("Expected no finished spans", mockTracer.finishedSpans().isEmpty());
+        assertTrue(mockTracer.finishedSpans().isEmpty(), "Expected no finished spans");
 
         // Finish the send operation
         jmsTracer.completeSend(message, sendOutcomeDescription);
@@ -142,21 +142,21 @@ public class OpenTracingTracerTest extends QpidJmsTestCase {
         Mockito.verifyNoMoreInteractions(message);
 
         List<MockSpan> finishedSpans = mockTracer.finishedSpans();
-        assertEquals("Expected 1 finished span: " + finishedSpans, 1, finishedSpans.size());
-        assertEquals("Unexpected finished span", sendSpan, finishedSpans.get(0));
+        assertEquals(1, finishedSpans.size(), "Expected 1 finished span: " + finishedSpans);
+        assertEquals(sendSpan, finishedSpans.get(0), "Unexpected finished span");
 
         // Verify log set on the completed span
         List<LogEntry> entries = sendMockSpan.logEntries();
-        assertEquals("Expected 1 log entry: " + entries, 1, entries.size());
+        assertEquals(1, entries.size(), "Expected 1 log entry: " + entries);
 
         Map<String, ?> entryFields = entries.get(0).fields();
-        assertFalse("Expected some log entry fields", entryFields.isEmpty());
+        assertFalse(entryFields.isEmpty(), "Expected some log entry fields");
         assertEquals(sendOutcomeDescription, entryFields.get(STATE));
         assertEquals(DELIVERY_SETTLED, entryFields.get(Fields.EVENT));
 
         // Verify tags set on the span
         Map<String, Object> spanTags = sendMockSpan.tags();
-        assertFalse("Expected some tags", spanTags.isEmpty());
+        assertFalse(spanTags.isEmpty(), "Expected some tags");
         assertEquals(Tags.SPAN_KIND_PRODUCER, spanTags.get(Tags.SPAN_KIND.getKey()));
         assertEquals(sendDestination, spanTags.get(Tags.MESSAGE_BUS_DESTINATION.getKey()));
         assertEquals(COMPONENT, spanTags.get(Tags.COMPONENT.getKey()));
@@ -182,7 +182,7 @@ public class OpenTracingTracerTest extends QpidJmsTestCase {
         Mockito.verifyNoMoreInteractions(message);
 
         Span sendSpan = sendSpanCapture.getValue();
-        assertNotNull("expected a span from send operation", sendSpan);
+        assertNotNull(sendSpan, "expected a span from send operation");
         Mockito.when(message.getTracingContext(SEND_SPAN_CONTEXT_KEY)).thenReturn(sendSpan);
 
         // Finish the send operation
@@ -205,11 +205,11 @@ public class OpenTracingTracerTest extends QpidJmsTestCase {
         MockSpan sendSpan = mockTracer.buildSpan(SEND_SPAN_NAME).start();
         mockTracer.inject(sendSpan.context(), Format.Builtin.TEXT_MAP, new TextMapAdapter(injected));
 
-        assertFalse("Expected inject to add values", injected.isEmpty());
+        assertFalse(injected.isEmpty(), "Expected inject to add values");
 
         Mockito.when(message.getTracingAnnotation(ANNOTATION_KEY)).thenReturn(injected);
 
-        assertTrue("Expected no finished spans", mockTracer.finishedSpans().isEmpty());
+        assertTrue(mockTracer.finishedSpans().isEmpty(), "Expected no finished spans");
 
         // Do the receive operation
         jmsTracer.syncReceive(message, consumerDestination, DeliveryOutcome.DELIVERED);
@@ -219,30 +219,30 @@ public class OpenTracingTracerTest extends QpidJmsTestCase {
         Mockito.verify(message).setTracingContext(Mockito.eq(ARRIVING_SPAN_CTX_CONTEXT_KEY), sendSpanContextCapture.capture());
 
         SpanContext sendContext = sendSpanContextCapture.getValue();
-        assertNotNull("expected a span context from extract operation", sendContext);
-        assertEquals("Unexpected context class", MockContext.class, sendContext.getClass());
-        assertEquals("Extracted context spanId did not match original", sendSpan.context().spanId(), ((MockContext) sendContext).spanId());
+        assertNotNull(sendContext, "expected a span context from extract operation");
+        assertEquals(MockContext.class, sendContext.getClass(), "Unexpected context class");
+        assertEquals(sendSpan.context().spanId(), ((MockContext) sendContext).spanId(), "Extracted context spanId did not match original");
 
         ArgumentCaptor<Span> deliverySpanCapture = ArgumentCaptor.forClass(Span.class);
         Mockito.verify(message).setTracingContext(Mockito.eq(DELIVERY_SPAN_CONTEXT_KEY), deliverySpanCapture.capture());
         Mockito.verifyNoMoreInteractions(message);
 
         Span deliverySpan = deliverySpanCapture.getValue();
-        assertNotNull("expected a span from receive operation", deliverySpan);
-        assertEquals("Unexpected span class", MockSpan.class, deliverySpan.getClass());
+        assertNotNull(deliverySpan, "expected a span from receive operation");
+        assertEquals(MockSpan.class, deliverySpan.getClass(), "Unexpected span class");
         MockSpan deliveryMockSpan = (MockSpan) deliverySpan;
 
-        assertEquals("Unexpected span operation name", RECEIVE_SPAN_NAME, deliveryMockSpan.operationName());
+        assertEquals(RECEIVE_SPAN_NAME, deliveryMockSpan.operationName(), "Unexpected span operation name");
 
         List<MockSpan> finishedSpans = mockTracer.finishedSpans();
-        assertEquals("Expected 1 finished span: " + finishedSpans, 1, finishedSpans.size());
-        assertEquals("Unexpected finished span", deliverySpan, finishedSpans.get(0));
+        assertEquals(1, finishedSpans.size(), "Expected 1 finished span: " + finishedSpans);
+        assertEquals(deliverySpan, finishedSpans.get(0), "Unexpected finished span");
 
-        assertEquals("Expected span to be child of 'send' span", sendSpan.context().spanId(), deliveryMockSpan.parentId());
+        assertEquals(sendSpan.context().spanId(), deliveryMockSpan.parentId(), "Expected span to be child of 'send' span");
 
         // Verify tags set on the span
         Map<String, Object> spanTags = deliveryMockSpan.tags();
-        assertFalse("Expected some tags", spanTags.isEmpty());
+        assertFalse(spanTags.isEmpty(), "Expected some tags");
         assertEquals(Tags.SPAN_KIND_CONSUMER, spanTags.get(Tags.SPAN_KIND.getKey()));
         assertEquals(consumerDestination, spanTags.get(Tags.MESSAGE_BUS_DESTINATION.getKey()));
         assertEquals(COMPONENT, spanTags.get(Tags.COMPONENT.getKey()));
@@ -258,7 +258,7 @@ public class OpenTracingTracerTest extends QpidJmsTestCase {
         TraceableMessage message = Mockito.mock(TraceableMessage.class);
         Mockito.when(message.getTracingAnnotation(ANNOTATION_KEY)).thenReturn(null);
 
-        assertTrue("Expected no finished spans", mockTracer.finishedSpans().isEmpty());
+        assertTrue(mockTracer.finishedSpans().isEmpty(), "Expected no finished spans");
 
         // Do the receive operation, verify behaviour after extract yields no context.
         jmsTracer.syncReceive(message, consumerDestination, DeliveryOutcome.DELIVERED);
@@ -269,21 +269,21 @@ public class OpenTracingTracerTest extends QpidJmsTestCase {
         Mockito.verifyNoMoreInteractions(message);
 
         Span deliverySpan = deliverySpanCapture.getValue();
-        assertNotNull("expected a span from receive operation", deliverySpan);
-        assertEquals("Unexpected span class", MockSpan.class, deliverySpan.getClass());
+        assertNotNull(deliverySpan, "expected a span from receive operation");
+        assertEquals(MockSpan.class, deliverySpan.getClass(), "Unexpected span class");
         MockSpan deliveryMockSpan = (MockSpan) deliverySpan;
 
-        assertEquals("Unexpected span operation name", RECEIVE_SPAN_NAME, deliveryMockSpan.operationName());
+        assertEquals(RECEIVE_SPAN_NAME, deliveryMockSpan.operationName(), "Unexpected span operation name");
 
         List<MockSpan> finishedSpans = mockTracer.finishedSpans();
-        assertEquals("Expected 1 finished span: " + finishedSpans, 1, finishedSpans.size());
-        assertEquals("Unexpected finished span", deliverySpan, finishedSpans.get(0));
+        assertEquals(1, finishedSpans.size(), "Expected 1 finished span: " + finishedSpans);
+        assertEquals(deliverySpan, finishedSpans.get(0), "Unexpected finished span");
 
-        assertEquals("Expected span to have no parent span", 0, deliveryMockSpan.parentId());
+        assertEquals(0, deliveryMockSpan.parentId(), "Expected span to have no parent span");
 
         // Verify tags set on the span
         Map<String, Object> spanTags = deliveryMockSpan.tags();
-        assertFalse("Expected some tags", spanTags.isEmpty());
+        assertFalse(spanTags.isEmpty(), "Expected some tags");
         assertEquals(Tags.SPAN_KIND_CONSUMER, spanTags.get(Tags.SPAN_KIND.getKey()));
         assertEquals(consumerDestination, spanTags.get(Tags.MESSAGE_BUS_DESTINATION.getKey()));
         assertEquals(COMPONENT, spanTags.get(Tags.COMPONENT.getKey()));
@@ -302,11 +302,11 @@ public class OpenTracingTracerTest extends QpidJmsTestCase {
         MockSpan sendSpan = mockTracer.buildSpan(SEND_SPAN_NAME).start();
         mockTracer.inject(sendSpan.context(), Format.Builtin.TEXT_MAP, new TextMapAdapter(injected));
 
-        assertFalse("Expected inject to add values", injected.isEmpty());
+        assertFalse(injected.isEmpty(), "Expected inject to add values");
 
         Mockito.when(message.getTracingAnnotation(ANNOTATION_KEY)).thenReturn(injected);
 
-        assertTrue("Expected no finished spans", mockTracer.finishedSpans().isEmpty());
+        assertTrue(mockTracer.finishedSpans().isEmpty(), "Expected no finished spans");
 
         // Do the onMessage init operation
         jmsTracer.asyncDeliveryInit(message, consumerDestination);
@@ -316,11 +316,11 @@ public class OpenTracingTracerTest extends QpidJmsTestCase {
         Mockito.verify(message).setTracingContext(Mockito.eq(ARRIVING_SPAN_CTX_CONTEXT_KEY), sendSpanContextCapture.capture());
 
         SpanContext sendContext = sendSpanContextCapture.getValue();
-        assertNotNull("expected a span context from extract operation", sendContext);
-        assertEquals("Unexpected context class", MockContext.class, sendContext.getClass());
-        assertEquals("Extracted context did not match original", sendSpan.context().spanId(), ((MockContext) sendContext).spanId());
+        assertNotNull(sendContext, "expected a span context from extract operation");
+        assertEquals(MockContext.class, sendContext.getClass(), "Unexpected context class");
+        assertEquals(sendSpan.context().spanId(), ((MockContext) sendContext).spanId(), "Extracted context did not match original");
 
-        assertTrue("Expected no finished spans", mockTracer.finishedSpans().isEmpty());
+        assertTrue(mockTracer.finishedSpans().isEmpty(), "Expected no finished spans");
 
         ArgumentCaptor<Span> deliverySpanCapture = ArgumentCaptor.forClass(Span.class);
         ArgumentCaptor<Scope> deliveryScopeCapture = ArgumentCaptor.forClass(Scope.class);
@@ -328,23 +328,23 @@ public class OpenTracingTracerTest extends QpidJmsTestCase {
         Mockito.verify(message).setTracingContext(Mockito.eq(ONMESSAGE_SCOPE_CONTEXT_KEY), deliveryScopeCapture.capture());
         Mockito.verifyNoMoreInteractions(message);
 
-        assertNotNull("Expected active span to be present", mockTracer.activeSpan());
+        assertNotNull(mockTracer.activeSpan(), "Expected active span to be present");
 
         Span deliverySpan = deliverySpanCapture.getValue();
-        assertNotNull("expected a span from onMessage operation", deliverySpan);
-        assertEquals("Unexpected span class", MockSpan.class, deliverySpan.getClass());
+        assertNotNull(deliverySpan, "expected a span from onMessage operation");
+        assertEquals(MockSpan.class, deliverySpan.getClass(), "Unexpected span class");
         MockSpan deliveryMockSpan = (MockSpan) deliverySpan;
 
-        assertEquals("Unexpected span operation name", ONMESSAGE_SPAN_NAME, deliveryMockSpan.operationName());
+        assertEquals(ONMESSAGE_SPAN_NAME, deliveryMockSpan.operationName(), "Unexpected span operation name");
 
         Scope deliveryScope = deliveryScopeCapture.getValue();
-        assertNotNull("expected a scope from onMessage operation", deliveryScope);
-        assertEquals("Unexpected scope class", ThreadLocalScope.class, deliveryScope.getClass());
+        assertNotNull(deliveryScope, "expected a scope from onMessage operation");
+        assertEquals(ThreadLocalScope.class, deliveryScope.getClass(), "Unexpected scope class");
 
         Mockito.when(message.getTracingContext(DELIVERY_SPAN_CONTEXT_KEY)).thenReturn(deliverySpan);
         Mockito.when(message.removeTracingContext(ONMESSAGE_SCOPE_CONTEXT_KEY)).thenReturn(deliveryScope);
 
-        assertTrue("Expected no finished spans", mockTracer.finishedSpans().isEmpty());
+        assertTrue(mockTracer.finishedSpans().isEmpty(), "Expected no finished spans");
 
         // Do the onMessage completion operation
         jmsTracer.asyncDeliveryComplete(message, DeliveryOutcome.DELIVERED, null);
@@ -354,14 +354,14 @@ public class OpenTracingTracerTest extends QpidJmsTestCase {
         Mockito.verifyNoMoreInteractions(message);
 
         List<MockSpan> finishedSpans = mockTracer.finishedSpans();
-        assertEquals("Expected 1 finished span: " + finishedSpans, 1, finishedSpans.size());
-        assertEquals("Unexpected finished span", deliverySpan, finishedSpans.get(0));
+        assertEquals(1, finishedSpans.size(), "Expected 1 finished span: " + finishedSpans);
+        assertEquals(deliverySpan, finishedSpans.get(0), "Unexpected finished span");
 
-        assertEquals("Expected span to be child of 'send' span", sendSpan.context().spanId(), deliveryMockSpan.parentId());
+        assertEquals(sendSpan.context().spanId(), deliveryMockSpan.parentId(), "Expected span to be child of 'send' span");
 
         // Verify tags set on the span
         Map<String, Object> spanTags = deliveryMockSpan.tags();
-        assertFalse("Expected some tags", spanTags.isEmpty());
+        assertFalse(spanTags.isEmpty(), "Expected some tags");
         assertEquals(Tags.SPAN_KIND_CONSUMER, spanTags.get(Tags.SPAN_KIND.getKey()));
         assertEquals(consumerDestination, spanTags.get(Tags.MESSAGE_BUS_DESTINATION.getKey()));
         assertEquals(COMPONENT, spanTags.get(Tags.COMPONENT.getKey()));
@@ -406,8 +406,8 @@ public class OpenTracingTracerTest extends QpidJmsTestCase {
 
         Mockito.when(message.getTracingAnnotation(ANNOTATION_KEY)).thenReturn(null);
 
-        assertTrue("Expected no finished spans", mockTracer.finishedSpans().isEmpty());
-        assertNull("Did not expect active span to be present", mockTracer.activeSpan());
+        assertTrue(mockTracer.finishedSpans().isEmpty(), "Expected no finished spans");
+        assertNull(mockTracer.activeSpan(), "Did not expect active span to be present");
 
         // Do the onMessage init operation, verify behaviour after extract yields no context.
         jmsTracer.asyncDeliveryInit(message, consumerDestination);
@@ -419,23 +419,23 @@ public class OpenTracingTracerTest extends QpidJmsTestCase {
         Mockito.verify(message).setTracingContext(Mockito.eq(ONMESSAGE_SCOPE_CONTEXT_KEY), deliveryScopeCapture.capture());
         Mockito.verifyNoMoreInteractions(message);
 
-        assertNotNull("Expected active span to be present", mockTracer.activeSpan());
+        assertNotNull(mockTracer.activeSpan(), "Expected active span to be present");
 
         Span deliverySpan = deliverySpanCapture.getValue();
-        assertNotNull("expected a span from onMessage operation", deliverySpan);
-        assertEquals("Unexpected span class", MockSpan.class, deliverySpan.getClass());
+        assertNotNull(deliverySpan, "expected a span from onMessage operation");
+        assertEquals(MockSpan.class, deliverySpan.getClass(), "Unexpected span class");
         MockSpan deliveryMockSpan = (MockSpan) deliverySpan;
 
-        assertEquals("Unexpected span operation name", ONMESSAGE_SPAN_NAME, deliveryMockSpan.operationName());
+        assertEquals(ONMESSAGE_SPAN_NAME, deliveryMockSpan.operationName(), "Unexpected span operation name");
 
         Scope deliveryScope = deliveryScopeCapture.getValue();
-        assertNotNull("expected a scope from onMessage operation", deliveryScope);
-        assertEquals("Unexpected scope class", ThreadLocalScope.class, deliveryScope.getClass());
+        assertNotNull(deliveryScope, "expected a scope from onMessage operation");
+        assertEquals(ThreadLocalScope.class, deliveryScope.getClass(), "Unexpected scope class");
 
         Mockito.when(message.getTracingContext(DELIVERY_SPAN_CONTEXT_KEY)).thenReturn(deliverySpan);
         Mockito.when(message.removeTracingContext(ONMESSAGE_SCOPE_CONTEXT_KEY)).thenReturn(deliveryScope);
 
-        assertTrue("Expected no finished spans", mockTracer.finishedSpans().isEmpty());
+        assertTrue(mockTracer.finishedSpans().isEmpty(), "Expected no finished spans");
 
         // Do the onMessage completion operation
         jmsTracer.asyncDeliveryComplete(message, DeliveryOutcome.DELIVERED, null);
@@ -445,14 +445,14 @@ public class OpenTracingTracerTest extends QpidJmsTestCase {
         Mockito.verifyNoMoreInteractions(message);
 
         List<MockSpan> finishedSpans = mockTracer.finishedSpans();
-        assertEquals("Expected 1 finished span: " + finishedSpans, 1, finishedSpans.size());
-        assertEquals("Unexpected finished span", deliverySpan, finishedSpans.get(0));
+        assertEquals(1, finishedSpans.size(), "Expected 1 finished span: " + finishedSpans);
+        assertEquals(deliverySpan, finishedSpans.get(0), "Unexpected finished span");
 
-        assertEquals("Expected span to have no parent span", 0, deliveryMockSpan.parentId());
+        assertEquals(0, deliveryMockSpan.parentId(), "Expected span to have no parent span");
 
         // Verify tags set on the span
         Map<String, Object> spanTags = deliveryMockSpan.tags();
-        assertFalse("Expected some tags", spanTags.isEmpty());
+        assertFalse(spanTags.isEmpty(), "Expected some tags");
         assertEquals(Tags.SPAN_KIND_CONSUMER, spanTags.get(Tags.SPAN_KIND.getKey()));
         assertEquals(consumerDestination, spanTags.get(Tags.MESSAGE_BUS_DESTINATION.getKey()));
         assertEquals(COMPONENT, spanTags.get(Tags.COMPONENT.getKey()));

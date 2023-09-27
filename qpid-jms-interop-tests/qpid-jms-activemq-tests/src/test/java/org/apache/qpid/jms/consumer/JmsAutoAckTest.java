@@ -16,10 +16,10 @@
  */
 package org.apache.qpid.jms.consumer;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -34,7 +34,8 @@ import jakarta.jms.Session;
 import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.apache.qpid.jms.support.Wait;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,45 +43,47 @@ public class JmsAutoAckTest extends AmqpTestSupport {
 
     protected static final Logger LOG = LoggerFactory.getLogger(JmsAutoAckTest.class);
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testAckedMessageAreConsumed() throws Exception {
         connection = createAmqpConnection();
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         MessageConsumer consumer = session.createConsumer(queue);
 
         sendToAmqQueue(1);
 
-        final QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        final QueueViewMBean proxy = getProxyToQueue(testMethodName);
         assertEquals(1, proxy.getQueueSize());
 
-        assertNotNull("Failed to receive any message.", consumer.receive(3000));
+        assertNotNull(consumer.receive(3000), "Failed to receive any message.");
 
-        assertTrue("Queued message not consumed.", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return proxy.getQueueSize() == 0;
             }
-        }));
+        }), "Queued message not consumed.");
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testAckedMessageAreConsumedAsync() throws Exception {
         connection = createAmqpConnection();
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         MessageConsumer consumer = session.createConsumer(queue);
 
         sendToAmqQueue(1);
 
-        final QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        final QueueViewMBean proxy = getProxyToQueue(testMethodName);
         assertEquals(1, proxy.getQueueSize());
 
         consumer.setMessageListener(new MessageListener() {
@@ -91,13 +94,13 @@ public class JmsAutoAckTest extends AmqpTestSupport {
             }
         });
 
-        assertTrue("Queued message not consumed.", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return proxy.getQueueSize() == 0;
             }
-        }));
+        }), "Queued message not consumed.");
     }
 
     /**
@@ -112,13 +115,14 @@ public class JmsAutoAckTest extends AmqpTestSupport {
      *
      * @throws Exception on error during test.
      */
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testRecoverInOnMessage() throws Exception {
         connection = createAmqpConnection();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         MessageConsumer consumer = session.createConsumer(queue);
 
         sendMessages(connection, queue, 3);
@@ -129,8 +133,8 @@ public class JmsAutoAckTest extends AmqpTestSupport {
 
         connection.start();
 
-        assertTrue("Timed out waiting for async listener", latch.await(10, TimeUnit.SECONDS));
-        assertFalse("Test failed in listener, consult logs", listener.getFailed());
+        assertTrue(latch.await(10, TimeUnit.SECONDS), "Timed out waiting for async listener");
+        assertFalse(listener.getFailed(), "Test failed in listener, consult logs");
     }
 
     private static class AutoAckRecoverMsgListener implements MessageListener {

@@ -16,10 +16,10 @@
  */
 package org.apache.qpid.jms.transactions;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import jakarta.jms.Message;
 import jakarta.jms.MessageConsumer;
@@ -30,14 +30,16 @@ import jakarta.jms.TextMessage;
 
 import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.apache.qpid.jms.support.AmqpTestSupport;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Test for messages produced inside a local transaction.
  */
 public class JmsTransactedProducerTest extends AmqpTestSupport {
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testCreateTxSessionAndProducer() throws Exception {
         connection = createAmqpConnection();
         assertNotNull(connection);
@@ -47,19 +49,20 @@ public class JmsTransactedProducerTest extends AmqpTestSupport {
         assertNotNull(session);
         assertTrue(session.getTransacted());
 
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         MessageProducer producer = session.createProducer(queue);
         assertNotNull(producer);
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testTXProducerReusesMessage() throws Exception {
         final int MSG_COUNT = 10;
         connection = createAmqpConnection();
         connection.start();
         Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
         Session nonTxSession = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         MessageConsumer consumer = nonTxSession.createConsumer(queue);
         MessageProducer producer = session.createProducer(queue);
 
@@ -72,19 +75,20 @@ public class JmsTransactedProducerTest extends AmqpTestSupport {
         Message msg = consumer.receive(1000);
         assertNull(msg);
 
-        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        QueueViewMBean proxy = getProxyToQueue(testMethodName);
         session.commit();
         assertEquals(MSG_COUNT, proxy.getQueueSize());
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testTXProducerCommitsAreQueued() throws Exception {
         final int MSG_COUNT = 10;
         connection = createAmqpConnection();
         connection.start();
         Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
         Session nonTxSession = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         MessageConsumer consumer = nonTxSession.createConsumer(queue);
         MessageProducer producer = session.createProducer(queue);
 
@@ -95,25 +99,26 @@ public class JmsTransactedProducerTest extends AmqpTestSupport {
         Message msg = consumer.receive(2000);
         assertNull(msg);
 
-        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        QueueViewMBean proxy = getProxyToQueue(testMethodName);
         session.commit();
         assertEquals(MSG_COUNT, proxy.getQueueSize());
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testTXProducerRollbacksNotQueued() throws Exception {
         final int MSG_COUNT = 10;
         connection = createAmqpConnection();
         connection.start();
         Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         MessageProducer producer = session.createProducer(queue);
 
         for (int i = 0; i < MSG_COUNT; ++i) {
             producer.send(session.createTextMessage());
         }
 
-        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        QueueViewMBean proxy = getProxyToQueue(testMethodName);
         session.rollback();
         assertEquals(0, proxy.getQueueSize());
     }

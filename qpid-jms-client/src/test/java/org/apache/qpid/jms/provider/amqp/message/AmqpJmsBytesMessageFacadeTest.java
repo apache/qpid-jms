@@ -17,13 +17,13 @@
 package org.apache.qpid.jms.provider.amqp.message;
 
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_BYTES_MESSAGE;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,7 +41,7 @@ import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
 import org.apache.qpid.proton.amqp.messaging.Properties;
 import org.apache.qpid.proton.amqp.messaging.Section;
 import org.apache.qpid.proton.message.Message;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import io.netty.buffer.ByteBufInputStream;
@@ -63,7 +63,7 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
 
         MessageAnnotations annotations = amqpBytesMessageFacade.getMessageAnnotations();
 
-        assertNull("MessageAnnotations section was present", annotations);
+        assertNull(annotations, "MessageAnnotations section was present");
 
         assertEquals(JMS_BYTES_MESSAGE, amqpBytesMessageFacade.getJmsMsgType());
     }
@@ -76,14 +76,14 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         assertNotNull(byteArrayInputStream);
 
         // try to read a byte, it should return -1 bytes read, i.e EOS.
-        assertEquals("Expected input stream to be at end but data was returned", END_OF_STREAM, byteArrayInputStream.read(new byte[1]));
+        assertEquals(END_OF_STREAM, byteArrayInputStream.read(new byte[1]), "Expected input stream to be at end but data was returned");
     }
 
     @Test
     public void testGetBodyLengthUsingNewMessage() throws Exception {
         AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createNewBytesMessageFacade();
 
-        assertEquals("Message reports unexpected length", 0, amqpBytesMessageFacade.getBodyLength());
+        assertEquals(0, amqpBytesMessageFacade.getBodyLength(), "Message reports unexpected length");
     }
 
     // ---------- test for normal message operations -------------------------//
@@ -98,7 +98,7 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
 
         amqpBytesMessageFacade.reset();
 
-        assertEquals("Message reports unexpected length", bytes.length, amqpBytesMessageFacade.getBodyLength());
+        assertEquals(bytes.length, amqpBytesMessageFacade.getBodyLength(), "Message reports unexpected length");
     }
 
     @Test
@@ -107,7 +107,7 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
 
         OutputStream os1 = amqpBytesMessageFacade.getOutputStream();
         OutputStream os2 = amqpBytesMessageFacade.getOutputStream();
-        assertSame("Got different output streams", os1, os2);
+        assertSame(os1, os2, "Got different output streams");
     }
 
     @Test
@@ -116,7 +116,7 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
 
         InputStream is1 = amqpBytesMessageFacade.getInputStream();
         InputStream is2 = amqpBytesMessageFacade.getInputStream();
-        assertSame("Got different input streams", is1, is2);
+        assertSame(is1, is2, "Got different input streams");
     }
 
     /**
@@ -183,7 +183,7 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         assertNotNull(properties.getContentType());
 
         String contentType = properties.getContentType().toString();
-        assertNotNull("content type should be set", contentType);
+        assertNotNull(contentType, "content type should be set");
         assertEquals("application/octet-stream", contentType);
     }
 
@@ -224,8 +224,8 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
 
         amqpBytesMessageFacade.clearBody();
 
-        assertTrue("Expected no message content from facade", amqpBytesMessageFacade.getBodyLength() == 0);
-        assertEquals("Expected no data from facade, but got some", END_OF_STREAM, amqpBytesMessageFacade.getInputStream().read(new byte[1]));
+        assertTrue(amqpBytesMessageFacade.getBodyLength() == 0, "Expected no message content from facade");
+        assertEquals(END_OF_STREAM, amqpBytesMessageFacade.getInputStream().read(new byte[1]), "Expected no data from facade, but got some");
 
         assertDataBodyAsExpected(amqpBytesMessageFacade.getBody(), 0);
     }
@@ -243,7 +243,7 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
 
         amqpBytesMessageFacade.clearBody();
 
-        assertEquals("Expected no data from facade, but got some", END_OF_STREAM, amqpBytesMessageFacade.getInputStream().read(new byte[1]));
+        assertEquals(END_OF_STREAM, amqpBytesMessageFacade.getInputStream().read(new byte[1]), "Expected no data from facade, but got some");
 
         assertDataBodyAsExpected(amqpBytesMessageFacade.getBody(), 0);
     }
@@ -301,7 +301,7 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         assertNotNull(byteArrayInputStream);
 
         // try to read a byte, it should return -1 bytes read, i.e EOS.
-        assertEquals("Expected input stream to be at end but data was returned", END_OF_STREAM, byteArrayInputStream.read(new byte[1]));
+        assertEquals(END_OF_STREAM, byteArrayInputStream.read(new byte[1]), "Expected input stream to be at end but data was returned");
     }
 
     @Test
@@ -311,7 +311,7 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         message.setBody(new Data(new Binary(new byte[length])));
         AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createReceivedBytesMessageFacade(createMockAmqpConsumer(), message);
 
-        assertEquals("Message reports unexpected length", length, amqpBytesMessageFacade.getBodyLength());
+        assertEquals(length, amqpBytesMessageFacade.getBodyLength(), "Message reports unexpected length");
     }
 
     @Test
@@ -321,7 +321,7 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         message.setBody(new AmqpValue(new Binary(new byte[length])));
         AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createReceivedBytesMessageFacade(createMockAmqpConsumer(), message);
 
-        assertEquals("Message reports unexpected length", length, amqpBytesMessageFacade.getBodyLength());
+        assertEquals(length, amqpBytesMessageFacade.getBodyLength(), "Message reports unexpected length");
     }
 
     @Test
@@ -330,7 +330,7 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         message.setBody(new AmqpValue(new Binary(new byte[0])));
         AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createReceivedBytesMessageFacade(createMockAmqpConsumer(), message);
 
-        assertEquals("Message reports unexpected length", 0, amqpBytesMessageFacade.getBodyLength());
+        assertEquals(0, amqpBytesMessageFacade.getBodyLength(), "Message reports unexpected length");
     }
 
     @Test
@@ -339,7 +339,7 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         message.setBody(new AmqpValue(null));
         AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createReceivedBytesMessageFacade(createMockAmqpConsumer(), message);
 
-        assertEquals("Message reports unexpected length", 0, amqpBytesMessageFacade.getBodyLength());
+        assertEquals(0, amqpBytesMessageFacade.getBodyLength(), "Message reports unexpected length");
     }
 
     @Test
@@ -358,7 +358,7 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         assertTrue(Arrays.equals(bytes, receivedBytes));
 
         // verify no more bytes remain, i.e EOS
-        assertEquals("Expected input stream to be at end but data was returned", END_OF_STREAM, bytesStream.read(new byte[1]));
+        assertEquals(END_OF_STREAM, bytesStream.read(new byte[1]), "Expected input stream to be at end but data was returned");
     }
 
     @Test
@@ -378,7 +378,7 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         assertTrue(Arrays.equals(bytes, receivedBytes));
 
         // verify no more bytes remain, i.e EOS
-        assertEquals("Expected input stream to be at end but data was returned", END_OF_STREAM, bytesStream.read(new byte[1]));
+        assertEquals(END_OF_STREAM, bytesStream.read(new byte[1]), "Expected input stream to be at end but data was returned");
     }
 
     @Test
@@ -390,8 +390,8 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         InputStream bytesStream = amqpBytesMessageFacade.getInputStream();
         assertNotNull(bytesStream);
 
-        assertEquals("Message reports unexpected length", 0, amqpBytesMessageFacade.getBodyLength());
-        assertEquals("Expected input stream to be at end but data was returned", END_OF_STREAM, bytesStream.read(new byte[1]));
+        assertEquals(0, amqpBytesMessageFacade.getBodyLength(), "Message reports unexpected length");
+        assertEquals(END_OF_STREAM, bytesStream.read(new byte[1]), "Expected input stream to be at end but data was returned");
     }
 
     @Test
@@ -459,18 +459,18 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         // Retrieve the new Binary from the underlying message, check they match
         // (the backing arrays may be different length so not checking arrayEquals)
         Data body = (Data) amqpBytesMessageFacade.getBody();
-        assertEquals("Underlying message data section did not contain the expected bytes", new Binary(replacement), body.getValue());
+        assertEquals(new Binary(replacement), body.getValue(), "Underlying message data section did not contain the expected bytes");
 
-        assertEquals("expected body length to match replacement bytes", replacement.length, amqpBytesMessageFacade.getBodyLength());
+        assertEquals(replacement.length, amqpBytesMessageFacade.getBodyLength(), "expected body length to match replacement bytes");
 
         // retrieve the new bytes via an InputStream, check they match expected
         byte[] receivedBytes = new byte[replacement.length];
         InputStream bytesStream = amqpBytesMessageFacade.getInputStream();
         bytesStream.read(receivedBytes);
-        assertTrue("Retrieved bytes from input steam did not match expected bytes", Arrays.equals(replacement, receivedBytes));
+        assertTrue(Arrays.equals(replacement, receivedBytes), "Retrieved bytes from input steam did not match expected bytes");
 
         // verify no more bytes remain, i.e EOS
-        assertEquals("Expected input stream to be at end but data was returned", END_OF_STREAM, bytesStream.read(new byte[1]));
+        assertEquals(END_OF_STREAM, bytesStream.read(new byte[1]), "Expected input stream to be at end but data was returned");
     }
 
     @Test
@@ -604,11 +604,11 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
     //--------- utility methods ----------
 
     private void assertDataBodyAsExpected(Section body, int length) {
-        assertNotNull("Expected body section to be present", body);
-        assertEquals("Unexpected body section type", Data.class, body.getClass());
+        assertNotNull(body, "Expected body section to be present");
+        assertEquals(Data.class, body.getClass(), "Unexpected body section type");
         Binary value = ((Data) body).getValue();
         assertNotNull(value);
-        assertEquals("Unexpected body length", length, value.getLength());
+        assertEquals(length, value.getLength(), "Unexpected body length");
     }
 
     private InputStream substituteMockInputStream(AmqpJmsBytesMessageFacade bytesMessage) throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {

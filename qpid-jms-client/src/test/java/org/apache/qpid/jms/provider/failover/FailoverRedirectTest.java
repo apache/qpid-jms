@@ -19,7 +19,7 @@ package org.apache.qpid.jms.provider.failover;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.NETWORK_HOST;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.OPEN_HOSTNAME;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.PORT;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -38,7 +38,8 @@ import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.basictypes.ConnectionError;
 import org.apache.qpid.proton.amqp.Symbol;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,7 +52,8 @@ public class FailoverRedirectTest extends QpidJmsTestCase {
 
     private static final Logger LOG = LoggerFactory.getLogger(FailoverRedirectTest.class);
 
-    @Test(timeout = 40000)
+    @Test
+    @Timeout(40)
     public void testFailoverHandlesRedirection() throws Exception {
         try (TestAmqpPeer rejectingPeer = new TestAmqpPeer();
              TestAmqpPeer redirectedPeer = new TestAmqpPeer();) {
@@ -84,7 +86,7 @@ public class FailoverRedirectTest extends QpidJmsTestCase {
             connection.start();
 
             rejectingPeer.waitForAllHandlersToComplete(1000);
-            assertTrue("Should connect to backup peer", connected.await(15, TimeUnit.SECONDS));
+            assertTrue(connected.await(15, TimeUnit.SECONDS), "Should connect to backup peer");
 
             redirectedPeer.expectClose();
             connection.close();
@@ -92,7 +94,8 @@ public class FailoverRedirectTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 40000)
+    @Test
+    @Timeout(40)
     public void testFailoverHandlesRemotelyEndConnectionWithRedirection() throws Exception {
         try (TestAmqpPeer rejectingPeer = new TestAmqpPeer();
              TestAmqpPeer redirectedPeer = new TestAmqpPeer();) {
@@ -140,8 +143,8 @@ public class FailoverRedirectTest extends QpidJmsTestCase {
 
             rejectingPeer.waitForAllHandlersToComplete(1000);
 
-            assertTrue("Should connect to primary peer", connectedToPrimary.await(15, TimeUnit.SECONDS));
-            assertTrue("Should connect to backup peer", connectedToBackup.await(15, TimeUnit.SECONDS));
+            assertTrue(connectedToPrimary.await(15, TimeUnit.SECONDS), "Should connect to primary peer");
+            assertTrue(connectedToBackup.await(15, TimeUnit.SECONDS), "Should connect to backup peer");
 
             redirectedPeer.expectClose();
             connection.close();

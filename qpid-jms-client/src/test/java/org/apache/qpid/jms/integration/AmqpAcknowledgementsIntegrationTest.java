@@ -19,10 +19,10 @@
 package org.apache.qpid.jms.integration;
 
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,7 +50,8 @@ import org.apache.qpid.jms.test.testpeer.matchers.ReleasedMatcher;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 public class AmqpAcknowledgementsIntegrationTest extends QpidJmsTestCase {
 
@@ -60,7 +61,8 @@ public class AmqpAcknowledgementsIntegrationTest extends QpidJmsTestCase {
 
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAcknowledgeFailsAfterSessionIsClosed() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -77,7 +79,7 @@ public class AmqpAcknowledgementsIntegrationTest extends QpidJmsTestCase {
             MessageConsumer messageConsumer = session.createConsumer(queue);
 
             Message receivedMessage = messageConsumer.receive(6000);
-            assertNotNull("Message was not recieved", receivedMessage);
+            assertNotNull(receivedMessage, "Message was not recieved");
 
             testPeer.expectDisposition(true, new ModifiedMatcher().withDeliveryFailed(equalTo(true)), 1, 1);
             testPeer.expectEnd();
@@ -96,42 +98,50 @@ public class AmqpAcknowledgementsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testDefaultAcceptMessages() throws Exception {
         doTestAmqpAcknowledgementTestImpl(SKIP, new AcceptedMatcher(), false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRequestAcceptMessages() throws Exception {
         doTestAmqpAcknowledgementTestImpl(JmsMessageSupport.ACCEPTED, new AcceptedMatcher(), false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRequestRejectMessages() throws Exception {
         doTestAmqpAcknowledgementTestImpl(JmsMessageSupport.REJECTED, new RejectedMatcher(), false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRequestReleaseMessages() throws Exception {
         doTestAmqpAcknowledgementTestImpl(JmsMessageSupport.RELEASED, new ReleasedMatcher(), false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRequestReleaseMessagesClearPropsFirst() throws Exception {
         doTestAmqpAcknowledgementTestImpl(JmsMessageSupport.RELEASED, new ReleasedMatcher(), true);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRequestModifiedFailedMessages() throws Exception {
         doTestAmqpAcknowledgementTestImpl(JmsMessageSupport.MODIFIED_FAILED, new ModifiedMatcher().withDeliveryFailed(equalTo(true)), false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRequestModifiedFailedUndeliverableHereMessages() throws Exception {
         doTestAmqpAcknowledgementTestImpl(JmsMessageSupport.MODIFIED_FAILED_UNDELIVERABLE, new ModifiedMatcher().withDeliveryFailed(equalTo(true)).withUndeliverableHere(equalTo(true)), false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRequestAcknowledgeMessagesWithInvalidDisposition() throws Exception {
         doTestAmqpAcknowledgementTestImpl(INVALID, new AcceptedMatcher(), false);
     }
@@ -158,7 +168,7 @@ public class AmqpAcknowledgementsIntegrationTest extends QpidJmsTestCase {
             Message lastReceivedMessage = null;
             for (int i = 1; i <= msgCount; i++) {
                 lastReceivedMessage = messageConsumer.receive(6000);
-                assertNotNull("Message " + i + " was not recieved", lastReceivedMessage);
+                assertNotNull(lastReceivedMessage, "Message " + i + " was not recieved");
             }
 
             if (disposition != SKIP) {
@@ -188,42 +198,50 @@ public class AmqpAcknowledgementsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testDefaultAcceptMessagesWithMessageListener() throws Exception {
         doTestAmqpAcknowledgementAsyncTestImpl(SKIP, new AcceptedMatcher(), false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRequestAcceptMessagesWithMessageListener() throws Exception {
         doTestAmqpAcknowledgementAsyncTestImpl(JmsMessageSupport.ACCEPTED, new AcceptedMatcher(), false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRequestRejectMessagesWithMessageListener() throws Exception {
         doTestAmqpAcknowledgementAsyncTestImpl(JmsMessageSupport.REJECTED, new RejectedMatcher(), false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRequestReleaseMessagesWithMessageListener() throws Exception {
         doTestAmqpAcknowledgementAsyncTestImpl(JmsMessageSupport.RELEASED, new ReleasedMatcher(), false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRequestReleaseMessagesClearPropsFirstWithMessageListener() throws Exception {
         doTestAmqpAcknowledgementAsyncTestImpl(JmsMessageSupport.RELEASED, new ReleasedMatcher(), true);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRequestModifiedFailedMessagesWithMessageListener() throws Exception {
         doTestAmqpAcknowledgementAsyncTestImpl(JmsMessageSupport.MODIFIED_FAILED, new ModifiedMatcher().withDeliveryFailed(equalTo(true)), false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRequestModifiedFailedUndeliverableHereMessagesWithMessageListener() throws Exception {
         doTestAmqpAcknowledgementAsyncTestImpl(JmsMessageSupport.MODIFIED_FAILED_UNDELIVERABLE, new ModifiedMatcher().withDeliveryFailed(equalTo(true)).withUndeliverableHere(equalTo(true)), false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRequestAcknowledgeMessagesWithInvalidDispositionWithMessageListener() throws Exception {
         doTestAmqpAcknowledgementAsyncTestImpl(INVALID, new AcceptedMatcher(), false);
     }
@@ -258,8 +276,8 @@ public class AmqpAcknowledgementsIntegrationTest extends QpidJmsTestCase {
                 }
             });
 
-            assertTrue("Did not get all messages", receiveCountDown.await(10, TimeUnit.SECONDS));
-            assertNotNull("Message was not received", lastReceivedMessage.get());
+            assertTrue(receiveCountDown.await(10, TimeUnit.SECONDS), "Did not get all messages");
+            assertNotNull(lastReceivedMessage.get(), "Message was not received");
 
             if (disposition != SKIP) {
                 if (clearPropsFirst) {
@@ -287,7 +305,8 @@ public class AmqpAcknowledgementsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAcknowledgeIndividualMessages()  throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -309,10 +328,10 @@ public class AmqpAcknowledgementsIntegrationTest extends QpidJmsTestCase {
             Message lastReceivedMessage = null;
             for (int i = 0; i < msgCount; i++) {
                 lastReceivedMessage = messageConsumer.receive(3000);
-                assertNotNull("Message " + i + " was not received", lastReceivedMessage);
+                assertNotNull(lastReceivedMessage, "Message " + i + " was not received");
                 messages.add(lastReceivedMessage);
 
-                assertEquals("unexpected message number property", i, lastReceivedMessage.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER));
+                assertEquals(i, lastReceivedMessage.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER), "unexpected message number property");
             }
 
             List<Integer> ackTypes = new ArrayList<>();

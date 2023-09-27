@@ -16,14 +16,18 @@
  */
 package org.apache.qpid.jms;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import jakarta.jms.Destination;
 import jakarta.jms.ExceptionListener;
 import jakarta.jms.JMSException;
 import jakarta.jms.Session;
 import jakarta.jms.Topic;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Test Connection methods contracts when state is closed.
@@ -41,63 +45,91 @@ public class JmsConnectionClosedTest extends JmsConnectionTestSupport {
     }
 
     @Override
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
+        super.setUp(testInfo);
         connection = createConnection();
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testGetClientIdFails() throws Exception {
-        connection.getClientID();
-    }
-
-    @Test(timeout=30000, expected=JMSException.class)
-    public void testSetClientIdFails() throws Exception {
-        connection.setClientID("test");
-    }
-
-    @Test(timeout=30000, expected=JMSException.class)
-    public void testGetMetaData() throws Exception {
-        connection.getMetaData();
-    }
-
-    @Test(timeout=30000, expected=JMSException.class)
-    public void testGetExceptionListener() throws Exception {
-        connection.getExceptionListener();
-    }
-
-    @Test(timeout=30000, expected=JMSException.class)
-    public void testSetExceptionListener() throws Exception {
-        connection.setExceptionListener(new ExceptionListener() {
-            @Override
-            public void onException(JMSException exception) {
-            }
+        assertThrows(JMSException.class, () -> {
+            connection.getClientID();
         });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
+    public void testSetClientIdFails() throws Exception {
+        assertThrows(JMSException.class, () -> {
+            connection.setClientID("test");
+        });
+    }
+
+    @Test
+    @Timeout(30)
+    public void testGetMetaData() throws Exception {
+        assertThrows(JMSException.class, () -> {
+            connection.getMetaData();
+        });
+    }
+
+    @Test
+    @Timeout(30)
+    public void testGetExceptionListener() throws Exception {
+        assertThrows(JMSException.class, () -> {
+            connection.getExceptionListener();
+        });
+    }
+
+    @Test
+    @Timeout(30)
+    public void testSetExceptionListener() throws Exception {
+        assertThrows(JMSException.class, () -> {
+            connection.setExceptionListener(new ExceptionListener() {
+                @Override
+                public void onException(JMSException exception) {
+                }
+            });
+        });
+    }
+
+    @Test
+    @Timeout(30)
     public void testStartFails() throws Exception {
-        connection.start();
+        assertThrows(JMSException.class, () -> {
+            connection.start();
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testStopFails() throws Exception {
-        connection.stop();
+        assertThrows(JMSException.class, () -> {
+            connection.stop();
+        });
     }
 
-    @Test(timeout=30000)
+    @Test
+    @Timeout(30)
     public void testClose() throws Exception {
         connection.close();
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testCreateConnectionConsumerFails() throws Exception {
-        connection.createConnectionConsumer(destination, "", null, 1);
+        assertThrows(JMSException.class, () -> {
+            connection.createConnectionConsumer(destination, "", null, 1);
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testCreateDurableConnectionConsumerFails() throws Exception {
-        connection.createDurableConnectionConsumer((Topic) destination, "id", "", null, 1);
+        assertThrows(JMSException.class, () -> {
+            connection.createDurableConnectionConsumer((Topic) destination, "id", "", null, 1);
+        });
     }
 }

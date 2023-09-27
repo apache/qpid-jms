@@ -16,8 +16,8 @@
  */
 package org.apache.qpid.jms.producer;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import jakarta.jms.Queue;
 import jakarta.jms.QueueConnection;
@@ -28,7 +28,7 @@ import jakarta.jms.Session;
 import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.support.AmqpTestSupport;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test basic QueueSender functionality.
@@ -43,11 +43,11 @@ public class JmsQueueSenderTest extends AmqpTestSupport {
 
         QueueSession session = connection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         QueueSender sender = session.createSender(queue);
         assertNotNull(sender);
 
-        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        QueueViewMBean proxy = getProxyToQueue(testMethodName);
         assertEquals(0, proxy.getQueueSize());
         connection.close();
     }

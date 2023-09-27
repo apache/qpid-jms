@@ -16,11 +16,11 @@
  */
 package org.apache.qpid.jms.producer;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -51,9 +51,11 @@ import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
 import org.apache.qpid.jms.provider.ProviderException;
 import org.apache.qpid.jms.provider.mock.MockRemotePeer;
 import org.apache.qpid.jms.test.Wait;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.Timeout;
 import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,16 +72,16 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
     private final MockRemotePeer remotePeer = new MockRemotePeer();
 
     @Override
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
+        super.setUp(testInfo);
         remotePeer.start();
         connection = createConnectionToMockProvider();
         session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
     }
 
     @Override
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         try {
             remotePeer.terminate();
@@ -88,20 +90,23 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
         }
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testMultipleCloseCallsNoErrors() throws Exception {
         MessageProducer producer = session.createProducer(null);
         producer.close();
         producer.close();
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testCreateProducerWithNullDestination() throws Exception {
         MessageProducer producer = session.createProducer(null);
         assertNull(producer.getDestination());
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testGetDisableMessageID() throws Exception {
         MessageProducer producer = session.createProducer(null);
         assertFalse(producer.getDisableMessageID());
@@ -109,7 +114,8 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
         assertTrue(producer.getDisableMessageID());
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testGetDisableTimeStamp() throws Exception {
         MessageProducer producer = session.createProducer(null);
         assertFalse(producer.getDisableMessageTimestamp());
@@ -117,7 +123,8 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
         assertTrue(producer.getDisableMessageTimestamp());
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testPriorityConfiguration() throws Exception {
         MessageProducer producer = session.createProducer(null);
         assertEquals(Message.DEFAULT_PRIORITY, producer.getPriority());
@@ -125,7 +132,8 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
         assertEquals(9, producer.getPriority());
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testPriorityConfigurationWithInvalidPriorityValues() throws Exception {
         MessageProducer producer = session.createProducer(null);
         assertEquals(Message.DEFAULT_PRIORITY, producer.getPriority());
@@ -144,7 +152,8 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
         assertEquals(Message.DEFAULT_PRIORITY, producer.getPriority());
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testTimeToLiveConfiguration() throws Exception {
         MessageProducer producer = session.createProducer(null);
         assertEquals(Message.DEFAULT_TIME_TO_LIVE, producer.getTimeToLive());
@@ -152,7 +161,8 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
         assertEquals(1000, producer.getTimeToLive());
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testDeliveryModeConfiguration() throws Exception {
         MessageProducer producer = session.createProducer(null);
         assertEquals(Message.DEFAULT_DELIVERY_MODE, producer.getDeliveryMode());
@@ -160,7 +170,8 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
         assertEquals(DeliveryMode.NON_PERSISTENT, producer.getDeliveryMode());
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testDeliveryModeConfigurationWithInvalidMode() throws Exception {
         MessageProducer producer = session.createProducer(null);
         assertEquals(Message.DEFAULT_DELIVERY_MODE, producer.getDeliveryMode());
@@ -179,7 +190,8 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
         assertEquals(Message.DEFAULT_DELIVERY_MODE, producer.getDeliveryMode());
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testDeliveryDelayConfiguration() throws Exception {
         MessageProducer producer = session.createProducer(null);
         assertEquals(Message.DEFAULT_DELIVERY_DELAY, producer.getDeliveryDelay());
@@ -187,7 +199,8 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
         assertEquals(2000, producer.getDeliveryDelay());
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testAnonymousProducerThrowsUOEWhenExplictDestinationNotProvided() throws Exception {
         JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(null);
 
@@ -221,12 +234,14 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
         }
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testExplicitQueueProducerThrowsIDEWhenNullDestinationIsProvidedOnSend() throws Exception {
         doExplicitProducerThrowsIDEWhenNullDestinationIsProvidedOnSendTestImpl(new JmsQueue("explicitQueueDest"));
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testExplicitTopicProducerThrowsIDEWhenInvalidDestinationIsProvidedOnSend() throws Exception {
         doExplicitProducerThrowsIDEWhenNullDestinationIsProvidedOnSendTestImpl(new JmsTopic("explicitTopicDest"));
     }
@@ -265,7 +280,8 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
         }
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testExplicitProducerThrowsUOEWhenExplictDestinationIsProvided() throws Exception {
         JmsDestination dest = new JmsQueue("explicitDestination");
         JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(dest);
@@ -300,7 +316,8 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
         }
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testAnonymousDestinationProducerThrowsIDEWhenNullDestinationIsProvided() throws Exception {
         JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(null);
 
@@ -334,7 +351,8 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
         }
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testAnonymousProducerThrowsIAEWhenNullCompletionListenerProvided() throws Exception {
         JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(null);
         JmsDestination dest = new JmsQueue("explicitDestination");
@@ -356,7 +374,8 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
         }
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testExplicitProducerThrowsIAEWhenNullCompletionListenerIsProvided() throws Exception {
         JmsDestination dest = new JmsQueue("explicitDestination");
         JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(dest);
@@ -377,7 +396,8 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
         }
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testAnonymousProducerThrowsMFEWhenNullMessageProvided() throws Exception {
         JmsDestination dest = new JmsQueue("explicitDestination");
         JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(null);
@@ -411,7 +431,8 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
         }
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testExplicitProducerThrowsMFEWhenNullMessageProvided() throws Exception {
         JmsDestination dest = new JmsQueue("explicitDestination");
         JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(dest);
@@ -445,7 +466,8 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
         }
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testInOrderSendAcksCompletionsReturnInOrder() throws Exception {
         final int MESSAGE_COUNT = 3;
 
@@ -461,30 +483,31 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
 
         sendMessages(MESSAGE_COUNT, producer, listener);
 
-        assertTrue("Not all sends made it to the remote", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return remotePeer.getPendingCompletions(destination).size() == MESSAGE_COUNT;
             }
-        }));
+        }), "Not all sends made it to the remote");
 
         remotePeer.completeAllPendingSends(destination);
 
-        assertTrue("Not all completions triggered", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return listener.getCompletedSends().size() == MESSAGE_COUNT;
             }
-        }));
+        }), "Not all completions triggered");
 
         assertMessageCompletedInOrder(MESSAGE_COUNT, listener);
 
         connection.close();
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testReversedOrderSendAcksCompletionsReturnInOrder() throws Exception {
         final int MESSAGE_COUNT = 3;
 
@@ -500,13 +523,13 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
 
         sendMessages(MESSAGE_COUNT, producer, listener);
 
-        assertTrue("Not all sends made it to the remote", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return remotePeer.getPendingCompletions(destination).size() == MESSAGE_COUNT;
             }
-        }));
+        }), "Not all sends made it to the remote");
 
         List<JmsOutboundMessageDispatch> pending = remotePeer.getPendingCompletions(destination);
         assertEquals(MESSAGE_COUNT, pending.size());
@@ -517,20 +540,21 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
             remotePeer.completePendingSend(envelope);
         }
 
-        assertTrue("Not all completions triggered", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return listener.getCompletedSends().size() == MESSAGE_COUNT;
             }
-        }));
+        }), "Not all completions triggered");
 
         assertMessageCompletedInOrder(MESSAGE_COUNT, listener);
 
         connection.close();
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testInOrderSendFailuresCompletionsReturnInOrder() throws Exception {
         final int MESSAGE_COUNT = 3;
 
@@ -545,29 +569,30 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
         final MyCompletionListener listener = new MyCompletionListener();
 
         sendMessages(MESSAGE_COUNT, producer, listener);
-        assertTrue("Not all messages sent", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return remotePeer.getPendingCompletions(destination).size() == MESSAGE_COUNT;
             }
-        }));
+        }), "Not all messages sent");
         remotePeer.failAllPendingSends(destination, new ProviderException("Could not send message"));
 
-        assertTrue("Not all completions triggered", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return listener.getFailedSends().size() == MESSAGE_COUNT;
             }
-        }));
+        }), "Not all completions triggered");
 
         assertMessageFailedInOrder(MESSAGE_COUNT, listener);
 
         connection.close();
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testReversedOrderSendAcksFailuresReturnInOrder() throws Exception {
         final int MESSAGE_COUNT = 3;
 
@@ -583,13 +608,13 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
 
         sendMessages(MESSAGE_COUNT, producer, listener);
 
-        assertTrue("Not all sends made it to the remote", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return remotePeer.getPendingCompletions(destination).size() == MESSAGE_COUNT;
             }
-        }));
+        }), "Not all sends made it to the remote");
 
         List<JmsOutboundMessageDispatch> pending = remotePeer.getPendingCompletions(destination);
         assertEquals(MESSAGE_COUNT, pending.size());
@@ -600,20 +625,21 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
             remotePeer.failPendingSend(envelope, new ProviderException("Failed to send message"));
         }
 
-        assertTrue("Not all failures triggered", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return listener.getFailedSends().size() == MESSAGE_COUNT;
             }
-        }));
+        }), "Not all failures triggered");
 
         assertMessageFailedInOrder(MESSAGE_COUNT, listener);
 
         connection.close();
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testInterleavedCompletionsReturnedInOrder() throws Exception {
         final int MESSAGE_COUNT = 3;
 
@@ -629,13 +655,13 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
 
         sendMessages(MESSAGE_COUNT, producer, listener);
 
-        assertTrue("Not all sends made it to the remote", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return remotePeer.getPendingCompletions(destination).size() == MESSAGE_COUNT;
             }
-        }));
+        }), "Not all sends made it to the remote");
 
         List<JmsOutboundMessageDispatch> pending = remotePeer.getPendingCompletions(destination);
         assertEquals(MESSAGE_COUNT, pending.size());
@@ -652,20 +678,21 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
             }
         }
 
-        assertTrue("Not all completions triggered", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return listener.getCombinedSends().size() == MESSAGE_COUNT;
             }
-        }));
+        }), "Not all completions triggered");
 
         assertTotalCompletionOrder(MESSAGE_COUNT, listener);
 
         connection.close();
     }
 
-    @Test(timeout = 15000)
+    @Test
+    @Timeout(15)
     public void testCompletionListenerOnCompleteCallsProducerCloseThrowsISE() throws Exception {
         final int MESSAGE_COUNT = 1;
 
@@ -699,22 +726,23 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
 
         sendMessages(MESSAGE_COUNT, producer, listener);
 
-        assertTrue("Not all sends made it to the remote", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return remotePeer.getPendingCompletions(destination).size() == MESSAGE_COUNT;
             }
-        }));
+        }), "Not all sends made it to the remote");
 
         remotePeer.completeAllPendingSends(destination);
 
-        assertTrue("Completion never got expected ISE", done.await(10, TimeUnit.SECONDS));
+        assertTrue(done.await(10, TimeUnit.SECONDS), "Completion never got expected ISE");
 
         connection.close();
     }
 
-    @Test(timeout = 15000)
+    @Test
+    @Timeout(15)
     public void testCompletionListenerOnExceptionCallsProducerCloseThrowsISE() throws Exception {
         final int MESSAGE_COUNT = 1;
 
@@ -747,17 +775,17 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
 
         sendMessages(MESSAGE_COUNT, producer, listener);
 
-        assertTrue("Not all sends made it to the remote", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return remotePeer.getPendingCompletions(destination).size() == MESSAGE_COUNT;
             }
-        }));
+        }), "Not all sends made it to the remote");
 
         remotePeer.failAllPendingSends(destination, new ProviderException("Could not send message"));
 
-        assertTrue("Completion never got expected ISE", done.await(10, TimeUnit.SECONDS));
+        assertTrue(done.await(10, TimeUnit.SECONDS), "Completion never got expected ISE");
 
         connection.close();
     }
@@ -772,26 +800,26 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
     }
 
     private void assertMessageCompletedInOrder(int expected, MyCompletionListener listener) throws Exception {
-        assertEquals("Did not get expected number of completions", expected, listener.completed.size());
+        assertEquals(expected, listener.completed.size(), "Did not get expected number of completions");
         for (int i = 0; i < listener.completed.size(); ++i) {
             int sequence = listener.completed.get(i).getIntProperty("sequence");
-            assertEquals("Did not complete expected message: " + i + " got: " + sequence, i, sequence);
+            assertEquals(i, sequence, "Did not complete expected message: " + i + " got: " + sequence);
         }
     }
 
     private void assertMessageFailedInOrder(int expected, MyCompletionListener listener) throws Exception {
-        assertEquals("Did not get expected number of failures", expected, listener.failed.size());
+        assertEquals(expected, listener.failed.size(), "Did not get expected number of failures");
         for (int i = 0; i < listener.failed.size(); ++i) {
             int sequence = listener.failed.get(i).getIntProperty("sequence");
-            assertEquals("Did not fail expected message: " + i + " got: " + sequence, i, sequence);
+            assertEquals(i, sequence, "Did not fail expected message: " + i + " got: " + sequence);
         }
     }
 
     private void assertTotalCompletionOrder(int expected, MyCompletionListener listener) throws Exception {
-        assertEquals("Did not get expected number of failures", expected, listener.combinedResult.size());
+        assertEquals(expected, listener.combinedResult.size(), "Did not get expected number of failures");
         for (int i = 0; i < listener.combinedResult.size(); ++i) {
             int sequence = listener.combinedResult.get(i).getIntProperty("sequence");
-            assertEquals("Did not fail expected message: " + i + " got: " + sequence, i, sequence);
+            assertEquals(i, sequence, "Did not fail expected message: " + i + " got: " + sequence);
         }
     }
 

@@ -16,11 +16,12 @@
  */
 package org.apache.qpid.jms.message;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,7 +35,7 @@ import jakarta.jms.MessageNotWriteableException;
 import org.apache.qpid.jms.message.facade.JmsMapMessageFacade;
 import org.apache.qpid.jms.message.facade.test.JmsTestMapMessageFacade;
 import org.apache.qpid.jms.message.facade.test.JmsTestMessageFactory;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test that the JMS level JmsMapMessage using a simple default message facade follows
@@ -57,7 +58,7 @@ public class JmsMapMessageTest {
         JmsMapMessage mapMessage = factory.createMapMessage();
         Enumeration<?> names = mapMessage.getMapNames();
 
-        assertFalse("Expected new message to have no map names", names.hasMoreElements());
+        assertFalse(names.hasMoreElements(), "Expected new message to have no map names");
     }
 
     /**
@@ -83,9 +84,9 @@ public class JmsMapMessageTest {
             count++;
             elements.add(names.nextElement());
         }
-        assertEquals("expected 2 map keys in enumeration", 2, count);
-        assertTrue("expected key was not found: " + myKey1, elements.contains(myKey1));
-        assertTrue("expected key was not found: " + myKey2, elements.contains(myKey2));
+        assertEquals(2, count, "expected 2 map keys in enumeration");
+        assertTrue(elements.contains(myKey1), "expected key was not found: " + myKey1);
+        assertTrue(elements.contains(myKey2), "expected key was not found: " + myKey2);
     }
 
     /**
@@ -148,9 +149,9 @@ public class JmsMapMessageTest {
         JmsMapMessage mapMessage = new JmsMapMessage(facade);
         mapMessage.onDispatch();
 
-        assertTrue("expected message to be read-only", mapMessage.isReadOnlyBody());
+        assertTrue(mapMessage.isReadOnlyBody(), "expected message to be read-only");
         mapMessage.clearBody();
-        assertFalse("expected message to be writable", mapMessage.isReadOnlyBody());
+        assertFalse(mapMessage.isReadOnlyBody(), "expected message to be writable");
         mapMessage.setObject("name", "value");
     }
 
@@ -168,9 +169,9 @@ public class JmsMapMessageTest {
 
         JmsMapMessage mapMessage = new JmsMapMessage(facade);
 
-        assertTrue("key should exist: " + myKey1, mapMessage.itemExists(myKey1));
+        assertTrue(mapMessage.itemExists(myKey1), "key should exist: " + myKey1);
         mapMessage.clearBody();
-        assertFalse("key should not exist", mapMessage.itemExists(myKey1));
+        assertFalse(mapMessage.itemExists(myKey1), "key should not exist");
     }
 
     /**
@@ -216,10 +217,12 @@ public class JmsMapMessageTest {
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(expected=MessageFormatException.class)
+    @Test
     public void testSetObjectWithIllegalTypeThrowsMFE() throws Exception {
-        JmsMapMessage mapMessage = factory.createMapMessage();
-        mapMessage.setObject("myPKey", new Exception());
+        assertThrows(MessageFormatException.class, () -> {
+            JmsMapMessage mapMessage = factory.createMapMessage();
+            mapMessage.setObject("myPKey", new Exception());
+        });
     }
 
     @Test
@@ -383,12 +386,12 @@ public class JmsMapMessageTest {
         boolean value = true;
 
         mapMessage.setBoolean(name, value);
-        assertEquals("value not as expected", value, mapMessage.getBoolean(name));
+        assertEquals(value, mapMessage.getBoolean(name), "value not as expected");
 
         assertGetMapEntryEquals(mapMessage, name, String.valueOf(value), String.class);
 
         mapMessage.setBoolean(name, !value);
-        assertEquals("value not as expected", !value, mapMessage.getBoolean(name));
+        assertEquals(!value, mapMessage.getBoolean(name), "value not as expected");
 
         assertGetMapEntryEquals(mapMessage, name, String.valueOf(!value), String.class);
     }

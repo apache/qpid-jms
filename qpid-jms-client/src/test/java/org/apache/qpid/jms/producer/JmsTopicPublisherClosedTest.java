@@ -16,6 +16,8 @@
  */
 package org.apache.qpid.jms.producer;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import jakarta.jms.Session;
 import jakarta.jms.Topic;
 import jakarta.jms.TopicConnection;
@@ -23,8 +25,10 @@ import jakarta.jms.TopicPublisher;
 import jakarta.jms.TopicSession;
 
 import org.apache.qpid.jms.JmsConnectionTestSupport;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Tests TopicSubscriber method contracts after the TopicSubscriber is closed.
@@ -36,50 +40,71 @@ public class JmsTopicPublisherClosedTest extends JmsConnectionTestSupport {
     protected void createTestResources() throws Exception {
         connection = createTopicConnectionToMockProvider();
         TopicSession session = ((TopicConnection) connection).createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
-        Topic destination = session.createTopic(_testName.getMethodName());
+        Topic destination = session.createTopic(_testMethodName);
         publisher = session.createPublisher(destination);
         publisher.close();
     }
 
     @Override
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
+        super.setUp(testInfo);
         createTestResources();
     }
 
-    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testGetDeliveryModeFails() throws Exception {
-        publisher.getDeliveryMode();
+        assertThrows(jakarta.jms.IllegalStateException.class, () -> {
+            publisher.getDeliveryMode();
+        });
     }
 
-    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testGetDestinationFails() throws Exception {
-        publisher.getDestination();
+        assertThrows(jakarta.jms.IllegalStateException.class, () -> {
+            publisher.getDestination();
+        });
     }
 
-    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testGetTopicFails() throws Exception {
-        publisher.getTopic();
+        assertThrows(jakarta.jms.IllegalStateException.class, () -> {
+            publisher.getTopic();
+        });
     }
 
-    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testGetDisableMessageIDFails() throws Exception {
-        publisher.getDisableMessageID();
+        assertThrows(jakarta.jms.IllegalStateException.class, () -> {
+            publisher.getDisableMessageID();
+        });
     }
 
-    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testGetDisableMessageTimestampFails() throws Exception {
-        publisher.getDisableMessageTimestamp();
+        assertThrows(jakarta.jms.IllegalStateException.class, () -> {
+            publisher.getDisableMessageTimestamp();
+        });
     }
 
-    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testGetTimeToLiveFails() throws Exception {
-        publisher.getTimeToLive();
+        assertThrows(jakarta.jms.IllegalStateException.class, () -> {
+            publisher.getTimeToLive();
+        });
     }
 
-    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testGetPriorityFails() throws Exception {
-        publisher.getPriority();
+        assertThrows(jakarta.jms.IllegalStateException.class, () -> {
+            publisher.getPriority();
+        });
     }
 }

@@ -16,9 +16,9 @@
  */
 package org.apache.qpid.jms.failover;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.URI;
 import java.util.List;
@@ -34,15 +34,17 @@ import jakarta.jms.Session;
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.apache.qpid.jms.support.Wait;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Test various client behaviors when the connection has gone offline.
  */
 public class JmsOfflineBehaviorTests extends AmqpTestSupport {
 
-    @Test(timeout=60000)
-    public void testConnectionCloseDoesNotBlock() throws Exception {
+    @Test
+    @Timeout(60)
+    void testConnectionCloseDoesNotBlock() throws Exception {
         URI brokerURI = new URI(getAmqpFailoverURI());
         Connection connection = createAmqpConnection(brokerURI);
         connection.start();
@@ -50,8 +52,9 @@ public class JmsOfflineBehaviorTests extends AmqpTestSupport {
         connection.close();
     }
 
-    @Test(timeout=60000)
-    public void testSessionCloseDoesNotBlock() throws Exception {
+    @Test
+    @Timeout(60)
+    void testSessionCloseDoesNotBlock() throws Exception {
         URI brokerURI = new URI(getAmqpFailoverURI());
         Connection connection = createAmqpConnection(brokerURI);
         connection.start();
@@ -61,14 +64,15 @@ public class JmsOfflineBehaviorTests extends AmqpTestSupport {
         connection.close();
     }
 
-    @Test(timeout=60000)
-    public void testClientAckDoesNotBlock() throws Exception {
+    @Test
+    @Timeout(60)
+    void testClientAckDoesNotBlock() throws Exception {
         URI brokerURI = new URI(getAmqpFailoverURI());
         Connection connection = createAmqpConnection(brokerURI);
         connection.start();
 
         Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         MessageConsumer consumer = session.createConsumer(queue);
         MessageProducer producer = session.createProducer(queue);
         producer.send(session.createTextMessage("Test"));
@@ -81,14 +85,15 @@ public class JmsOfflineBehaviorTests extends AmqpTestSupport {
         connection.close();
     }
 
-    @Test(timeout=60000)
-    public void testProducerCloseDoesNotBlock() throws Exception {
+    @Test
+    @Timeout(60)
+    void testProducerCloseDoesNotBlock() throws Exception {
         URI brokerURI = new URI(getAmqpFailoverURI());
         Connection connection = createAmqpConnection(brokerURI);
         connection.start();
 
         Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         MessageProducer producer = session.createProducer(queue);
 
         stopPrimaryBroker();
@@ -96,14 +101,15 @@ public class JmsOfflineBehaviorTests extends AmqpTestSupport {
         connection.close();
     }
 
-    @Test(timeout=60000)
-    public void testConsumerCloseDoesNotBlock() throws Exception {
+    @Test
+    @Timeout(60)
+    void testConsumerCloseDoesNotBlock() throws Exception {
         URI brokerURI = new URI(getAmqpFailoverURI());
         Connection connection = createAmqpConnection(brokerURI);
         connection.start();
 
         Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         MessageConsumer consumer = session.createConsumer(queue);
 
         stopPrimaryBroker();
@@ -111,14 +117,15 @@ public class JmsOfflineBehaviorTests extends AmqpTestSupport {
         connection.close();
     }
 
-    @Test(timeout=60000)
-    public void testSessionCloseWithOpenResourcesDoesNotBlock() throws Exception {
+    @Test
+    @Timeout(60)
+    void testSessionCloseWithOpenResourcesDoesNotBlock() throws Exception {
         URI brokerURI = new URI(getAmqpFailoverURI());
         Connection connection = createAmqpConnection(brokerURI);
         connection.start();
 
         Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         session.createConsumer(queue);
         session.createProducer(queue);
 
@@ -127,8 +134,9 @@ public class JmsOfflineBehaviorTests extends AmqpTestSupport {
         connection.close();
     }
 
-    @Test(timeout=60000)
-    public void testGetRemoteURI() throws Exception {
+    @Test
+    @Timeout(60)
+    void testGetRemoteURI() throws Exception {
 
         startNewBroker();
 
@@ -144,7 +152,7 @@ public class JmsOfflineBehaviorTests extends AmqpTestSupport {
 
         stopPrimaryBroker();
 
-        assertTrue("Should connect to secondary URI.", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
@@ -155,19 +163,20 @@ public class JmsOfflineBehaviorTests extends AmqpTestSupport {
 
                 return false;
             }
-        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(100)));
+        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(100)), "Should connect to secondary URI.");
 
         connection.close();
     }
 
-    @Test(timeout=60000)
-    public void testClosedReourcesAreNotRestored() throws Exception {
+    @Test
+    @Timeout(60)
+    void testClosedReourcesAreNotRestored() throws Exception {
         URI brokerURI = new URI(getAmqpFailoverURI() + "?failover.maxReconnectDelay=500");
         Connection connection = createAmqpConnection(brokerURI);
         connection.start();
 
         Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         session.createConsumer(queue);
         session.createProducer(queue);
 
@@ -178,13 +187,13 @@ public class JmsOfflineBehaviorTests extends AmqpTestSupport {
         session.close();
         restartPrimaryBroker();
 
-        assertTrue("Should have a new connection.", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return brokerService.getAdminView().getCurrentConnectionsCount() == 1;
             }
-        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(100)));
+        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(100)), "Should have a new connection.");
 
         assertEquals(0, brokerService.getAdminView().getQueueSubscribers().length);
         assertEquals(0, brokerService.getAdminView().getQueueProducers().length);

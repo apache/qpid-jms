@@ -16,11 +16,11 @@
  */
 package org.apache.qpid.jms.transports.netty;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -36,7 +36,8 @@ import org.apache.qpid.jms.test.proxy.TestProxy.ProxyType;
 import org.apache.qpid.jms.transports.Transport;
 import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.transports.TransportOptions;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,7 +70,8 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testConnectToServerUsingCorrectPath() throws Exception {
         final String WEBSOCKET_PATH = "/testpath";
 
@@ -102,7 +104,8 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
         assertTrue(data.isEmpty());
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testConnectToServerUsingIncorrectPath() throws Exception {
         final String WEBSOCKET_PATH = "/testpath";
 
@@ -133,7 +136,8 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
         assertTrue(data.isEmpty());
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testConnectionsSendReceiveLargeDataWhenFrameSizeAllowsIt() throws Exception {
         final int FRAME_SIZE = 8192;
 
@@ -171,7 +175,7 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
                 }
             }, 10000, 50));
 
-            assertTrue("Connection failed while receiving.", transport.isConnected());
+            assertTrue(transport.isConnected(), "Connection failed while receiving.");
 
             transport.close();
         }
@@ -179,7 +183,8 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
         assertTrue(exceptions.isEmpty());
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testConnectionReceivesFragmentedData() throws Exception {
         final int FRAME_SIZE = 5317;
 
@@ -222,19 +227,19 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
                 }
             }, 10000, 50));
 
-            assertTrue("Connection failed while receiving.", transport.isConnected());
+            assertTrue(transport.isConnected(), "Connection failed while receiving.");
 
             transport.close();
 
-            assertEquals("Expected 2 data packets due to seperate websocket frames", 2, data.size());
+            assertEquals(2, data.size(), "Expected 2 data packets due to seperate websocket frames");
 
             ByteBuf receivedBuffer = Unpooled.buffer(FRAME_SIZE);
             for(ByteBuf buf : data) {
                buf.readBytes(receivedBuffer, buf.readableBytes());
             }
 
-            assertEquals("Unexpected data length", FRAME_SIZE, receivedBuffer.readableBytes());
-            assertTrue("Unexpected data", ByteBufUtil.equals(sendBuffer, 0, receivedBuffer, 0, FRAME_SIZE));
+            assertEquals(FRAME_SIZE, receivedBuffer.readableBytes(), "Unexpected data length");
+            assertTrue(ByteBufUtil.equals(sendBuffer, 0, receivedBuffer, 0, FRAME_SIZE), "Unexpected data");
         } finally {
             for (ByteBuf buf : data) {
                 buf.release();
@@ -244,7 +249,8 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
         assertTrue(exceptions.isEmpty());
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testConnectionsSendReceiveLargeDataFailsDueToMaxFrameSize() throws Exception {
         final int FRAME_SIZE = 1024;
 
@@ -275,13 +281,14 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
                 fail("Should have connected to the server at " + serverLocation + " but got exception: " + e);
             }
 
-            assertTrue("Transport should have lost connection", Wait.waitFor(() -> !transport.isConnected()));
+            assertTrue(Wait.waitFor(() -> !transport.isConnected()), "Transport should have lost connection");
         }
 
         assertFalse(exceptions.isEmpty());
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testTransportDetectsConnectionDropWhenServerEnforcesMaxFrameSize() throws Exception {
         final int FRAME_SIZE = 1024;
 
@@ -311,7 +318,7 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
                 fail("Should have connected to the server at " + serverLocation + " but got exception: " + e);
             }
 
-            assertTrue("Transport should have lost connection", Wait.waitFor(new Wait.Condition() {
+            assertTrue(Wait.waitFor(new Wait.Condition() {
                 @Override
                 public boolean isSatisfied() throws Exception {
                     try {
@@ -323,13 +330,14 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
 
                     return false;
                 }
-            }, 10000, 10));
+            }, 10000, 10), "Transport should have lost connection");
 
             transport.close();
         }
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testCreateWithHttpHeadersSpecified() throws Exception {
         URI BASE_URI = new URI("ws://localhost:5672?" +
                 "transport.ws.httpHeader.first=FOO&" +
@@ -353,7 +361,8 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
         assertEquals("BAR", options.getHttpHeaders().get("second"));
     }
 
-    @Test(timeout = 60 * 1000)
+    @Test
+    @Timeout(60)
     public void testConfiguredHttpHeadersArriveAtServer() throws Exception {
         try (NettyEchoServer server = createEchoServer(createServerOptions())) {
             server.start();
@@ -376,9 +385,9 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
             assertTrue(transport.isConnected());
             assertEquals(serverLocation, transport.getRemoteLocation());
 
-            assertTrue("HandshakeCompletion not set within given time", server.awaitHandshakeCompletion(2000));
+            assertTrue(server.awaitHandshakeCompletion(2000), "HandshakeCompletion not set within given time");
             HandshakeComplete handshake = server.getHandshakeComplete();
-            assertNotNull("completion should not be null", handshake);
+            assertNotNull(handshake, "completion should not be null");
             HttpHeaders requestHeaders = handshake.requestHeaders();
 
             assertTrue(requestHeaders.contains("test-header1"));
@@ -395,7 +404,8 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
         assertTrue(data.isEmpty());
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testConnectViaHttpProxy() throws Exception {
         try (TestProxy testProxy = new TestProxy(ProxyType.HTTP);
              NettyEchoServer server = createEchoServer(createServerOptions())) {

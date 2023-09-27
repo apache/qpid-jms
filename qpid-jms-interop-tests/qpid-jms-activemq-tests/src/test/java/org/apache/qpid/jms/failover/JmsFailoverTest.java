@@ -16,11 +16,12 @@
  */
 package org.apache.qpid.jms.failover;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.net.URI;
 import java.util.concurrent.CountDownLatch;
@@ -42,7 +43,8 @@ import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.apache.qpid.jms.support.Wait;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Basic tests for the FailoverProvider implementation
@@ -54,7 +56,8 @@ public class JmsFailoverTest extends AmqpTestSupport {
         return true;
     }
 
-    @Test(timeout=60000)
+    @Test
+    @Timeout(60)
     public void testFailoverConnects() throws Exception {
         URI brokerURI = new URI(getAmqpFailoverURI());
         Connection connection = createAmqpConnection(brokerURI);
@@ -62,7 +65,8 @@ public class JmsFailoverTest extends AmqpTestSupport {
         connection.close();
     }
 
-    @Test(timeout=60000)
+    @Test
+    @Timeout(60)
     public void testFailoverConnectsWithMultipleURIs() throws Exception {
         URI brokerURI = new URI("failover://(amqp://127.0.0.1:5678,amqp://localhost:5777," +
                                 getBrokerAmqpConnectionURI() + ")?failover.useReconnectBackOff=false");
@@ -71,22 +75,26 @@ public class JmsFailoverTest extends AmqpTestSupport {
         connection.close();
     }
 
-    @Test(timeout=30000, expected = JMSSecurityException.class)
+    @Test
+    @Timeout(30)
     public void testCreateConnectionAsUnknwonUser() throws Exception {
-        URI brokerURI = new URI(getAmqpFailoverURI() +
-            "?failover.maxReconnectAttempts=5");
+        assertThrows(JMSSecurityException.class, () -> {
+            URI brokerURI = new URI(getAmqpFailoverURI() +
+                "?failover.maxReconnectAttempts=5");
 
-        JmsConnectionFactory factory = new JmsConnectionFactory(brokerURI);
-        factory.setUsername("unknown");
-        factory.setPassword("unknown");
+            JmsConnectionFactory factory = new JmsConnectionFactory(brokerURI);
+            factory.setUsername("unknown");
+            factory.setPassword("unknown");
 
-        connection = factory.createConnection();
-        assertNotNull(connection);
-        connection.start();
-        connection.close();
+            connection = factory.createConnection();
+            assertNotNull(connection);
+            connection.start();
+            connection.close();
+        });
     }
 
-    @Test(timeout=60000)
+    @Test
+    @Timeout(60)
     public void testStartupReconnectAttempts() throws Exception {
         URI brokerURI = new URI("failover://(amqp://localhost:5677)" +
                                 "?failover.startupMaxReconnectAttempts=5" +
@@ -104,7 +112,8 @@ public class JmsFailoverTest extends AmqpTestSupport {
         }
     }
 
-    @Test(timeout=60000)
+    @Test
+    @Timeout(60)
     public void testStartupReconnectAttemptsMultipleHosts() throws Exception {
         URI brokerURI = new URI("failover://(amqp://localhost:5678,amqp://localhost:5677)" +
                                 "?failover.startupMaxReconnectAttempts=6" +
@@ -122,7 +131,8 @@ public class JmsFailoverTest extends AmqpTestSupport {
         }
     }
 
-    @Test(timeout=60000)
+    @Test
+    @Timeout(60)
     public void testStartFailureWithAsyncExceptionListener() throws Exception {
         URI brokerURI = new URI(getAmqpFailoverURI() +
             "?failover.maxReconnectAttempts=5" +
@@ -143,10 +153,11 @@ public class JmsFailoverTest extends AmqpTestSupport {
 
         stopPrimaryBroker();
 
-        assertTrue("No async exception", failed.await(15, TimeUnit.SECONDS));
+        assertTrue(failed.await(15, TimeUnit.SECONDS), "No async exception");
     }
 
-    @Test(timeout=60000)
+    @Test
+    @Timeout(60)
     public void testBasicStateRestoration() throws Exception {
         URI brokerURI = new URI(getAmqpFailoverURI());
 
@@ -154,7 +165,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         session.createProducer(queue);
         session.createConsumer(queue);
 
@@ -163,74 +174,76 @@ public class JmsFailoverTest extends AmqpTestSupport {
 
         restartPrimaryBroker();
 
-        assertTrue("Should have a new connection.", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return brokerService.getAdminView().getCurrentConnectionsCount() == 1;
             }
-        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(100)));
+        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(100)), "Should have a new connection.");
 
-        assertTrue("Should one new Queue Subscription.", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return brokerService.getAdminView().getQueueSubscribers().length == 1;
             }
-        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(50)));
+        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(50)), "Should one new Queue Subscription.");
 
-        assertTrue("Should one new Queue Producer.", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return brokerService.getAdminView().getQueueProducers().length == 1;
             }
-        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(50)));
+        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(50)), "Should one new Queue Producer.");
     }
 
-    @Test(timeout=60000)
+    @Test
+    @Timeout(60)
     public void testDurableSubscriberRestores() throws Exception {
         URI brokerURI = new URI(getAmqpFailoverURI());
 
         connection = createAmqpConnection(brokerURI);
-        connection.setClientID(name.getMethodName());
+        connection.setClientID(testMethodName);
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Topic topic = session.createTopic(name.getMethodName());
-        MessageConsumer consumer = session.createDurableSubscriber(topic, name.getMethodName());
+        Topic topic = session.createTopic(testMethodName);
+        MessageConsumer consumer = session.createDurableSubscriber(topic, testMethodName);
         assertNotNull(consumer);
 
         assertEquals(1, brokerService.getAdminView().getDurableTopicSubscribers().length);
 
         restartPrimaryBroker();
 
-        assertTrue("Should have a new connection.", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return brokerService.getAdminView().getCurrentConnectionsCount() == 1;
             }
-        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(100)));
+        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(100)), "Should have a new connection.");
 
-        assertTrue("Should have no inactive subscribers.", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return brokerService.getAdminView().getInactiveDurableTopicSubscribers().length == 0;
             }
-        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(100)));
+        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(100)), "Should have no inactive subscribers.");
 
-        assertTrue("Should have one durable sub.", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return brokerService.getAdminView().getDurableTopicSubscribers().length == 1;
             }
-        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(100)));
+        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(100)), "Should have one durable sub.");
     }
 
-    @Test(timeout=90000)
+    @Test
+    @Timeout(90)
     public void testBadFirstURIConnectsAndProducerWorks() throws Exception {
         URI brokerURI = new URI("failover://(amqp://localhost:5679," + getBrokerAmqpConnectionURI() + ")");
 
@@ -239,7 +252,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
 
         final int MSG_COUNT = 10;
         final Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         final MessageProducer producer = session.createProducer(queue);
         producer.setDeliveryMode(DeliveryMode.PERSISTENT);
         final CountDownLatch failed = new CountDownLatch(1);
@@ -250,20 +263,21 @@ public class JmsFailoverTest extends AmqpTestSupport {
             producer.send(session.createTextMessage("Message: " + i));
         }
 
-        final QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        final QueueViewMBean proxy = getProxyToQueue(testMethodName);
 
-        assertTrue("Should have all messages sent.", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return proxy.getQueueSize() == MSG_COUNT;
             }
-        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(100)));
+        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(100)), "Should have all messages sent.");
 
         assertFalse(failed.getCount() == 0);
     }
 
-    @Test(timeout=90000)
+    @Test
+    @Timeout(90)
     public void testNonTxProducerRecoversAfterFailover() throws Exception {
         URI brokerURI = new URI(getAmqpFailoverURI());
 
@@ -272,7 +286,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
 
         final int MSG_COUNT = 20;
         final Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         final MessageProducer producer = session.createProducer(queue);
         producer.setDeliveryMode(DeliveryMode.PERSISTENT);
         final CountDownLatch failed = new CountDownLatch(1);
@@ -306,37 +320,38 @@ public class JmsFailoverTest extends AmqpTestSupport {
         TimeUnit.SECONDS.sleep(2);  // Gives FailoverProvider some CPU time
         restartPrimaryBroker();
 
-        assertTrue("Should have a new connection.", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return brokerService.getAdminView().getCurrentConnectionsCount() == 1;
             }
-        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(100)));
+        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(100)), "Should have a new connection.");
 
-        assertTrue("Should have a recovered producer.", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return brokerService.getAdminView().getQueueProducers().length == 1;
             }
-        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(50)));
+        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(50)), "Should have a recovered producer.");
 
-        final QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        final QueueViewMBean proxy = getProxyToQueue(testMethodName);
 
-        assertTrue("Should have all messages sent.", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return proxy.getQueueSize() == MSG_COUNT;
             }
-        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(50)));
+        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(50)), "Should have all messages sent.");
 
         assertFalse(failed.getCount() == 0);
         connection.close();
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testPullConsumerTimedReceiveRecovers() throws Exception {
         URI brokerURI = new URI(getAmqpFailoverURI() + "?jms.prefetchPolicy.all=0");
 
@@ -347,7 +362,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         final MessageConsumer consumer = session.createConsumer(queue);
 
         Thread receiver = new Thread(new Runnable() {
@@ -374,29 +389,30 @@ public class JmsFailoverTest extends AmqpTestSupport {
 
         restartPrimaryBroker();
 
-        assertTrue("Should have a new connection.", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return brokerService.getAdminView().getCurrentConnectionsCount() == 1;
             }
-        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(100)));
+        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(100)), "Should have a new connection.");
 
-        assertTrue("Should one new Queue Subscription.", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return brokerService.getAdminView().getQueueSubscribers().length == 1;
             }
-        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(50)));
+        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(50)), "Should one new Queue Subscription.");
 
         MessageProducer producer = session.createProducer(queue);
         producer.send(session.createMessage());
 
-        assertTrue("Consumer should have recovered", received.await(30, TimeUnit.SECONDS));
+        assertTrue(received.await(30, TimeUnit.SECONDS), "Consumer should have recovered");
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testPullConsumerReceiveRecovers() throws Exception {
         URI brokerURI = new URI(getAmqpFailoverURI() + "?jms.prefetchPolicy.all=0");
 
@@ -407,7 +423,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         final MessageConsumer consumer = session.createConsumer(queue);
 
         Thread receiver = new Thread(new Runnable() {
@@ -434,25 +450,25 @@ public class JmsFailoverTest extends AmqpTestSupport {
 
         restartPrimaryBroker();
 
-        assertTrue("Should have a new connection.", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return brokerService.getAdminView().getCurrentConnectionsCount() == 1;
             }
-        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(100)));
+        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(100)), "Should have a new connection.");
 
-        assertTrue("Should one new Queue Subscription.", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return brokerService.getAdminView().getQueueSubscribers().length == 1;
             }
-        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(50)));
+        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(50)), "Should one new Queue Subscription.");
 
         MessageProducer producer = session.createProducer(queue);
         producer.send(session.createMessage());
 
-        assertTrue("Consumer should have recovered", received.await(30, TimeUnit.SECONDS));
+        assertTrue(received.await(30, TimeUnit.SECONDS), "Consumer should have recovered");
     }
 }

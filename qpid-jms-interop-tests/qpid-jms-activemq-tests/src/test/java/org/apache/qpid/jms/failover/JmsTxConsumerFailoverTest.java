@@ -16,10 +16,10 @@
  */
 package org.apache.qpid.jms.failover;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.net.URI;
 import java.util.concurrent.TimeUnit;
@@ -34,7 +34,8 @@ import jakarta.jms.TransactionRolledBackException;
 import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.apache.qpid.jms.support.Wait;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Test MessageConsumer behavior when in a TX and failover occurs.
@@ -50,7 +51,8 @@ public class JmsTxConsumerFailoverTest extends AmqpTestSupport {
      * Test that the TX doesn't start until the first ack so a failover
      * before that should allow Commit to work as expected.
      */
-    @Test(timeout=60000)
+    @Test
+    @Timeout(60)
     public void testTxConsumerReceiveAfterFailoverCommits() throws Exception {
         URI brokerURI = new URI(getAmqpFailoverURI());
 
@@ -59,35 +61,35 @@ public class JmsTxConsumerFailoverTest extends AmqpTestSupport {
 
         final int MSG_COUNT = 5;
         final Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         final MessageConsumer consumer = session.createConsumer(queue);
 
         sendMessages(connection, queue, MSG_COUNT);
-        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        QueueViewMBean proxy = getProxyToQueue(testMethodName);
         assertEquals(MSG_COUNT, proxy.getQueueSize());
 
         stopPrimaryBroker();
         restartPrimaryBroker();
 
-        assertTrue("Should have a new connection.", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return brokerService.getAdminView().getCurrentConnectionsCount() == 1;
             }
-        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(100)));
+        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(100)), "Should have a new connection.");
 
-        assertTrue("Should have a recovered consumer.", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return brokerService.getAdminView().getQueueSubscribers().length == 1;
             }
-        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(50)));
+        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(50)), "Should have a recovered consumer.");
 
         for (int i = 0; i < MSG_COUNT; ++i) {
             Message received = consumer.receive(3000);
-            assertNotNull("Mesage was not expected but not received", received);
+            assertNotNull(received, "Mesage was not expected but not received");
         }
 
         try {
@@ -100,7 +102,8 @@ public class JmsTxConsumerFailoverTest extends AmqpTestSupport {
         assertEquals(0, proxy.getQueueSize());
     }
 
-    @Test(timeout=60000)
+    @Test
+    @Timeout(60)
     public void testTxConsumerReceiveThenFailoverCommitFails() throws Exception {
         URI brokerURI = new URI(getAmqpFailoverURI());
 
@@ -109,22 +112,22 @@ public class JmsTxConsumerFailoverTest extends AmqpTestSupport {
 
         final int MSG_COUNT = 5;
         final Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         final MessageConsumer consumer = session.createConsumer(queue);
 
         sendMessages(connection, queue, MSG_COUNT);
-        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        QueueViewMBean proxy = getProxyToQueue(testMethodName);
         assertEquals(MSG_COUNT, proxy.getQueueSize());
 
         for (int i = 0; i < MSG_COUNT; ++i) {
             Message received = consumer.receive(3000);
-            assertNotNull("Mesage was not expected but not received", received);
+            assertNotNull(received, "Mesage was not expected but not received");
         }
 
         stopPrimaryBroker();
         restartPrimaryBroker();
 
-        proxy = getProxyToQueue(name.getMethodName());
+        proxy = getProxyToQueue(testMethodName);
         assertEquals(MSG_COUNT, proxy.getQueueSize());
 
         try {
@@ -138,7 +141,8 @@ public class JmsTxConsumerFailoverTest extends AmqpTestSupport {
         assertEquals(MSG_COUNT, proxy.getQueueSize());
     }
 
-    @Test(timeout=60000)
+    @Test
+    @Timeout(60)
     public void testTxConsumerRollbackAfterFailoverGetsNoErrors() throws Exception {
         URI brokerURI = new URI(getAmqpFailoverURI());
 
@@ -147,25 +151,25 @@ public class JmsTxConsumerFailoverTest extends AmqpTestSupport {
 
         final int MSG_COUNT = 5;
         final Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         final MessageConsumer consumer = session.createConsumer(queue);
 
         sendMessages(connection, queue, MSG_COUNT);
-        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        QueueViewMBean proxy = getProxyToQueue(testMethodName);
         assertEquals(MSG_COUNT, proxy.getQueueSize());
 
         for (int i = 0; i < MSG_COUNT; ++i) {
             Message received = consumer.receive(3000);
-            assertNotNull("Mesage was not expected but not received", received);
+            assertNotNull(received, "Mesage was not expected but not received");
         }
 
-        proxy = getProxyToQueue(name.getMethodName());
+        proxy = getProxyToQueue(testMethodName);
         assertEquals(MSG_COUNT, proxy.getQueueSize());
 
         stopPrimaryBroker();
         restartPrimaryBroker();
 
-        proxy = getProxyToQueue(name.getMethodName());
+        proxy = getProxyToQueue(testMethodName);
         assertEquals(MSG_COUNT, proxy.getQueueSize());
 
         try {
@@ -184,7 +188,8 @@ public class JmsTxConsumerFailoverTest extends AmqpTestSupport {
      * Tests that if some receives happen and then a failover followed by additional
      * receives the commit will fail and no messages are left on the broker.
      */
-    @Test(timeout=60000)
+    @Test
+    @Timeout(60)
     public void testTxConsumerReceiveWorksAfterFailoverButCommitFails() throws Exception {
         URI brokerURI = new URI(getAmqpFailoverURI());
 
@@ -193,16 +198,16 @@ public class JmsTxConsumerFailoverTest extends AmqpTestSupport {
 
         final int MSG_COUNT = 10;
         final Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         final MessageConsumer consumer = session.createConsumer(queue);
 
         sendMessages(connection, queue, MSG_COUNT);
-        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        QueueViewMBean proxy = getProxyToQueue(testMethodName);
         assertEquals(MSG_COUNT, proxy.getQueueSize());
 
         for (int i = 0; i < MSG_COUNT / 2; ++i) {
             Message received = consumer.receive(3000);
-            assertNotNull("Mesage was not expected but not received", received);
+            assertNotNull(received, "Mesage was not expected but not received");
             LOG.info("consumer received message #{} - {}", i + 1, received.getJMSMessageID());
         }
 
@@ -211,12 +216,12 @@ public class JmsTxConsumerFailoverTest extends AmqpTestSupport {
         stopPrimaryBroker();
         restartPrimaryBroker();
 
-        proxy = getProxyToQueue(name.getMethodName());
+        proxy = getProxyToQueue(testMethodName);
         assertEquals(MSG_COUNT, proxy.getQueueSize());
 
         for (int i = 0; i < MSG_COUNT / 2; ++i) {
             Message received = consumer.receive(3000);
-            assertNotNull("Mesage was not expected but not received", received);
+            assertNotNull(received, "Mesage was not expected but not received");
             LOG.info("consumer received message #{} - {}", i + 1, received.getJMSMessageID());
         }
 

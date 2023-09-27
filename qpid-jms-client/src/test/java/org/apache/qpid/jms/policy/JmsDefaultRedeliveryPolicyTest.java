@@ -16,15 +16,16 @@
  */
 package org.apache.qpid.jms.policy;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.JmsQueue;
 import org.apache.qpid.jms.JmsTopic;
 import org.apache.qpid.jms.message.JmsMessageSupport;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test for the Default Redelivery Policy object.
@@ -127,10 +128,12 @@ public class JmsDefaultRedeliveryPolicyTest {
         assertEquals(JmsMessageSupport.MODIFIED_FAILED_UNDELIVERABLE, policy.getOutcome());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testSetOutcomeWithInvalidIntValue() {
-        JmsDefaultRedeliveryPolicy policy = new JmsDefaultRedeliveryPolicy();
-        policy.setOutcome(100);
+        assertThrows(IllegalArgumentException.class, () -> {
+            JmsDefaultRedeliveryPolicy policy = new JmsDefaultRedeliveryPolicy();
+            policy.setOutcome(100);
+        });
     }
 
     @Test
@@ -166,10 +169,12 @@ public class JmsDefaultRedeliveryPolicyTest {
         assertEquals(JmsMessageSupport.ACCEPTED, policy.getOutcome());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testSetOutcomeWithInvaliStringValue() {
-        JmsDefaultRedeliveryPolicy policy = new JmsDefaultRedeliveryPolicy();
-        policy.setOutcome("FOO");
+        assertThrows(IllegalArgumentException.class, () -> {
+            JmsDefaultRedeliveryPolicy policy = new JmsDefaultRedeliveryPolicy();
+            policy.setOutcome("FOO");
+        });
     }
 
     @Test

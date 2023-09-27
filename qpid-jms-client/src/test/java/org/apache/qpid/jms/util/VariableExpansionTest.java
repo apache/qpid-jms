@@ -20,19 +20,20 @@
  */
 package org.apache.qpid.jms.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
-import static org.junit.Assume.assumeFalse;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.util.VariableExpansion.Resolver;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.mockito.Mockito;
 
 public class VariableExpansionTest extends QpidJmsTestCase {
@@ -50,10 +51,10 @@ public class VariableExpansionTest extends QpidJmsTestCase {
     private String testPropValue;
     private String testVariableForExpansion;
 
-    @Before
+    @BeforeEach
     @Override
-    public void setUp() throws Exception {
-        super.setUp();
+    public void setUp(TestInfo testInfo) throws Exception {
+        super.setUp(testInfo);
 
         testNamePrefix = getTestName() + ".";
 
@@ -68,29 +69,29 @@ public class VariableExpansionTest extends QpidJmsTestCase {
     public void testResolveWithSysPropResolver() {
         Resolver sysPropResolver = VariableExpansion.SYS_PROP_RESOLVER;
 
-        assertNull("System property value unexpectedly set already", System.getProperty(testPropName));
-        assertNull("Expected resolve to return null as property not set", sysPropResolver.resolve(testPropName));
+        assertNull(System.getProperty(testPropName), "System property value unexpectedly set already");
+        assertNull(sysPropResolver.resolve(testPropName), "Expected resolve to return null as property not set");
 
         setTestSystemProperty(testPropName, testPropValue);
 
-        assertEquals("System property value not as expected", testPropValue, System.getProperty(testPropName));
-        assertEquals("Resolved variable not as expected", testPropValue, sysPropResolver.resolve(testPropName));
+        assertEquals(testPropValue, System.getProperty(testPropName), "System property value not as expected");
+        assertEquals(testPropValue, sysPropResolver.resolve(testPropName), "Resolved variable not as expected");
     }
 
     @Test
     public void testResolveWithEnvVarResolver() {
         // Verify variable is set (by Surefire config),
         // prevents spurious failure if not manually configured when run in IDE.
-        assumeTrue("Environment variable not set as required", System.getenv().containsKey(TEST_ENV_VARIABLE_NAME));
-        assumeFalse("Environment variable unexpectedly set", System.getenv().containsKey(TEST_ENV_VARIABLE_NAME_NOT_SET));
+        assumeTrue(System.getenv().containsKey(TEST_ENV_VARIABLE_NAME), "Environment variable not set as required");
+        assumeFalse(System.getenv().containsKey(TEST_ENV_VARIABLE_NAME_NOT_SET), "Environment variable unexpectedly set");
 
-        assertEquals("Environment variable value not as expected", TEST_ENV_VARIABLE_VALUE, System.getenv(TEST_ENV_VARIABLE_NAME));
+        assertEquals(TEST_ENV_VARIABLE_VALUE, System.getenv(TEST_ENV_VARIABLE_NAME), "Environment variable value not as expected");
 
         final Resolver envVarResolver = VariableExpansion.ENV_VAR_RESOLVER;
 
-        assertNull("Expected resolve to return null as property not set", envVarResolver.resolve(TEST_ENV_VARIABLE_NAME_NOT_SET));
+        assertNull(envVarResolver.resolve(TEST_ENV_VARIABLE_NAME_NOT_SET), "Expected resolve to return null as property not set");
 
-        assertEquals("Resolved variable not as expected", TEST_ENV_VARIABLE_VALUE, envVarResolver.resolve(TEST_ENV_VARIABLE_NAME));
+        assertEquals(TEST_ENV_VARIABLE_VALUE, envVarResolver.resolve(TEST_ENV_VARIABLE_NAME), "Resolved variable not as expected");
     }
 
     // ===== Expansion tests =====
@@ -107,7 +108,7 @@ public class VariableExpansionTest extends QpidJmsTestCase {
 
     @Test
     public void testExpandNull() {
-        assertNull("Expected null", VariableExpansion.expand(null, variable -> "foo"));
+        assertNull(VariableExpansion.expand(null, variable -> "foo"), "Expected null");
     }
 
     @Test
@@ -123,19 +124,19 @@ public class VariableExpansionTest extends QpidJmsTestCase {
 
         setTestSystemProperty(testPropName, testPropValue);
 
-        assertEquals("System property value not as expected", testPropValue, System.getProperty(testPropName));
+        assertEquals(testPropValue, System.getProperty(testPropName), "System property value not as expected");
 
         String expanded = VariableExpansion.expand(testVariableForExpansion, resolver);
-        assertEquals("Expanded variable not as expected", testPropValue, expanded);
+        assertEquals(testPropValue, expanded, "Expanded variable not as expected");
     }
 
     @Test
     public void testExpandWithEnvVarResolver() {
         // Verify variable is set (by Surefire config),
         // prevents spurious failure if not manually configured when run in IDE.
-        assumeTrue("Environment variable not set as required", System.getenv().containsKey(TEST_ENV_VARIABLE_NAME));
+        assumeTrue(System.getenv().containsKey(TEST_ENV_VARIABLE_NAME), "Environment variable not set as required");
 
-        assertEquals("Environment variable value not as expected", TEST_ENV_VARIABLE_VALUE, System.getenv(TEST_ENV_VARIABLE_NAME));
+        assertEquals(TEST_ENV_VARIABLE_VALUE, System.getenv(TEST_ENV_VARIABLE_NAME), "Environment variable value not as expected");
 
         final Resolver resolver = VariableExpansion.ENV_VAR_RESOLVER;
 
@@ -148,7 +149,7 @@ public class VariableExpansionTest extends QpidJmsTestCase {
 
         String expanded = VariableExpansion.expand("${" + TEST_ENV_VARIABLE_NAME + "}", resolver);
 
-        assertEquals("Expanded variable not as expected", TEST_ENV_VARIABLE_VALUE, expanded);
+        assertEquals(TEST_ENV_VARIABLE_VALUE, expanded, "Expanded variable not as expected");
     }
 
     @Test
@@ -166,7 +167,7 @@ public class VariableExpansionTest extends QpidJmsTestCase {
 
         String expanded = VariableExpansion.expand(testVariableForExpansion, resolver);
 
-        assertEquals("Expanded variable not as expected", testPropValue, expanded);
+        assertEquals(testPropValue, expanded, "Expanded variable not as expected");
     }
 
     @Test
@@ -277,7 +278,7 @@ public class VariableExpansionTest extends QpidJmsTestCase {
 
     private void doBasicExpansionTestImpl(String toExpand, String expectedExpansion, Resolver resolver) {
         String expanded = VariableExpansion.expand(toExpand, resolver);
-        assertEquals("Expanded variable not as expected", expectedExpansion, expanded);
+        assertEquals(expectedExpansion, expanded, "Expanded variable not as expected");
     }
 
     @Test
@@ -308,7 +309,7 @@ public class VariableExpansionTest extends QpidJmsTestCase {
         Mockito.verify(mockResolver).resolve(testPropName);
         Mockito.verifyNoMoreInteractions(mockResolver);
 
-        assertEquals("Expanded variable not as expected", defaultValue, expanded);
+        assertEquals(defaultValue, expanded, "Expanded variable not as expected");
     }
 
     @Test
@@ -326,7 +327,7 @@ public class VariableExpansionTest extends QpidJmsTestCase {
 
         String expanded = VariableExpansion.expand("${" + propName1 + "}", resolver);
 
-        assertEquals("Expanded variable not as expected", otherPropDefault, expanded);
+        assertEquals(otherPropDefault, expanded, "Expanded variable not as expected");
     }
 
     @Test
@@ -344,7 +345,7 @@ public class VariableExpansionTest extends QpidJmsTestCase {
 
         String expanded = VariableExpansion.expand("${" + propName1 + DEFAULT_DELIMINATOR + prop1Default + "}", resolver);
 
-        assertEquals("Expanded variable not as expected", prop1Default, expanded);
+        assertEquals(prop1Default, expanded, "Expanded variable not as expected");
     }
 
     @Test

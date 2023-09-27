@@ -16,6 +16,8 @@
  */
 package org.apache.qpid.jms.session;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import jakarta.jms.Queue;
 import jakarta.jms.QueueConnection;
 import jakarta.jms.QueueReceiver;
@@ -24,8 +26,10 @@ import jakarta.jms.QueueSession;
 import jakarta.jms.Session;
 
 import org.apache.qpid.jms.JmsConnectionTestSupport;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Tests behaviour after a QueueSession is closed.
@@ -40,7 +44,7 @@ public class JmsQueueSessionClosedTest extends JmsConnectionTestSupport {
         connection = createQueueConnectionToMockProvider();
 
         session = ((QueueConnection) connection).createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue destination = session.createQueue(_testName.getMethodName());
+        Queue destination = session.createQueue(_testMethodName);
 
         sender = session.createSender(destination);
         receiver = session.createReceiver(destination);
@@ -50,37 +54,46 @@ public class JmsQueueSessionClosedTest extends JmsConnectionTestSupport {
     }
 
     @Override
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
+        super.setUp(testInfo);
         createTestResources();
     }
 
-    @Test(timeout=30000)
+    @Test
+    @Timeout(30)
     public void testSessionCloseAgain() throws Exception {
         // Close it again
         session.close();
     }
 
-    @Test(timeout=30000)
+    @Test
+    @Timeout(30)
     public void testReceiverCloseAgain() throws Exception {
         // Close it again (closing the session should have closed it already).
         receiver.close();
     }
 
-    @Test(timeout=30000)
+    @Test
+    @Timeout(30)
     public void testSenderCloseAgain() throws Exception {
         // Close it again (closing the session should have closed it already).
         sender.close();
     }
 
-    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testReceiverGetQueueFails() throws Exception {
-        receiver.getQueue();
+        assertThrows(jakarta.jms.IllegalStateException.class, () -> {
+            receiver.getQueue();
+        });
     }
 
-    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testSenderGetQueueFails() throws Exception {
-        sender.getQueue();
+        assertThrows(jakarta.jms.IllegalStateException.class, () -> {
+            sender.getQueue();
+        });
     }
 }

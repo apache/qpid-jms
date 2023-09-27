@@ -16,14 +16,15 @@
  */
 package org.apache.qpid.jms.transports;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.IOException;
 import java.security.UnrecoverableKeyException;
@@ -35,7 +36,8 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
 import org.apache.qpid.jms.test.QpidJmsTestCase;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.handler.ssl.OpenSsl;
@@ -84,8 +86,8 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertNotNull(engine);
 
         List<String> engineProtocols = Arrays.asList(engine.getEnabledProtocols());
-        assertFalse("SSLv3 should not be enabled by default", engineProtocols.contains("SSLv3"));
-        assertFalse("SSLv2Hello should not be enabled by default", engineProtocols.contains("SSLv2Hello"));
+        assertFalse(engineProtocols.contains("SSLv3"), "SSLv3 should not be enabled by default");
+        assertFalse(engineProtocols.contains("SSLv2Hello"), "SSLv2Hello should not be enabled by default");
     }
 
     @Test
@@ -102,7 +104,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertNotNull(engine);
 
         List<String> engineProtocols = Arrays.asList(engine.getEnabledProtocols());
-        assertFalse("SSLv3 should not be enabled by default", engineProtocols.contains("SSLv3"));
+        assertFalse(engineProtocols.contains("SSLv3"), "SSLv3 should not be enabled by default");
 
         // TODO - Netty is currently unable to disable OpenSSL SSLv2Hello so we are stuck with it for now.
         // assertFalse("SSLv2Hello should not be enabled by default", engineProtocols.contains("SSLv2Hello"));
@@ -172,7 +174,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
         } catch (IllegalArgumentException iae) {
             // Expected in certain cases
             String message = iae.getMessage();
-            assertTrue("Unexpected message: " + message, message.contains("password can't be null"));
+            assertTrue(message.contains("password can't be null"), "Unexpected message: " + message);
         }
     }
 
@@ -192,76 +194,92 @@ public class TransportSupportTest extends QpidJmsTestCase {
         } catch (IllegalArgumentException iae) {
             // Expected in certain cases
             String message = iae.getMessage();
-            assertTrue("Unexpected message: " + message, message.contains("password can't be null"));
+            assertTrue(message.contains("password can't be null"), "Unexpected message: " + message);
         }
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void testCreateSslContextWrongKeyStorePasswordJDK() throws Exception {
-        TransportOptions options = createJksSslOptions();
-        options.setKeyStorePassword("wrong");
-        TransportSupport.createJdkSslContext(options);
+        assertThrows(IOException.class, () -> {
+            TransportOptions options = createJksSslOptions();
+            options.setKeyStorePassword("wrong");
+            TransportSupport.createJdkSslContext(options);
+        });
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void testCreateSslContextWrongKeyStorePasswordOpenSSL() throws Exception {
-        assumeTrue(OpenSsl.isAvailable());
-        assumeTrue(OpenSsl.supportsKeyManagerFactory());
+        assertThrows(IOException.class, () -> {
+            assumeTrue(OpenSsl.isAvailable());
+            assumeTrue(OpenSsl.supportsKeyManagerFactory());
 
-        TransportOptions options = createJksSslOptions();
-        options.setKeyStorePassword("wrong");
-        TransportSupport.createOpenSslContext(options);
+            TransportOptions options = createJksSslOptions();
+            options.setKeyStorePassword("wrong");
+            TransportSupport.createOpenSslContext(options);
+        });
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void testCreateSslContextBadPathToKeyStoreJDK() throws Exception {
-        TransportOptions options = createJksSslOptions();
-        options.setKeyStoreLocation(CLIENT_JKS_KEYSTORE + ".bad");
-        TransportSupport.createJdkSslContext(options);
+        assertThrows(IOException.class, () -> {
+            TransportOptions options = createJksSslOptions();
+            options.setKeyStoreLocation(CLIENT_JKS_KEYSTORE + ".bad");
+            TransportSupport.createJdkSslContext(options);
+        });
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void testCreateSslContextBadPathToKeyStoreOpenSSL() throws Exception {
-        assumeTrue(OpenSsl.isAvailable());
-        assumeTrue(OpenSsl.supportsKeyManagerFactory());
+        assertThrows(IOException.class, () -> {
+            assumeTrue(OpenSsl.isAvailable());
+            assumeTrue(OpenSsl.supportsKeyManagerFactory());
 
-        TransportOptions options = createJksSslOptions();
-        options.setKeyStoreLocation(CLIENT_JKS_KEYSTORE + ".bad");
-        TransportSupport.createOpenSslContext(options);
+            TransportOptions options = createJksSslOptions();
+            options.setKeyStoreLocation(CLIENT_JKS_KEYSTORE + ".bad");
+            TransportSupport.createOpenSslContext(options);
+        });
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void testCreateSslContextWrongTrustStorePasswordJDK() throws Exception {
-        TransportOptions options = createJksSslOptions();
-        options.setTrustStorePassword("wrong");
-        TransportSupport.createJdkSslContext(options);
+        assertThrows(IOException.class, () -> {
+            TransportOptions options = createJksSslOptions();
+            options.setTrustStorePassword("wrong");
+            TransportSupport.createJdkSslContext(options);
+        });
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void testCreateSslContextWrongTrustStorePasswordOpenSSL() throws Exception {
-        assumeTrue(OpenSsl.isAvailable());
-        assumeTrue(OpenSsl.supportsKeyManagerFactory());
+        assertThrows(IOException.class, () -> {
+            assumeTrue(OpenSsl.isAvailable());
+            assumeTrue(OpenSsl.supportsKeyManagerFactory());
 
-        TransportOptions options = createJksSslOptions();
-        options.setTrustStorePassword("wrong");
-        TransportSupport.createOpenSslContext(options);
+            TransportOptions options = createJksSslOptions();
+            options.setTrustStorePassword("wrong");
+            TransportSupport.createOpenSslContext(options);
+        });
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void testCreateSslContextBadPathToTrustStoreJDK() throws Exception {
-        TransportOptions options = createJksSslOptions();
-        options.setTrustStoreLocation(CLIENT_JKS_TRUSTSTORE + ".bad");
-        TransportSupport.createJdkSslContext(options);
+        assertThrows(IOException.class, () -> {
+            TransportOptions options = createJksSslOptions();
+            options.setTrustStoreLocation(CLIENT_JKS_TRUSTSTORE + ".bad");
+            TransportSupport.createJdkSslContext(options);
+        });
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void testCreateSslContextBadPathToTrustStoreOpenSSL() throws Exception {
-        assumeTrue(OpenSsl.isAvailable());
-        assumeTrue(OpenSsl.supportsKeyManagerFactory());
+        assertThrows(IOException.class, () -> {
+            assumeTrue(OpenSsl.isAvailable());
+            assumeTrue(OpenSsl.supportsKeyManagerFactory());
 
-        TransportOptions options = createJksSslOptions();
-        options.setTrustStoreLocation(CLIENT_JKS_TRUSTSTORE + ".bad");
-        TransportSupport.createOpenSslContext(options);
+            TransportOptions options = createJksSslOptions();
+            options.setTrustStoreLocation(CLIENT_JKS_TRUSTSTORE + ".bad");
+            TransportSupport.createOpenSslContext(options);
+        });
     }
 
     @Test
@@ -308,21 +326,25 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertTrue(context.isClient());
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void testCreateSslContextIncorrectStoreTypeJDK() throws Exception {
-        TransportOptions options = createPkcs12SslOptions();
-        options.setStoreType(KEYSTORE_JCEKS_TYPE);
-        TransportSupport.createJdkSslContext(options);
+        assertThrows(IOException.class, () -> {
+            TransportOptions options = createPkcs12SslOptions();
+            options.setStoreType(KEYSTORE_JCEKS_TYPE);
+            TransportSupport.createJdkSslContext(options);
+        });
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void testCreateSslContextIncorrectStoreTypeOpenSSL() throws Exception {
-        assumeTrue(OpenSsl.isAvailable());
-        assumeTrue(OpenSsl.supportsKeyManagerFactory());
+        assertThrows(IOException.class, () -> {
+            assumeTrue(OpenSsl.isAvailable());
+            assumeTrue(OpenSsl.supportsKeyManagerFactory());
 
-        TransportOptions options = createPkcs12SslOptions();
-        options.setStoreType(KEYSTORE_JCEKS_TYPE);
-        TransportSupport.createOpenSslContext(options);
+            TransportOptions options = createPkcs12SslOptions();
+            options.setStoreType(KEYSTORE_JCEKS_TYPE);
+            TransportSupport.createOpenSslContext(options);
+        });
     }
 
     @Test
@@ -366,7 +388,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
         SSLEngine engine = TransportSupport.createJdkSslEngine(null, context, options);
         assertNotNull(engine);
 
-        assertArrayEquals("Enabled protocols not as expected", ENABLED_PROTOCOLS, engine.getEnabledProtocols());
+        assertArrayEquals(ENABLED_PROTOCOLS, engine.getEnabledProtocols(), "Enabled protocols not as expected");
     }
 
     @Test
@@ -382,7 +404,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
         SSLEngine engine = TransportSupport.createOpenSslEngine(PooledByteBufAllocator.DEFAULT, null, context, options);
         assertNotNull(engine);
 
-        assertArrayEquals("Enabled protocols not as expected", ENABLED_OPENSSL_PROTOCOLS, engine.getEnabledProtocols());
+        assertArrayEquals(ENABLED_OPENSSL_PROTOCOLS, engine.getEnabledProtocols(), "Enabled protocols not as expected");
     }
 
     @Test
@@ -426,7 +448,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
         SSLEngine engine = TransportSupport.createJdkSslEngine(null, context, options);
         assertNotNull(engine);
 
-        assertArrayEquals("Enabled protocols not as expected", ENABLED_PROTOCOLS, engine.getEnabledProtocols());
+        assertArrayEquals(ENABLED_PROTOCOLS, engine.getEnabledProtocols(), "Enabled protocols not as expected");
     }
 
     @Test
@@ -442,7 +464,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
         SSLEngine engine = TransportSupport.createOpenSslEngine(PooledByteBufAllocator.DEFAULT, null, context, options);
         assertNotNull(engine);
 
-        assertArrayEquals("Enabled protocols not as expected", ENABLED_OPENSSL_PROTOCOLS, engine.getEnabledProtocols());
+        assertArrayEquals(ENABLED_OPENSSL_PROTOCOLS, engine.getEnabledProtocols(), "Enabled protocols not as expected");
     }
 
     @Test
@@ -451,7 +473,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
         TransportOptions options = createJksSslOptions();
         SSLEngine directEngine = createSSLEngineDirectly(options);
         String[] protocols = directEngine.getEnabledProtocols();
-        assertTrue("There were no initial protocols to choose from!", protocols.length > 0);
+        assertTrue(protocols.length > 0, "There were no initial protocols to choose from!");
 
         // Pull out one to disable specifically
         String[] disabledProtocol = new String[] { protocols[protocols.length - 1] };
@@ -462,7 +484,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
 
         // verify the option took effect
         assertNotNull(engine);
-        assertArrayEquals("Enabled protocols not as expected", trimmedProtocols, engine.getEnabledProtocols());
+        assertArrayEquals(trimmedProtocols, engine.getEnabledProtocols(), "Enabled protocols not as expected");
     }
 
     @Test
@@ -474,7 +496,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
         TransportOptions options = createJksSslOptions();
         SSLEngine directEngine = createOpenSSLEngineDirectly(options);
         String[] protocols = directEngine.getEnabledProtocols();
-        assertTrue("There were no initial protocols to choose from!", protocols.length > 0);
+        assertTrue(protocols.length > 0, "There were no initial protocols to choose from!");
 
         // Pull out one to disable specifically
         String[] disabledProtocol = new String[] { protocols[protocols.length - 1] };
@@ -485,7 +507,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
 
         // verify the option took effect
         assertNotNull(engine);
-        assertArrayEquals("Enabled protocols not as expected", trimmedProtocols, engine.getEnabledProtocols());
+        assertArrayEquals(trimmedProtocols, engine.getEnabledProtocols(), "Enabled protocols not as expected");
     }
 
     @Test
@@ -494,7 +516,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
         TransportOptions options = createJksSslOptions();
         SSLEngine directEngine = createSSLEngineDirectly(options);
         String[] protocols = directEngine.getEnabledProtocols();
-        assumeTrue("Insufficient initial protocols to filter from: " + Arrays.toString(protocols) , protocols.length > 1);
+        assumeTrue(protocols.length > 1 , "Insufficient initial protocols to filter from: " + Arrays.toString(protocols));
 
         // Pull out two to enable, and one to disable specifically
         String protocol1 = protocols[0];
@@ -509,7 +531,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
 
         // verify the option took effect, that the disabled protocols were removed from the enabled list.
         assertNotNull(engine);
-        assertArrayEquals("Enabled protocols not as expected", remainingProtocols, engine.getEnabledProtocols());
+        assertArrayEquals(remainingProtocols, engine.getEnabledProtocols(), "Enabled protocols not as expected");
     }
 
     @Test
@@ -521,7 +543,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
         TransportOptions options = createJksSslOptions();
         SSLEngine directEngine = createOpenSSLEngineDirectly(options);
         String[] protocols = directEngine.getEnabledProtocols();
-        assumeTrue("Insufficient initial protocols to filter from: " + Arrays.toString(protocols) , protocols.length > 1);
+        assumeTrue(protocols.length > 1 , "Insufficient initial protocols to filter from: " + Arrays.toString(protocols));
 
         // Pull out two to enable, and one to disable specifically
         String protocol1 = protocols[0];
@@ -544,8 +566,8 @@ public class TransportSupportTest extends QpidJmsTestCase {
 
         // verify the option took effect, that the disabled protocols were removed from the enabled list.
         assertNotNull(engine);
-        assertEquals("Enabled protocols not as expected", remainingProtocolsList.size(), engine.getEnabledProtocols().length);
-        assertTrue("Enabled protocols not as expected", remainingProtocolsList.containsAll(Arrays.asList(engine.getEnabledProtocols())));
+        assertEquals(remainingProtocolsList.size(), engine.getEnabledProtocols().length, "Enabled protocols not as expected");
+        assertTrue(remainingProtocolsList.containsAll(Arrays.asList(engine.getEnabledProtocols())), "Enabled protocols not as expected");
     }
 
     @Test
@@ -554,7 +576,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
         TransportOptions options = createJksSslOptions();
         SSLEngine directEngine = createSSLEngineDirectly(options);
         String[] ciphers = directEngine.getEnabledCipherSuites();
-        assertTrue("There were no initial ciphers to choose from!", ciphers.length > 0);
+        assertTrue(ciphers.length > 0, "There were no initial ciphers to choose from!");
 
         // Pull out one to enable specifically
         String cipher = ciphers[0];
@@ -565,7 +587,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
 
         // verify the option took effect
         assertNotNull(engine);
-        assertArrayEquals("Enabled ciphers not as expected", enabledCipher, engine.getEnabledCipherSuites());
+        assertArrayEquals(enabledCipher, engine.getEnabledCipherSuites(), "Enabled ciphers not as expected");
     }
 
     @Test
@@ -577,7 +599,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
         TransportOptions options = createJksSslOptions();
         SSLEngine directEngine = createOpenSSLEngineDirectly(options);
         String[] ciphers = directEngine.getEnabledCipherSuites();
-        assertTrue("There were no initial ciphers to choose from!", ciphers.length > 0);
+        assertTrue(ciphers.length > 0, "There were no initial ciphers to choose from!");
 
         // Pull out one to enable specifically
         String cipher = ciphers[0];
@@ -588,7 +610,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
 
         // verify the option took effect
         assertNotNull(engine);
-        assertArrayEquals("Enabled ciphers not as expected", enabledCipher, engine.getEnabledCipherSuites());
+        assertArrayEquals(enabledCipher, engine.getEnabledCipherSuites(), "Enabled ciphers not as expected");
     }
 
     @Test
@@ -597,7 +619,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
         TransportOptions options = createJksSslOptions();
         SSLEngine directEngine = createSSLEngineDirectly(options);
         String[] ciphers = directEngine.getEnabledCipherSuites();
-        assertTrue("There were no initial ciphers to choose from!", ciphers.length > 0);
+        assertTrue(ciphers.length > 0, "There were no initial ciphers to choose from!");
 
         // Pull out one to disable specifically
         String[] disabledCipher = new String[] { ciphers[ciphers.length - 1] };
@@ -608,7 +630,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
 
         // verify the option took effect
         assertNotNull(engine);
-        assertArrayEquals("Enabled ciphers not as expected", trimmedCiphers, engine.getEnabledCipherSuites());
+        assertArrayEquals(trimmedCiphers, engine.getEnabledCipherSuites(), "Enabled ciphers not as expected");
     }
 
     @Test
@@ -620,7 +642,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
         TransportOptions options = createJksSslOptions();
         SSLEngine directEngine = createOpenSSLEngineDirectly(options);
         String[] ciphers = directEngine.getEnabledCipherSuites();
-        assertTrue("There were no initial ciphers to choose from!", ciphers.length > 0);
+        assertTrue(ciphers.length > 0, "There were no initial ciphers to choose from!");
 
         // Pull out one to disable specifically
         String[] disabledCipher = new String[] { ciphers[ciphers.length - 1] };
@@ -631,7 +653,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
 
         // verify the option took effect
         assertNotNull(engine);
-        assertArrayEquals("Enabled ciphers not as expected", trimmedCiphers, engine.getEnabledCipherSuites());
+        assertArrayEquals(trimmedCiphers, engine.getEnabledCipherSuites(), "Enabled ciphers not as expected");
     }
 
     @Test
@@ -640,7 +662,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
         TransportOptions options = createJksSslOptions();
         SSLEngine directEngine = createSSLEngineDirectly(options);
         String[] ciphers = directEngine.getEnabledCipherSuites();
-        assertTrue("There werent enough initial ciphers to choose from!", ciphers.length > 1);
+        assertTrue(ciphers.length > 1, "There werent enough initial ciphers to choose from!");
 
         // Pull out two to enable, and one to disable specifically
         String cipher1 = ciphers[0];
@@ -655,7 +677,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
 
         // verify the option took effect, that the disabled ciphers were removed from the enabled list.
         assertNotNull(engine);
-        assertArrayEquals("Enabled ciphers not as expected", remainingCipher, engine.getEnabledCipherSuites());
+        assertArrayEquals(remainingCipher, engine.getEnabledCipherSuites(), "Enabled ciphers not as expected");
     }
 
     @Test
@@ -667,7 +689,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
         TransportOptions options = createJksSslOptions();
         SSLEngine directEngine = createOpenSSLEngineDirectly(options);
         String[] ciphers = directEngine.getEnabledCipherSuites();
-        assertTrue("There werent enough initial ciphers to choose from!", ciphers.length > 1);
+        assertTrue(ciphers.length > 1, "There werent enough initial ciphers to choose from!");
 
         // Pull out two to enable, and one to disable specifically
         String cipher1 = ciphers[0];
@@ -682,7 +704,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
 
         // verify the option took effect, that the disabled ciphers were removed from the enabled list.
         assertNotNull(engine);
-        assertArrayEquals("Enabled ciphers not as expected", remainingCipher, engine.getEnabledCipherSuites());
+        assertArrayEquals(remainingCipher, engine.getEnabledCipherSuites(), "Enabled ciphers not as expected");
     }
 
     @Test
@@ -726,7 +748,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
         SSLEngine engine = TransportSupport.createJdkSslEngine(null, context, options);
         assertNotNull(engine);
 
-        assertArrayEquals("Enabled protocols not as expected", ENABLED_PROTOCOLS, engine.getEnabledProtocols());
+        assertArrayEquals(ENABLED_PROTOCOLS, engine.getEnabledProtocols(), "Enabled protocols not as expected");
     }
 
     @Test
@@ -744,7 +766,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
         SSLEngine engine = TransportSupport.createOpenSslEngine(PooledByteBufAllocator.DEFAULT, null, context, options);
         assertNotNull(engine);
 
-        assertArrayEquals("Enabled protocols not as expected", ENABLED_OPENSSL_PROTOCOLS, engine.getEnabledProtocols());
+        assertArrayEquals(ENABLED_OPENSSL_PROTOCOLS, engine.getEnabledProtocols(), "Enabled protocols not as expected");
     }
 
     @Test
@@ -837,7 +859,8 @@ public class TransportSupportTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 100000)
+    @Test
+    @Timeout(100)
     public void testIsOpenSSLPossible() throws Exception {
         assumeTrue(OpenSsl.isAvailable());
         assumeTrue(OpenSsl.supportsKeyManagerFactory());
@@ -850,7 +873,8 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertTrue(TransportSupport.isOpenSSLPossible(options));
     }
 
-    @Test(timeout = 100000)
+    @Test
+    @Timeout(100)
     public void testIsOpenSSLPossibleWhenHostNameVerificationConfigured() throws Exception {
         assumeTrue(OpenSsl.isAvailable());
         assumeTrue(OpenSsl.supportsKeyManagerFactory());
@@ -866,7 +890,8 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertTrue(TransportSupport.isOpenSSLPossible(options));
     }
 
-    @Test(timeout = 100000)
+    @Test
+    @Timeout(100)
     public void testIsOpenSSLPossibleWhenKeyAliasIsSpecified() throws Exception {
         assumeTrue(OpenSsl.isAvailable());
         assumeTrue(OpenSsl.supportsKeyManagerFactory());
@@ -879,7 +904,8 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertFalse(TransportSupport.isOpenSSLPossible(options));
     }
 
-    @Test(timeout = 100000)
+    @Test
+    @Timeout(100)
     public void testCreateSslHandlerJDK() throws Exception {
         assumeTrue(OpenSsl.isAvailable());
         assumeTrue(OpenSsl.supportsKeyManagerFactory());
@@ -892,7 +918,8 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertFalse(handler.engine() instanceof OpenSslEngine);
     }
 
-    @Test(timeout = 100000)
+    @Test
+    @Timeout(100)
     public void testCreateSslHandlerOpenSSL() throws Exception {
         assumeTrue(OpenSsl.isAvailable());
         assumeTrue(OpenSsl.supportsKeyManagerFactory());
@@ -905,7 +932,8 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertTrue(handler.engine() instanceof OpenSslEngine);
     }
 
-    @Test(timeout = 100000)
+    @Test
+    @Timeout(100)
     public void testCreateOpenSSLEngineFailsWhenAllocatorMissing() throws Exception {
         assumeTrue(OpenSsl.isAvailable());
         assumeTrue(OpenSsl.supportsKeyManagerFactory());

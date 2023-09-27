@@ -19,10 +19,10 @@
 package org.apache.qpid.jms.provider.amqp;
 
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.SUB_NAME_DELIMITER;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -31,7 +31,7 @@ import jakarta.jms.JMSRuntimeException;
 import org.apache.qpid.jms.JmsTopic;
 import org.apache.qpid.jms.meta.JmsConsumerId;
 import org.apache.qpid.jms.meta.JmsConsumerInfo;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class AmqpSubscriptionTrackerTest {
 
@@ -97,21 +97,21 @@ public class AmqpSubscriptionTrackerTest {
 
         // For the first shared sub name
         JmsConsumerInfo sub1consumer1 = createConsumerInfo(subscriptionName1, topicName, true, true, true);
-        assertEquals("Unexpected first sub link name", subscriptionName1, tracker.reserveNextSubscriptionLinkName(subscriptionName1, sub1consumer1));
+        assertEquals(subscriptionName1, tracker.reserveNextSubscriptionLinkName(subscriptionName1, sub1consumer1), "Unexpected first sub link name");
         JmsConsumerInfo sub1consumer2 = createConsumerInfo(subscriptionName1, topicName, true, true, true);
-        assertEquals("Unexpected second sub link name", subscriptionName1 + SUB_NAME_DELIMITER + "2", tracker.reserveNextSubscriptionLinkName(subscriptionName1, sub1consumer2));
+        assertEquals(subscriptionName1 + SUB_NAME_DELIMITER + "2", tracker.reserveNextSubscriptionLinkName(subscriptionName1, sub1consumer2), "Unexpected second sub link name");
 
         // For the second shared sub name
         JmsConsumerInfo sub2consumer1 = createConsumerInfo(subscriptionName2, topicName, true, true, true);
-        assertEquals("Unexpected first sub link name", subscriptionName2, tracker.reserveNextSubscriptionLinkName(subscriptionName2, sub2consumer1));
+        assertEquals(subscriptionName2, tracker.reserveNextSubscriptionLinkName(subscriptionName2, sub2consumer1), "Unexpected first sub link name");
         JmsConsumerInfo sub2consumer2 = createConsumerInfo(subscriptionName2, topicName, true, true, true);
-        assertEquals("Unexpected second sub link name", subscriptionName2 + SUB_NAME_DELIMITER + "2", tracker.reserveNextSubscriptionLinkName(subscriptionName2, sub2consumer2));
+        assertEquals(subscriptionName2 + SUB_NAME_DELIMITER + "2", tracker.reserveNextSubscriptionLinkName(subscriptionName2, sub2consumer2), "Unexpected second sub link name");
 
         // Register a third subscriber for a subscription, after removing the first subscriber for the subscription.
         // Validate the new link name isn't the same as the second subscribers (which is still using its name...)
         tracker.consumerRemoved(sub2consumer1);
         JmsConsumerInfo sub2consumer3 = createConsumerInfo(subscriptionName2, topicName, true, true, true);
-        assertEquals("Unexpected third subscriber link name", subscriptionName2 + SUB_NAME_DELIMITER + "3", tracker.reserveNextSubscriptionLinkName(subscriptionName2, sub2consumer3));
+        assertEquals(subscriptionName2 + SUB_NAME_DELIMITER + "3", tracker.reserveNextSubscriptionLinkName(subscriptionName2, sub2consumer3), "Unexpected third subscriber link name");
     }
 
     @Test
@@ -123,7 +123,7 @@ public class AmqpSubscriptionTrackerTest {
 
         // For the first shared sub name with selector 'color = red'
         JmsConsumerInfo sub1consumer1 = createConsumerInfo(subscriptionName1, topicName, true, true, "color = red", true);
-        assertEquals("Unexpected first sub link name", subscriptionName1, tracker.reserveNextSubscriptionLinkName(subscriptionName1, sub1consumer1));
+        assertEquals(subscriptionName1, tracker.reserveNextSubscriptionLinkName(subscriptionName1, sub1consumer1), "Unexpected first sub link name");
 
         // For the next shared sub name with selector 'color = blue'
         JmsConsumerInfo sub1consumer2 = createConsumerInfo(subscriptionName1, topicName, true, true, "color = blue", true);
@@ -145,7 +145,7 @@ public class AmqpSubscriptionTrackerTest {
         tracker.consumerRemoved(sub1consumer1);
 
         JmsConsumerInfo sub1consumer4 = createConsumerInfo(subscriptionName1, topicName, true, true, true);
-        assertEquals("Unexpected first sub link name", subscriptionName1, tracker.reserveNextSubscriptionLinkName(subscriptionName1, sub1consumer4));
+        assertEquals(subscriptionName1, tracker.reserveNextSubscriptionLinkName(subscriptionName1, sub1consumer4), "Unexpected first sub link name");
 
         // Try adding the second consumer again with selector "color = blue"
         try {
@@ -164,7 +164,7 @@ public class AmqpSubscriptionTrackerTest {
 
         // For the first shared sub name on Topic
         JmsConsumerInfo sub1consumer1 = createConsumerInfo(subscriptionName1, topicName, true, true, true);
-        assertEquals("Unexpected first sub link name", subscriptionName1, tracker.reserveNextSubscriptionLinkName(subscriptionName1, sub1consumer1));
+        assertEquals(subscriptionName1, tracker.reserveNextSubscriptionLinkName(subscriptionName1, sub1consumer1), "Unexpected first sub link name");
 
         // For the next shared sub name on different Topic
         JmsConsumerInfo sub1consumer2 = createConsumerInfo(subscriptionName1, topicName + "-Alt", true, true, true);
@@ -185,21 +185,21 @@ public class AmqpSubscriptionTrackerTest {
 
         // For the first shared sub name
         JmsConsumerInfo sub1consumer1 = createConsumerInfo(subscriptionName1, topicName, true, true, false);
-        assertEquals("Unexpected first sub link name", subscriptionName1 + SUB_NAME_DELIMITER + "global", tracker.reserveNextSubscriptionLinkName(subscriptionName1, sub1consumer1));
+        assertEquals(subscriptionName1 + SUB_NAME_DELIMITER + "global", tracker.reserveNextSubscriptionLinkName(subscriptionName1, sub1consumer1), "Unexpected first sub link name");
         JmsConsumerInfo sub1consumer2 = createConsumerInfo(subscriptionName1, topicName, true, true, false);
-        assertEquals("Unexpected second sub link name", subscriptionName1 + SUB_NAME_DELIMITER + "global2", tracker.reserveNextSubscriptionLinkName(subscriptionName1, sub1consumer2));
+        assertEquals(subscriptionName1 + SUB_NAME_DELIMITER + "global2", tracker.reserveNextSubscriptionLinkName(subscriptionName1, sub1consumer2), "Unexpected second sub link name");
 
         // For the second shared sub name
         JmsConsumerInfo sub2consumer1 = createConsumerInfo(subscriptionName2, topicName, true, true, false);
-        assertEquals("Unexpected first sub link name", subscriptionName2 + SUB_NAME_DELIMITER + "global", tracker.reserveNextSubscriptionLinkName(subscriptionName2, sub2consumer1));
+        assertEquals(subscriptionName2 + SUB_NAME_DELIMITER + "global", tracker.reserveNextSubscriptionLinkName(subscriptionName2, sub2consumer1), "Unexpected first sub link name");
         JmsConsumerInfo sub2consumer2 = createConsumerInfo(subscriptionName2, topicName, true, true, false);
-        assertEquals("Unexpected second sub link name", subscriptionName2 + SUB_NAME_DELIMITER + "global2", tracker.reserveNextSubscriptionLinkName(subscriptionName2, sub2consumer2));
+        assertEquals(subscriptionName2 + SUB_NAME_DELIMITER + "global2", tracker.reserveNextSubscriptionLinkName(subscriptionName2, sub2consumer2), "Unexpected second sub link name");
 
         // Register a third subscriber for a subscription, after removing the first subscriber for the subscription.
         // Validate the new link name isn't the same as the second subscribers (which is still using its name...)
         tracker.consumerRemoved(sub2consumer1);
         JmsConsumerInfo sub2consumer3 = createConsumerInfo(subscriptionName2, topicName, true, true, false);
-        assertEquals("Unexpected third subscriber link name", subscriptionName2 + SUB_NAME_DELIMITER + "global3", tracker.reserveNextSubscriptionLinkName(subscriptionName2, sub2consumer3));
+        assertEquals(subscriptionName2 + SUB_NAME_DELIMITER + "global3", tracker.reserveNextSubscriptionLinkName(subscriptionName2, sub2consumer3), "Unexpected third subscriber link name");
     }
 
     @Test
@@ -211,30 +211,30 @@ public class AmqpSubscriptionTrackerTest {
         AmqpSubscriptionTracker tracker = new AmqpSubscriptionTracker();
 
         // For the first shared sub name
-        assertFalse("Should be active shard volatile sub", tracker.isActiveSharedVolatileSub(subscriptionName1));
+        assertFalse(tracker.isActiveSharedVolatileSub(subscriptionName1), "Should be active shared volatile sub");
         JmsConsumerInfo sub1consumer1 = createConsumerInfo(subscriptionName1, topicName, true, false, true);
-        assertEquals("Unexpected first sub link name", subscriptionName1 + SUB_NAME_DELIMITER + "volatile1", tracker.reserveNextSubscriptionLinkName(subscriptionName1, sub1consumer1));
-        assertTrue("Should be active shard volatile sub", tracker.isActiveSharedVolatileSub(subscriptionName1));
+        assertEquals(subscriptionName1 + SUB_NAME_DELIMITER + "volatile1", tracker.reserveNextSubscriptionLinkName(subscriptionName1, sub1consumer1), "Unexpected first sub link name");
+        assertTrue(tracker.isActiveSharedVolatileSub(subscriptionName1), "Should be active shared volatile sub");
         JmsConsumerInfo sub1consumer2 = createConsumerInfo(subscriptionName1, topicName, true, false, true);
-        assertEquals("Unexpected second sub link name", subscriptionName1 + SUB_NAME_DELIMITER + "volatile2", tracker.reserveNextSubscriptionLinkName(subscriptionName1, sub1consumer2));
-        assertTrue("Should be active shard volatile sub", tracker.isActiveSharedVolatileSub(subscriptionName1));
+        assertEquals(subscriptionName1 + SUB_NAME_DELIMITER + "volatile2", tracker.reserveNextSubscriptionLinkName(subscriptionName1, sub1consumer2), "Unexpected second sub link name");
+        assertTrue(tracker.isActiveSharedVolatileSub(subscriptionName1), "Should be active shared volatile sub");
 
         // For the second shared sub name
-        assertFalse("Should be active shard volatile sub", tracker.isActiveSharedVolatileSub(subscriptionName2));
+        assertFalse(tracker.isActiveSharedVolatileSub(subscriptionName2), "Should be active shared volatile sub");
         JmsConsumerInfo sub2consumer1 = createConsumerInfo(subscriptionName2, topicName, true, false, true);
-        assertEquals("Unexpected first sub link name", subscriptionName2 + SUB_NAME_DELIMITER + "volatile1", tracker.reserveNextSubscriptionLinkName(subscriptionName2, sub2consumer1));
-        assertTrue("Should be active shard volatile sub", tracker.isActiveSharedVolatileSub(subscriptionName2));
+        assertEquals(subscriptionName2 + SUB_NAME_DELIMITER + "volatile1", tracker.reserveNextSubscriptionLinkName(subscriptionName2, sub2consumer1), "Unexpected first sub link name");
+        assertTrue(tracker.isActiveSharedVolatileSub(subscriptionName2), "Should be active shared volatile sub");
         JmsConsumerInfo sub2consumer2 = createConsumerInfo(subscriptionName2, topicName, true, false, true);
-        assertEquals("Unexpected second sub link name", subscriptionName2 + SUB_NAME_DELIMITER + "volatile2", tracker.reserveNextSubscriptionLinkName(subscriptionName2, sub2consumer2));
-        assertTrue("Should be active shard volatile sub", tracker.isActiveSharedVolatileSub(subscriptionName2));
+        assertEquals(subscriptionName2 + SUB_NAME_DELIMITER + "volatile2", tracker.reserveNextSubscriptionLinkName(subscriptionName2, sub2consumer2), "Unexpected second sub link name");
+        assertTrue(tracker.isActiveSharedVolatileSub(subscriptionName2), "Should be active shared volatile sub");
 
         // Register a third subscriber for a subscription, after removing the first subscriber for the subscription.
         // Validate the new link name isn't the same as the second subscribers (which is still using its name...)
         tracker.consumerRemoved(sub2consumer1);
-        assertTrue("Should be active shard volatile sub", tracker.isActiveSharedVolatileSub(subscriptionName2));
+        assertTrue(tracker.isActiveSharedVolatileSub(subscriptionName2), "Should be active shared volatile sub");
         JmsConsumerInfo sub2consumer3 = createConsumerInfo(subscriptionName2, topicName, true, false, true);
-        assertEquals("Unexpected third subscriber link name", subscriptionName2 + SUB_NAME_DELIMITER + "volatile3", tracker.reserveNextSubscriptionLinkName(subscriptionName2, sub2consumer3));
-        assertTrue("Should be active shard volatile sub", tracker.isActiveSharedVolatileSub(subscriptionName2));
+        assertEquals(subscriptionName2 + SUB_NAME_DELIMITER + "volatile3", tracker.reserveNextSubscriptionLinkName(subscriptionName2, sub2consumer3), "Unexpected third subscriber link name");
+        assertTrue(tracker.isActiveSharedVolatileSub(subscriptionName2), "Should be active shared volatile sub");
     }
 
     @Test
@@ -246,7 +246,7 @@ public class AmqpSubscriptionTrackerTest {
 
         // For the first shared sub name with selector 'color = red'
         JmsConsumerInfo sub1consumer1 = createConsumerInfo(subscriptionName1, topicName, true, false, "color = red", true);
-        assertEquals("Unexpected first sub link name", subscriptionName1 + SUB_NAME_DELIMITER + "volatile1", tracker.reserveNextSubscriptionLinkName(subscriptionName1, sub1consumer1));
+        assertEquals(subscriptionName1 + SUB_NAME_DELIMITER + "volatile1", tracker.reserveNextSubscriptionLinkName(subscriptionName1, sub1consumer1), "Unexpected first sub link name");
 
         // For the next shared sub name with selector 'color = blue'
         JmsConsumerInfo sub1consumer2 = createConsumerInfo(subscriptionName1, topicName, true, false, "color = blue", true);
@@ -267,7 +267,7 @@ public class AmqpSubscriptionTrackerTest {
         // Remove the consumer and add the third one which has no selector
         tracker.consumerRemoved(sub1consumer1);
 
-        assertEquals("Unexpected second sub link name", subscriptionName1 + SUB_NAME_DELIMITER + "volatile1", tracker.reserveNextSubscriptionLinkName(subscriptionName1, sub1consumer3));
+        assertEquals(subscriptionName1 + SUB_NAME_DELIMITER + "volatile1", tracker.reserveNextSubscriptionLinkName(subscriptionName1, sub1consumer3), "Unexpected second sub link name");
 
         // Try adding the second consumer again with selector "color = blue"
         try {
@@ -286,7 +286,7 @@ public class AmqpSubscriptionTrackerTest {
 
         // For the first shared sub name with Topic
         JmsConsumerInfo sub1consumer1 = createConsumerInfo(subscriptionName1, topicName, true, false, true);
-        assertEquals("Unexpected first sub link name", subscriptionName1 + SUB_NAME_DELIMITER + "volatile1", tracker.reserveNextSubscriptionLinkName(subscriptionName1, sub1consumer1));
+        assertEquals(subscriptionName1 + SUB_NAME_DELIMITER + "volatile1", tracker.reserveNextSubscriptionLinkName(subscriptionName1, sub1consumer1), "Unexpected first sub link name");
 
         // For the next shared sub name with different Topic
         JmsConsumerInfo sub1consumer2 = createConsumerInfo(subscriptionName1, topicName + "-alt", true, false, true);
@@ -306,26 +306,26 @@ public class AmqpSubscriptionTrackerTest {
         AmqpSubscriptionTracker tracker = new AmqpSubscriptionTracker();
 
         // For the first shared sub name
-        assertFalse("Should be active shard volatile sub", tracker.isActiveSharedVolatileSub(subscriptionName1));
+        assertFalse(tracker.isActiveSharedVolatileSub(subscriptionName1), "Should be active shared volatile sub");
         JmsConsumerInfo sub1consumer1 = createConsumerInfo(subscriptionName1, topicName, true, false, false);
-        assertEquals("Unexpected first sub link name", subscriptionName1 + SUB_NAME_DELIMITER + "global-volatile1", tracker.reserveNextSubscriptionLinkName(subscriptionName1, sub1consumer1));
+        assertEquals(subscriptionName1 + SUB_NAME_DELIMITER + "global-volatile1", tracker.reserveNextSubscriptionLinkName(subscriptionName1, sub1consumer1), "Unexpected first sub link name");
         JmsConsumerInfo sub1consumer2 = createConsumerInfo(subscriptionName1, topicName, true, false, false);
-        assertEquals("Unexpected second sub link name", subscriptionName1 + SUB_NAME_DELIMITER + "global-volatile2", tracker.reserveNextSubscriptionLinkName(subscriptionName1, sub1consumer2));
-        assertTrue("Should be active shard volatile sub", tracker.isActiveSharedVolatileSub(subscriptionName1));
+        assertEquals(subscriptionName1 + SUB_NAME_DELIMITER + "global-volatile2", tracker.reserveNextSubscriptionLinkName(subscriptionName1, sub1consumer2), "Unexpected second sub link name");
+        assertTrue(tracker.isActiveSharedVolatileSub(subscriptionName1), "Should be active shared volatile sub");
 
         // For the second shared sub name
-        assertFalse("Should be active shard volatile sub", tracker.isActiveSharedVolatileSub(subscriptionName2));
+        assertFalse(tracker.isActiveSharedVolatileSub(subscriptionName2), "Should be active shared volatile sub");
         JmsConsumerInfo sub2consumer1 = createConsumerInfo(subscriptionName2, topicName, true, false, false);
-        assertEquals("Unexpected first sub link name", subscriptionName2 + SUB_NAME_DELIMITER + "global-volatile1", tracker.reserveNextSubscriptionLinkName(subscriptionName2, sub2consumer1));
+        assertEquals(subscriptionName2 + SUB_NAME_DELIMITER + "global-volatile1", tracker.reserveNextSubscriptionLinkName(subscriptionName2, sub2consumer1), "Unexpected first sub link name");
         JmsConsumerInfo sub2consumer2 = createConsumerInfo(subscriptionName2, topicName, true, false, false);
-        assertEquals("Unexpected second sub link name", subscriptionName2 + SUB_NAME_DELIMITER + "global-volatile2", tracker.reserveNextSubscriptionLinkName(subscriptionName2, sub2consumer2));
-        assertTrue("Should be active shard volatile sub", tracker.isActiveSharedVolatileSub(subscriptionName2));
+        assertEquals(subscriptionName2 + SUB_NAME_DELIMITER + "global-volatile2", tracker.reserveNextSubscriptionLinkName(subscriptionName2, sub2consumer2), "Unexpected second sub link name");
+        assertTrue(tracker.isActiveSharedVolatileSub(subscriptionName2), "Should be active shared volatile sub");
 
         // Register a third subscriber for a subscription, after removing the first subscriber for the subscription.
         // Validate the new link name isn't the same as the second subscribers (which is still using its name...)
         tracker.consumerRemoved(sub2consumer1);
         JmsConsumerInfo sub2consumer3 = createConsumerInfo(subscriptionName2, topicName, true, false, false);
-        assertEquals("Unexpected third subscriber link name", subscriptionName2 + SUB_NAME_DELIMITER + "global-volatile3", tracker.reserveNextSubscriptionLinkName(subscriptionName2, sub2consumer3));
+        assertEquals(subscriptionName2 + SUB_NAME_DELIMITER + "global-volatile3", tracker.reserveNextSubscriptionLinkName(subscriptionName2, sub2consumer3), "Unexpected third subscriber link name");
     }
 
     @Test
@@ -336,25 +336,25 @@ public class AmqpSubscriptionTrackerTest {
 
         AmqpSubscriptionTracker tracker = new AmqpSubscriptionTracker();
 
-        // For the first shared sub name
-        assertFalse("Should be active shard volatile sub", tracker.isActiveExclusiveDurableSub(subscriptionName1));
+        // For the first sub name
+        assertFalse(tracker.isActiveExclusiveDurableSub(subscriptionName1), "Should not be active durable sub");
         JmsConsumerInfo sub1consumer1 = createConsumerInfo(subscriptionName1, topicName, false, true, true);
-        assertEquals("Unexpected first sub link name", subscriptionName1, tracker.reserveNextSubscriptionLinkName(subscriptionName1, sub1consumer1));
-        assertTrue("Should be active shard volatile sub", tracker.isActiveExclusiveDurableSub(subscriptionName1));
+        assertEquals(subscriptionName1, tracker.reserveNextSubscriptionLinkName(subscriptionName1, sub1consumer1), "Unexpected first sub link name");
+        assertTrue(tracker.isActiveExclusiveDurableSub(subscriptionName1), "Should be active durable sub");
         // This shouldn't happen, checks elsewhere should stop requests for an exclusive durable sub link
         // name if its already in use, but check we get the same name anyway even with an existing registration.
         JmsConsumerInfo sub1consumer2 = createConsumerInfo(subscriptionName1, topicName, false, true, true);
-        assertEquals("Unexpected second sub link name", subscriptionName1, tracker.reserveNextSubscriptionLinkName(subscriptionName1, sub1consumer2));
+        assertEquals(subscriptionName1, tracker.reserveNextSubscriptionLinkName(subscriptionName1, sub1consumer2), "Unexpected second sub link name");
 
-        // For the second shared sub name
-        assertFalse("Should be active shard volatile sub", tracker.isActiveExclusiveDurableSub(subscriptionName2));
+        // For the second sub name
+        assertFalse(tracker.isActiveExclusiveDurableSub(subscriptionName2), "Should not be active durable sub");
         JmsConsumerInfo sub2consumer1 = createConsumerInfo(subscriptionName2, topicName, false, true, true);
-        assertEquals("Unexpected first sub link name", subscriptionName2, tracker.reserveNextSubscriptionLinkName(subscriptionName2, sub2consumer1));
-        assertTrue("Should be active shard volatile sub", tracker.isActiveExclusiveDurableSub(subscriptionName2));
+        assertEquals(subscriptionName2, tracker.reserveNextSubscriptionLinkName(subscriptionName2, sub2consumer1), "Unexpected first sub link name");
+        assertTrue(tracker.isActiveExclusiveDurableSub(subscriptionName2), "Should be active durable sub");
         // This shouldn't happen, checks elsewhere should stop requests for an exclusive durable sub link
         // name if its already in use, but check we get the same name anyway even with an existing registration.
         JmsConsumerInfo sub2consumer2 = createConsumerInfo(subscriptionName2, topicName, false, true, true);
-        assertEquals("Unexpected second sub link name", subscriptionName2, tracker.reserveNextSubscriptionLinkName(subscriptionName2, sub2consumer2));
+        assertEquals(subscriptionName2, tracker.reserveNextSubscriptionLinkName(subscriptionName2, sub2consumer2), "Unexpected second sub link name");
     }
 
     @Test
@@ -476,7 +476,7 @@ public class AmqpSubscriptionTrackerTest {
 
         // For the first shared sub name
         JmsConsumerInfo sub1consumer1 = createConsumerInfo(subscriptionName1, topicName, true, true, true);
-        assertEquals("Unexpected first sub link name", subscriptionName1, tracker.reserveNextSubscriptionLinkName(subscriptionName1, sub1consumer1));
+        assertEquals(subscriptionName1, tracker.reserveNextSubscriptionLinkName(subscriptionName1, sub1consumer1), "Unexpected first sub link name");
 
         // Create another shared sub that is not registered and remove it
         JmsConsumerInfo sub2consumer1 = createConsumerInfo(subscriptionName2, topicName, true, true, true);
@@ -503,7 +503,7 @@ public class AmqpSubscriptionTrackerTest {
 
         // For the first shared sub name
         JmsConsumerInfo sub1consumer1 = createConsumerInfo(subscriptionName1, topicName, true, false, true);
-        assertEquals("Unexpected first sub link name", subscriptionName1 + SUB_NAME_DELIMITER + "volatile1", tracker.reserveNextSubscriptionLinkName(subscriptionName1, sub1consumer1));
+        assertEquals(subscriptionName1 + SUB_NAME_DELIMITER + "volatile1", tracker.reserveNextSubscriptionLinkName(subscriptionName1, sub1consumer1), "Unexpected first sub link name");
 
         // Create another shared sub that is not registered and remove it
         JmsConsumerInfo sub2consumer1 = createConsumerInfo(subscriptionName2, topicName, true, false, true);

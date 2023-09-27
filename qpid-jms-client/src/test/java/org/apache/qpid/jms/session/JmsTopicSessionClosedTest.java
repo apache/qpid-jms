@@ -16,6 +16,8 @@
  */
 package org.apache.qpid.jms.session;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import jakarta.jms.Session;
 import jakarta.jms.Topic;
 import jakarta.jms.TopicConnection;
@@ -24,8 +26,10 @@ import jakarta.jms.TopicSession;
 import jakarta.jms.TopicSubscriber;
 
 import org.apache.qpid.jms.JmsConnectionTestSupport;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Tests behaviour after a TopicSession is closed.
@@ -41,7 +45,7 @@ public class JmsTopicSessionClosedTest extends JmsConnectionTestSupport {
         connection = createTopicConnectionToMockProvider();
 
         session = ((TopicConnection) connection).createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
-        destination = session.createTopic(_testName.getMethodName());
+        destination = session.createTopic(_testMethodName);
 
         publisher = session.createPublisher(destination);
         subscriber = session.createSubscriber(destination);
@@ -51,66 +55,93 @@ public class JmsTopicSessionClosedTest extends JmsConnectionTestSupport {
     }
 
     @Override
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
+        super.setUp(testInfo);
         createTestResources();
     }
 
-    @Test(timeout=30000)
+    @Test
+    @Timeout(30)
     public void testSessionCloseAgain() throws Exception {
         session.close();
     }
 
-    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testCreatePublisher() throws Exception {
-        session.createPublisher(destination);
+        assertThrows(jakarta.jms.IllegalStateException.class, () -> {
+            session.createPublisher(destination);
+        });
     }
 
-    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testCreateSubscriber() throws Exception {
-        session.createSubscriber(destination);
+        assertThrows(jakarta.jms.IllegalStateException.class, () -> {
+            session.createSubscriber(destination);
+        });
     }
 
-    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testCreateSubscriberWithSelector() throws Exception {
-        session.createSubscriber(destination, "color = blue", false);
+        assertThrows(jakarta.jms.IllegalStateException.class, () -> {
+            session.createSubscriber(destination, "color = blue", false);
+        });
     }
 
-    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testCreateDurableSubscriber() throws Exception {
-        session.createDurableSubscriber(destination, "foo");
+        assertThrows(jakarta.jms.IllegalStateException.class, () -> {
+            session.createDurableSubscriber(destination, "foo");
+        });
     }
 
-    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testCreateDurableSubscriberWithSelector() throws Exception {
-        session.createDurableSubscriber(destination, "foo", "color = blue", false);
+        assertThrows(jakarta.jms.IllegalStateException.class, () -> {
+            session.createDurableSubscriber(destination, "foo", "color = blue", false);
+        });
     }
 
-    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testCreateDurableConsumerWithSelector() throws Exception {
-        session.createDurableConsumer(destination, "foo", "color = blue", false);
+        assertThrows(jakarta.jms.IllegalStateException.class, () -> {
+            session.createDurableConsumer(destination, "foo", "color = blue", false);
+        });
     }
 
-    @Test(timeout=30000)
+    @Test
+    @Timeout(30)
     public void testSubscriberCloseAgain() throws Exception {
         // Close it again (closing the session should have closed it already).
         subscriber.close();
     }
 
-    @Test(timeout=30000)
+    @Test
+    @Timeout(30)
     public void testPublisherCloseAgain() throws Exception {
         // Close it again (closing the session should have closed it already).
         publisher.close();
     }
 
-    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testSubscriberGetTopicFails() throws Exception {
-        subscriber.getTopic();
+        assertThrows(jakarta.jms.IllegalStateException.class, () -> {
+            subscriber.getTopic();
+        });
     }
 
-    @Test(timeout=30000, expected=jakarta.jms.IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testPublisherGetTopicFails() throws Exception {
-        publisher.getTopic();
+        assertThrows(jakarta.jms.IllegalStateException.class, () -> {
+            publisher.getTopic();
+        });
     }
 }

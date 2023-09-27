@@ -16,12 +16,13 @@
  */
 package org.apache.qpid.jms.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -32,7 +33,7 @@ import java.util.Properties;
 
 import javax.net.ssl.SSLContext;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests for URI and Class level property Utilities class.
@@ -480,9 +481,11 @@ public class PropertyUtilTest {
 
     //----- filterProperties -------------------------------------------------//
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test
     public void testFilterPropertiesNullProperties() throws Exception {
-        PropertyUtil.filterProperties(null, "option.");
+        assertThrows(IllegalArgumentException.class, () -> {
+            PropertyUtil.filterProperties(null, "option.");
+        });
     }
 
     @Test
@@ -519,13 +522,15 @@ public class PropertyUtilTest {
         assertEquals("bar", configObject.getLastName());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testSetPropertiesThrowsOnNullObject() throws Exception {
-        Map<String, String> properties = new HashMap<String, String>();
-        properties.put("firstName", "foo");
-        properties.put("lastName", "bar");
+        assertThrows(IllegalArgumentException.class, () -> {
+            Map<String, String> properties = new HashMap<String, String>();
+            properties.put("firstName", "foo");
+            properties.put("lastName", "bar");
 
-        PropertyUtil.setProperties(null, properties);
+            PropertyUtil.setProperties(null, properties);
+        });
     }
 
     @Test
@@ -727,19 +732,25 @@ public class PropertyUtilTest {
         assertEquals("foo", configObject.getStringArray()[0]);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test
     public void testSetPropertiesWithNullObject() {
-        PropertyUtil.setProperties(null, new HashMap<String, String>());
+        assertThrows(IllegalArgumentException.class, () -> {
+            PropertyUtil.setProperties(null, new HashMap<String, String>());
+        });
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test
     public void testSetPropertiesWithNullMap() {
-        PropertyUtil.setProperties(new Options(), (Map<String, String>) null);
+        assertThrows(IllegalArgumentException.class, () -> {
+            PropertyUtil.setProperties(new Options(), (Map<String, String>) null);
+        });
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test
     public void testSetPropertiesWithNullProperties() {
-        PropertyUtil.setProperties(new Options(), (Properties) null);
+        assertThrows(IllegalArgumentException.class, () -> {
+            PropertyUtil.setProperties(new Options(), (Properties) null);
+        });
     }
 
     @Test

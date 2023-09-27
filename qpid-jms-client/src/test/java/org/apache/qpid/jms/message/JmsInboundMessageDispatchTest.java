@@ -16,10 +16,10 @@
  */
 package org.apache.qpid.jms.message;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.UUID;
 
@@ -27,7 +27,7 @@ import org.apache.qpid.jms.meta.JmsConsumerId;
 import org.apache.qpid.jms.meta.JmsSessionId;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.UnsignedLong;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class JmsInboundMessageDispatchTest {
 
@@ -50,22 +50,22 @@ public class JmsInboundMessageDispatchTest {
         envelope2.setConsumerId(consumerId2);
         envelope2.setMessageId("myMessageId");
 
-        assertFalse("objects should not be equal", envelope1.equals(envelope2));
-        assertFalse("objects should still not be equal", envelope2.equals(envelope1));
+        assertFalse(envelope1.equals(envelope2), "objects should not be equal");
+        assertFalse(envelope2.equals(envelope1), "objects should still not be equal");
 
         // Not strictly a requirement, but expected in this case
-        assertNotEquals("hashCodes should not be the same", envelope1.hashCode(), envelope2.hashCode());
+        assertNotEquals(envelope1.hashCode(), envelope2.hashCode(), "hashCodes should not be the same");
 
         envelope2.setMessageId(null);
-        assertFalse("objects should not be equal", envelope1.equals(envelope2));
-        assertFalse("objects should still not be equal", envelope2.equals(envelope1));
+        assertFalse(envelope1.equals(envelope2), "objects should not be equal");
+        assertFalse(envelope2.equals(envelope1), "objects should still not be equal");
 
         // Not strictly a requirement, but expected in this case
-        assertNotEquals("hashCodes should not be the same", envelope1.hashCode(), envelope2.hashCode());
+        assertNotEquals(envelope1.hashCode(), envelope2.hashCode(), "hashCodes should not be the same");
 
         envelope2.setConsumerId(null);
-        assertTrue("objects should be equal", envelope1.equals(envelope2));
-        assertTrue("objects should still be equal", envelope2.equals(envelope1));
+        assertTrue(envelope1.equals(envelope2), "objects should be equal");
+        assertTrue(envelope2.equals(envelope1), "objects should still be equal");
     }
 
     @Test
@@ -74,10 +74,10 @@ public class JmsInboundMessageDispatchTest {
         JmsInboundMessageDispatch envelope1 = new JmsInboundMessageDispatch(sequence);
         JmsInboundMessageDispatch envelope2 = new JmsInboundMessageDispatch(sequence);
 
-        assertTrue("objects should be equal", envelope1.equals(envelope2));
-        assertTrue("objects should still be equal", envelope2.equals(envelope1));
+        assertTrue(envelope1.equals(envelope2), "objects should be equal");
+        assertTrue(envelope2.equals(envelope1), "objects should still be equal");
 
-        assertEquals("hashCodes should be the same", envelope1.hashCode(), envelope2.hashCode());
+        assertEquals(envelope1.hashCode(), envelope2.hashCode(), "hashCodes should be the same");
     }
 
     @Test
@@ -86,11 +86,11 @@ public class JmsInboundMessageDispatchTest {
         JmsInboundMessageDispatch envelope1 = new JmsInboundMessageDispatch(sequence);
         JmsInboundMessageDispatch envelope2 = new JmsInboundMessageDispatch(sequence + 1);
 
-        assertFalse("objects should not be equal", envelope1.equals(envelope2));
-        assertFalse("objects should still not be equal", envelope2.equals(envelope1));
+        assertFalse(envelope1.equals(envelope2), "objects should not be equal");
+        assertFalse(envelope2.equals(envelope1), "objects should still not be equal");
 
         // Not strictly a requirement, but expected in this case
-        assertNotEquals("hashCodes should not be the same", envelope1.hashCode(), envelope2.hashCode());
+        assertNotEquals(envelope1.hashCode(), envelope2.hashCode(), "hashCodes should not be the same");
     }
 
     @Test
@@ -106,11 +106,11 @@ public class JmsInboundMessageDispatchTest {
         JmsConsumerId consumerId2 = new JmsConsumerId(sessionId, 2);
         envelope2.setConsumerId(consumerId2);
 
-        assertFalse("objects should not be equal", envelope1.equals(envelope2));
-        assertFalse("objects should still not be equal", envelope2.equals(envelope1));
+        assertFalse(envelope1.equals(envelope2), "objects should not be equal");
+        assertFalse(envelope2.equals(envelope1), "objects should still not be equal");
 
         // Not strictly a requirement, but expected in this case
-        assertNotEquals("hashCodes should not be the same", envelope1.hashCode(), envelope2.hashCode());
+        assertNotEquals(envelope1.hashCode(), envelope2.hashCode(), "hashCodes should not be the same");
     }
 
     @Test
@@ -125,10 +125,10 @@ public class JmsInboundMessageDispatchTest {
         JmsInboundMessageDispatch envelope2 = new JmsInboundMessageDispatch(sequence);
         envelope2.setConsumerId(consumerId);
 
-        assertTrue("objects should be equal", envelope1.equals(envelope2));
-        assertTrue("objects should still be equal", envelope2.equals(envelope1));
+        assertTrue(envelope1.equals(envelope2), "objects should be equal");
+        assertTrue(envelope2.equals(envelope1), "objects should still be equal");
 
-        assertEquals("hashCodes should be the same", envelope1.hashCode(), envelope2.hashCode());
+        assertEquals(envelope1.hashCode(), envelope2.hashCode(), "hashCodes should be the same");
     }
 
     @Test
@@ -146,10 +146,10 @@ public class JmsInboundMessageDispatchTest {
         envelope2.setConsumerId(consumerId);
         envelope2.setMessageId(messageId);
 
-        assertTrue("objects should be equal", envelope1.equals(envelope2));
-        assertTrue("objects should still be equal", envelope2.equals(envelope1));
+        assertTrue(envelope1.equals(envelope2), "objects should be equal");
+        assertTrue(envelope2.equals(envelope1), "objects should still be equal");
 
-        assertEquals("hashCodes should be the same", envelope1.hashCode(), envelope2.hashCode());
+        assertEquals(envelope1.hashCode(), envelope2.hashCode(), "hashCodes should be the same");
     }
 
     @Test
@@ -168,11 +168,11 @@ public class JmsInboundMessageDispatchTest {
         envelope2.setConsumerId(consumerId);
         envelope2.setMessageId(messageId2);
 
-        assertFalse("objects should not be equal", envelope1.equals(envelope2));
-        assertFalse("objects should still not be equal", envelope2.equals(envelope1));
+        assertFalse(envelope1.equals(envelope2), "objects should not be equal");
+        assertFalse(envelope2.equals(envelope1), "objects should still not be equal");
 
         // Not strictly a requirement, but expected in this case
-        assertNotEquals("hashCodes should not be the same", envelope1.hashCode(), envelope2.hashCode());
+        assertNotEquals(envelope1.hashCode(), envelope2.hashCode(), "hashCodes should not be the same");
     }
 
     @Test
@@ -191,11 +191,11 @@ public class JmsInboundMessageDispatchTest {
         envelope2.setConsumerId(consumerId);
         envelope2.setMessageId(messageId2);
 
-        assertFalse("objects should not be equal", envelope1.equals(envelope2));
-        assertFalse("objects should still not be equal", envelope2.equals(envelope1));
+        assertFalse(envelope1.equals(envelope2), "objects should not be equal");
+        assertFalse(envelope2.equals(envelope1), "objects should still not be equal");
 
         // Not strictly a requirement, but expected in this case
-        assertNotEquals("hashCodes should not be the same", envelope1.hashCode(), envelope2.hashCode());
+        assertNotEquals(envelope1.hashCode(), envelope2.hashCode(), "hashCodes should not be the same");
     }
 
     @Test
@@ -213,10 +213,10 @@ public class JmsInboundMessageDispatchTest {
         envelope2.setConsumerId(consumerId);
         envelope2.setMessageId(messageId);
 
-        assertFalse("objects should not be equal", envelope1.equals(envelope2));
-        assertFalse("objects should still not be equal", envelope2.equals(envelope1));
+        assertFalse(envelope1.equals(envelope2), "objects should not be equal");
+        assertFalse(envelope2.equals(envelope1), "objects should still not be equal");
 
         // Not strictly a requirement, but expected in this case
-        assertNotEquals("hashCodes should not be the same", envelope1.hashCode(), envelope2.hashCode());
+        assertNotEquals(envelope1.hashCode(), envelope2.hashCode(), "hashCodes should not be the same");
     }
 }

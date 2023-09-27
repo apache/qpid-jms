@@ -16,13 +16,13 @@
  */
 package org.apache.qpid.jms.sasl;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.security.Principal;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class ExternalMechanismTest {
 
@@ -48,37 +48,37 @@ public class ExternalMechanismTest {
     public void testIsNotApplicableWithUserAndPasswordButNoPrincipal() {
         ExternalMechanism mech = new ExternalMechanism();
 
-        assertFalse("Should not be applicable with user and password but no principal", mech.isApplicable("user", "password", null));
+        assertFalse(mech.isApplicable("user", "password", null), "Should not be applicable with user and password but no principal");
     }
 
     @Test
     public void testIsApplicableWithUserAndPasswordAndPrincipal() {
         ExternalMechanism mech = new ExternalMechanism();
 
-        assertTrue("Should be applicable with user and password and principal", mech.isApplicable("user", "password", new Principal() {
+        assertTrue(mech.isApplicable("user", "password", new Principal() {
             @Override
             public String getName() {
                 return "name";
             }
-        }));
+        }), "Should be applicable with user and password and principal");
     }
 
     @Test
     public void testIsApplicableWithPrincipalOnly() {
         ExternalMechanism mech = new ExternalMechanism();
 
-        assertTrue("Should be applicable with principal only", mech.isApplicable(null, null, new Principal() {
+        assertTrue(mech.isApplicable(null, null, new Principal() {
             @Override
             public String getName() {
                 return "name";
             }
-        }));
+        }), "Should be applicable with principal only");
     }
 
     @Test
     public void testIsEnabledByDefault() {
         ExternalMechanism mech = new ExternalMechanism();
 
-        assertTrue("Should be enabled by default", mech.isEnabledByDefault());
+        assertTrue(mech.isEnabledByDefault(), "Should be enabled by default");
     }
 }

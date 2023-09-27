@@ -16,9 +16,9 @@
  */
 package org.apache.qpid.jms.consumer;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -31,7 +31,8 @@ import jakarta.jms.Queue;
 import jakarta.jms.Session;
 
 import org.apache.qpid.jms.support.AmqpTestSupport;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,13 +52,14 @@ public class JmsDupsOkTest extends AmqpTestSupport {
      *
      * @throws Exception on error during test.
      */
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testRecoverInOnMessage() throws Exception {
         connection = createAmqpConnection();
 
         Session session = connection.createSession(false, Session.DUPS_OK_ACKNOWLEDGE);
         assertNotNull(session);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         MessageConsumer consumer = session.createConsumer(queue);
 
         sendMessages(connection, queue, 3);
@@ -68,8 +70,8 @@ public class JmsDupsOkTest extends AmqpTestSupport {
 
         connection.start();
 
-        assertTrue("Timed out waiting for async listener", latch.await(10, TimeUnit.SECONDS));
-        assertFalse("Test failed in listener, consult logs", listener.getFailed());
+        assertTrue(latch.await(10, TimeUnit.SECONDS), "Timed out waiting for async listener");
+        assertFalse(listener.getFailed(), "Test failed in listener, consult logs");
     }
 
     private static class DupsOkRecoverMsgListener implements MessageListener {

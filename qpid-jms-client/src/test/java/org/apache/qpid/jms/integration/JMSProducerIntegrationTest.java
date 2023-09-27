@@ -21,8 +21,8 @@ package org.apache.qpid.jms.integration;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.ANONYMOUS_RELAY;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import jakarta.jms.JMSContext;
 import jakarta.jms.JMSProducer;
@@ -40,7 +40,8 @@ import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageHeaderSectionM
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessagePropertiesSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompositeMatcher;
 import org.apache.qpid.proton.amqp.Symbol;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 public class JMSProducerIntegrationTest extends QpidJmsTestCase {
 
@@ -67,7 +68,8 @@ public class JMSProducerIntegrationTest extends QpidJmsTestCase {
     private static final String DOUBLE_PROP = "doubleProperty";
     private static final double DOUBLE_PROP_VALUE = Double.MAX_VALUE;
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateProducerAndSend() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JMSContext context = testFixture.createJMSContext(testPeer, SERVER_ANONYMOUS_RELAY);
@@ -111,7 +113,8 @@ public class JMSProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testJMSProducerHasDefaultConfiguration() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JMSContext context = testFixture.createJMSContext(testPeer, SERVER_ANONYMOUS_RELAY);
@@ -134,7 +137,8 @@ public class JMSProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testJMSProducerSetPropertySendsApplicationProperties() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JMSContext context = testFixture.createJMSContext(testPeer, SERVER_ANONYMOUS_RELAY);
@@ -188,7 +192,8 @@ public class JMSProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testJMSProducerPropertyOverridesMessageValue() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JMSContext context = testFixture.createJMSContext(testPeer, SERVER_ANONYMOUS_RELAY);

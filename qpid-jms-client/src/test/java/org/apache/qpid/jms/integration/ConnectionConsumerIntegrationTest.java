@@ -16,9 +16,9 @@
  */
 package org.apache.qpid.jms.integration;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -47,7 +47,8 @@ import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.basictypes.AmqpError;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescribedType;
 import org.apache.qpid.proton.amqp.DescribedType;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,7 +61,8 @@ public class ConnectionConsumerIntegrationTest extends QpidJmsTestCase {
 
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateConnectionConsumer() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsServerSessionPool sessionPool = new JmsServerSessionPool();
@@ -83,12 +85,14 @@ public class ConnectionConsumerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testConnectionConsumerDispatchesToSessionConnectionStartedBeforeCreate() throws Exception {
         doTestConnectionConsumerDispatchesToSession(true);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testConnectionConsumerDispatchesToSessionConnectionStartedAfterCreate() throws Exception {
         doTestConnectionConsumerDispatchesToSession(false);
     }
@@ -132,7 +136,7 @@ public class ConnectionConsumerIntegrationTest extends QpidJmsTestCase {
                 connection.start();
             }
 
-            assertTrue("Message didn't arrive in time", messageArrived.await(10, TimeUnit.SECONDS));
+            assertTrue(messageArrived.await(10, TimeUnit.SECONDS), "Message didn't arrive in time");
 
             testPeer.expectDetach(true, true, true);
             consumer.close();
@@ -144,7 +148,8 @@ public class ConnectionConsumerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testPauseInOnMessageAndConsumerClosed() throws Exception {
         final CountDownLatch messageArrived = new CountDownLatch(1);
 
@@ -189,7 +194,7 @@ public class ConnectionConsumerIntegrationTest extends QpidJmsTestCase {
 
             connection.start();
 
-            assertTrue("Message didn't arrive in time", messageArrived.await(10, TimeUnit.SECONDS));
+            assertTrue(messageArrived.await(10, TimeUnit.SECONDS), "Message didn't arrive in time");
 
             testPeer.expectDetach(true, true, true);
             consumer.close();
@@ -201,7 +206,8 @@ public class ConnectionConsumerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testNonStartedConnectionConsumerDoesNotDispatch() throws Exception {
         final CountDownLatch messageArrived = new CountDownLatch(1);
 
@@ -232,7 +238,7 @@ public class ConnectionConsumerIntegrationTest extends QpidJmsTestCase {
             Queue queue = new JmsQueue("myQueue");
             ConnectionConsumer consumer = connection.createConnectionConsumer(queue, null, sessionPool, 100);
 
-            assertFalse("Message Arrived unexpectedly", messageArrived.await(500, TimeUnit.MILLISECONDS));
+            assertFalse(messageArrived.await(500, TimeUnit.MILLISECONDS), "Message Arrived unexpectedly");
 
             testPeer.expectDetach(true, true, true);
             testPeer.expectDispositionThatIsReleasedAndSettled();
@@ -245,7 +251,8 @@ public class ConnectionConsumerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testQueuedMessagesAreDrainedToServerSession() throws Exception {
         final int MESSAGE_COUNT = 10;
         final CountDownLatch messagesDispatched = new CountDownLatch(MESSAGE_COUNT);
@@ -290,12 +297,12 @@ public class ConnectionConsumerIntegrationTest extends QpidJmsTestCase {
             Queue queue = new JmsQueue("myQueue");
             ConnectionConsumer consumer = connection.createConnectionConsumer(queue, null, sessionPool, 100);
 
-            assertTrue("Message didn't arrive in time", messagesDispatched.await(10, TimeUnit.SECONDS));
+            assertTrue(messagesDispatched.await(10, TimeUnit.SECONDS), "Message didn't arrive in time");
             assertEquals(MESSAGE_COUNT, messagesArrived.getCount());
 
             connection.start();
 
-            assertTrue("Message didn't arrive in time", messagesArrived.await(10, TimeUnit.SECONDS));
+            assertTrue(messagesArrived.await(10, TimeUnit.SECONDS), "Message didn't arrive in time");
 
             testPeer.expectDetach(true, true, true);
             consumer.close();
@@ -307,7 +314,8 @@ public class ConnectionConsumerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testConsumerRecoversAfterSessionPoolReturnsNullSession() throws Exception {
         final int MESSAGE_COUNT = 10;
         final CountDownLatch messagesDispatched = new CountDownLatch(MESSAGE_COUNT);
@@ -352,12 +360,12 @@ public class ConnectionConsumerIntegrationTest extends QpidJmsTestCase {
             Queue queue = new JmsQueue("myQueue");
             ConnectionConsumer consumer = connection.createConnectionConsumer(queue, null, sessionPool, 100);
 
-            assertTrue("Message didn't arrive in time", messagesDispatched.await(10, TimeUnit.SECONDS));
+            assertTrue(messagesDispatched.await(10, TimeUnit.SECONDS), "Message didn't arrive in time");
             assertEquals(MESSAGE_COUNT, messagesArrived.getCount());
 
             connection.start();
 
-            assertTrue("Message didn't arrive in time", messagesArrived.await(10, TimeUnit.SECONDS));
+            assertTrue(messagesArrived.await(10, TimeUnit.SECONDS), "Message didn't arrive in time");
 
             testPeer.expectDetach(true, true, true);
             consumer.close();
@@ -369,7 +377,8 @@ public class ConnectionConsumerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRemotelyCloseConnectionConsumer() throws Exception {
         final String BREAD_CRUMB = "ErrorMessage";
 
@@ -395,7 +404,7 @@ public class ConnectionConsumerIntegrationTest extends QpidJmsTestCase {
 
             // Verify the consumer gets marked closed
             testPeer.waitForAllHandlersToComplete(1000);
-            assertTrue("consumer never closed.", Wait.waitFor(new Wait.Condition() {
+            assertTrue(Wait.waitFor(new Wait.Condition() {
                 @Override
                 public boolean isSatisfied() throws Exception {
                     try {
@@ -412,9 +421,9 @@ public class ConnectionConsumerIntegrationTest extends QpidJmsTestCase {
                     }
                     return false;
                 }
-            }, 10000, 10));
+            }, 10000, 10), "consumer never closed.");
 
-            assertTrue("Consumer closed callback didn't trigger", connectionError.await(5, TimeUnit.SECONDS));
+            assertTrue(connectionError.await(5, TimeUnit.SECONDS), "Consumer closed callback didn't trigger");
 
             // Try closing it explicitly, should effectively no-op in client.
             // The test peer will throw during close if it sends anything.
@@ -425,7 +434,8 @@ public class ConnectionConsumerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testOnExceptionFiredOnSessionPoolFailure() throws Exception {
         final CountDownLatch exceptionFired = new CountDownLatch(1);
 
@@ -453,7 +463,7 @@ public class ConnectionConsumerIntegrationTest extends QpidJmsTestCase {
             Queue queue = new JmsQueue("myQueue");
             ConnectionConsumer consumer = connection.createConnectionConsumer(queue, null, sessionPool, 100);
 
-            assertTrue("Exception should have been fired", exceptionFired.await(5, TimeUnit.SECONDS));
+            assertTrue(exceptionFired.await(5, TimeUnit.SECONDS), "Exception should have been fired");
 
             testPeer.expectDetach(true, true, true);
             testPeer.expectDispositionThatIsReleasedAndSettled();
@@ -466,7 +476,8 @@ public class ConnectionConsumerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testOnExceptionFiredOnServerSessionFailure() throws Exception {
         final CountDownLatch exceptionFired = new CountDownLatch(1);
 
@@ -494,7 +505,7 @@ public class ConnectionConsumerIntegrationTest extends QpidJmsTestCase {
             Queue queue = new JmsQueue("myQueue");
             ConnectionConsumer consumer = connection.createConnectionConsumer(queue, null, sessionPool, 100);
 
-            assertTrue("Exception should have been fired", exceptionFired.await(5, TimeUnit.SECONDS));
+            assertTrue(exceptionFired.await(5, TimeUnit.SECONDS), "Exception should have been fired");
 
             testPeer.expectDetach(true, true, true);
             testPeer.expectDispositionThatIsReleasedAndSettled();

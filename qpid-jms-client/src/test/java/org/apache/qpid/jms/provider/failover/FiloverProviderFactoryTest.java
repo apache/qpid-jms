@@ -16,19 +16,22 @@
  */
 package org.apache.qpid.jms.provider.failover;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.URI;
 import java.util.Map;
 
 import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Test that the provider factory correctly creates and configures the provider.
@@ -40,14 +43,14 @@ public class FiloverProviderFactoryTest extends QpidJmsTestCase {
     private FailoverProvider provider;
 
     @Override
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
+        super.setUp(testInfo);
         baseURI = new URI("failover:(amqp://localhost:5672,amqp://localhost:5674)");
     }
 
     @Override
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         if (provider != null) {
             provider.close();
@@ -55,7 +58,8 @@ public class FiloverProviderFactoryTest extends QpidJmsTestCase {
         super.tearDown();
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testCreateProvider() throws Exception {
         assertNotNull(factory.getName());
         Provider provider = factory.createProvider(baseURI);
@@ -63,7 +67,8 @@ public class FiloverProviderFactoryTest extends QpidJmsTestCase {
         assertTrue(provider instanceof FailoverProvider);
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testCreateProviderInitializesToDefaults() throws Exception {
         Provider provider = factory.createProvider(baseURI);
         assertNotNull(provider);
@@ -82,13 +87,17 @@ public class FiloverProviderFactoryTest extends QpidJmsTestCase {
         assertEquals(FailoverUriPool.DEFAULT_RANDOMIZE_ENABLED, failover.isRandomize());
     }
 
-    @Test(timeout = 60000, expected = IllegalArgumentException.class)
+    @Test
+    @Timeout(60)
     public void testCreateProviderWithUnknownOption() throws Exception {
-        URI badURI = new URI(baseURI.toString() + "?failover.unknown=true");
-        factory.createProvider(badURI);
+        assertThrows(IllegalArgumentException.class, () -> {
+            URI badURI = new URI(baseURI.toString() + "?failover.unknown=true");
+            factory.createProvider(badURI);
+        });
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testCreateWithOptions() throws Exception {
         URI configured = new URI(baseURI.toString() +
             "?failover.initialReconnectDelay=" + (FailoverProvider.DEFAULT_INITIAL_RECONNECT_DELAY + 1) +
@@ -118,7 +127,8 @@ public class FiloverProviderFactoryTest extends QpidJmsTestCase {
         assertEquals(!FailoverUriPool.DEFAULT_RANDOMIZE_ENABLED, failover.isRandomize());
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testNestedOptionsArePassedAlong() throws Exception {
         URI configured = new URI(baseURI.toString() +
             "?failover.nested.transport.tcpNoDelay=true&failover.randomize=false");

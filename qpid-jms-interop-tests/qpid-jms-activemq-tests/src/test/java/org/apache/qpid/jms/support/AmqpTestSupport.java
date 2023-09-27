@@ -128,7 +128,7 @@ public class AmqpTestSupport extends QpidJmsTestSupport {
 
             return new URI(uri);
         } catch (Exception e) {
-            throw new RuntimeException();
+            throw new RuntimeException(e);
         }
     }
 

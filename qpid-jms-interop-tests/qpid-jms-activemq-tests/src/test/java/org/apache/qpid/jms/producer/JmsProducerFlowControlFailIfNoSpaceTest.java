@@ -16,8 +16,8 @@
  */
 package org.apache.qpid.jms.producer;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,7 +36,9 @@ import org.apache.activemq.broker.region.policy.VMPendingSubscriberMessageStorag
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.apache.qpid.jms.support.Wait;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,9 +52,10 @@ public class JmsProducerFlowControlFailIfNoSpaceTest extends AmqpTestSupport {
 
     private List<Exception> exceptions;
 
+    @BeforeEach
     @Override
-    public void setUp() throws Exception {
-        super.setUp();
+    public void setUp(TestInfo testInfo) throws Exception {
+        super.setUp(testInfo);
 
         exceptions = new ArrayList<Exception>();
     }
@@ -117,13 +120,13 @@ public class JmsProducerFlowControlFailIfNoSpaceTest extends AmqpTestSupport {
         producer.send(session.createTextMessage("Message:1"));
         producer.send(session.createTextMessage("Message:2"));
 
-        assertTrue("Should have got an error from no space.", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return !exceptions.isEmpty();
             }
-        }));
+        }), "Should have got an error from no space.");
 
         connection.close();
     }

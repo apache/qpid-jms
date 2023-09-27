@@ -19,15 +19,16 @@
 package org.apache.qpid.jms.integration;
 
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.DELAYED_DELIVERY;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import jakarta.jms.Connection;
 import jakarta.jms.MessageProducer;
@@ -49,13 +50,14 @@ import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedDataMatcher;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.hamcrest.Matcher;
-import org.hamcrest.MatcherAssert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 public class ForeignMessageIntegrationTest extends QpidJmsTestCase {
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendForeignBytesMessageWithContent() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -92,7 +94,8 @@ public class ForeignMessageIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSentForeignMessageHasMessageId() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -118,7 +121,7 @@ public class ForeignMessageIntegrationTest extends QpidJmsTestCase {
 
             producer.send(foreign);
 
-            assertNotNull("JMSMessageID should not be null", foreign.getJMSMessageID());
+            assertNotNull(foreign.getJMSMessageID(), "JMSMessageID should not be null");
 
             testPeer.expectClose();
             connection.close();
@@ -134,7 +137,8 @@ public class ForeignMessageIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendForeignMessageWithDisableMessageIDHintAndExistingMessageID() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -163,16 +167,16 @@ public class ForeignMessageIntegrationTest extends QpidJmsTestCase {
             ForeignJmsBytesMessage foreign = new ForeignJmsBytesMessage();
             foreign.writeBytes(content);
 
-            assertNull("JMSMessageID should not yet be set", foreign.getJMSMessageID());
+            assertNull(foreign.getJMSMessageID(), "JMSMessageID should not yet be set");
             String existingMessageId = "ID:this-should-be-overwritten-in-send";
             foreign.setJMSMessageID(existingMessageId);
-            assertEquals("JMSMessageID should now be set", existingMessageId, foreign.getJMSMessageID());
+            assertEquals(existingMessageId, foreign.getJMSMessageID(), "JMSMessageID should now be set");
 
             // Toggle the DisableMessageID hint, then send it
             producer.setDisableMessageID(true);
             producer.send(foreign);
 
-            assertNull("JMSMessageID should now be null", foreign.getJMSMessageID());
+            assertNull(foreign.getJMSMessageID(), "JMSMessageID should now be null");
 
             testPeer.expectClose();
             connection.close();
@@ -181,7 +185,8 @@ public class ForeignMessageIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendForeignMessageWithDeliveryDelay() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
@@ -223,16 +228,16 @@ public class ForeignMessageIntegrationTest extends QpidJmsTestCase {
 
             // Create a foreign message, [erroneously] set a JMSDeliveryTime value, expect it to be overwritten
             ForeignJmsMessage foreign = new ForeignJmsMessage();
-            assertEquals("JMSDeliveryTime should not yet be set", 0, foreign.getJMSDeliveryTime());
+            assertEquals(0, foreign.getJMSDeliveryTime(), "JMSDeliveryTime should not yet be set");
             foreign.setJMSDeliveryTime(1234);
-            assertEquals("JMSDeliveryTime should now (erroneously) be set", 1234, foreign.getJMSDeliveryTime());
+            assertEquals(1234, foreign.getJMSDeliveryTime(), "JMSDeliveryTime should now (erroneously) be set");
 
             // Now send the message, peer will verify the actual delivery time was set as expected
             producer.send(foreign);
             testPeer.waitForAllHandlersToComplete(3000);
 
             // Now verify the local message also has the deliveryTime set as expected
-            MatcherAssert.assertThat("JMSDeliveryTime should now be set in expected range", foreign.getJMSDeliveryTime(), inRange);
+            assertThat("JMSDeliveryTime should now be set in expected range", foreign.getJMSDeliveryTime(), inRange);
 
             testPeer.expectClose();
             connection.close();

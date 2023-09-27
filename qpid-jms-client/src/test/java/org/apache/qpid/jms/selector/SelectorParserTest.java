@@ -16,6 +16,10 @@
  */
 package org.apache.qpid.jms.selector;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import java.util.HashMap;
 
 import org.apache.qpid.jms.selector.filter.BooleanExpression;
@@ -25,14 +29,14 @@ import org.apache.qpid.jms.selector.filter.FilterException;
 import org.apache.qpid.jms.selector.filter.Filterable;
 import org.apache.qpid.jms.selector.filter.LogicExpression;
 import org.apache.qpid.jms.selector.filter.PropertyExpression;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import junit.framework.TestCase;
-
-public class SelectorParserTest extends TestCase {
+public class SelectorParserTest {
     private static final Logger LOG = LoggerFactory.getLogger(SelectorParserTest.class);
 
+    @Test
     public void testParseWithParensAround() throws Exception {
         String[] values = {"x = 1 and y = 2", "(x = 1) and (y = 2)", "((x = 1) and (y = 2))"};
 
@@ -41,13 +45,13 @@ public class SelectorParserTest extends TestCase {
             LOG.info("Parsing: " + value);
 
             BooleanExpression andExpression = parse(value);
-            assertTrue("Created LogicExpression expression", andExpression instanceof LogicExpression);
+            assertTrue(andExpression instanceof LogicExpression, "Created LogicExpression expression");
             LogicExpression logicExpression = (LogicExpression)andExpression;
             Expression left = logicExpression.getLeft();
             Expression right = logicExpression.getRight();
 
-            assertTrue("Left is a binary filter", left instanceof ComparisonExpression);
-            assertTrue("Right is a binary filter", right instanceof ComparisonExpression);
+            assertTrue(left instanceof ComparisonExpression, "Left is a binary filter");
+            assertTrue(right instanceof ComparisonExpression, "Right is a binary filter");
             ComparisonExpression leftCompare = (ComparisonExpression)left;
             ComparisonExpression rightCompare = (ComparisonExpression)right;
             assertPropertyExpression("left", leftCompare.getLeft(), "x");
@@ -56,15 +60,16 @@ public class SelectorParserTest extends TestCase {
     }
 
     protected void assertPropertyExpression(String message, Expression expression, String expected) {
-        assertTrue(message + ". Must be PropertyExpression", expression instanceof PropertyExpression);
+        assertTrue(expression instanceof PropertyExpression, message + ". Must be PropertyExpression");
         PropertyExpression propExp = (PropertyExpression)expression;
-        assertEquals(message + ". Property name", expected, propExp.getName());
+        assertEquals(expected, propExp.getName(), message + ". Property name");
     }
 
     protected BooleanExpression parse(String text) throws Exception {
         return SelectorParser.parse(text);
     }
 
+    @Test
     public void testBooleanSelector() throws Exception {
         MockMessage message = createMessage();
 
@@ -72,6 +77,7 @@ public class SelectorParserTest extends TestCase {
         assertSelector(message, "(trueProp OR falseProp) AND falseProp", false);
     }
 
+    @Test
     public void testJMSPropertySelectors() throws Exception {
         MockMessage message = createMessage();
         message.setJMSType("selector-test");
@@ -91,6 +97,7 @@ public class SelectorParserTest extends TestCase {
         assertSelector(message, "JMSType = 'crap'", false);
     }
 
+    @Test
     public void testBasicSelectors() throws Exception {
         MockMessage message = createMessage();
 
@@ -100,6 +107,7 @@ public class SelectorParserTest extends TestCase {
         assertSelector(message, "rank >= 124", false);
     }
 
+    @Test
     public void testPropertyTypes() throws Exception {
         MockMessage message = createMessage();
         assertSelector(message, "byteProp = 123", true);
@@ -126,6 +134,7 @@ public class SelectorParserTest extends TestCase {
         assertSelector(message, "doubleProp = 10", false);
     }
 
+    @Test
     public void testAndSelectors() throws Exception {
         MockMessage message = createMessage();
 
@@ -135,6 +144,7 @@ public class SelectorParserTest extends TestCase {
         assertSelector(message, "unknown = 'Foo' and anotherUnknown < 200", false);
     }
 
+    @Test
     public void testOrSelectors() throws Exception {
         MockMessage message = createMessage();
 
@@ -145,6 +155,7 @@ public class SelectorParserTest extends TestCase {
         assertSelector(message, "unknown = 'Foo' or anotherUnknown < 200", false);
     }
 
+    @Test
     public void testPlus() throws Exception {
         MockMessage message = createMessage();
 
@@ -156,6 +167,7 @@ public class SelectorParserTest extends TestCase {
         assertSelector(message, "name + '!' = 'James!'", true);
     }
 
+    @Test
     public void testMinus() throws Exception {
         MockMessage message = createMessage();
 
@@ -164,6 +176,7 @@ public class SelectorParserTest extends TestCase {
         assertSelector(message, "rank - 2 > 122", false);
     }
 
+    @Test
     public void testMultiply() throws Exception {
         MockMessage message = createMessage();
 
@@ -172,6 +185,7 @@ public class SelectorParserTest extends TestCase {
         assertSelector(message, "rank * 2 < 130", false);
     }
 
+    @Test
     public void testDivide() throws Exception {
         MockMessage message = createMessage();
 
@@ -181,6 +195,7 @@ public class SelectorParserTest extends TestCase {
         assertSelector(message, "version / 2 = 1", true);
     }
 
+    @Test
     public void testBetween() throws Exception {
         MockMessage message = createMessage();
 
@@ -188,6 +203,7 @@ public class SelectorParserTest extends TestCase {
         assertSelector(message, "rank between 10 and 120", false);
     }
 
+    @Test
     public void testIn() throws Exception {
         MockMessage message = createMessage();
 
@@ -199,6 +215,7 @@ public class SelectorParserTest extends TestCase {
         assertSelector(message, "name not in ('Gromit', 'Bob', 'Cheddar')", true);
     }
 
+    @Test
     public void testIsNull() throws Exception {
         MockMessage message = createMessage();
 
@@ -208,6 +225,7 @@ public class SelectorParserTest extends TestCase {
         assertSelector(message, "name is null", false);
     }
 
+    @Test
     public void testLike() throws Exception {
         MockMessage message = createMessage();
         message.setStringProperty("modelClassId", "com.whatever.something.foo.bar");
@@ -237,6 +255,7 @@ public class SelectorParserTest extends TestCase {
      *
      * @throws Exception if an error occurs during the test.
      */
+    @Test
     public void testMatsHenricsonUseCases() throws Exception {
         MockMessage message = createMessage();
         assertSelector(message, "SessionserverId=1870414179", false);
@@ -259,6 +278,7 @@ public class SelectorParserTest extends TestCase {
     }
 
     @SuppressWarnings("unused")
+    @Test
     public void testFloatComparisons() throws Exception {
         MockMessage message = createMessage();
 
@@ -308,11 +328,13 @@ public class SelectorParserTest extends TestCase {
         assertSelector(message, "4E-10 < 5E-10", true);
     }
 
+    @Test
     public void testStringQuoteParsing() throws Exception {
         MockMessage message = createMessage();
         assertSelector(message, "quote = '''In God We Trust'''", true);
     }
 
+    @Test
     public void testLikeComparisons() throws Exception {
         MockMessage message = createMessage();
 
@@ -334,6 +356,7 @@ public class SelectorParserTest extends TestCase {
         assertSelector(message, "punctuation LIKE '!#$&()*+,-./:;<=>?@[\\]^`{|}~'", true);
     }
 
+    @Test
     public void testInvalidSelector() throws Exception {
         MockMessage message = createMessage();
         assertInvalidSelector(message, "3+5");
@@ -343,6 +366,7 @@ public class SelectorParserTest extends TestCase {
         assertInvalidSelector(message, "a = 1 AMD  b = 2");
     }
 
+    @Test
     public void testHyphenatedProperty() throws Exception {
         MockMessage message = createMessage();
         message.setStringProperty("hyphenated-prop", "val");
@@ -386,9 +410,9 @@ public class SelectorParserTest extends TestCase {
 
     protected void assertSelector(MockMessage message, String text, boolean expected) throws FilterException {
         BooleanExpression selector = SelectorParser.parse(text);
-        assertTrue("Created a valid selector", selector != null);
+        assertTrue(selector != null, "Created a valid selector");
         boolean value = selector.matches(message);
-        assertEquals("Selector for: " + text, expected, value);
+        assertEquals(expected, value, "Selector for: " + text);
     }
 
     protected MockMessage createMessage(String subject) {

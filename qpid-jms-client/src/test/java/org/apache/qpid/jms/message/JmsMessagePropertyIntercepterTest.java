@@ -33,11 +33,12 @@ import static org.apache.qpid.jms.message.JmsMessageSupport.JMS_REPLYTO;
 import static org.apache.qpid.jms.message.JmsMessageSupport.JMS_TIMESTAMP;
 import static org.apache.qpid.jms.message.JmsMessageSupport.JMS_TYPE;
 import static org.apache.qpid.jms.message.JmsMessageSupport.RELEASED;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import jakarta.jms.JMSException;
 import jakarta.jms.Message;
@@ -48,7 +49,7 @@ import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.JmsQueue;
 import org.apache.qpid.jms.JmsSession;
 import org.apache.qpid.jms.message.facade.JmsMessageFacade;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 public class JmsMessagePropertyIntercepterTest {
@@ -122,13 +123,15 @@ public class JmsMessagePropertyIntercepterTest {
         assertEquals(destination.getAddress(), JmsMessagePropertyIntercepter.getProperty(message, JMS_DESTINATION));
     }
 
-    @Test(expected=JMSException.class)
+    @Test
     public void testSetJMSDestination() throws JMSException {
-        JmsMessageFacade facade = Mockito.mock(JmsMessageFacade.class);
-        JmsMessage message = Mockito.mock(JmsMapMessage.class);
-        Mockito.when(message.getFacade()).thenReturn(facade);
-        String destinationName = new String("TestDestination");
-        JmsMessagePropertyIntercepter.setProperty(message, JMS_DESTINATION, destinationName);
+        assertThrows(JMSException.class, () -> {
+            JmsMessageFacade facade = Mockito.mock(JmsMessageFacade.class);
+            JmsMessage message = Mockito.mock(JmsMapMessage.class);
+            Mockito.when(message.getFacade()).thenReturn(facade);
+            String destinationName = new String("TestDestination");
+            JmsMessagePropertyIntercepter.setProperty(message, JMS_DESTINATION, destinationName);
+        });
     }
 
     @Test
@@ -234,13 +237,15 @@ public class JmsMessagePropertyIntercepterTest {
         assertEquals(destination.getAddress(), JmsMessagePropertyIntercepter.getProperty(message, JMS_REPLYTO));
     }
 
-    @Test(expected=JMSException.class)
+    @Test
     public void testSetJMSReplyTo() throws JMSException {
-        JmsMessageFacade facade = Mockito.mock(JmsMessageFacade.class);
-        JmsMessage message = Mockito.mock(JmsMapMessage.class);
-        Mockito.when(message.getFacade()).thenReturn(facade);
-        String destinationName = new String("TestDestination");
-        JmsMessagePropertyIntercepter.setProperty(message, JMS_REPLYTO, destinationName);
+        assertThrows(JMSException.class, () -> {
+            JmsMessageFacade facade = Mockito.mock(JmsMessageFacade.class);
+            JmsMessage message = Mockito.mock(JmsMapMessage.class);
+            Mockito.when(message.getFacade()).thenReturn(facade);
+            String destinationName = new String("TestDestination");
+            JmsMessagePropertyIntercepter.setProperty(message, JMS_REPLYTO, destinationName);
+        });
     }
 
     @Test
@@ -1269,8 +1274,8 @@ public class JmsMessagePropertyIntercepterTest {
         Mockito.when(message.getFacade()).thenReturn(facade);
         Mockito.when(facade.getGroupId()).thenReturn("GROUP_ID");
         assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMSX_GROUPID));
-        assertTrue(JMSX_GROUPID + " is not a header and should be included",
-                  JmsMessagePropertyIntercepter.getPropertyNames(message, true).contains(JMSX_GROUPID));
+        assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message, true).contains(JMSX_GROUPID),
+                  JMSX_GROUPID + " is not a header and should be included");
     }
 
     @Test
@@ -1366,8 +1371,8 @@ public class JmsMessagePropertyIntercepterTest {
         Mockito.when(message.getFacade()).thenReturn(facade);
         Mockito.when(facade.getGroupSequence()).thenReturn(1);
         assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMSX_GROUPSEQ));
-        assertTrue(JMSX_GROUPSEQ + " is not a header and should be included",
-                   JmsMessagePropertyIntercepter.getPropertyNames(message, true).contains(JMSX_GROUPSEQ));
+        assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message, true).contains(JMSX_GROUPSEQ),
+                   JMSX_GROUPSEQ + " is not a header and should be included");
     }
 
     @Test
@@ -1463,8 +1468,8 @@ public class JmsMessagePropertyIntercepterTest {
         Mockito.when(message.getFacade()).thenReturn(facade);
         Mockito.when(facade.getDeliveryCount()).thenReturn(2);
         assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMSX_DELIVERY_COUNT));
-        assertTrue(JMSX_DELIVERY_COUNT + " is not a header and should be included",
-                   JmsMessagePropertyIntercepter.getPropertyNames(message, true).contains(JMSX_DELIVERY_COUNT));
+        assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message, true).contains(JMSX_DELIVERY_COUNT),
+                   JMSX_DELIVERY_COUNT + " is not a header and should be included");
     }
 
     @Test
@@ -1573,8 +1578,8 @@ public class JmsMessagePropertyIntercepterTest {
         Mockito.when(message.getFacade()).thenReturn(facade);
         Mockito.when(facade.getUserId()).thenReturn("Administrator");
         assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMSX_USERID));
-        assertTrue(JMSX_USERID + " is not a header and should be included",
-                   JmsMessagePropertyIntercepter.getPropertyNames(message, true).contains(JMSX_USERID));
+        assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message, true).contains(JMSX_USERID),
+                   JMSX_USERID + " is not a header and should be included");
     }
 
     @Test

@@ -16,10 +16,10 @@
  */
 package org.apache.qpid.jms.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -29,12 +29,11 @@ import java.util.Arrays;
 import java.util.UUID;
 import java.util.Vector;
 
+import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.util.ClassLoadingAwareObjectInputStream.TrustedClassFilter;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TestName;
+import org.junit.jupiter.api.Test;
 
-public class ClassLoadingAwareObjectInputStreamTest {
+public class ClassLoadingAwareObjectInputStreamTest extends QpidJmsTestCase {
 
     private final TrustedClassFilter ACCEPTS_ALL_FILTER = new TrustedClassFilter() {
 
@@ -52,19 +51,16 @@ public class ClassLoadingAwareObjectInputStreamTest {
         }
     };
 
-    @Rule
-    public TestName name = new TestName();
-
     //----- Test for serialized objects --------------------------------------//
 
     @Test
     public void testReadObject() throws Exception {
         // Expect to succeed
-        doTestReadObject(new SimplePojo(name.getMethodName()), ACCEPTS_ALL_FILTER);
+        doTestReadObject(new SimplePojo(_testMethodName), ACCEPTS_ALL_FILTER);
 
         // Expect to fail
         try {
-            doTestReadObject(new SimplePojo(name.getMethodName()), ACCEPTS_NONE_FILTER);
+            doTestReadObject(new SimplePojo(_testMethodName), ACCEPTS_NONE_FILTER);
             fail("Should have failed to read");
         } catch (ClassNotFoundException cnfe) {
             // Expected
@@ -73,7 +69,7 @@ public class ClassLoadingAwareObjectInputStreamTest {
 
     @Test
     public void testReadObjectWithAnonymousClass() throws Exception {
-        AnonymousSimplePojoParent pojoParent = new AnonymousSimplePojoParent(name.getMethodName());
+        AnonymousSimplePojoParent pojoParent = new AnonymousSimplePojoParent(_testMethodName);
 
         byte[] serialized = serializeObject(pojoParent);
 
@@ -90,13 +86,13 @@ public class ClassLoadingAwareObjectInputStreamTest {
             Object obj = reader.readObject();
 
             assertTrue(obj instanceof AnonymousSimplePojoParent);
-            assertEquals("Unexpected payload", pojoParent.getPayload(), ((AnonymousSimplePojoParent)obj).getPayload());
+            assertEquals(pojoParent.getPayload(), ((AnonymousSimplePojoParent)obj).getPayload(), "Unexpected payload");
         }
     }
 
     @Test
     public void testReadObjectWitLocalClass() throws Exception {
-        LocalSimplePojoParent pojoParent = new LocalSimplePojoParent(name.getMethodName());
+        LocalSimplePojoParent pojoParent = new LocalSimplePojoParent(_testMethodName);
 
         byte[] serialized = serializeObject(pojoParent);
 
@@ -113,7 +109,7 @@ public class ClassLoadingAwareObjectInputStreamTest {
             Object obj = reader.readObject();
 
             assertTrue(obj instanceof LocalSimplePojoParent);
-            assertEquals("Unexpected payload", pojoParent.getPayload(), ((LocalSimplePojoParent)obj).getPayload());
+            assertEquals(pojoParent.getPayload(), ((LocalSimplePojoParent)obj).getPayload(), "Unexpected payload");
         }
     }
 
@@ -154,7 +150,7 @@ public class ClassLoadingAwareObjectInputStreamTest {
 
     @Test
     public void testReadObjectString() throws Exception {
-        doTestReadObject(new String(name.getMethodName()), ACCEPTS_ALL_FILTER);
+        doTestReadObject(new String(_testMethodName), ACCEPTS_ALL_FILTER);
     }
 
     //----- Test that arrays of objects can be read --------------------------//
@@ -163,8 +159,8 @@ public class ClassLoadingAwareObjectInputStreamTest {
     public void testReadObjectStringArray() throws Exception {
         String[] value = new String[2];
 
-        value[0] = name.getMethodName() + "-1";
-        value[1] = name.getMethodName() + "-2";
+        value[0] = _testMethodName + "-1";
+        value[1] = _testMethodName + "-2";
 
         doTestReadObject(value, ACCEPTS_ALL_FILTER);
     }
@@ -225,7 +221,7 @@ public class ClassLoadingAwareObjectInputStreamTest {
 
     @Test
     public void testReadObjectStringNotFiltered() throws Exception {
-        doTestReadObject(new String(name.getMethodName()), ACCEPTS_NONE_FILTER);
+        doTestReadObject(new String(_testMethodName), ACCEPTS_NONE_FILTER);
     }
 
     //----- Test that primitive arrays get past filters ----------------------//
@@ -296,8 +292,8 @@ public class ClassLoadingAwareObjectInputStreamTest {
     public void testReadObjectStringArrayFiltered() throws Exception {
         String[] value = new String[2];
 
-        value[0] = name.getMethodName() + "-1";
-        value[1] = name.getMethodName() + "-2";
+        value[0] = _testMethodName + "-1";
+        value[1] = _testMethodName + "-2";
 
         byte[] serialized = serializeObject(value);
 
@@ -315,10 +311,10 @@ public class ClassLoadingAwareObjectInputStreamTest {
     public void testReadObjectMixedTypeArrayGetsFiltered() throws Exception {
         Object[] value = new Object[4];
 
-        value[0] = name.getMethodName();
+        value[0] =_testMethodName;
         value[1] = UUID.randomUUID();
         value[2] = new Vector<Object>();
-        value[3] = new SimplePojo(name.getMethodName());
+        value[3] = new SimplePojo(_testMethodName);
 
         byte[] serialized = serializeObject(value);
 
@@ -362,10 +358,10 @@ public class ClassLoadingAwareObjectInputStreamTest {
     public void testReadObjectMultiDimensionalStringArrayFiltered() throws Exception {
         String[][] value = new String[2][2];
 
-        value[0][0] = name.getMethodName() + "-0-0";
-        value[0][1] = name.getMethodName() + "-0-1";
-        value[1][0] = name.getMethodName() + "-1-0";
-        value[1][1] = name.getMethodName() + "-1-1";
+        value[0][0] = _testMethodName + "-0-0";
+        value[0][1] = _testMethodName + "-0-1";
+        value[1][0] = _testMethodName + "-1-0";
+        value[1][1] = _testMethodName + "-1-1";
 
         byte[] serialized = serializeObject(value);
 
@@ -381,7 +377,7 @@ public class ClassLoadingAwareObjectInputStreamTest {
 
     @Test
     public void testReadObjectFailsWithUntrustedType() throws Exception {
-        byte[] serialized = serializeObject(new SimplePojo(name.getMethodName()));
+        byte[] serialized = serializeObject(new SimplePojo(_testMethodName));
 
         TrustedClassFilter myFilter = new TrustedClassFilter() {
 

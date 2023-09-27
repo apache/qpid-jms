@@ -18,8 +18,8 @@ package org.apache.qpid.jms.integration;
 
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import javax.jms.Connection;
 import javax.jms.Destination;
@@ -39,7 +39,8 @@ import org.apache.qpid.jms.test.testpeer.matchers.TransactionalStateMatcher;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.transaction.TxnCapability;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Test for Consumer state when various consumer presettle options are applied.
@@ -50,25 +51,29 @@ public class PresettledConsumerIntegrationTest extends QpidJmsTestCase {
 
     //----- Test the jms.presettlePolicy.presettleAll option -----------------//
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testPresettleAllConfigurationAppliedToTopic() throws Exception {
         String presettleConfig = "?jms.presettlePolicy.presettleAll=true";
         doTestConsumerWithPresettleOptions(presettleConfig, false, true, true, Topic.class);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testPresettledAllConfigurationAppliedToQueue() throws Exception {
         String presettleConfig = "?jms.presettlePolicy.presettleAll=true";
         doTestConsumerWithPresettleOptions(presettleConfig, false, true, true, Queue.class);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testPresettledAllConfigurationAppliedToTempTopic() throws Exception {
         String presettleConfig = "?jms.presettlePolicy.presettleAll=true";
         doTestConsumerWithPresettleOptions(presettleConfig, false, true, true, TemporaryTopic.class);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testPresettledAllConfigurationAppliedToTempQueue() throws Exception {
         String presettleConfig = "?jms.presettlePolicy.presettleAll=true";
         doTestConsumerWithPresettleOptions(presettleConfig, false, true, true, TemporaryQueue.class);
@@ -76,25 +81,29 @@ public class PresettledConsumerIntegrationTest extends QpidJmsTestCase {
 
     //----- Test the jms.presettlePolicy.presettleTopicConsumers option ------//
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testPresettleTopicConsumersConfigurationAppliedToTopic() throws Exception {
         String presettleConfig = "?jms.presettlePolicy.presettleTopicConsumers=true";
         doTestConsumerWithPresettleOptions(presettleConfig, false, true, true, Topic.class);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testPresettledTopicConsumersConfigurationAppliedToQueue() throws Exception {
         String presettleConfig = "?jms.presettlePolicy.presettleTopicConsumers=true";
         doTestConsumerWithPresettleOptions(presettleConfig, false, false, false, Queue.class);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testPresettledTopicConsumersConfigurationAppliedToTempTopic() throws Exception {
         String presettleConfig = "?jms.presettlePolicy.presettleTopicConsumers=true";
         doTestConsumerWithPresettleOptions(presettleConfig, false, true, true, TemporaryTopic.class);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testPresettledTopicConsumersConfigurationAppliedToTempQueue() throws Exception {
         String presettleConfig = "?jms.presettlePolicy.presettleTopicConsumers=true";
         doTestConsumerWithPresettleOptions(presettleConfig, false, false, false, TemporaryQueue.class);
@@ -102,25 +111,29 @@ public class PresettledConsumerIntegrationTest extends QpidJmsTestCase {
 
     //----- Test the jms.presettlePolicy.presettleQueueConsumers option ----- //
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testPresettleQueueConsumersConfigurationAppliedToTopic() throws Exception {
         String presettleConfig = "?jms.presettlePolicy.presettleQueueConsumers=true";
         doTestConsumerWithPresettleOptions(presettleConfig, false, false, false, Topic.class);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testPresettledQueueConsumersConfigurationAppliedToQueue() throws Exception {
         String presettleConfig = "?jms.presettlePolicy.presettleQueueConsumers=true";
         doTestConsumerWithPresettleOptions(presettleConfig, false, true, true, Queue.class);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testPresettledQueueConsumersConfigurationAppliedToTempTopic() throws Exception {
         String presettleConfig = "?jms.presettlePolicy.presettleQueueConsumers=true";
         doTestConsumerWithPresettleOptions(presettleConfig, false, false, false, TemporaryTopic.class);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testPresettledQueueConsumersConfigurationAppliedToTempQueue() throws Exception {
         String presettleConfig = "?jms.presettlePolicy.presettleQueueConsumers=true";
         doTestConsumerWithPresettleOptions(presettleConfig, false, true, true, TemporaryQueue.class);
@@ -128,25 +141,29 @@ public class PresettledConsumerIntegrationTest extends QpidJmsTestCase {
 
     //----- Test the presettled consumer still settles if needed -------------//
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testPresettledTopicConsumerSettlesWhenNeeded() throws Exception {
         String presettleConfig = "?jms.presettlePolicy.presettleAll=true";
         doTestConsumerWithPresettleOptions(presettleConfig, false, true, false, Topic.class);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testPresettledQueueConsumerSettlesWhenNeeded() throws Exception {
         String presettleConfig = "?jms.presettlePolicy.presettleAll=true";
         doTestConsumerWithPresettleOptions(presettleConfig, false, true, false, Queue.class);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testPresettledTempTopicConsumerSettlesWhenNeeded() throws Exception {
         String presettleConfig = "?jms.presettlePolicy.presettleAll=true";
         doTestConsumerWithPresettleOptions(presettleConfig, false, true, false, TemporaryTopic.class);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testPresettledTempQueueConsumerSettlesWhenNeeded() throws Exception {
         String presettleConfig = "?jms.presettlePolicy.presettleAll=true";
         doTestConsumerWithPresettleOptions(presettleConfig, false, true, false, TemporaryQueue.class);
@@ -154,49 +171,57 @@ public class PresettledConsumerIntegrationTest extends QpidJmsTestCase {
 
     //----- Test that transacted consumers always send unsettled -------------//
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testTransactedTopicConsumerNotSettledPresettleAll() throws Exception {
         String presettleConfig = "?jms.presettlePolicy.presettleAll=true";
         doTestConsumerWithPresettleOptions(presettleConfig, true, false, false, Topic.class);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testTransactedQueueConsumerNotSettledPresettleAll() throws Exception {
         String presettleConfig = "?jms.presettlePolicy.presettleAll=true";
         doTestConsumerWithPresettleOptions(presettleConfig, true, false, false, Queue.class);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testTransactedTempTopicConsumerNotSettledPresettleAll() throws Exception {
         String presettleConfig = "?jms.presettlePolicy.presettleAll=true";
         doTestConsumerWithPresettleOptions(presettleConfig, true, false, false, TemporaryTopic.class);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testTransactedTempQueueConsumerNotSettledPresettleAll() throws Exception {
         String presettleConfig = "?jms.presettlePolicy.presettleAll=true";
         doTestConsumerWithPresettleOptions(presettleConfig, true, false, false, TemporaryQueue.class);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testTransactedTopicConsumerNotSettledPresettleTopicConsumers() throws Exception {
         String presettleConfig = "?jms.presettlePolicy.presettleTopicConsumers=true";
         doTestConsumerWithPresettleOptions(presettleConfig, true, false, false, Topic.class);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testTransactedQueueConsumerNotSettledPresettleQueueConsumers() throws Exception {
         String presettleConfig = "?jms.presettlePolicy.presettleQueueConsumers=true";
         doTestConsumerWithPresettleOptions(presettleConfig, true, false, false, Queue.class);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testTransactedTempTopicConsumerNotSettledPresettleTopicConsumers() throws Exception {
         String presettleConfig = "?jms.presettlePolicy.presettleTopicConsumers=true";
         doTestConsumerWithPresettleOptions(presettleConfig, true, false, false, TemporaryTopic.class);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testTransactedTempQueueConsumerNotSettledPresettleQueueConsumers() throws Exception {
         String presettleConfig = "?jms.presettlePolicy.presettleQueueConsumers=true";
         doTestConsumerWithPresettleOptions(presettleConfig, true, false, false, TemporaryQueue.class);

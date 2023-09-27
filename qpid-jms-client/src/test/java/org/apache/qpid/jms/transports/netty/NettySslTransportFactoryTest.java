@@ -18,12 +18,13 @@ package org.apache.qpid.jms.transports.netty;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.URI;
 import java.net.URLEncoder;
@@ -32,7 +33,7 @@ import java.util.List;
 
 import org.apache.qpid.jms.transports.Transport;
 import org.apache.qpid.jms.transports.TransportOptions;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test the NettySslTransportFactoryTest class
@@ -107,18 +108,22 @@ public class NettySslTransportFactoryTest {
         assertNull(options.getKeyAlias());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testCreateWithUnknownOption() throws Exception {
-        URI BASE_URI = new URI("ssl://localhost:5672?transport.someOption=true");
-        NettySslTransportFactory factory = new NettySslTransportFactory();
-        factory.createTransport(BASE_URI);
+        assertThrows(IllegalArgumentException.class, () -> {
+            URI BASE_URI = new URI("ssl://localhost:5672?transport.someOption=true");
+            NettySslTransportFactory factory = new NettySslTransportFactory();
+            factory.createTransport(BASE_URI);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testCreateWithBadOption() throws Exception {
-        URI BASE_URI = new URI("ssl://localhost:5672?transport.trafficClass=4096");
-        NettySslTransportFactory factory = new NettySslTransportFactory();
-        factory.createTransport(BASE_URI);
+        assertThrows(IllegalArgumentException.class, () -> {
+            URI BASE_URI = new URI("ssl://localhost:5672?transport.trafficClass=4096");
+            NettySslTransportFactory factory = new NettySslTransportFactory();
+            factory.createTransport(BASE_URI);
+        });
     }
 
     @Test

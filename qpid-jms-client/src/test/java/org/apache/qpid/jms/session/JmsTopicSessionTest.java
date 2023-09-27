@@ -16,7 +16,8 @@
  */
 package org.apache.qpid.jms.session;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import javax.jms.IllegalStateException;
 import javax.jms.JMSException;
@@ -27,8 +28,10 @@ import org.apache.qpid.jms.JmsConnectionTestSupport;
 import org.apache.qpid.jms.JmsQueue;
 import org.apache.qpid.jms.JmsTopic;
 import org.apache.qpid.jms.JmsTopicSession;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Test the contract of JmsTopicSession against JMS Spec requirements.
@@ -40,9 +43,9 @@ public class JmsTopicSessionTest extends JmsConnectionTestSupport {
     private final JmsTopic topic = new JmsTopic();
 
     @Override
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
+        super.setUp(testInfo);
 
         topicConnection = createTopicConnectionToMockProvider();
         topicConnection.start();
@@ -60,52 +63,74 @@ public class JmsTopicSessionTest extends JmsConnectionTestSupport {
      *
      * @throws JMSException if an error occurs during the test.
      */
-    @Test(timeout = 30000, expected=IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testCreateBrowserOnTopicSession() throws JMSException {
-        topicSession.createBrowser(queue);
+        assertThrows(IllegalStateException.class, () -> {
+            topicSession.createBrowser(queue);
+        });
     }
 
-    @Test(timeout = 30000, expected=IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testCreateBrowserWithSelectorOnTopicSession() throws JMSException {
-        topicSession.createBrowser(queue, "color = red");
+        assertThrows(IllegalStateException.class, () -> {
+            topicSession.createBrowser(queue, "color = red");
+        });
     }
 
-    @Test(timeout = 30000, expected=IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testCreateConsumerToQueue() throws JMSException {
-        topicSession.createConsumer(queue);
+        assertThrows(IllegalStateException.class, () -> {
+            topicSession.createConsumer(queue);
+        });
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testCreateConsumerToTopic() throws JMSException {
        assertNotNull(topicSession.createConsumer(topic));
     }
 
-    @Test(timeout = 30000, expected=IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testCreateConsumerWithSelectorToQueue() throws JMSException {
-        topicSession.createConsumer(queue, "color = red");
+        assertThrows(IllegalStateException.class, () -> {
+            topicSession.createConsumer(queue, "color = red");
+        });
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testCreateConsumerWithSelectorToTopic() throws JMSException {
         assertNotNull(topicSession.createConsumer(topic, "color = red"));
     }
 
-    @Test(timeout = 30000, expected=IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testCreateConsumerWithSelectorNoLocalToQueue() throws JMSException {
-        topicSession.createConsumer(queue, "color = red", false);
+        assertThrows(IllegalStateException.class, () -> {
+            topicSession.createConsumer(queue, "color = red", false);
+        });
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testCreateConsumerWithSelectorNoLocalToTopic() throws JMSException {
         assertNotNull(topicSession.createConsumer(topic, "color = red", false));
     }
 
-    @Test(timeout = 30000, expected=IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testCreateProducerToQueue() throws JMSException {
-        topicSession.createProducer(queue);
+        assertThrows(IllegalStateException.class, () -> {
+            topicSession.createProducer(queue);
+        });
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testCreateProducerToTopic() throws JMSException {
         assertNotNull(topicSession.createProducer(topic));
     }
@@ -120,9 +145,12 @@ public class JmsTopicSessionTest extends JmsConnectionTestSupport {
      *
      * @throws JMSException if an error occurs during the test.
      */
-    @Test(timeout = 30000, expected=IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testCreateQueueOnTopicSession() throws JMSException {
-        topicSession.createQueue("test-queue");
+        assertThrows(IllegalStateException.class, () -> {
+            topicSession.createQueue("test-queue");
+        });
     }
 
     /**
@@ -135,23 +163,35 @@ public class JmsTopicSessionTest extends JmsConnectionTestSupport {
      *
      * @throws JMSException if an error occurs during the test.
      */
-    @Test(timeout = 30000, expected=IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testCreateTemporaryQueueOnTopicSession() throws JMSException {
-        topicSession.createTemporaryQueue();
+        assertThrows(IllegalStateException.class, () -> {
+            topicSession.createTemporaryQueue();
+        });
     }
 
-    @Test(timeout = 30000, expected=IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testCreateQueueReceiver() throws JMSException {
-        ((JmsTopicSession) topicSession).createReceiver(queue);
+        assertThrows(IllegalStateException.class, () -> {
+            ((JmsTopicSession) topicSession).createReceiver(queue);
+        });
     }
 
-    @Test(timeout = 30000, expected=IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testCreateQueueReceiverWithSelector() throws JMSException {
-        ((JmsTopicSession) topicSession).createReceiver(queue, "color = read");
+        assertThrows(IllegalStateException.class, () -> {
+            ((JmsTopicSession) topicSession).createReceiver(queue, "color = read");
+        });
     }
 
-    @Test(timeout = 30000, expected=IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testCreateQueueSender() throws JMSException {
-        ((JmsTopicSession) topicSession).createSender(queue);
+        assertThrows(IllegalStateException.class, () -> {
+            ((JmsTopicSession) topicSession).createSender(queue);
+        });
     }
 }

@@ -16,9 +16,9 @@
  */
 package org.apache.qpid.jms.usecases;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 import java.util.Random;
@@ -33,8 +33,9 @@ import javax.jms.Queue;
 import javax.jms.Session;
 
 import org.apache.qpid.jms.support.AmqpTestSupport;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,27 +55,31 @@ public class JmsLargeMessageSendRecvTimedTest extends AmqpTestSupport {
         return payload;
     }
 
-    @Test(timeout = 2 * 60 * 1000)
+    @Test
+    @Timeout(120)
     public void testSendSmallerMessages() throws Exception {
         for (int i = 512; i <= (16 * 1024); i += 512) {
             doTestSendLargeMessage(i);
         }
     }
 
-    @Test(timeout = 2 * 60 * 1000)
+    @Test
+    @Timeout(120)
     public void testSendFixedSizedMessages() throws Exception {
         doTestSendLargeMessage(65536);
         doTestSendLargeMessage(65536 * 2);
         doTestSendLargeMessage(65536 * 4);
     }
 
-    @Test(timeout = 5 * 60 * 1000)
+    @Test
+    @Timeout(300)
     public void testSend10MBMessage() throws Exception {
         doTestSendLargeMessage(1024 * 1024 * 10);
     }
 
-    @Ignore
-    @Test(timeout = 5 * 60 * 1000)
+    @Disabled
+    @Test
+    @Timeout(300)
     public void testSend100MBMessage() throws Exception {
         doTestSendLargeMessage(1024 * 1024 * 100);
     }
@@ -88,7 +93,7 @@ public class JmsLargeMessageSendRecvTimedTest extends AmqpTestSupport {
 
         long startTime = System.currentTimeMillis();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         MessageProducer producer = session.createProducer(queue);
         BytesMessage message = session.createBytesMessage();
         message.writeBytes(payload);

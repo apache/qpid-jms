@@ -16,14 +16,14 @@
  */
 package org.apache.qpid.jms.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,7 +59,7 @@ public class LRUCacheTest {
                 LOG.info("count: " + count + ", max=" + max);
             }
         }
-        assertEquals("size is still in order", 1000, underTest.size());
+        assertEquals(1000, underTest.size(), "size is still in order");
     }
 
     @SuppressWarnings("serial")

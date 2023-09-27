@@ -16,13 +16,13 @@
  */
 package org.apache.qpid.jms.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -35,8 +35,9 @@ import javax.jms.MessageNotReadableException;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsMessage;
 import org.apache.qpid.jms.message.facade.test.JmsTestMessageFacade;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.mockito.Mockito;
 
 /**
@@ -48,7 +49,7 @@ public class PriorityMessageQueueTest {
     private final IdGenerator messageId = new IdGenerator();
     private long sequence;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         queue = new PriorityMessageQueue();
         queue.start();
@@ -219,12 +220,14 @@ public class PriorityMessageQueueTest {
         assertTrue(queue.isEmpty());
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testDequeueWaitsUntilMessageArrives() throws InterruptedException {
         doDequeueWaitsUntilMessageArrivesTestImpl(-1);
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testDequeueTimedWaitsUntilMessageArrives() throws InterruptedException {
         doDequeueWaitsUntilMessageArrivesTestImpl(5000);
     }
@@ -247,12 +250,14 @@ public class PriorityMessageQueueTest {
         assertSame(message, queue.dequeue(timeout));
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testDequeueWaitsUntilMessageArrivesWhenLockNotified() throws InterruptedException {
         doDequeueWaitsUntilMessageArrivesWhenLockNotifiedTestImpl(-1);
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testTimedDequeueWaitsUntilMessageArrivesWhenLockNotified() throws InterruptedException {
         doDequeueWaitsUntilMessageArrivesWhenLockNotifiedTestImpl(100000);
     }
@@ -287,7 +292,8 @@ public class PriorityMessageQueueTest {
         assertSame(message, queue.dequeue(timeout));
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testDequeueReturnsWhenQueueIsStopped() throws InterruptedException {
         Thread runner = new Thread(new Runnable() {
 
@@ -410,7 +416,7 @@ public class PriorityMessageQueueTest {
             }
         }
 
-        assertNotNull("MessageQueue implementation unknown", lock);
+        assertNotNull(lock, "MessageQueue implementation unknown");
         lock.setAccessible(true);
 
         Object lockView = lock.get(queue);

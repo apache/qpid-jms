@@ -18,20 +18,20 @@ package org.apache.qpid.jms;
 
 import static org.apache.qpid.jms.SerializationTestSupport.roundTripSerialize;
 import static org.apache.qpid.jms.SerializationTestSupport.serialize;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.qpid.jms.test.QpidJmsTestCase;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class JmsTemporaryTopicTest extends QpidJmsTestCase {
 
@@ -41,61 +41,61 @@ public class JmsTemporaryTopicTest extends QpidJmsTestCase {
     @Test
     public void testIsQueue() {
         JmsTemporaryTopic topic = new JmsTemporaryTopic("myTopic");
-        assertFalse("should not be a queue", topic.isQueue());
+        assertFalse(topic.isQueue(), "should not be a queue");
     }
 
     @Test
     public void testIsTopic() {
         JmsTemporaryTopic topic = new JmsTemporaryTopic("myTopic");
-        assertTrue("should be a topic", topic.isTopic());
+        assertTrue(topic.isTopic(), "should be a topic");
     }
 
     @Test
     public void testIsTemporary() {
         JmsTemporaryTopic topic = new JmsTemporaryTopic("myTopic");
-        assertTrue("should be temporary", topic.isTemporary());
+        assertTrue(topic.isTemporary(), "should be temporary");
     }
 
     @Test
     public void testIsDeleted() throws Exception {
         JmsTemporaryTopic topic = new JmsTemporaryTopic("myTopic");
-        assertFalse("should not be deleted", topic.isDeleted());
+        assertFalse(topic.isDeleted(), "should not be deleted");
         topic.delete();
-        assertTrue("should be deleted", topic.isDeleted());
+        assertTrue(topic.isDeleted(), "should be deleted");
     }
 
     @Test
     public void testEqualsWithNull() {
         JmsTemporaryTopic topic = new JmsTemporaryTopic("myTopic");
-        assertFalse("should not be equal", topic.equals(null));
+        assertFalse(topic.equals(null), "should not be equal");
     }
 
     @Test
     public void testEqualsWithDifferentObjectType() {
         JmsTemporaryTopic topic = new JmsTemporaryTopic("name");
         JmsQueue otherObject = new JmsQueue("name");
-        assertFalse("should not be equal", topic.equals(otherObject));
+        assertFalse(topic.equals(otherObject), "should not be equal");
     }
 
     @Test
     public void testEqualsWithSameObject() {
         JmsTemporaryTopic topic = new JmsTemporaryTopic("name");
-        assertTrue("should be equal to itself", topic.equals(topic));
+        assertTrue(topic.equals(topic), "should be equal to itself");
     }
 
     @Test
     public void testEqualsWithDifferentObject() {
         JmsTemporaryTopic topic1 = new JmsTemporaryTopic("name");
         JmsTemporaryTopic topic2 = new JmsTemporaryTopic("name");
-        assertTrue("should be equal", topic1.equals(topic2));
-        assertTrue("should still be equal", topic2.equals(topic1));
+        assertTrue(topic1.equals(topic2), "should be equal");
+        assertTrue(topic2.equals(topic1), "should still be equal");
     }
 
     @Test
     public void testHashcodeWithEqualNamedObjects() {
         JmsTemporaryTopic topic1 = new JmsTemporaryTopic("name");
         JmsTemporaryTopic topic2 = new JmsTemporaryTopic("name");
-        assertEquals("should have same hashcode", topic1.hashCode(), topic2.hashCode());
+        assertEquals(topic1.hashCode(), topic2.hashCode(), "should have same hashcode");
     }
 
     @Test
@@ -104,7 +104,7 @@ public class JmsTemporaryTopicTest extends QpidJmsTestCase {
         JmsTemporaryTopic topic2 = new JmsTemporaryTopic("name2");
 
         // Not strictly a requirement, but expected in this case
-        assertNotEquals("should not have same hashcode", topic1.hashCode(), topic2.hashCode());
+        assertNotEquals(topic1.hashCode(), topic2.hashCode(), "should not have same hashcode");
     }
 
     @Test
@@ -114,9 +114,9 @@ public class JmsTemporaryTopicTest extends QpidJmsTestCase {
 
         Map<String, String> props = topic.getProperties();
 
-        assertTrue("Property not found: " + NAME_PROP, props.containsKey(NAME_PROP));
-        assertEquals("Unexpected value for property: " + NAME_PROP, name, props.get(NAME_PROP));
-        assertEquals("Unexpected number of properties", 1, props.size());
+        assertTrue(props.containsKey(NAME_PROP), "Property not found: " + NAME_PROP);
+        assertEquals(name, props.get(NAME_PROP), "Unexpected value for property: " + NAME_PROP);
+        assertEquals(1, props.size(), "Unexpected number of properties");
     }
 
     @Test
@@ -138,7 +138,7 @@ public class JmsTemporaryTopicTest extends QpidJmsTestCase {
         String name = "myTopic";
         JmsTemporaryTopic topic = new JmsTemporaryTopic();
 
-        assertNull("Shouldnt have name yet", topic.getTopicName());
+        assertNull(topic.getTopicName(), "Shouldnt have name yet");
 
         Map<String, String> props = new HashMap<String, String>();
         if(addNameProp) {
@@ -151,10 +151,10 @@ public class JmsTemporaryTopicTest extends QpidJmsTestCase {
 
         Map<String, String> unusedProps = topic.setProperties(props);
 
-        assertEquals("Unexpected value for name", name, topic.getTopicName());
+        assertEquals(name, topic.getTopicName(), "Unexpected value for name");
 
         // Verify the returned map was empty and unmodifiable
-        assertTrue("Map should be empty: " + unusedProps, unusedProps.isEmpty());
+        assertTrue(unusedProps.isEmpty(), "Map should be empty: " + unusedProps);
         try {
             unusedProps.put("a", "b");
             fail("Map should be unmodifiable");
@@ -176,12 +176,12 @@ public class JmsTemporaryTopicTest extends QpidJmsTestCase {
         Map<String, String> unusedProps = topic.setProperties(props);
 
         // Verify the name property was applied.
-        assertEquals("Unexpected value for name", name, topic.getTopicName());
+        assertEquals(name, topic.getTopicName(), "Unexpected value for name");
 
         //Verify that the unused property was returned
-        assertEquals("Unexpected size of return map", 1, unusedProps.size());
-        assertTrue("Expected property not found in map: " + unusedProps, unusedProps.containsKey(unusedKey));
-        assertEquals("Unexpected property value", unusedValue, unusedProps.get(unusedKey));
+        assertEquals(1, unusedProps.size(), "Unexpected size of return map");
+        assertTrue(unusedProps.containsKey(unusedKey), "Expected property not found in map: " + unusedProps);
+        assertEquals(unusedValue, unusedProps.get(unusedKey), "Unexpected property value");
 
         // Verify the returned map was unmodifiable
         try {
@@ -199,12 +199,12 @@ public class JmsTemporaryTopicTest extends QpidJmsTestCase {
 
         Object roundTripped = roundTripSerialize(topic);
 
-        assertNotNull("Null destination returned", roundTripped);
-        assertEquals("Unexpected type", JmsTemporaryTopic.class, roundTripped.getClass());
-        assertEquals("Unexpected name", name, ((JmsTemporaryTopic)roundTripped).getTopicName());
+        assertNotNull(roundTripped, "Null destination returned");
+        assertEquals(JmsTemporaryTopic.class, roundTripped.getClass(), "Unexpected type");
+        assertEquals(name, ((JmsTemporaryTopic)roundTripped).getTopicName(), "Unexpected name");
 
-        assertEquals("Objects were not equal", topic, roundTripped);
-        assertEquals("Object hashCodes were not equal", topic.hashCode(), roundTripped.hashCode());
+        assertEquals(topic, roundTripped, "Objects were not equal");
+        assertEquals(topic.hashCode(), roundTripped.hashCode(), "Object hashCodes were not equal");
     }
 
     @Test
@@ -212,12 +212,12 @@ public class JmsTemporaryTopicTest extends QpidJmsTestCase {
         JmsTemporaryTopic topic1 = new JmsTemporaryTopic("myTopic");
         JmsTemporaryTopic topic2 = new JmsTemporaryTopic("myTopic");
 
-        assertEquals("Destinations were not equal", topic1, topic2);
+        assertEquals(topic1, topic2, "Destinations were not equal");
 
         byte[] bytes1 = serialize(topic1);
         byte[] bytes2 = serialize(topic2);
 
-        assertArrayEquals("Serialized bytes were not equal", bytes1, bytes2);
+        assertArrayEquals(bytes1, bytes2, "Serialized bytes were not equal");
     }
 
     @Test
@@ -225,7 +225,7 @@ public class JmsTemporaryTopicTest extends QpidJmsTestCase {
         JmsTemporaryTopic topic1 = new JmsTemporaryTopic("myTopic1");
         JmsTemporaryTopic topic2 = new JmsTemporaryTopic("myTopic2");
 
-        assertNotEquals("Destinations were not expected to be equal", topic1, topic2);
+        assertNotEquals(topic1, topic2, "Destinations were not expected to be equal");
 
         byte[] bytes1 = serialize(topic1);
         byte[] bytes2 = serialize(topic2);

@@ -19,11 +19,11 @@
 package org.apache.qpid.jms.integration;
 
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectOutputStream;
@@ -52,7 +52,8 @@ import org.apache.qpid.jms.test.testpeer.describedtypes.sections.PropertiesDescr
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,7 +63,8 @@ public class JMSConsumerIntegrationTest extends QpidJmsTestCase {
 
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateConsumer() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JMSContext context = testFixture.createJMSContext(testPeer);
@@ -82,7 +84,8 @@ public class JMSConsumerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRemotelyCloseJMSConsumer() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JMSContext context = testFixture.createJMSContext(testPeer);
@@ -99,7 +102,7 @@ public class JMSConsumerIntegrationTest extends QpidJmsTestCase {
 
             // Verify the consumer gets marked closed
             testPeer.waitForAllHandlersToComplete(1000);
-            assertTrue("JMSConsumer never closed.", Wait.waitFor(new Wait.Condition() {
+            assertTrue(Wait.waitFor(new Wait.Condition() {
                 @Override
                 public boolean isSatisfied() throws Exception {
                     try {
@@ -109,7 +112,7 @@ public class JMSConsumerIntegrationTest extends QpidJmsTestCase {
                     }
                     return false;
                 }
-            }, 10000, 10));
+            }, 10000, 10), "JMSConsumer never closed.");
 
             // Try closing it explicitly, should effectively no-op in client.
             // The test peer will throw during close if it sends anything.
@@ -123,7 +126,8 @@ public class JMSConsumerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceiveMessageWithReceiveZeroTimeout() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JMSContext context = testFixture.createJMSContext(testPeer);
@@ -141,7 +145,7 @@ public class JMSConsumerIntegrationTest extends QpidJmsTestCase {
             JMSConsumer messageConsumer = context.createConsumer(queue);
             Message receivedMessage = messageConsumer.receive(0);
 
-            assertNotNull("A message should have been recieved", receivedMessage);
+            assertNotNull(receivedMessage, "A message should have been recieved");
 
             testPeer.expectEnd();
             testPeer.expectClose();
@@ -151,7 +155,8 @@ public class JMSConsumerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testConsumerReceiveNoWaitThrowsIfConnectionLost() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JMSContext context = testFixture.createJMSContext(testPeer);
@@ -181,7 +186,8 @@ public class JMSConsumerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testNoReceivedMessagesWhenConnectionNotStarted() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JMSContext context = testFixture.createJMSContext(testPeer);
@@ -211,7 +217,8 @@ public class JMSConsumerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=60000)
+    @Test
+    @Timeout(60)
     public void testSyncReceiveFailsWhenListenerSet() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JMSContext context = testFixture.createJMSContext(testPeer);
@@ -258,7 +265,8 @@ public class JMSConsumerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceiveBodyMapMessage() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JMSContext context = testFixture.createJMSContext(testPeer);
@@ -320,19 +328,19 @@ public class JMSConsumerIntegrationTest extends QpidJmsTestCase {
             Map<String, Object> receivedMap = messageConsumer.receiveBody(Map.class, 3000);
 
             // verify the content is as expected
-            assertNotNull("Map was not received", receivedMap);
+            assertNotNull(receivedMap, "Map was not received");
 
-            assertEquals("Unexpected boolean value", myBool, receivedMap.get(myBoolKey));
-            assertEquals("Unexpected byte value", myByte, receivedMap.get(myByteKey));
+            assertEquals(myBool, receivedMap.get(myBoolKey), "Unexpected boolean value");
+            assertEquals(myByte, receivedMap.get(myByteKey), "Unexpected byte value");
             byte[] readBytes = (byte[]) receivedMap.get(myBytesKey);
-            assertTrue("Read bytes were not as expected: " + Arrays.toString(readBytes), Arrays.equals(myBytes, readBytes));
-            assertEquals("Unexpected char value", myChar, receivedMap.get(myCharKey));
-            assertEquals("Unexpected double value", myDouble, (double) receivedMap.get(myDoubleKey), 0.0);
-            assertEquals("Unexpected float value", myFloat, (float) receivedMap.get(myFloatKey), 0.0);
-            assertEquals("Unexpected int value", myInt, receivedMap.get(myIntKey));
-            assertEquals("Unexpected long value", myLong, receivedMap.get(myLongKey));
-            assertEquals("Unexpected short value", myShort, receivedMap.get(myShortKey));
-            assertEquals("Unexpected UTF value", myString, receivedMap.get(myStringKey));
+            assertTrue(Arrays.equals(myBytes, readBytes), "Read bytes were not as expected: " + Arrays.toString(readBytes));
+            assertEquals(myChar, receivedMap.get(myCharKey), "Unexpected char value");
+            assertEquals(myDouble, (double) receivedMap.get(myDoubleKey), 0.0, "Unexpected double value");
+            assertEquals(myFloat, (float) receivedMap.get(myFloatKey), 0.0, "Unexpected float value");
+            assertEquals(myInt, receivedMap.get(myIntKey), "Unexpected int value");
+            assertEquals(myLong, receivedMap.get(myLongKey), "Unexpected long value");
+            assertEquals(myShort, receivedMap.get(myShortKey), "Unexpected short value");
+            assertEquals(myString, receivedMap.get(myStringKey), "Unexpected UTF value");
 
             context.close();
 
@@ -340,7 +348,8 @@ public class JMSConsumerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceiveBodyTextMessage() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JMSContext context = testFixture.createJMSContext(testPeer);
@@ -370,7 +379,8 @@ public class JMSConsumerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceiveBodyObjectMessage() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JMSContext context = testFixture.createJMSContext(testPeer);
@@ -414,7 +424,8 @@ public class JMSConsumerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceiveBodyBytesMessage() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JMSContext context = testFixture.createJMSContext(testPeer);
@@ -453,17 +464,20 @@ public class JMSConsumerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceiveBodyFailsDoesNotAcceptMessageAutoAck() throws Exception {
         doTestReceiveBodyFailsDoesNotAcceptMessage(JMSContext.AUTO_ACKNOWLEDGE);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceiveBodyFailsDoesNotAcceptMessageDupsOk() throws Exception {
         doTestReceiveBodyFailsDoesNotAcceptMessage(JMSContext.DUPS_OK_ACKNOWLEDGE);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceiveBodyFailsDoesNotAcceptMessageClientAck() throws Exception {
         doTestReceiveBodyFailsDoesNotAcceptMessage(JMSContext.CLIENT_ACKNOWLEDGE);
     }
@@ -497,17 +511,20 @@ public class JMSConsumerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceiveBodyFailsThenAcceptsOnSuccessfullyNextCallAutoAck() throws Exception {
         doTestReceiveBodyFailsDoesNotAcceptMessage(JMSContext.AUTO_ACKNOWLEDGE);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceiveBodyFailsThenAcceptsOnSuccessfullyNextCallDupsOk() throws Exception {
         doTestReceiveBodyFailsDoesNotAcceptMessage(JMSContext.DUPS_OK_ACKNOWLEDGE);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceiveBodyFailsThenGetNullOnNextAttemptClientAck() throws Exception {
         doTestReceiveBodyFailsDoesNotAcceptMessage(JMSContext.CLIENT_ACKNOWLEDGE);
     }
@@ -561,7 +578,8 @@ public class JMSConsumerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceiveBodyBytesMessageFailsWhenWrongTypeRequested() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JMSContext context = testFixture.createJMSContext(testPeer);

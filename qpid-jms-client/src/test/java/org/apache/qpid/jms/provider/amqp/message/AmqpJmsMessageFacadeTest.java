@@ -21,14 +21,15 @@
 package org.apache.qpid.jms.provider.amqp.message;
 
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_MESSAGE;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -64,7 +65,7 @@ import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
 import org.apache.qpid.proton.amqp.messaging.Properties;
 import org.apache.qpid.proton.codec.Data;
 import org.apache.qpid.proton.message.Message;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
@@ -87,32 +88,36 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
     public void testNewMessageHasUnderlyingHeaderSectionWithDurableTrue() {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
 
-        assertNotNull("Expected message to have Header section", amqpMessageFacade.getHeader());
-        assertTrue("Durable not as expected", amqpMessageFacade.getAmqpHeader().isDurable());
+        assertNotNull(amqpMessageFacade.getHeader(), "Expected message to have Header section");
+        assertTrue(amqpMessageFacade.getAmqpHeader().isDurable(), "Durable not as expected");
     }
 
     // --- ttl field  ---
 
-    @Test(expected = MessageFormatException.class)
+    @Test
     public void testSetAmqpTimeToLiveRejectsNegatives() throws Exception {
-        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+        assertThrows(MessageFormatException.class, () -> {
+            AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
 
-        amqpMessageFacade.setAmqpTimeToLiveOverride(-1L);
+            amqpMessageFacade.setAmqpTimeToLiveOverride(-1L);
+        });
     }
 
-    @Test(expected = MessageFormatException.class)
+    @Test
     public void testSetAmqpTimeToLiveRejectsValuesFromTwoToThirtyTwo() throws Exception {
-        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
-        // check values over 2^32 - 1 are rejected
-        amqpMessageFacade.setAmqpTimeToLiveOverride(0X100000000L);
+        assertThrows(MessageFormatException.class, () -> {
+            AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+            // check values over 2^32 - 1 are rejected
+            amqpMessageFacade.setAmqpTimeToLiveOverride(0X100000000L);
+        });
     }
 
     @Test
     public void testNewMessageHasUnderlyingHeaderSectionWithNoTtlSet() {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
 
-        assertNotNull("Expected message to have Header section", amqpMessageFacade.getHeader());
-        assertNull("Ttl field should not be set", amqpMessageFacade.getHeader().getTtl());
+        assertNotNull(amqpMessageFacade.getHeader(), "Expected message to have Header section");
+        assertNull(amqpMessageFacade.getHeader().getTtl(), "Ttl field should not be set");
     }
 
     @Test
@@ -130,15 +135,15 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         long expiration = amqpMessageFacade.getExpiration();
 
-        assertTrue("Should have sythesized expiration based on current time + ttl", start + ttl <= expiration);
-        assertTrue("Should have sythesized expiration based on current time + ttl", expiration <= end + ttl);
+        assertTrue(start + ttl <= expiration, "Should have sythesized expiration based on current time + ttl");
+        assertTrue(expiration <= end + ttl, "Should have sythesized expiration based on current time + ttl");
 
         long expiration2 = amqpMessageFacade.getExpiration();
-        assertEquals("Second retrieval should return same result", expiration, expiration2);
+        assertEquals(expiration, expiration2, "Second retrieval should return same result");
 
         amqpMessageFacade = amqpMessageFacade.copy();
         long expiration3 = amqpMessageFacade.getExpiration();
-        assertEquals("Thrid retrieval from copy should return same result", expiration, expiration3);
+        assertEquals(expiration, expiration3, "Thrid retrieval from copy should return same result");
     }
 
     @Test
@@ -147,15 +152,15 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
 
-        assertFalse("Should not have a ttl override", amqpMessageFacade.hasAmqpTimeToLiveOverride());
+        assertFalse(amqpMessageFacade.hasAmqpTimeToLiveOverride(), "Should not have a ttl override");
         assertEquals(0, amqpMessageFacade.getAmqpTimeToLiveOverride());
 
         amqpMessageFacade.setAmqpTimeToLiveOverride(ttl);
 
-        assertTrue("Should have a ttl override", amqpMessageFacade.hasAmqpTimeToLiveOverride());
+        assertTrue(amqpMessageFacade.hasAmqpTimeToLiveOverride(), "Should have a ttl override");
         assertEquals(ttl, amqpMessageFacade.getAmqpTimeToLiveOverride());
         // check value on underlying TTL field is NOT set
-        assertNull("TTL field on underlying message should NOT be set", amqpMessageFacade.getHeader().getTtl());
+        assertNull(amqpMessageFacade.getHeader().getTtl(), "TTL field on underlying message should NOT be set");
     }
 
     @Test
@@ -166,13 +171,13 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
 
-        assertEquals("TTL has been unset already", origTtl, message.getTtl());
+        assertEquals(origTtl, message.getTtl(), "TTL has been unset already");
 
         amqpMessageFacade.onSend(0);
 
         // check value on underlying TTL field is NOT set
-        assertEquals("TTL has not been cleared", 0, amqpMessageFacade.getAmqpHeader().getTimeToLive());
-        assertNull("Underlying Header should be null, no values set to non-defaults", amqpMessageFacade.getHeader());
+        assertEquals(0, amqpMessageFacade.getAmqpHeader().getTimeToLive(), "TTL has not been cleared");
+        assertNull(amqpMessageFacade.getHeader(), "Underlying Header should be null, no values set to non-defaults");
     }
 
     @Test
@@ -184,13 +189,13 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
 
-        assertEquals("TTL has been unset already", origTtl, message.getTtl());
+        assertEquals(origTtl, message.getTtl(), "TTL has been unset already");
 
         amqpMessageFacade.onSend(newTtl);
 
         // check value on underlying TTL field is NOT set
-        assertEquals("TTL has not been overriden", newTtl, amqpMessageFacade.getAmqpHeader().getTimeToLive());
-        assertEquals("TTL field on underlying message should be set", UnsignedInteger.valueOf(newTtl), amqpMessageFacade.getHeader().getTtl());
+        assertEquals(newTtl, amqpMessageFacade.getAmqpHeader().getTimeToLive(), "TTL has not been overriden");
+        assertEquals(UnsignedInteger.valueOf(newTtl), amqpMessageFacade.getHeader().getTtl(), "TTL field on underlying message should be set");
     }
 
     @Test
@@ -205,7 +210,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         amqpMessageFacade.onSend(producerTtl);
 
         // check value on underlying TTL field is set to the override
-        assertEquals("TTL has not been overriden", overrideTtl, amqpMessageFacade.getAmqpHeader().getTimeToLive());
+        assertEquals(overrideTtl, amqpMessageFacade.getAmqpHeader().getTimeToLive(), "TTL has not been overriden");
     }
 
     // --- delivery count  ---
@@ -215,7 +220,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
 
         // JMS delivery count starts at one.
-        assertEquals("expected delivery count value not found", 1, amqpMessageFacade.getDeliveryCount());
+        assertEquals(1, amqpMessageFacade.getDeliveryCount(), "expected delivery count value not found");
 
         // Redelivered state inferred from delivery count
         assertFalse(amqpMessageFacade.isRedelivered());
@@ -227,9 +232,9 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         Message message = Proton.message();
         AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
 
-        assertNull("expected no header section to exist", message.getHeader());
+        assertNull(message.getHeader(), "expected no header section to exist");
         // JMS delivery count starts at one.
-        assertEquals("expected delivery count value not found", 1, amqpMessageFacade.getDeliveryCount());
+        assertEquals(1, amqpMessageFacade.getDeliveryCount(), "expected delivery count value not found");
 
         // Redelivered state inferred from delivery count
         assertFalse(amqpMessageFacade.isRedelivered());
@@ -245,7 +250,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         message.setHeader(header);
 
         // JMS delivery count starts at one.
-        assertEquals("expected delivery count value not found", 1, amqpMessageFacade.getDeliveryCount());
+        assertEquals(1, amqpMessageFacade.getDeliveryCount(), "expected delivery count value not found");
 
         // Redelivered state inferred from delivery count
         assertFalse(amqpMessageFacade.isRedelivered());
@@ -262,7 +267,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
 
         // JMS delivery count starts at one.
-        assertEquals("expected delivery count value not found", 2, amqpMessageFacade.getDeliveryCount());
+        assertEquals(2, amqpMessageFacade.getDeliveryCount(), "expected delivery count value not found");
 
         // Redelivered state inferred from delivery count
         assertTrue(amqpMessageFacade.isRedelivered());
@@ -323,7 +328,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
     public void testSetRedeliveryCountToZeroWhenNoHeadersNoNPE() {
         Message message = Proton.message();
         AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
-        assertNull("expected no header section to exist", message.getHeader());
+        assertNull(message.getHeader(), "expected no header section to exist");
         amqpMessageFacade.setRedeliveryCount(0);
     }
 
@@ -333,7 +338,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
     public void testGetPriorityIs4ForNewMessage() {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
 
-        assertEquals("expected priority value not found", 4, amqpMessageFacade.getPriority());
+        assertEquals(4, amqpMessageFacade.getPriority(), "expected priority value not found");
     }
 
     /**
@@ -344,8 +349,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         Message message = Proton.message();
         AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
 
-        assertNull("expected no header section to exist", message.getHeader());
-        assertEquals("expected priority value not found", 4, amqpMessageFacade.getPriority());
+        assertNull(message.getHeader(), "expected no header section to exist");
+        assertEquals(4, amqpMessageFacade.getPriority(), "expected priority value not found");
     }
 
     /**
@@ -361,7 +366,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
 
-        assertEquals("expected priority value not found", 4, amqpMessageFacade.getPriority());
+        assertEquals(4, amqpMessageFacade.getPriority(), "expected priority value not found");
     }
 
     /**
@@ -379,7 +384,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
 
-        assertEquals("expected priority value not found", priority, amqpMessageFacade.getPriority());
+        assertEquals(priority, amqpMessageFacade.getPriority(), "expected priority value not found");
     }
 
     /**
@@ -398,7 +403,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
 
-        assertEquals("expected priority value not found", 9, amqpMessageFacade.getPriority());
+        assertEquals(9, amqpMessageFacade.getPriority(), "expected priority value not found");
     }
 
     /**
@@ -417,7 +422,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
 
-        assertEquals("expected priority value not found", 9, amqpMessageFacade.getPriority());
+        assertEquals(9, amqpMessageFacade.getPriority(), "expected priority value not found");
     }
 
     /**
@@ -431,8 +436,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
         amqpMessageFacade.setPriority(priority);
 
-        assertEquals("expected priority value not found", priority, amqpMessageFacade.getPriority());
-        assertEquals("expected priority value not found", UnsignedByte.valueOf(priority), amqpMessageFacade.getHeader().getPriority());
+        assertEquals(priority, amqpMessageFacade.getPriority(), "expected priority value not found");
+        assertEquals(UnsignedByte.valueOf(priority), amqpMessageFacade.getHeader().getPriority(), "expected priority value not found");
     }
 
     /**
@@ -444,8 +449,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
         amqpMessageFacade.setPriority(-1);
 
-        assertEquals("expected priority value not found", 0, amqpMessageFacade.getPriority());
-        assertEquals("expected priority value not found", UnsignedByte.valueOf((byte) 0), amqpMessageFacade.getHeader().getPriority());
+        assertEquals(0, amqpMessageFacade.getPriority(), "expected priority value not found");
+        assertEquals(UnsignedByte.valueOf((byte) 0), amqpMessageFacade.getHeader().getPriority(), "expected priority value not found");
     }
 
     /**
@@ -457,8 +462,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
         amqpMessageFacade.setPriority(11);
 
-        assertEquals("expected priority value not found", 9, amqpMessageFacade.getPriority());
-        assertEquals("expected priority value not found", UnsignedByte.valueOf((byte) 9), amqpMessageFacade.getHeader().getPriority());
+        assertEquals(9, amqpMessageFacade.getPriority(), "expected priority value not found");
+        assertEquals(UnsignedByte.valueOf((byte) 9), amqpMessageFacade.getHeader().getPriority(), "expected priority value not found");
     }
 
     /**
@@ -471,12 +476,12 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         Message message = Proton.message();
         AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
 
-        assertNull("expected no header section to exist", message.getHeader());
+        assertNull(message.getHeader(), "expected no header section to exist");
 
         amqpMessageFacade.setPriority(Message.DEFAULT_PRIORITY);
 
-        assertNull("expected no header section to exist", message.getHeader());
-        assertEquals("expected priority to be default", Message.DEFAULT_PRIORITY, amqpMessageFacade.getPriority());
+        assertNull(message.getHeader(), "expected no header section to exist");
+        assertEquals(Message.DEFAULT_PRIORITY, amqpMessageFacade.getPriority(), "expected priority to be default");
     }
 
     /**
@@ -496,10 +501,10 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         amqpMessageFacade.setPriority(Message.DEFAULT_PRIORITY);
 
         //check the expected value is still returned
-        assertEquals("expected priority value not returned", Message.DEFAULT_PRIORITY, amqpMessageFacade.getPriority());
+        assertEquals(Message.DEFAULT_PRIORITY, amqpMessageFacade.getPriority(), "expected priority value not returned");
 
         //check the underlying header field was actually cleared rather than set to Message.DEFAULT_PRIORITY
-        assertNull("underlying header priority field was not cleared", amqpMessageFacade.getHeader());
+        assertNull(amqpMessageFacade.getHeader(), "underlying header priority field was not cleared");
     }
 
     // ====== AMQP Properties Section =======
@@ -517,7 +522,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
     public void testGetGroupIdIsNullForNewMessage() {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
 
-        assertNull("expected GroupId to be null on new message", amqpMessageFacade.getGroupId());
+        assertNull(amqpMessageFacade.getGroupId(), "expected GroupId to be null on new message");
     }
 
     /**
@@ -533,7 +538,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         amqpMessageFacade.setGroupId(null);
 
-        assertNull("properties section was created", amqpMessageFacade.getProperties());
+        assertNull(amqpMessageFacade.getProperties(), "properties section was created");
     }
 
     /**
@@ -550,10 +555,10 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         amqpMessageFacade.setGroupId(groupId);
 
-        assertNotNull("properties section was not created", amqpMessageFacade.getProperties());
-        assertEquals("value was not set for GroupId as expected", groupId, amqpMessageFacade.getProperties().getGroupId());
+        assertNotNull(amqpMessageFacade.getProperties(), "properties section was not created");
+        assertEquals(groupId, amqpMessageFacade.getProperties().getGroupId(), "value was not set for GroupId as expected");
 
-        assertEquals("value was not set for GroupId as expected", groupId, amqpMessageFacade.getGroupId());
+        assertEquals(groupId, amqpMessageFacade.getGroupId(), "value was not set for GroupId as expected");
     }
 
     /**
@@ -569,8 +574,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         amqpMessageFacade.setGroupId(groupId);
         amqpMessageFacade.setGroupId(null);
 
-        assertNull("value was not cleared for GroupId as expected", amqpMessageFacade.getProperties().getGroupId());
-        assertNull("value was not cleared for GroupId as expected", amqpMessageFacade.getGroupId());
+        assertNull(amqpMessageFacade.getProperties().getGroupId(), "value was not cleared for GroupId as expected");
+        assertNull(amqpMessageFacade.getGroupId(), "value was not cleared for GroupId as expected");
     }
 
     // --- reply-to-group-id field ---
@@ -584,7 +589,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
     public void testGetReplyToGroupIdIsNullForNewMessage() {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
 
-        assertNull("expected ReplyToGroupId to be null on new message", amqpMessageFacade.getReplyToGroupId());
+        assertNull(amqpMessageFacade.getReplyToGroupId(), "expected ReplyToGroupId to be null on new message");
     }
 
     /**
@@ -596,7 +601,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
 
         String replyToGroupId = amqpMessageFacade.getReplyToGroupId();
-        assertNull("expected ReplyToGroupId to be null on message without properties section", replyToGroupId);
+        assertNull(replyToGroupId, "expected ReplyToGroupId to be null on message without properties section");
     }
 
     /**
@@ -612,7 +617,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         amqpMessageFacade.setReplyToGroupId(null);
 
-        assertNull("properties section was created", amqpMessageFacade.getProperties());
+        assertNull(amqpMessageFacade.getProperties(), "properties section was created");
     }
 
     /**
@@ -630,7 +635,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
 
         String replyToGroupId = amqpMessageFacade.getReplyToGroupId();
-        assertNull("expected ReplyToGroupId to be null on message with properties section but no reply-to-group-id", replyToGroupId);
+        assertNull(replyToGroupId, "expected ReplyToGroupId to be null on message with properties section but no reply-to-group-id");
     }
 
     /**
@@ -650,8 +655,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
 
         String actual = amqpMessageFacade.getReplyToGroupId();
-        assertNotNull("expected ReplyToGroupId on message was not found", actual);
-        assertEquals("expected ReplyToGroupId on message was not found", replyToGroupId, actual);
+        assertNotNull(actual, "expected ReplyToGroupId on message was not found");
+        assertEquals(replyToGroupId, actual, "expected ReplyToGroupId on message was not found");
     }
 
     /**
@@ -666,8 +671,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         amqpMessageFacade.setReplyToGroupId(replyToGroupId);
 
-        assertNotNull("expected ReplyToGroupId on message was not found", amqpMessageFacade.getProperties().getReplyToGroupId());
-        assertEquals("expected ReplyToGroupId on message was not found", replyToGroupId, amqpMessageFacade.getProperties().getReplyToGroupId());
+        assertNotNull(amqpMessageFacade.getProperties().getReplyToGroupId(), "expected ReplyToGroupId on message was not found");
+        assertEquals(replyToGroupId, amqpMessageFacade.getProperties().getReplyToGroupId(), "expected ReplyToGroupId on message was not found");
     }
 
     @Test
@@ -678,11 +683,11 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         amqpMessageFacade.setReplyToGroupId(replyToGroupId);
 
-        assertNotNull("expected ReplyToGroupId on message was not found", amqpMessageFacade.getProperties().getReplyToGroupId());
-        assertEquals("expected ReplyToGroupId on message was not found", replyToGroupId, amqpMessageFacade.getProperties().getReplyToGroupId());
+        assertNotNull(amqpMessageFacade.getProperties().getReplyToGroupId(), "expected ReplyToGroupId on message was not found");
+        assertEquals(replyToGroupId, amqpMessageFacade.getProperties().getReplyToGroupId(), "expected ReplyToGroupId on message was not found");
 
         amqpMessageFacade.setReplyToGroupId(null);
-        assertNull("expected ReplyToGroupId on message to be null", amqpMessageFacade.getProperties().getReplyToGroupId());
+        assertNull(amqpMessageFacade.getProperties().getReplyToGroupId(), "expected ReplyToGroupId on message to be null");
     }
 
     /**
@@ -698,8 +703,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         amqpMessageFacade.setReplyToGroupId(replyToGroupId);
 
-        assertNotNull("expected ReplyToGroupId on message was not found", amqpMessageFacade.getReplyToGroupId());
-        assertEquals("expected ReplyToGroupId on message was not found", replyToGroupId, amqpMessageFacade.getReplyToGroupId());
+        assertNotNull(amqpMessageFacade.getReplyToGroupId(), "expected ReplyToGroupId on message was not found");
+        assertEquals(replyToGroupId, amqpMessageFacade.getReplyToGroupId(), "expected ReplyToGroupId on message was not found");
     }
 
     // --- group-sequence field ---
@@ -711,8 +716,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         int groupSequence = 5;
         amqpMessageFacade.setGroupSequence(groupSequence);
 
-        assertEquals("underlying message should have groupSequence field value", groupSequence, amqpMessageFacade.getProperties().getGroupSequence().longValue());
-        assertEquals("GroupSequence not as expected", groupSequence, amqpMessageFacade.getGroupSequence());
+        assertEquals(groupSequence, amqpMessageFacade.getProperties().getGroupSequence().longValue(), "underlying message should have groupSequence field value");
+        assertEquals(groupSequence, amqpMessageFacade.getGroupSequence(), "GroupSequence not as expected");
     }
 
     /**
@@ -729,8 +734,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         UnsignedInteger mapped = UnsignedInteger.valueOf(MAX_UINT - delta);
         amqpMessageFacade.setGroupSequence(-1 - delta);
 
-        assertEquals("underlying message should have no groupSequence field value",mapped, amqpMessageFacade.getProperties().getGroupSequence());
-        assertEquals("GroupSequence not as expected", -1 - delta, amqpMessageFacade.getGroupSequence());
+        assertEquals(mapped, amqpMessageFacade.getProperties().getGroupSequence(), "underlying message should have no groupSequence field value");
+        assertEquals(-1 - delta, amqpMessageFacade.getGroupSequence(), "GroupSequence not as expected");
     }
 
     @Test
@@ -744,7 +749,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
 
         // The unsigned int value >= 2^31 will be represented as a negative, and so should begin from minimum signed int value
-        assertEquals("GroupSequence not as expected", Integer.MIN_VALUE, amqpMessageFacade.getGroupSequence());
+        assertEquals(Integer.MIN_VALUE, amqpMessageFacade.getGroupSequence(), "GroupSequence not as expected");
     }
 
     @Test
@@ -758,7 +763,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
 
         // The unsigned int value 2^32-1 will be represented as a negative, and should be the largest such value, -1
-        assertEquals("GroupSequence not as expected", -1, amqpMessageFacade.getGroupSequence());
+        assertEquals(-1, amqpMessageFacade.getGroupSequence(), "GroupSequence not as expected");
     }
 
     @Test
@@ -769,7 +774,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         amqpMessageFacade.setGroupSequence(0);
 
         // assertNull("underlying message should have no groupSequence field value", amqpMessageFacade.getAmqpMessage().getProperties().getGroupSequence());
-        assertEquals("GroupSequence should be 0", 0, amqpMessageFacade.getGroupSequence());
+        assertEquals(0, amqpMessageFacade.getGroupSequence(), "GroupSequence should be 0");
     }
 
     @Test
@@ -778,8 +783,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         amqpMessageFacade.setGroupSequence(0);
 
-        assertNull("underlying message should still have no properties setion", amqpMessageFacade.getProperties());
-        assertEquals("GroupSequence should be 0", 0, amqpMessageFacade.getGroupSequence());
+        assertNull(amqpMessageFacade.getProperties(), "underlying message should still have no properties setion");
+        assertEquals(0, amqpMessageFacade.getGroupSequence(), "GroupSequence should be 0");
     }
 
     // --- to field ---
@@ -913,7 +918,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
     public void testGetCorrelationIdIsNullOnNewMessage() {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
 
-        assertNull("Expected correlationId to be null on new message", amqpMessageFacade.getCorrelationId());
+        assertNull(amqpMessageFacade.getCorrelationId(), "Expected correlationId to be null on new message");
     }
 
     /**
@@ -928,8 +933,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
         amqpMessageFacade.setCorrelationId(testCorrelationId);
 
-        assertEquals("correlationId value on underlying AMQP message not as expected", testCorrelationId, amqpMessageFacade.getProperties().getCorrelationId());
-        assertEquals("Expected correlationId not returned", testCorrelationId, amqpMessageFacade.getCorrelationId());
+        assertEquals(testCorrelationId, amqpMessageFacade.getProperties().getCorrelationId(), "correlationId value on underlying AMQP message not as expected");
+        assertEquals(testCorrelationId, amqpMessageFacade.getCorrelationId(), "Expected correlationId not returned");
     }
 
     /**
@@ -944,8 +949,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
         amqpMessageFacade.setCorrelationId(testCorrelationId);
 
-        assertEquals("correlationId value on underlying AMQP message not as expected", testCorrelationId, amqpMessageFacade.getProperties().getCorrelationId());
-        assertEquals("Expected correlationId not returned from facade", testCorrelationId, amqpMessageFacade.getCorrelationId());
+        assertEquals(testCorrelationId, amqpMessageFacade.getProperties().getCorrelationId(), "correlationId value on underlying AMQP message not as expected");
+        assertEquals(testCorrelationId, amqpMessageFacade.getCorrelationId(), "Expected correlationId not returned from facade");
     }
 
     /**
@@ -960,8 +965,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         amqpMessageFacade.setCorrelationId("cid");
         amqpMessageFacade.setCorrelationId(null);
 
-        assertNull("Unexpected correlationId value on underlying AMQP message", amqpMessageFacade.getCorrelationId());
-        assertNull("Expected correlationId bytes to be null", amqpMessageFacade.getCorrelationId());
+        assertNull(amqpMessageFacade.getCorrelationId(), "Unexpected correlationId value on underlying AMQP message");
+        assertNull(amqpMessageFacade.getCorrelationId(), "Expected correlationId bytes to be null");
     }
 
     /**
@@ -998,8 +1003,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
         amqpMessageFacade.setCorrelationId(converted);
 
-        assertEquals("Unexpected correlationId value on underlying AMQP message", testCorrelationId, amqpMessageFacade.getProperties().getCorrelationId());
-        assertEquals("Expected correlationId not returned", converted, amqpMessageFacade.getCorrelationId());
+        assertEquals(testCorrelationId, amqpMessageFacade.getProperties().getCorrelationId(), "Unexpected correlationId value on underlying AMQP message");
+        assertEquals(converted, amqpMessageFacade.getCorrelationId(), "Expected correlationId not returned");
     }
 
     /**
@@ -1026,8 +1031,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
         amqpMessageFacade.setCorrelationId(converted);
 
-        assertEquals("Unexpected correlationId value on underlying AMQP message", testCorrelationId, amqpMessageFacade.getProperties().getCorrelationId());
-        assertEquals("Expected correlationId not returned", converted, amqpMessageFacade.getCorrelationId());
+        assertEquals(testCorrelationId, amqpMessageFacade.getProperties().getCorrelationId(), "Unexpected correlationId value on underlying AMQP message");
+        assertEquals(converted, amqpMessageFacade.getCorrelationId(), "Expected correlationId not returned");
     }
 
     /**
@@ -1058,8 +1063,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
         amqpMessageFacade.setCorrelationId(converted);
 
-        assertEquals("Unexpected correlationId value on underlying AMQP message", testCorrelationId, amqpMessageFacade.getProperties().getCorrelationId());
-        assertEquals("Expected correlationId not returned", converted, amqpMessageFacade.getCorrelationId());
+        assertEquals(testCorrelationId, amqpMessageFacade.getProperties().getCorrelationId(), "Unexpected correlationId value on underlying AMQP message");
+        assertEquals(converted, amqpMessageFacade.getCorrelationId(), "Expected correlationId not returned");
     }
 
     /**
@@ -1075,8 +1080,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
         amqpMessageFacade.setCorrelationIdBytes(bytes);
 
-        assertEquals("Unexpected correlationId value on underlying AMQP message", testCorrelationId, amqpMessageFacade.getProperties().getCorrelationId());
-        assertArrayEquals("Expected correlationId bytes not returned", bytes, amqpMessageFacade.getCorrelationIdBytes());
+        assertEquals(testCorrelationId, amqpMessageFacade.getProperties().getCorrelationId(), "Unexpected correlationId value on underlying AMQP message");
+        assertArrayEquals(bytes, amqpMessageFacade.getCorrelationIdBytes(), "Expected correlationId bytes not returned");
     }
 
     /**
@@ -1093,22 +1098,22 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         amqpMessageFacade.setCorrelationIdBytes(bytes);
         amqpMessageFacade.setCorrelationIdBytes(null);
 
-        assertNull("Unexpected correlationId value on underlying AMQP message", amqpMessageFacade.getCorrelationId());
-        assertNull("Expected correlationId bytes to be null", amqpMessageFacade.getCorrelationIdBytes());
+        assertNull(amqpMessageFacade.getCorrelationId(), "Unexpected correlationId value on underlying AMQP message");
+        assertNull(amqpMessageFacade.getCorrelationIdBytes(), "Expected correlationId bytes to be null");
     }
 
     @Test
     public void testSetCorrelationIdBytesNullDoesNotCreateProperties() throws Exception {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
         amqpMessageFacade.setCorrelationIdBytes(null);
-        assertNull("Unexpected Properties Object in AMQP message", amqpMessageFacade.getProperties());
+        assertNull(amqpMessageFacade.getProperties(), "Unexpected Properties Object in AMQP message");
     }
 
     @Test
     public void testGetCorrelationIdBytesOnNewMessage() throws Exception {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
 
-        assertNull("Expected correlationId bytes to be null", amqpMessageFacade.getCorrelationIdBytes());
+        assertNull(amqpMessageFacade.getCorrelationIdBytes(), "Expected correlationId bytes to be null");
     }
 
     @Test
@@ -1145,8 +1150,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
 
-        assertEquals("Unexpected correlationId value on underlying AMQP message", testCorrelationId, amqpMessageFacade.getProperties().getCorrelationId());
-        assertArrayEquals("Expected correlationId bytes not returned", bytes, amqpMessageFacade.getCorrelationIdBytes());
+        assertEquals(testCorrelationId, amqpMessageFacade.getProperties().getCorrelationId(), "Unexpected correlationId value on underlying AMQP message");
+        assertArrayEquals(bytes, amqpMessageFacade.getCorrelationIdBytes(), "Expected correlationId bytes not returned");
     }
 
     /**
@@ -1171,10 +1176,10 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
 
         String result = amqpMessageFacade.getCorrelationId();
-        assertNotNull("Expected a correlationId on received message", result);
-        assertEquals("Incorrect correlationId value received", expected, result);
+        assertNotNull(result, "Expected a correlationId on received message");
+        assertEquals(expected, result, "Incorrect correlationId value received");
         if(!appSpecificCorrelationId) {
-            assertTrue("Should have have 'ID:' prefix", result.startsWith(AmqpMessageIdHelper.JMS_ID_PREFIX));
+            assertTrue(result.startsWith(AmqpMessageIdHelper.JMS_ID_PREFIX), "Should have have 'ID:' prefix");
         }
     }
 
@@ -1193,8 +1198,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         amqpMessageFacade.setMessageId(testMessageId);
 
-        assertEquals("Expected messageId not returned", testMessageId, amqpMessageFacade.getMessageId());
-        assertEquals("ID strings were not equal", testMessageId, amqpMessageFacade.getMessageId());
+        assertEquals(testMessageId, amqpMessageFacade.getMessageId(), "Expected messageId not returned");
+        assertEquals(testMessageId, amqpMessageFacade.getMessageId(), "ID strings were not equal");
     }
 
     /**
@@ -1211,7 +1216,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         amqpMessageFacade.setMessageId(testMessageId);
 
-        assertEquals("underlying messageId value not as expected", testMessageId, amqpMessageFacade.getMessageId());
+        assertEquals(testMessageId, amqpMessageFacade.getMessageId(), "underlying messageId value not as expected");
     }
 
     /**
@@ -1228,12 +1233,12 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         amqpMessageFacade.setMessageId(testMessageId);
 
-        assertNotNull("messageId should not be null", amqpMessageFacade.getMessageId());
+        assertNotNull(amqpMessageFacade.getMessageId(), "messageId should not be null");
 
         amqpMessageFacade.setMessageId(null);
 
-        assertNull("Expected messageId to be null", amqpMessageFacade.getMessageId());
-        assertNull("ID was not null", amqpMessageFacade.getMessageId());
+        assertNull(amqpMessageFacade.getMessageId(), "Expected messageId to be null");
+        assertNull(amqpMessageFacade.getMessageId(), "ID was not null");
     }
 
     /**
@@ -1306,9 +1311,9 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
 
-        assertNotNull("Expected a messageId on received message", amqpMessageFacade.getMessageId());
+        assertNotNull(amqpMessageFacade.getMessageId(), "Expected a messageId on received message");
 
-        assertEquals("Incorrect messageId value received", expected, amqpMessageFacade.getMessageId());
+        assertEquals(expected, amqpMessageFacade.getMessageId(), "Incorrect messageId value received");
     }
 
     private Binary createBinaryId() {
@@ -1326,7 +1331,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
     @Test
     public void testGetProviderMessageIdObjectOnNewMessage() throws Exception {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
-        assertNull("Expected messageId not returned", amqpMessageFacade.getProviderMessageIdObject());
+        assertNull(amqpMessageFacade.getProviderMessageIdObject(), "Expected messageId not returned");
     }
 
     /**
@@ -1342,8 +1347,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         amqpMessageFacade.setProviderMessageIdObject(testMessageId);
 
-        assertEquals("Expected messageId not returned", testMessageId, amqpMessageFacade.getProviderMessageIdObject());
-        assertEquals("ID strings were not equal", testMessageId, amqpMessageFacade.getProviderMessageIdObject());
+        assertEquals(testMessageId, amqpMessageFacade.getProviderMessageIdObject(), "Expected messageId not returned");
+        assertEquals(testMessageId, amqpMessageFacade.getProviderMessageIdObject(), "ID strings were not equal");
     }
 
     @Test
@@ -1353,22 +1358,22 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
 
         amqpMessageFacade.setProviderMessageIdObject(testMessageId);
-        assertEquals("Expected messageId not returned", testMessageId, amqpMessageFacade.getProviderMessageIdObject());
+        assertEquals(testMessageId, amqpMessageFacade.getProviderMessageIdObject(), "Expected messageId not returned");
 
         amqpMessageFacade.setProviderMessageIdObject(null);
-        assertNull("Expected messageId not returned", amqpMessageFacade.getProviderMessageIdObject());
+        assertNull(amqpMessageFacade.getProviderMessageIdObject(), "Expected messageId not returned");
     }
 
     @Test
     public void testSetProviderMessageIdObjectNullDoesNotCreateProperties() throws Exception {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
 
-        assertNull("Expected null value not returned", amqpMessageFacade.getProperties());
+        assertNull(amqpMessageFacade.getProperties(), "Expected null value not returned");
 
         amqpMessageFacade.setProviderMessageIdObject(null);
 
-        assertNull("Expected null value not returned", amqpMessageFacade.getProviderMessageIdObject());
-        assertNull("Expected null value not returned", amqpMessageFacade.getProperties());
+        assertNull(amqpMessageFacade.getProviderMessageIdObject(), "Expected null value not returned");
+        assertNull(amqpMessageFacade.getProperties(), "Expected null value not returned");
     }
 
     // --- creation-time field  ---
@@ -1377,20 +1382,20 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
     public void testSetCreationTimeOnNewNewMessage() {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
 
-        assertNull("Expected null Properties section", amqpMessageFacade.getProperties());
+        assertNull(amqpMessageFacade.getProperties(), "Expected null Properties section");
 
         long expected = 1;
         amqpMessageFacade.setTimestamp(expected);
 
-        assertEquals("Unexpected timestamp value", expected, amqpMessageFacade.getTimestamp());
-        assertEquals("Expected creation-time field to be set on new Properties section", new Date(expected), amqpMessageFacade.getProperties().getCreationTime());
+        assertEquals(expected, amqpMessageFacade.getTimestamp(), "Unexpected timestamp value");
+        assertEquals(new Date(expected), amqpMessageFacade.getProperties().getCreationTime(), "Expected creation-time field to be set on new Properties section");
     }
 
     @Test
     public void testGetTimestampIsZeroForNewMessage() {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
 
-        assertEquals("Expected no timestamp", 0, amqpMessageFacade.getTimestamp());
+        assertEquals(0, amqpMessageFacade.getTimestamp(), "Expected no timestamp");
     }
 
     @Test
@@ -1401,8 +1406,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         amqpMessageFacade.setTimestamp(timestamp);
 
-        assertEquals("Expected creation-time field to be set", timestamp.longValue(), amqpMessageFacade.getProperties().getCreationTime().getTime());
-        assertEquals("Expected timestamp", timestamp.longValue(), amqpMessageFacade.getTimestamp());
+        assertEquals(timestamp.longValue(), amqpMessageFacade.getProperties().getCreationTime().getTime(), "Expected creation-time field to be set");
+        assertEquals(timestamp.longValue(), amqpMessageFacade.getTimestamp(), "Expected timestamp");
     }
 
     @Test
@@ -1411,8 +1416,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         amqpMessageFacade.setTimestamp(0);
 
-        assertNull("underlying message should have no properties section", amqpMessageFacade.getProperties());
-        assertEquals("Timestamp should not be set", 0, amqpMessageFacade.getTimestamp());
+        assertNull(amqpMessageFacade.getProperties(), "underlying message should have no properties section");
+        assertEquals(0, amqpMessageFacade.getTimestamp(), "Timestamp should not be set");
     }
 
     @Test
@@ -1424,8 +1429,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         amqpMessageFacade.setTimestamp(0);
 
-        assertNull("Expected creation-time to be null", amqpMessageFacade.getProperties().getCreationTime());
-        assertEquals("Expected no timestamp", 0, amqpMessageFacade.getTimestamp());
+        assertNull(amqpMessageFacade.getProperties().getCreationTime(), "Expected creation-time to be null");
+        assertEquals(0, amqpMessageFacade.getTimestamp(), "Expected no timestamp");
     }
 
     // --- absolute-expiry-time field  ---
@@ -1434,7 +1439,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
     public void testGetExpirationIsZeroForNewMessage() {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
 
-        assertEquals("Expected no expiration", 0, amqpMessageFacade.getExpiration());
+        assertEquals(0, amqpMessageFacade.getExpiration(), "Expected no expiration");
     }
 
     @Test
@@ -1445,19 +1450,19 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         amqpMessageFacade.setExpiration(timestamp);
 
-        assertEquals("Expected absolute-expiry-time to be set", timestamp.longValue(), amqpMessageFacade.getProperties().getAbsoluteExpiryTime().getTime());
-        assertEquals("Expected expiration to be set", timestamp.longValue(), amqpMessageFacade.getExpiration());
+        assertEquals(timestamp.longValue(), amqpMessageFacade.getProperties().getAbsoluteExpiryTime().getTime(), "Expected absolute-expiry-time to be set");
+        assertEquals(timestamp.longValue(), amqpMessageFacade.getExpiration(), "Expected expiration to be set");
     }
 
     @Test
     public void testSetExpirationZeroOnNewMessageDoesNotCreatePropertiesSection() {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
 
-        assertNull("Expected properties section not to exist", amqpMessageFacade.getProperties());
+        assertNull(amqpMessageFacade.getProperties(), "Expected properties section not to exist");
 
         amqpMessageFacade.setExpiration(0);
 
-        assertNull("Expected properties section still not to exist", amqpMessageFacade.getProperties());
+        assertNull(amqpMessageFacade.getProperties(), "Expected properties section still not to exist");
     }
 
     @Test
@@ -1469,8 +1474,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         amqpMessageFacade.setExpiration(0);
 
-        assertNull("Expected absolute-expiry-time to be null", amqpMessageFacade.getProperties().getAbsoluteExpiryTime());
-        assertEquals("Expected no expiration", 0, amqpMessageFacade.getExpiration());
+        assertNull(amqpMessageFacade.getProperties().getAbsoluteExpiryTime(), "Expected absolute-expiry-time to be null");
+        assertEquals(0, amqpMessageFacade.getExpiration(), "Expected no expiration");
     }
 
     // --- user-id field  ---
@@ -1479,7 +1484,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
     public void testGetUserIdIsNullForNewMessage() {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
 
-        assertNull("expected userid to be null on new message", amqpMessageFacade.getUserId());
+        assertNull(amqpMessageFacade.getUserId(), "expected userid to be null on new message");
     }
 
     @Test
@@ -1495,8 +1500,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
 
-        assertNotNull("Expected a userid on received message", amqpMessageFacade.getUserId());
-        assertEquals("Incorrect messageId value received", userIdString, amqpMessageFacade.getUserId());
+        assertNotNull(amqpMessageFacade.getUserId(), "Expected a userid on received message");
+        assertEquals(userIdString, amqpMessageFacade.getUserId(), "Incorrect messageId value received");
     }
 
     @Test
@@ -1511,7 +1516,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
 
-        assertNull("Expected a userid on received message", amqpMessageFacade.getUserId());
+        assertNull(amqpMessageFacade.getUserId(), "Expected a userid on received message");
     }
 
     /**
@@ -1529,9 +1534,9 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         amqpMessageFacade.setUserId(userIdString);
 
-        assertNotNull("properties section was not created", amqpMessageFacade.getProperties());
-        assertTrue("bytes were not set as expected for userid", Arrays.equals(bytes, amqpMessageFacade.getProperties().getUserId().getArray()));
-        assertEquals("userid not as expected", userIdString, amqpMessageFacade.getUserId());
+        assertNotNull(amqpMessageFacade.getProperties(), "properties section was not created");
+        assertTrue(Arrays.equals(bytes, amqpMessageFacade.getProperties().getUserId().getArray()), "bytes were not set as expected for userid");
+        assertEquals(userIdString, amqpMessageFacade.getUserId(), "userid not as expected");
     }
 
     /**
@@ -1547,9 +1552,9 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         amqpMessageFacade.setUserId(userIdString);
         amqpMessageFacade.setUserId(null);
 
-        assertNotNull("properties section was not created", amqpMessageFacade.getProperties());
-        assertNull("bytes were not cleared as expected for userid", amqpMessageFacade.getProperties().getUserId());
-        assertNull("userid not as expected", amqpMessageFacade.getUserId());
+        assertNotNull(amqpMessageFacade.getProperties(), "properties section was not created");
+        assertNull(amqpMessageFacade.getProperties().getUserId(), "bytes were not cleared as expected for userid");
+        assertNull(amqpMessageFacade.getUserId(), "userid not as expected");
     }
 
     @Test
@@ -1558,8 +1563,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         amqpMessageFacade.setUserId(null);
 
-        assertNull("underlying message should still have no properties setion", amqpMessageFacade.getProperties());
-        assertEquals("UserId should be null", null, amqpMessageFacade.getUserId());
+        assertNull(amqpMessageFacade.getProperties(), "underlying message should still have no properties setion");
+        assertEquals(null, amqpMessageFacade.getUserId(), "UserId should be null");
     }
 
     // --- user-id-bytes field  ---
@@ -1568,7 +1573,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
     public void testGetUserIdBytesIsNullForNewMessage() {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
 
-        assertNull("expected userid bytes to be null on new message", amqpMessageFacade.getUserIdBytes());
+        assertNull(amqpMessageFacade.getUserIdBytes(), "expected userid bytes to be null on new message");
     }
 
     @Test
@@ -1586,8 +1591,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
 
-        assertNotNull("Expected a userid on received message", amqpMessageFacade.getUserIdBytes());
-        assertArrayEquals("Incorrect userid bytes value received", bytes, amqpMessageFacade.getUserIdBytes());
+        assertNotNull(amqpMessageFacade.getUserIdBytes(), "Expected a userid on received message");
+        assertArrayEquals(bytes, amqpMessageFacade.getUserIdBytes(), "Incorrect userid bytes value received");
     }
 
     /**
@@ -1605,9 +1610,9 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         amqpMessageFacade.setUserIdBytes(bytes);
 
-        assertNotNull("properties section was not created", amqpMessageFacade.getProperties());
-        assertTrue("bytes were not set as expected for userid", Arrays.equals(bytes, amqpMessageFacade.getProperties().getUserId().getArray()));
-        assertArrayEquals("userid bytes not as expected", bytes, amqpMessageFacade.getUserIdBytes());
+        assertNotNull(amqpMessageFacade.getProperties(), "properties section was not created");
+        assertTrue(Arrays.equals(bytes, amqpMessageFacade.getProperties().getUserId().getArray()), "bytes were not set as expected for userid");
+        assertArrayEquals(bytes, amqpMessageFacade.getUserIdBytes(), "userid bytes not as expected");
     }
 
     /**
@@ -1625,13 +1630,13 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         amqpMessageFacade.setUserIdBytes(bytes);
         amqpMessageFacade.setUserIdBytes(null);
 
-        assertNotNull("properties section was not created", amqpMessageFacade.getProperties());
-        assertNull("bytes were not cleared as expected for userid", amqpMessageFacade.getProperties().getUserId());
-        assertNull("userid bytes not as expected", amqpMessageFacade.getUserIdBytes());
+        assertNotNull(amqpMessageFacade.getProperties(), "properties section was not created");
+        assertNull(amqpMessageFacade.getProperties().getUserId(), "bytes were not cleared as expected for userid");
+        assertNull(amqpMessageFacade.getUserIdBytes(), "userid bytes not as expected");
     }
 
-   @Test
-   public void testSetUserIdBytesEmptyOnMessageWithExistingUserId() throws Exception {
+    @Test
+    public void testSetUserIdBytesEmptyOnMessageWithExistingUserId() throws Exception {
        String userIdString = "testValue";
        byte[] bytes = userIdString.getBytes("UTF-8");
 
@@ -1640,9 +1645,9 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
        amqpMessageFacade.setUserIdBytes(bytes);
        amqpMessageFacade.setUserIdBytes(new byte[0]);
 
-       assertNotNull("properties section was not created", amqpMessageFacade.getProperties());
-       assertNull("bytes were not cleared as expected for userid", amqpMessageFacade.getProperties().getUserId());
-       assertNull("userid bytes not as expected", amqpMessageFacade.getUserIdBytes());
+       assertNotNull(amqpMessageFacade.getProperties(), "properties section was not created");
+       assertNull(amqpMessageFacade.getProperties().getUserId(), "bytes were not cleared as expected for userid");
+       assertNull(amqpMessageFacade.getUserIdBytes(), "userid bytes not as expected");
    }
 
     @Test
@@ -1651,8 +1656,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         amqpMessageFacade.setUserIdBytes(null);
 
-        assertNull("underlying message should still have no properties setion", amqpMessageFacade.getProperties());
-        assertEquals("UserId should be null", null, amqpMessageFacade.getUserIdBytes());
+        assertNull(amqpMessageFacade.getProperties(), "underlying message should still have no properties setion");
+        assertEquals(null, amqpMessageFacade.getUserIdBytes(), "UserId should be null");
     }
 
     // ====== AMQP Message Annotations =======
@@ -1825,7 +1830,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
     @Test
     public void testGetJMSTypeIsNullOnNewMessage() throws Exception {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
-        assertNull("did not expect a JMSType value to be present", amqpMessageFacade.getType());
+        assertNull(amqpMessageFacade.getType(), "did not expect a JMSType value to be present");
     }
 
     @Test
@@ -1834,8 +1839,9 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
         amqpMessageFacade.setType(jmsType);
 
-        assertEquals("Subject should be set to the provded JMSType string", jmsType,
-                        amqpMessageFacade.getProperties().getSubject());
+        assertEquals(jmsType,
+                        amqpMessageFacade.getProperties().getSubject(),
+                        "Subject should be set to the provded JMSType string");
     }
 
     @Test
@@ -1844,20 +1850,21 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
 
         amqpMessageFacade.setType(jmsType);
-        assertEquals("Subject should be set to the provded JMSType string", jmsType,
-                        amqpMessageFacade.getProperties().getSubject());
+        assertEquals(jmsType,
+                        amqpMessageFacade.getProperties().getSubject(),
+                        "Subject should be set to the provded JMSType string");
         amqpMessageFacade.setType(null);
-        assertNull("Subject should be clear", amqpMessageFacade.getProperties().getSubject());
+        assertNull(amqpMessageFacade.getProperties().getSubject(), "Subject should be clear");
     }
 
     @Test
     public void testSetTypeNullWhenNoPropertiesDoesNotCreateProperties() throws Exception {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
 
-        assertNull("Should not be any Properties object by default", amqpMessageFacade.getProperties());
+        assertNull(amqpMessageFacade.getProperties(), "Should not be any Properties object by default");
         amqpMessageFacade.setType(null);
-        assertNull("Subject should be clear", amqpMessageFacade.getProperties());
-        assertNull("Should be no Type", amqpMessageFacade.getType());
+        assertNull(amqpMessageFacade.getProperties(), "Subject should be clear");
+        assertNull(amqpMessageFacade.getType(), "Should be no Type");
     }
 
     /**
@@ -1874,7 +1881,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         message.setSubject(myJMSType);
         AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
 
-        assertEquals("JMSType value was not as expected", myJMSType, amqpMessageFacade.getType());
+        assertEquals(myJMSType, amqpMessageFacade.getType(), "JMSType value was not as expected");
     }
 
     // ====== Content Type =======
@@ -1882,14 +1889,14 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
     @Test
     public void testGetContentTypeIsNullOnNewMessage() throws Exception {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
-        assertNull("did not expect a JMSType value to be present", amqpMessageFacade.getContentType());
+        assertNull(amqpMessageFacade.getContentType(), "did not expect a JMSType value to be present");
     }
 
     @Test
     public void testGetContentTypeIsNullOnMessageWithEmptyPropertiesObject() throws Exception {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
         amqpMessageFacade.setProperties(new Properties());
-        assertNull("did not expect a JMSType value to be present", amqpMessageFacade.getContentType());
+        assertNull(amqpMessageFacade.getContentType(), "did not expect a JMSType value to be present");
     }
 
     // ====== AMQP Application Properties =======
@@ -2021,11 +2028,13 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         assertEquals(TEST_VALUE_STRING_A, underlyingApplicationProps.get(TEST_PROP_A));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testSetPropertyUsingNullKeyCausesIAE() throws Exception {
-        JmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+        assertThrows(IllegalArgumentException.class, () -> {
+            JmsMessageFacade amqpMessageFacade = createNewMessageFacade();
 
-        amqpMessageFacade.setProperty(null, "value");
+            amqpMessageFacade.setProperty(null, "value");
+        });
     }
 
     @Test

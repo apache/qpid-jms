@@ -18,9 +18,9 @@
  */
 package org.apache.qpid.jms.integration;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -44,17 +44,20 @@ import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.hamcrest.Matchers;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 public class MultiTransferFrameMessageIntegrationTest extends QpidJmsTestCase {
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceiveMultiFrameBytesMessage() throws Exception {
         doReceiveMultiFrameBytesMessageTestImpl(false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceiveMultiFrameBytesMessageWithEmptyFinalTransfer() throws Exception {
         doReceiveMultiFrameBytesMessageTestImpl(true);
     }
@@ -99,13 +102,13 @@ public class MultiTransferFrameMessageIntegrationTest extends QpidJmsTestCase {
             assertNotNull(receivedMessage);
             assertTrue(receivedMessage instanceof BytesMessage);
             BytesMessage bytesMessage = (BytesMessage) receivedMessage;
-            assertEquals("Unexpected message body length", expectedContent.length, bytesMessage.getBodyLength());
+            assertEquals(expectedContent.length, bytesMessage.getBodyLength(), "Unexpected message body length");
 
             byte[] receivedContent = new byte[expectedContent.length];
             int readBytes = bytesMessage.readBytes(receivedContent);
 
-            assertEquals("Unexpected content length read", receivedContent.length, readBytes);
-            assertTrue("Unexpected content", Arrays.equals(expectedContent, receivedContent));
+            assertEquals(receivedContent.length, readBytes, "Unexpected content length read");
+            assertTrue(Arrays.equals(expectedContent, receivedContent), "Unexpected content");
 
             testPeer.expectClose();
             connection.close();

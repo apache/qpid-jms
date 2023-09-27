@@ -16,7 +16,7 @@
  */
 package org.apache.qpid.jms;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -30,9 +30,10 @@ import org.apache.activemq.broker.SslContext;
 import org.apache.activemq.broker.TransportConnector;
 import org.apache.qpid.jms.transports.TransportOptions;
 import org.apache.qpid.jms.transports.TransportSupport;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,7 +52,7 @@ public class JmsWSSConnectionTest {
     private URI connectionURI;
     private final int DEFAULT_WS_PORT = 5679;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         brokerService = new BrokerService();
         brokerService.setPersistent(false);
@@ -82,13 +83,14 @@ public class JmsWSSConnectionTest {
         connectionURI = connector.getPublishableConnectURI();
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         brokerService.stop();
         brokerService.waitUntilStopped();
     }
 
-    @Test(timeout=30000)
+    @Test
+    @Timeout(30)
     public void testCreateConnectionAndStart() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(getConnectionURI(true));
         JmsConnection connection = (JmsConnection) factory.createConnection();

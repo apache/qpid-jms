@@ -16,8 +16,8 @@
  */
 package org.apache.qpid.jms.producer;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import javax.jms.Session;
 import javax.jms.Topic;
@@ -28,7 +28,7 @@ import javax.jms.TopicSession;
 import org.apache.activemq.broker.jmx.TopicViewMBean;
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.support.AmqpTestSupport;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * test basic TopicPublisher functionality.
@@ -43,11 +43,11 @@ public class JmsTopicPublisherTest extends AmqpTestSupport {
 
         TopicSession session = connection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
-        Topic topic = session.createTopic(name.getMethodName());
+        Topic topic = session.createTopic(testMethodName);
         TopicPublisher publisher = session.createPublisher(topic);
         assertNotNull(publisher);
 
-        TopicViewMBean proxy = getProxyToTopic(name.getMethodName());
+        TopicViewMBean proxy = getProxyToTopic(testMethodName);
         assertEquals(0, proxy.getEnqueueCount());
         connection.close();
     }

@@ -28,12 +28,12 @@ import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.net.URI;
 import java.util.Enumeration;
@@ -99,8 +99,6 @@ import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageHeaderSectionM
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessagePropertiesSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompositeMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedAmqpValueMatcher;
-import org.apache.qpid.jms.util.QpidJMSTestRunner;
-import org.apache.qpid.jms.util.Repeat;
 import org.apache.qpid.jms.util.StopWatch;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
@@ -108,15 +106,13 @@ import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedByte;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.hamcrest.Matcher;
-import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@RunWith(QpidJMSTestRunner.class)
 public class FailoverIntegrationTest extends QpidJmsTestCase {
 
     private static final Logger LOG = LoggerFactory.getLogger(FailoverIntegrationTest.class);
@@ -128,7 +124,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
     private static final UnsignedByte SASL_SYS_PERM = UnsignedByte.valueOf((byte) 3);
     private static final UnsignedByte SASL_SYS_TEMP = UnsignedByte.valueOf((byte) 4);
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testConnectThrowsSecurityViolationOnFailureFromOpen() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
@@ -149,14 +146,16 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testConnectThrowsSecurityViolationOnFailureFromSaslWithClientID() throws Exception {
         doConnectThrowsSecurityViolationOnFailureFromSaslWithOrExplicitlyWithoutClientIDTestImpl(true, SASL_FAIL_AUTH);
         doConnectThrowsSecurityViolationOnFailureFromSaslWithOrExplicitlyWithoutClientIDTestImpl(true, SASL_SYS);
         doConnectThrowsSecurityViolationOnFailureFromSaslWithOrExplicitlyWithoutClientIDTestImpl(true, SASL_SYS_PERM);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testConnectThrowsSecurityViolationOnFailureFromSaslExplicitlyWithoutClientID() throws Exception {
         doConnectThrowsSecurityViolationOnFailureFromSaslWithOrExplicitlyWithoutClientIDTestImpl(false, SASL_FAIL_AUTH);
         doConnectThrowsSecurityViolationOnFailureFromSaslWithOrExplicitlyWithoutClientIDTestImpl(false, SASL_SYS);
@@ -188,7 +187,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testConnectThrowsSecurityViolationOnFailureFromSaslImplicitlyWithoutClientID() throws Exception {
         doConnectThrowsSecurityViolationOnFailureFromSaslImplicitlyWithoutClientIDTestImpl(SASL_FAIL_AUTH);
         doConnectThrowsSecurityViolationOnFailureFromSaslImplicitlyWithoutClientIDTestImpl(SASL_SYS);
@@ -213,7 +213,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testConnectHandlesSaslTempFailure() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer finalPeer = new TestAmqpPeer();) {
@@ -244,7 +245,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
                 fail("Should not have thrown an Exception: " + ex);
             }
 
-            assertTrue("Should connect to final peer", finalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(finalConnected.await(5, TimeUnit.SECONDS), "Should connect to final peer");
 
             String content = "myContent";
             final DescribedType amqpValueNullContent = new AmqpValueDescribedType(content);
@@ -269,7 +270,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailoverStopsOnNonTemporarySaslFailure() throws Exception {
         doFailoverStopsOnNonTemporarySaslFailureTestImpl(SASL_FAIL_AUTH);
         doFailoverStopsOnNonTemporarySaslFailureTestImpl(SASL_SYS);
@@ -339,14 +341,14 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             Queue queue = session.createQueue("myQueue");
             final MessageConsumer consumer = session.createConsumer(queue);
 
-            assertTrue("Should connect to original peer", originalConnected.await(3, TimeUnit.SECONDS));
+            assertTrue(originalConnected.await(3, TimeUnit.SECONDS), "Should connect to original peer");
 
-            assertTrue("The ExceptionListener should have been alerted", exceptionListenerFired.await(3, TimeUnit.SECONDS));
+            assertTrue(exceptionListenerFired.await(3, TimeUnit.SECONDS), "The ExceptionListener should have been alerted");
             Throwable ex = failure.get();
-            assertTrue("Unexpected failure exception: " + ex, ex instanceof JMSSecurityException);
+            assertTrue(ex instanceof JMSSecurityException, "Unexpected failure exception: " + ex);
 
             // Verify the consumer gets marked closed
-            assertTrue("consumer never closed.", Wait.waitFor(new Wait.Condition() {
+            assertTrue(Wait.waitFor(new Wait.Condition() {
                 @Override
                 public boolean isSatisfied() throws Exception {
                     try {
@@ -356,18 +358,19 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
                     }
                     return false;
                 }
-            }, 5000, 5));
+            }, 5000, 5), "consumer never closed.");
 
             // Shut down last peer and verify no connection made to it
             finalPeer.purgeExpectations();
             finalPeer.close();
-            assertNotNull("First peer should have accepted a TCP connection", originalPeer.getClientSocket());
-            assertNotNull("Rejecting peer should have accepted a TCP connection", rejectingPeer.getClientSocket());
-            assertNull("Final peer should not have accepted any TCP connection", finalPeer.getClientSocket());
+            assertNotNull(originalPeer.getClientSocket(), "First peer should have accepted a TCP connection");
+            assertNotNull(rejectingPeer.getClientSocket(), "Rejecting peer should have accepted a TCP connection");
+            assertNull(finalPeer.getClientSocket(), "Final peer should not have accepted any TCP connection");
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailoverHandlesTemporarySaslFailure() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer rejectingPeer = new TestAmqpPeer();
@@ -446,17 +449,17 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             finalPeer.waitForAllHandlersToComplete(2000);
 
-            assertTrue("Should connect to original peer", originalConnected.await(3, TimeUnit.SECONDS));
-            assertTrue("Should connect to final peer", finalConnected.await(3, TimeUnit.SECONDS));
+            assertTrue(originalConnected.await(3, TimeUnit.SECONDS), "Should connect to original peer");
+            assertTrue(finalConnected.await(3, TimeUnit.SECONDS), "Should connect to final peer");
 
             // Check message arrives
             finalPeer.expectDispositionThatIsAcceptedAndSettled();
 
             Message msg = consumer.receive(5000);
-            assertTrue("Expected an instance of TextMessage, got: " + msg, msg instanceof TextMessage);
-            assertEquals("Unexpected msg content", expectedMessageContent, ((TextMessage) msg).getText());
+            assertTrue(msg instanceof TextMessage, "Expected an instance of TextMessage, got: " + msg);
+            assertEquals(expectedMessageContent, ((TextMessage) msg).getText(), "Unexpected msg content");
 
-            assertFalse("The ExceptionListener should not have been alerted", exceptionListenerFired.get());
+            assertFalse(exceptionListenerFired.get(), "The ExceptionListener should not have been alerted");
 
             // Shut it down
             finalPeer.expectClose();
@@ -466,12 +469,14 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailoverHandlesConnectErrorInvalidField() throws Exception {
         doFailoverHandlesConnectErrorInvalidFieldTestImpl(false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailoverHandlesConnectErrorInvalidFieldWithContainerIdHint() throws Exception {
         // As above but also including hint that the container-id is the invalid field, i.e invalid ClientID
         doFailoverHandlesConnectErrorInvalidFieldTestImpl(true);
@@ -514,7 +519,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
                 fail("Should not have thrown an Exception: " + ex);
             }
 
-            assertTrue("Should connect to final peer", finalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(finalConnected.await(5, TimeUnit.SECONDS), "Should connect to final peer");
 
             finalPeer.expectBegin();
             finalPeer.expectReceiverAttach();
@@ -535,12 +540,14 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailoverHandlesConnectErrorInvalidFieldOnReconnect() throws Exception {
         doFailoverHandlesConnectErrorInvalidFieldOnReconnectTestImpl(false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailoverHandlesConnectErrorInvalidFieldOnReconnectWithContainerIdHint() throws Exception {
         // As above but also including hint that the container-id is the invalid field, i.e invalid ClientID
         doFailoverHandlesConnectErrorInvalidFieldOnReconnectTestImpl(true);
@@ -588,7 +595,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
                 fail("Should not have thrown an Exception: " + ex);
             }
 
-            assertTrue("Should connect to final peer", finalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(finalConnected.await(5, TimeUnit.SECONDS), "Should connect to final peer");
 
             finalPeer.expectBegin();
             finalPeer.expectReceiverAttach();
@@ -609,7 +616,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailoverHandlesConnectErrorNotFound() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer finalPeer = new TestAmqpPeer();) {
@@ -641,7 +649,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
                 fail("Should not have thrown an Exception: " + ex);
             }
 
-            assertTrue("Should connect to final peer", finalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(finalConnected.await(5, TimeUnit.SECONDS), "Should connect to final peer");
 
             finalPeer.expectBegin();
             finalPeer.expectReceiverAttach();
@@ -662,7 +670,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailoverHandlesDropThenRejectionCloseAfterConnect() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer rejectingPeer = new TestAmqpPeer();
@@ -709,8 +718,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             });
             connection.start();
 
-            assertTrue("Should connect to original peer", originalConnected.await(5, TimeUnit.SECONDS));
-            assertEquals("should not yet have connected to final peer", 1L, finalConnected.getCount());
+            assertTrue(originalConnected.await(5, TimeUnit.SECONDS), "Should connect to original peer");
+            assertEquals(1L, finalConnected.getCount(), "should not yet have connected to final peer");
 
             // Set expectations on rejecting and final peer
             rejectingPeer.rejectConnect(AmqpError.NOT_FOUND, "Resource could not be located", null);
@@ -724,7 +733,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             rejectingPeer.waitForAllHandlersToComplete(2000);
 
-            assertTrue("Should connect to final peer", finalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(finalConnected.await(5, TimeUnit.SECONDS), "Should connect to final peer");
             long end = System.currentTimeMillis();
 
             long margin = 2000;
@@ -738,7 +747,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailoverHandlesImmediateTransportDropAfterConnect() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer rejectingPeer = new TestAmqpPeer();
@@ -781,8 +791,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             });
             connection.start();
 
-            assertTrue("Should connect to original peer", originalConnected.await(5, TimeUnit.SECONDS));
-            assertEquals("should not yet have connected to final peer", 1L, finalConnected.getCount());
+            assertTrue(originalConnected.await(5, TimeUnit.SECONDS), "Should connect to original peer");
+            assertEquals(1L, finalConnected.getCount(), "should not yet have connected to final peer");
 
             // Set expectations on rejecting and final peer
             rejectingPeer.expectSaslHeaderThenDrop();
@@ -796,7 +806,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             rejectingPeer.waitForAllHandlersToComplete(2000);
 
-            assertTrue("Should connect to final peer", finalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(finalConnected.await(5, TimeUnit.SECONDS), "Should connect to final peer");
 
             // Shut it down
             finalPeer.expectClose();
@@ -805,7 +815,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailoverHandlesRemotelyEndConnectionForced() throws Exception {
         try (TestAmqpPeer forcingPeer = new TestAmqpPeer();
              TestAmqpPeer backupPeer = new TestAmqpPeer();) {
@@ -848,8 +859,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             forcingPeer.waitForAllHandlersToComplete(3000);
 
-            assertTrue("Should connect to primary peer", connectedToPrimary.await(5, TimeUnit.SECONDS));
-            assertTrue("Should connect to backup peer", connectedToBackup.await(5, TimeUnit.SECONDS));
+            assertTrue(connectedToPrimary.await(5, TimeUnit.SECONDS), "Should connect to primary peer");
+            assertTrue(connectedToBackup.await(5, TimeUnit.SECONDS), "Should connect to backup peer");
 
             backupPeer.expectClose();
             connection.close();
@@ -857,7 +868,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailoverHandlesTransportDropBeforeDispositionRecieived() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer finalPeer = new TestAmqpPeer();) {
@@ -897,7 +909,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             });
             connection.start();
 
-            assertTrue("Should connect to original peer", originalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(originalConnected.await(5, TimeUnit.SECONDS), "Should connect to original peer");
 
             // Create session+producer, send a persistent message on auto-ack session for synchronous send
             originalPeer.expectBegin();
@@ -949,17 +961,17 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             finalPeer.expectSenderAttach();
             finalPeer.expectTransfer(messageMatcher, nullValue(), false, true, new Accepted(), true);
 
-            assertEquals("Should not yet have connected to final peer", 1L, finalConnected.getCount());
-            assertEquals("Sender thread should not yet have completed", 1L, senderCompleted.getCount());
+            assertEquals(1L, finalConnected.getCount(), "Should not yet have connected to final peer");
+            assertEquals(1L, senderCompleted.getCount(), "Sender thread should not yet have completed");
 
             // Close the original peer to provoke reconnect, while send() is still outstanding
             originalPeer.close();
 
-            assertTrue("Should connect to final peer", finalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(finalConnected.await(5, TimeUnit.SECONDS), "Should connect to final peer");
 
             boolean await = senderCompleted.await(5, TimeUnit.SECONDS);
             Throwable t = problem.get();
-            assertTrue("Sender thread should have completed. Problem: " + t, await);
+            assertTrue(await, "Sender thread should have completed. Problem: " + t);
 
             // Shut it down
             finalPeer.expectClose();
@@ -968,7 +980,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailoverHandlesRemoteCloseBeforeDispositionRecieived() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer finalPeer = new TestAmqpPeer();) {
@@ -1010,7 +1023,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             });
             connection.start();
 
-            assertTrue("Should connect to original peer", originalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(originalConnected.await(5, TimeUnit.SECONDS), "Should connect to original peer");
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
@@ -1059,19 +1072,19 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             finalPeer.expectTransfer(messageMatcher, nullValue(), false, true, new Accepted(), true);
             finalPeer.expectClose();
 
-            assertTrue("Should connect to final peer", finalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(finalConnected.await(5, TimeUnit.SECONDS), "Should connect to final peer");
 
             boolean await = senderCompleted.await(5, TimeUnit.SECONDS);
             Throwable t = problem.get();
-            assertTrue("Sender thread should have completed. Problem: " + t, await);
+            assertTrue(await, "Sender thread should have completed. Problem: " + t);
 
             connection.close();
             finalPeer.waitForAllHandlersToComplete(1000);
         }
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailoverHandlesDropWithModifiedInitialReconnectDelay() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer finalPeer = new TestAmqpPeer();) {
@@ -1115,7 +1128,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             });
             connection.start();
 
-            assertTrue("Should connect to original peer", originalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(originalConnected.await(5, TimeUnit.SECONDS), "Should connect to original peer");
 
             // --- Post Failover Expectations of FinalPeer --- //
 
@@ -1126,7 +1139,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-            assertTrue("Should connect to final peer", finalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(finalConnected.await(5, TimeUnit.SECONDS), "Should connect to final peer");
 
             // Shut it down
             finalPeer.expectClose();
@@ -1136,7 +1149,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testFailoverInitialReconnectDelayDoesNotApplyToInitialConnect() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();) {
             // Create a peer to connect to
@@ -1158,8 +1172,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             long taken = watch.taken();
 
             String message = "Initial connect should not have delayed for the specified initialReconnectDelay." + "Elapsed=" + taken + ", delay=" + delay;
-            assertTrue(message,  taken < delay);
-            assertTrue("Connection took longer than reasonable: " + taken, taken < 5000);
+            assertTrue(taken < delay,  message);
+            assertTrue(taken < 5000, "Connection took longer than reasonable: " + taken);
 
             // Shut it down
             originalPeer.expectClose();
@@ -1169,7 +1183,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailoverHandlesDropZeroPrefetchPullConsumerReceiveNoWait() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer finalPeer = new TestAmqpPeer();) {
@@ -1214,7 +1229,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             });
             connection.start();
 
-            assertTrue("Should connect to original peer", originalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(originalConnected.await(5, TimeUnit.SECONDS), "Should connect to original peer");
 
             // --- Post Failover Expectations of FinalPeer --- //
 
@@ -1232,7 +1247,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             assertNull(consumer.receiveNoWait());
 
-            assertTrue("Should connect to final peer", finalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(finalConnected.await(5, TimeUnit.SECONDS), "Should connect to final peer");
 
             consumer.close();
 
@@ -1244,7 +1259,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailoverHandlesDropZeroPrefetchPullConsumerReceiveWithTimeout() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer finalPeer = new TestAmqpPeer();) {
@@ -1289,7 +1305,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             });
             connection.start();
 
-            assertTrue("Should connect to original peer", originalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(originalConnected.await(5, TimeUnit.SECONDS), "Should connect to original peer");
 
             // --- Post Failover Expectations of FinalPeer --- //
 
@@ -1309,7 +1325,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             assertNull(consumer.receive(500));
             LOG.info("Receive returned");
 
-            assertTrue("Should connect to final peer", finalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(finalConnected.await(5, TimeUnit.SECONDS), "Should connect to final peer");
 
             LOG.info("Closing consumer");
             consumer.close();
@@ -1322,7 +1338,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailoverHandlesDropZeroPrefetchPullConsumerReceive() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer finalPeer = new TestAmqpPeer();) {
@@ -1367,7 +1384,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             });
             connection.start();
 
-            assertTrue("Should connect to original peer", originalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(originalConnected.await(5, TimeUnit.SECONDS), "Should connect to original peer");
 
             // --- Post Failover Expectations of FinalPeer --- //
 
@@ -1389,7 +1406,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             assertNotNull(consumer.receive());
             LOG.info("Receive returned");
 
-            assertTrue("Should connect to final peer", finalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(finalConnected.await(5, TimeUnit.SECONDS), "Should connect to final peer");
 
             LOG.info("Closing consumer");
             consumer.close();
@@ -1402,7 +1419,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailoverHandlesDropAfterQueueBrowserDrain() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer finalPeer = new TestAmqpPeer();) {
@@ -1442,7 +1460,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             });
             connection.start();
 
-            assertTrue("Should connect to original peer", originalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(originalConnected.await(5, TimeUnit.SECONDS), "Should connect to original peer");
 
             originalPeer.expectBegin();
             originalPeer.expectQueueBrowserAttach();
@@ -1480,7 +1498,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailoverHandlesDropAfterSessionCloseRequested() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer()) {
 
@@ -1507,7 +1526,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             });
             connection.start();
 
-            assertTrue("Should connect to original peer", originalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(originalConnected.await(5, TimeUnit.SECONDS), "Should connect to original peer");
 
             originalPeer.expectBegin();
             originalPeer.expectEnd(false);
@@ -1537,19 +1556,21 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             originalPeer.waitForAllHandlersToComplete(2000);
 
-            assertTrue("Session close should have completed by now", sessionCloseCompleted.await(3, TimeUnit.SECONDS));
-            assertFalse("Session close should have completed normally", sessionClosedThrew.get());
+            assertTrue(sessionCloseCompleted.await(3, TimeUnit.SECONDS), "Session close should have completed by now");
+            assertFalse(sessionClosedThrew.get(), "Session close should have completed normally");
 
             connection.close();
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateConsumerFailsWhenLinkRefusedAndAttachResponseWriteIsNotDeferred() throws Exception {
         doCreateConsumerFailsWhenLinkRefusedTestImpl(false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateConsumerFailsWhenLinkRefusedAndAttachResponseWriteIsDeferred() throws Exception {
         doCreateConsumerFailsWhenLinkRefusedTestImpl(true);
     }
@@ -1595,12 +1616,14 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateProducerFailsWhenLinkRefusedAndAttachResponseWriteIsNotDeferred() throws Exception {
         doCreateProducerFailsWhenLinkRefusedTestImpl(false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateProducerFailsWhenLinkRefusedAndAttachResponseWriteIsDeferred() throws Exception {
         doCreateProducerFailsWhenLinkRefusedTestImpl(true);
     }
@@ -1646,14 +1669,14 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testTxRecreatedAfterConnectionFailsOverDropsAfterCoordinatorAttach() throws Exception {
         doTxRecreatedAfterConnectionFailsOver(true);
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testTxRecreatedAfterConnectionFailsOverDropsAfterSessionBegin() throws Exception {
         doTxRecreatedAfterConnectionFailsOver(false);
     }
@@ -1696,7 +1719,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             });
             connection.start();
 
-            assertTrue("Should connect to original peer", originalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(originalConnected.await(5, TimeUnit.SECONDS), "Should connect to original peer");
 
             originalPeer.expectBegin();
 
@@ -1730,7 +1753,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
 
-            assertTrue("Should connect to final peer", finalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(finalConnected.await(5, TimeUnit.SECONDS), "Should connect to final peer");
 
             LOG.debug("About to close session following final peer connection.");
             session.close();
@@ -1742,7 +1765,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testTempDestinationRecreatedAfterConnectionFailsOver() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer finalPeer = new TestAmqpPeer();) {
@@ -1785,7 +1809,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             });
             connection.start();
 
-            assertTrue("Should connect to original peer", originalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(originalConnected.await(5, TimeUnit.SECONDS), "Should connect to original peer");
 
             // --- Post Failover Expectations of FinalPeer --- //
 
@@ -1801,7 +1825,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             TemporaryTopic tempTopic = session.createTemporaryTopic();
 
-            assertTrue("Should connect to final peer", finalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(finalConnected.await(5, TimeUnit.SECONDS), "Should connect to final peer");
 
             // Delete the temporary Topic and close the session.
             finalPeer.expectDetach(true, true, true);
@@ -1820,7 +1844,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailoverEnforcesRequestTimeoutSession() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
 
@@ -1858,8 +1883,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             });
             connection.start();
 
-            assertTrue("Should connect to peer", connected.await(5, TimeUnit.SECONDS));
-            assertTrue("Should lose connection to peer", disconnected.await(5, TimeUnit.SECONDS));
+            assertTrue(connected.await(5, TimeUnit.SECONDS), "Should connect to peer");
+            assertTrue(disconnected.await(5, TimeUnit.SECONDS), "Should lose connection to peer");
 
             try {
                 connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -1876,7 +1901,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailoverEnforcesRequestTimeoutSessionWhenBeginSent() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
 
@@ -1912,7 +1938,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailoverEnforcesSendTimeout() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
 
@@ -1952,13 +1979,13 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             });
             connection.start();
 
-            assertTrue("Should connect to peer", connected.await(5, TimeUnit.SECONDS));
+            assertTrue(connected.await(5, TimeUnit.SECONDS), "Should connect to peer");
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
             MessageProducer producer = session.createProducer(queue);
 
-            assertTrue("Should lose connection to peer", disconnected.await(5, TimeUnit.SECONDS));
+            assertTrue(disconnected.await(5, TimeUnit.SECONDS), "Should lose connection to peer");
 
             try {
                 producer.send(session.createMessage());
@@ -1975,7 +2002,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailoverEnforcesRequestTimeoutCreateTenpDestination() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
 
@@ -2014,11 +2042,11 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             });
             connection.start();
 
-            assertTrue("Should connect to peer", connected.await(5, TimeUnit.SECONDS));
+            assertTrue(connected.await(5, TimeUnit.SECONDS), "Should connect to peer");
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-            assertTrue("Should lose connection to peer", disconnected.await(5, TimeUnit.SECONDS));
+            assertTrue(disconnected.await(5, TimeUnit.SECONDS), "Should lose connection to peer");
 
             try {
                 session.createTemporaryQueue();
@@ -2044,7 +2072,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailoverPassthroughOfCompletedSyncSend() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             final Connection connection = establishAnonymousConnecton(testPeer);
@@ -2093,7 +2122,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             producer.send(message2);
 
             long elapsed = System.currentTimeMillis() - start;
-            MatcherAssert.assertThat("Send call should have taken at least the disposition delay", elapsed, Matchers.greaterThanOrEqualTo(delay));
+            assertThat("Send call should have taken at least the disposition delay", elapsed, Matchers.greaterThanOrEqualTo(delay));
 
             connection.close();
 
@@ -2101,7 +2130,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailoverPassthroughOfRejectedSyncSend() throws Exception {
         Rejected failingState = new Rejected();
         org.apache.qpid.jms.test.testpeer.describedtypes.Error rejectError = new org.apache.qpid.jms.test.testpeer.describedtypes.Error();
@@ -2112,12 +2142,14 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         doFailoverPassthroughOfFailingSyncSendTestImpl(failingState, true);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailoverPassthroughOfReleasedSyncSend() throws Exception {
         doFailoverPassthroughOfFailingSyncSendTestImpl(new Released(), false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailoverPassthroughOfModifiedFailedSyncSend() throws Exception {
         Modified failingState = new Modified();
         failingState.setDeliveryFailed(true);
@@ -2177,7 +2209,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             } catch (JMSException jmse) {
                 //Expected
                 long elapsed = System.currentTimeMillis() - start;
-                MatcherAssert.assertThat("Send call should have taken at least the disposition delay", elapsed, Matchers.greaterThanOrEqualTo(delay));
+                assertThat("Send call should have taken at least the disposition delay", elapsed, Matchers.greaterThanOrEqualTo(delay));
 
                 if (inspectException) {
                     assertTrue(jmse instanceof ResourceAllocationException);
@@ -2207,7 +2239,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailoverPassthroughOfCompletedAsyncSend() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             final Connection connection = establishAnonymousConnecton(
@@ -2234,7 +2267,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             producer.send(message, listener);
 
-            assertTrue("Did not get async callback", listener.awaitCompletion(2000, TimeUnit.SECONDS));
+            assertTrue(listener.awaitCompletion(2000, TimeUnit.SECONDS), "Did not get async callback");
             assertNull(listener.exception);
             assertNotNull(listener.message);
             assertTrue(listener.message instanceof TextMessage);
@@ -2245,7 +2278,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailoverPassthroughOfRejectedAsyncCompletionSend() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             final JmsConnection connection = establishAnonymousConnecton(
@@ -2265,7 +2299,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             Message message = session.createTextMessage("content");
             testPeer.expectTransfer(new TransferPayloadCompositeMatcher(), nullValue(), new Rejected(), true);
 
-            assertNull("Should not yet have a JMSDestination", message.getJMSDestination());
+            assertNull(message.getJMSDestination(), "Should not yet have a JMSDestination");
 
             TestJmsCompletionListener listener = new TestJmsCompletionListener();
             try {
@@ -2275,7 +2309,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
                 fail("No expected exception for this send.");
             }
 
-            assertTrue("Did not get async callback", listener.awaitCompletion(2000, TimeUnit.SECONDS));
+            assertTrue(listener.awaitCompletion(2000, TimeUnit.SECONDS), "Did not get async callback");
             assertNotNull(listener.exception);
             assertNotNull(listener.message);
             assertTrue(listener.message instanceof TextMessage);
@@ -2291,7 +2325,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
                 fail("No expected exception for this send.");
             }
 
-            assertTrue("Did not get async callback", listener.awaitCompletion(2000, TimeUnit.SECONDS));
+            assertTrue(listener.awaitCompletion(2000, TimeUnit.SECONDS), "Did not get async callback");
             assertNull(listener.exception);
             assertNotNull(listener.message);
             assertTrue(listener.message instanceof TextMessage);
@@ -2302,7 +2336,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailoverConnectionLossFailsWaitingAsyncCompletionSends() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             final JmsConnection connection = establishAnonymousConnecton(
@@ -2344,7 +2379,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
                 fail("No expected exception for this send.");
             }
 
-            assertTrue("Did not get async callback", listener.awaitCompletion(2000, TimeUnit.SECONDS));
+            assertTrue(listener.awaitCompletion(2000, TimeUnit.SECONDS), "Did not get async callback");
             assertEquals(MSG_COUNT, listener.errorCount);
             assertEquals(1, listener.successCount);
             assertNotNull(listener.exception);
@@ -2355,7 +2390,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateSessionAfterConnectionDrops() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer finalPeer = new TestAmqpPeer();) {
@@ -2398,7 +2434,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             });
             connection.start();
 
-            assertTrue("Should connect to original peer", originalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(originalConnected.await(5, TimeUnit.SECONDS), "Should connect to original peer");
 
             // --- Post Failover Expectations of FinalPeer --- //
 
@@ -2411,7 +2447,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-            assertTrue("Should connect to final peer", finalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(finalConnected.await(5, TimeUnit.SECONDS), "Should connect to final peer");
 
             session.close();
             connection.close();
@@ -2420,8 +2456,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateConsumerAfterConnectionDrops() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer finalPeer = new TestAmqpPeer();) {
@@ -2464,7 +2500,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             });
             connection.start();
 
-            assertTrue("Should connect to original peer", originalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(originalConnected.await(5, TimeUnit.SECONDS), "Should connect to original peer");
 
             // --- Post Failover Expectations of FinalPeer --- //
 
@@ -2485,7 +2521,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             assertNull(consumer.receive(500));
             LOG.info("Receive returned");
 
-            assertTrue("Should connect to final peer", finalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(finalConnected.await(5, TimeUnit.SECONDS), "Should connect to final peer");
 
             LOG.info("Closing consumer");
             consumer.close();
@@ -2497,7 +2533,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateProducerAfterConnectionDrops() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer finalPeer = new TestAmqpPeer();) {
@@ -2540,7 +2577,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             });
             connection.start();
 
-            assertTrue("Should connect to original peer", originalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(originalConnected.await(5, TimeUnit.SECONDS), "Should connect to original peer");
 
             // --- Post Failover Expectations of FinalPeer --- //
 
@@ -2556,7 +2593,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             Queue queue = session.createQueue("myQueue");
             MessageProducer producer = session.createProducer(queue);
 
-            assertTrue("Should connect to final peer", finalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(finalConnected.await(5, TimeUnit.SECONDS), "Should connect to final peer");
 
             LOG.info("Closing consumer");
             producer.close();
@@ -2568,8 +2605,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testTxCommitThrowsWhenNoDischargeResponseSentAndConnectionDrops() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
 
@@ -2604,7 +2641,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             });
             connection.start();
 
-            assertTrue("Should connect to test peer", testConnected.await(6, TimeUnit.SECONDS));
+            assertTrue(testConnected.await(6, TimeUnit.SECONDS), "Should connect to test peer");
 
             testPeer.expectBegin();
             testPeer.expectCoordinatorAttach();
@@ -2632,7 +2669,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
                 LOG.debug("Commit threw: ", jmsEx);
             }
 
-            assertTrue("Should reported failed", failedConnection.await(5, TimeUnit.SECONDS));
+            assertTrue(failedConnection.await(5, TimeUnit.SECONDS), "Should reported failed");
 
             try {
                 connection.close();
@@ -2642,7 +2679,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testDropAndRejectAfterwardsHonorsMax() throws Exception {
         try (TestAmqpPeer firstPeer = new TestAmqpPeer();
              TestAmqpPeer secondPeer = new TestAmqpPeer();
@@ -2694,11 +2732,11 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             });
             connection.start();
 
-            assertTrue("Should connect to first peer", testConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(testConnected.await(5, TimeUnit.SECONDS), "Should connect to first peer");
 
             // --- Failover should handle the connection close ---------------//
 
-            assertTrue("Should reported failed", failedConnection.await(5, TimeUnit.SECONDS));
+            assertTrue(failedConnection.await(5, TimeUnit.SECONDS), "Should reported failed");
 
             try {
                 connection.close();
@@ -2710,14 +2748,15 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             // Shut down last peer and verify no connection made to it
             fourthPeer.purgeExpectations();
             fourthPeer.close();
-            assertNotNull("Peer 1 should have accepted a TCP connection", firstPeer.getClientSocket());
-            assertNotNull("Peer 2 should have accepted a TCP connection", secondPeer.getClientSocket());
-            assertNotNull("Peer 3 should have accepted a TCP connection", thirdPeer.getClientSocket());
-            assertNull("Peer 4 should not have accepted any TCP connection", fourthPeer.getClientSocket());
+            assertNotNull(firstPeer.getClientSocket(), "Peer 1 should have accepted a TCP connection");
+            assertNotNull(secondPeer.getClientSocket(), "Peer 2 should have accepted a TCP connection");
+            assertNotNull(thirdPeer.getClientSocket(), "Peer 3 should have accepted a TCP connection");
+            assertNull(fourthPeer.getClientSocket(), "Peer 4 should not have accepted any TCP connection");
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testStartMaxReconnectAttemptsTriggeredWhenRemotesAreRejecting() throws Exception {
         try (TestAmqpPeer firstPeer = new TestAmqpPeer();
              TestAmqpPeer secondPeer = new TestAmqpPeer();
@@ -2761,7 +2800,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             // --- Failover should handle the connection close ---------------//
 
-            assertTrue("Should reported failed", failedConnection.await(5, TimeUnit.SECONDS));
+            assertTrue(failedConnection.await(5, TimeUnit.SECONDS), "Should reported failed");
 
             try {
                 connection.close();
@@ -2774,14 +2813,15 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             // Shut down last peer and verify no connection made to it
             fourthPeer.purgeExpectations();
             fourthPeer.close();
-            assertNotNull("Peer 1 should have accepted a TCP connection", firstPeer.getClientSocket());
-            assertNotNull("Peer 2 should have accepted a TCP connection", secondPeer.getClientSocket());
-            assertNotNull("Peer 3 should have accepted a TCP connection", thirdPeer.getClientSocket());
-            assertNull("Peer 4 should not have accepted any TCP connection", fourthPeer.getClientSocket());
+            assertNotNull(firstPeer.getClientSocket(), "Peer 1 should have accepted a TCP connection");
+            assertNotNull(secondPeer.getClientSocket(), "Peer 2 should have accepted a TCP connection");
+            assertNotNull(thirdPeer.getClientSocket(), "Peer 3 should have accepted a TCP connection");
+            assertNull(fourthPeer.getClientSocket(), "Peer 4 should not have accepted any TCP connection");
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testConnectionConsumerRecreatedAfterReconnect() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer finalPeer = new TestAmqpPeer();) {
@@ -2836,9 +2876,9 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             Queue queue = new JmsQueue("myQueue");
             connection.createConnectionConsumer(queue, null, sessionPool, 100);
 
-            assertTrue("Should connect to original peer", originalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(originalConnected.await(5, TimeUnit.SECONDS), "Should connect to original peer");
 
-            assertTrue("Should connect to final peer", finalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(finalConnected.await(5, TimeUnit.SECONDS), "Should connect to final peer");
 
             // Shut it down
             finalPeer.expectClose();
@@ -2848,8 +2888,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRemotelyCloseConsumerWithMessageListenerFiresJMSExceptionListener() throws Exception {
         Symbol errorCondition = AmqpError.RESOURCE_DELETED;
         String errorDescription = "testRemotelyCloseConsumerWithMessageListenerFiresJMSExceptionListener";
@@ -2857,8 +2897,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         doRemotelyCloseConsumerWithMessageListenerFiresJMSExceptionListenerTestImpl(errorCondition, errorDescription);
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRemotelyCloseConsumerWithMessageListenerWithoutErrorFiresJMSExceptionListener() throws Exception {
         // As above but with the peer not including any error condition in its consumer close
         doRemotelyCloseConsumerWithMessageListenerFiresJMSExceptionListenerTestImpl(null, null);
@@ -2912,7 +2952,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             // Verify the consumer gets marked closed
             testPeer.waitForAllHandlersToComplete(1000);
-            assertTrue("consumer never closed.", Wait.waitFor(new Wait.Condition() {
+            assertTrue(Wait.waitFor(new Wait.Condition() {
                 @Override
                 public boolean isSatisfied() throws Exception {
                     try {
@@ -2931,10 +2971,10 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
                     }
                     return false;
                 }
-            }, 5000, 10));
+            }, 5000, 10), "consumer never closed.");
 
-            assertTrue("Consumer closed callback didn't trigger",  consumerClosed.await(2000, TimeUnit.MILLISECONDS));
-            assertTrue("JMS Exception listener should have fired with a MessageListener", exceptionListenerFired.await(2000, TimeUnit.MILLISECONDS));
+            assertTrue(consumerClosed.await(2000, TimeUnit.MILLISECONDS),  "Consumer closed callback didn't trigger");
+            assertTrue(exceptionListenerFired.await(2000, TimeUnit.MILLISECONDS), "JMS Exception listener should have fired with a MessageListener");
 
             // Try closing it explicitly, should effectively no-op in client.
             // The test peer will throw during close if it sends anything.
@@ -2947,7 +2987,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailoverCannotRecreateConsumerFailsConnectionAndRetries() throws Exception {
         Symbol errorCondition = AmqpError.RESOURCE_DELETED;
         String errorDescription = "testFailoverCannotRecreateConsumerFailsConnectionAndRetries";
@@ -2955,7 +2996,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         doTestFailoverCannotRecreateConsumerFailsConnectionAndRetries(errorCondition, errorDescription);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailoverCannotRecreateConsumerFailsConnectionAndRetriesNoErrorConditionGiven() throws Exception {
         doTestFailoverCannotRecreateConsumerFailsConnectionAndRetries(null, null);
     }
@@ -3051,14 +3093,14 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             finalPeer.waitForAllHandlersToComplete(1000);
 
-            assertTrue("Should connect to original peer", originalConnected.await(3, TimeUnit.SECONDS));
-            assertTrue("Should connect to final peer", finalConnected.await(3, TimeUnit.SECONDS));
+            assertTrue(originalConnected.await(3, TimeUnit.SECONDS), "Should connect to original peer");
+            assertTrue(finalConnected.await(3, TimeUnit.SECONDS), "Should connect to final peer");
 
             // Check message arrives
-            assertTrue("The onMessage listener should have fired", msgReceived.await(3, TimeUnit.SECONDS));
+            assertTrue(msgReceived.await(3, TimeUnit.SECONDS), "The onMessage listener should have fired");
             Message msg = msgRef.get();
-            assertTrue("Expected an instance of TextMessage, got: " + msg, msg instanceof TextMessage);
-            assertEquals("Unexpected msg content", expectedMessageContent, ((TextMessage) msg).getText());
+            assertTrue(msg instanceof TextMessage, "Expected an instance of TextMessage, got: " + msg);
+            assertEquals(expectedMessageContent, ((TextMessage) msg).getText(), "Unexpected msg content");
 
             // Check that consumer isn't closed
             try {
@@ -3067,7 +3109,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
                 fail("Consumer should be in open state and not throw here.");
             }
 
-            assertFalse("The ExceptionListener should not have been alerted", exceptionListenerFired.get());
+            assertFalse(exceptionListenerFired.get(), "The ExceptionListener should not have been alerted");
 
             // Shut it down
             finalPeer.expectClose();
@@ -3077,7 +3119,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailoverCannotRecreateProducerFailsConnectionAndRetries() throws Exception {
         Symbol errorCondition = AmqpError.RESOURCE_DELETED;
         String errorDescription = "testFailoverCannotRecreateProducerFailsConnectionAndRetries";
@@ -3085,7 +3128,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         doTestFailoverCannotRecreateProducerFailsConnectionAndRetries(errorCondition, errorDescription);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailoverCannotRecreateProducerFailsConnectionAndRetriesNoErrorConditionGiven() throws Exception {
         doTestFailoverCannotRecreateProducerFailsConnectionAndRetries(null, null);
     }
@@ -3167,8 +3211,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             finalPeer.waitForAllHandlersToComplete(1000);
 
-            assertTrue("Should connect to original peer", originalConnected.await(3, TimeUnit.SECONDS));
-            assertTrue("Should connect to final peer", finalConnected.await(3, TimeUnit.SECONDS));
+            assertTrue(originalConnected.await(3, TimeUnit.SECONDS), "Should connect to original peer");
+            assertTrue(finalConnected.await(3, TimeUnit.SECONDS), "Should connect to final peer");
 
             // Check that producer isn't closed
             try {
@@ -3189,7 +3233,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             Message message = session.createTextMessage(messageContent);
             producer.send(message);
 
-            assertFalse("The ExceptionListener should not have been alerted", exceptionListenerFired.get());
+            assertFalse(exceptionListenerFired.get(), "The ExceptionListener should not have been alerted");
 
             // Shut it down
             finalPeer.expectClose();
@@ -3199,7 +3243,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailoverCannotRecreateConsumerWithCloseFailedLinksEnabled() throws Exception {
         Symbol errorCondition = AmqpError.RESOURCE_DELETED;
         String errorDescription = "testFailoverCannotRecreateConsumerWithCloseFailedLinksEnabled";
@@ -3207,7 +3252,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         doTestFailoverCannotRecreateConsumerWithCloseFailedLinksEnabled(true, errorCondition, errorDescription);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailoverCannotRecreateConsumerWithCloseFailedLinksEnabledNoMessageListener() throws Exception {
         Symbol errorCondition = AmqpError.RESOURCE_DELETED;
         String errorDescription = "testFailoverCannotRecreateConsumerWithCloseFailedLinksEnabledNoMessageListener";
@@ -3215,12 +3261,14 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         doTestFailoverCannotRecreateConsumerWithCloseFailedLinksEnabled(false, errorCondition, errorDescription);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailoverCannotRecreateConsumerWithCloseFailedLinksEnabledNoErrorConditionGiven() throws Exception {
         doTestFailoverCannotRecreateConsumerWithCloseFailedLinksEnabled(true, null, null);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailoverCannotRecreateConsumerWithCloseFailedLinksEnabledNoErrorConditionGivenNoMessageListener() throws Exception {
         doTestFailoverCannotRecreateConsumerWithCloseFailedLinksEnabled(false, null, null);
     }
@@ -3306,11 +3354,11 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             finalPeer.waitForAllHandlersToComplete(1000);
 
-            assertTrue("Should connect to original peer", originalConnected.await(3, TimeUnit.SECONDS));
-            assertTrue("Should connect to final peer", finalConnected.await(3, TimeUnit.SECONDS));
+            assertTrue(originalConnected.await(3, TimeUnit.SECONDS), "Should connect to original peer");
+            assertTrue(finalConnected.await(3, TimeUnit.SECONDS), "Should connect to final peer");
 
             // Verify the consumer gets marked closed
-            assertTrue("consumer never closed.", Wait.waitFor(new Wait.Condition() {
+            assertTrue(Wait.waitFor(new Wait.Condition() {
                 @Override
                 public boolean isSatisfied() throws Exception {
                     try {
@@ -3330,13 +3378,13 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
                     }
                     return false;
                 }
-            }, 5000, 10));
+            }, 5000, 10), "consumer never closed.");
 
             // Verify the exception listener behaviour
             if (addListener) {
-                assertTrue("JMS Exception listener should have fired with a MessageListener", exceptionListenerFired.await(2, TimeUnit.SECONDS));
+                assertTrue(exceptionListenerFired.await(2, TimeUnit.SECONDS), "JMS Exception listener should have fired with a MessageListener");
             } else {
-                assertFalse("The ExceptionListener should not have been alerted", exceptionListenerFired.await(10, TimeUnit.MILLISECONDS));
+                assertFalse(exceptionListenerFired.await(10, TimeUnit.MILLISECONDS), "The ExceptionListener should not have been alerted");
             }
 
             // Shut it down
@@ -3347,7 +3395,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailoverCannotRecreateProducerWithCloseFailedLinksEnabled() throws Exception {
         Symbol errorCondition = AmqpError.RESOURCE_DELETED;
         String errorDescription = "testFailoverCannotRecreateProducerWithCloseFailedLinksEnabled";
@@ -3355,7 +3404,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         doTestFailoverCannotRecreateWithCloseFailedLinksEnabled(errorCondition, errorDescription);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailoverCannotRecreateProducerWithCloseFailedLinksEnabledNoErrorConditionGiven() throws Exception {
         doTestFailoverCannotRecreateWithCloseFailedLinksEnabled(null, null);
     }
@@ -3425,11 +3475,11 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             finalPeer.waitForAllHandlersToComplete(1000);
 
-            assertTrue("Should connect to original peer", originalConnected.await(3, TimeUnit.SECONDS));
-            assertTrue("Should connect to final peer", finalConnected.await(3, TimeUnit.SECONDS));
+            assertTrue(originalConnected.await(3, TimeUnit.SECONDS), "Should connect to original peer");
+            assertTrue(finalConnected.await(3, TimeUnit.SECONDS), "Should connect to final peer");
 
             // Verify the producer gets marked closed
-            assertTrue("producer never closed.", Wait.waitFor(new Wait.Condition() {
+            assertTrue(Wait.waitFor(new Wait.Condition() {
                 @Override
                 public boolean isSatisfied() throws Exception {
                     try {
@@ -3449,9 +3499,9 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
                     }
                     return false;
                 }
-            }, 5000, 10));
+            }, 5000, 10), "producer never closed.");
 
-            assertFalse("The ExceptionListener should not have been alerted", exceptionListenerFired.get());
+            assertFalse(exceptionListenerFired.get(), "The ExceptionListener should not have been alerted");
 
             // Shut it down
             finalPeer.expectClose();
@@ -3461,7 +3511,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testInDoubtTransactionFromFailoverCompletesAsyncCompletions() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer finalPeer = new TestAmqpPeer();) {
@@ -3541,7 +3592,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             });
             connection.start();
 
-            assertTrue("Should connect to original peer", originalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(originalConnected.await(5, TimeUnit.SECONDS), "Should connect to original peer");
 
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
             Queue queue = session.createQueue("myQueue");
@@ -3561,12 +3612,12 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
                 fail("Should not have failed the async completion send.");
             }
 
-            assertTrue("Should connect to final peer", finalConnected.await(3, TimeUnit.SECONDS));
+            assertTrue(finalConnected.await(3, TimeUnit.SECONDS), "Should connect to final peer");
 
             // This should fire after reconnect without an error, if it fires with an error at
             // any time then something is wrong.
-            assertTrue("Did not get async callback for send #1", listener1.awaitCompletion(5, TimeUnit.SECONDS));
-            assertNull("Completion of send #1 should not have been on error", listener1.exception);
+            assertTrue(listener1.awaitCompletion(5, TimeUnit.SECONDS), "Did not get async callback for send #1");
+            assertNull(listener1.exception, "Completion of send #1 should not have been on error");
             assertNotNull(listener1.message);
             assertTrue(listener1.message instanceof TextMessage);
 
@@ -3576,8 +3627,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
                 fail("Should not have failed the async completion send.");
             }
 
-            assertTrue("Did not get async callback for send #2", listener2.awaitCompletion(5, TimeUnit.SECONDS));
-            assertNull("Completion of send #2 should not have been on error", listener2.exception);
+            assertTrue(listener2.awaitCompletion(5, TimeUnit.SECONDS), "Did not get async callback for send #2");
+            assertNull(listener2.exception, "Completion of send #2 should not have been on error");
             assertNotNull(listener2.message);
             assertTrue(listener2.message instanceof TextMessage);
 
@@ -3592,8 +3643,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendAndConnectionDropsRecoveredAsInDoubtTransaction() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer finalPeer = new TestAmqpPeer();) {
@@ -3673,7 +3724,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             });
             connection.start();
 
-            assertTrue("Should connect to original peer", originalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(originalConnected.await(5, TimeUnit.SECONDS), "Should connect to original peer");
 
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
             Queue queue = session.createQueue("myQueue");
@@ -3691,7 +3742,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
                 fail("Should not have failed to send.");
             }
 
-            assertTrue("Should connect to final peer", finalConnected.await(3, TimeUnit.SECONDS));
+            assertTrue(finalConnected.await(3, TimeUnit.SECONDS), "Should connect to final peer");
 
             try {
                 session.commit();
@@ -3705,8 +3756,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSecondSendAndConnectionDropsResendsButTransactionRollsBackAsInDoubt() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer finalPeer = new TestAmqpPeer();) {
@@ -3793,7 +3844,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             });
             connection.start();
 
-            assertTrue("Should connect to original peer", originalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(originalConnected.await(5, TimeUnit.SECONDS), "Should connect to original peer");
 
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
             Queue queue = session.createQueue("myQueue");
@@ -3817,7 +3868,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
                 fail("Should not have failed to send.");
             }
 
-            assertTrue("Should connect to final peer", finalConnected.await(3, TimeUnit.SECONDS));
+            assertTrue(finalConnected.await(3, TimeUnit.SECONDS), "Should connect to final peer");
 
             try {
                 session.commit();
@@ -3831,8 +3882,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testTransactionalAcknowledgeAfterRecoveredWhileSendBlocked() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer finalPeer = new TestAmqpPeer();) {
@@ -3916,7 +3967,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             });
             connection.start();
 
-            assertTrue("Should connect to original peer", originalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(originalConnected.await(5, TimeUnit.SECONDS), "Should connect to original peer");
 
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
             Queue queue = session.createQueue("myQueue");
@@ -3934,7 +3985,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
                 fail("Should not have failed the send after connection dropped.");
             }
 
-            assertTrue("Should connect to final peer", finalConnected.await(3, TimeUnit.SECONDS));
+            assertTrue(finalConnected.await(3, TimeUnit.SECONDS), "Should connect to final peer");
 
             MessageConsumer consumer = session.createConsumer(queue);
             assertNotNull(consumer.receive(5000));
@@ -3951,8 +4002,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout = 30_000)
+    @Test
+    @Timeout(30)
     public void testReceiveAndSendInTransactionFailsCommitWhenConnectionDropsDuringSend() throws Exception {
         final Binary txnId1 = new Binary(new byte[]{ (byte) 1, (byte) 2, (byte) 3, (byte) 4});
         final Binary txnId2 = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
@@ -4032,7 +4083,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             });
             connection.start();
 
-            assertTrue("Should connect to original peer", originalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(originalConnected.await(5, TimeUnit.SECONDS), "Should connect to original peer");
 
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
             Queue queue = session.createQueue("myQueue");
@@ -4048,13 +4099,13 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
                 }
             });
 
-            assertTrue("Should connect to final peer", finalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(finalConnected.await(5, TimeUnit.SECONDS), "Should connect to final peer");
 
             finalPeer.waitForAllHandlersToComplete(1000);
             finalPeer.expectDischarge(txnId2, true);
             finalPeer.expectClose();
 
-            assertTrue("Should have encounted a Transaction Rollback Error", transactionRollback.await(5, TimeUnit.SECONDS));
+            assertTrue(transactionRollback.await(5, TimeUnit.SECONDS), "Should have encounted a Transaction Rollback Error");
 
             connection.close();
 
@@ -4062,7 +4113,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testTransactionDeclareWithNoResponseRecoveredAsInDoubtAndCommitFails() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer finalPeer = new TestAmqpPeer();) {
@@ -4154,11 +4206,11 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             });
             connection.start();
 
-            assertTrue("Should connect to original peer", originalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(originalConnected.await(5, TimeUnit.SECONDS), "Should connect to original peer");
 
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
 
-            assertTrue("Should connect to final peer", finalConnected.await(3, TimeUnit.SECONDS));
+            assertTrue(finalConnected.await(3, TimeUnit.SECONDS), "Should connect to final peer");
 
             Queue queue = session.createQueue("myQueue");
             MessageProducer producer = session.createProducer(queue);
@@ -4185,12 +4237,14 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testTransactionCommitWithNoResponseRecoveredAsInDoubtAndPerformsNoWork() throws Exception {
         doTestTransactionRetirementWithNoResponseRecoveredAsInDoubtAndCommitRollsBack(true);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testTransactionRollbackWithNoResponseRecoveredAsInDoubtAndPerformsNoWork() throws Exception {
         doTestTransactionRetirementWithNoResponseRecoveredAsInDoubtAndCommitRollsBack(false);
     }
@@ -4287,7 +4341,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             });
             connection.start();
 
-            assertTrue("Should connect to original peer", originalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(originalConnected.await(5, TimeUnit.SECONDS), "Should connect to original peer");
 
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
 
@@ -4306,7 +4360,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
                 }
             }
 
-            assertTrue("Should connect to final peer", finalConnected.await(3, TimeUnit.SECONDS));
+            assertTrue(finalConnected.await(3, TimeUnit.SECONDS), "Should connect to final peer");
 
             Queue queue = session.createQueue("myQueue");
             MessageProducer producer = session.createProducer(queue);
@@ -4333,8 +4387,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout = 20_000)
+    @Test
+    @Timeout(20)
     public void testSendWhileOfflinePreventsRecoveredTransactionFromCommitting() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer finalPeer = new TestAmqpPeer();) {
@@ -4400,7 +4454,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             });
             connection.start();
 
-            assertTrue("Should connect to original peer", originalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(originalConnected.await(5, TimeUnit.SECONDS), "Should connect to original peer");
 
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
             Queue queue = session.createQueue("myQueue");
@@ -4425,7 +4479,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
                 fail("Should not have failed the async completion send.");
             }
 
-            assertTrue("Should connect to final peer", finalConnected.await(5, TimeUnit.SECONDS));
+            assertTrue(finalConnected.await(5, TimeUnit.SECONDS), "Should connect to final peer");
 
             try {
                 session.commit();
@@ -4440,8 +4494,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailoverDoesNotFailPendingAsyncCompletionSend() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer finalPeer = new TestAmqpPeer();) {
@@ -4493,8 +4547,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             // This should fire after reconnect without an error, if it fires with an error at
             // any time then something is wrong.
-            assertTrue("Did not get async callback", listener.awaitCompletion(5, TimeUnit.SECONDS));
-            assertNull("Completion should not have been on error", listener.exception);
+            assertTrue(listener.awaitCompletion(5, TimeUnit.SECONDS), "Did not get async callback");
+            assertNull(listener.exception, "Completion should not have been on error");
             assertNotNull(listener.message);
             assertTrue(listener.message instanceof TextMessage);
 
@@ -4504,8 +4558,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testFailoverHandlesAnonymousFallbackWaitingForClose() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer finalPeer = new TestAmqpPeer();) {
@@ -4565,22 +4619,26 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testPassthroughCreateTemporaryQueueFailsWhenLinkRefusedAndAttachResponseWriteIsNotDeferred() throws Exception {
         doCreateTemporaryDestinationFailsWhenLinkRefusedTestImpl(false, false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testPassthroughCreateTemporaryQueueFailsWhenLinkRefusedAndAttachResponseWriteIsDeferred() throws Exception {
         doCreateTemporaryDestinationFailsWhenLinkRefusedTestImpl(false, true);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testPassthroughCreateTemporaryTopicFailsWhenLinkRefusedAndAttachResponseWriteIsNotDeferred() throws Exception {
         doCreateTemporaryDestinationFailsWhenLinkRefusedTestImpl(true, false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testPassthroughCreateTemporaryTopicFailsWhenLinkRefusedAndAttachResponseWriteIsDeferred() throws Exception {
         doCreateTemporaryDestinationFailsWhenLinkRefusedTestImpl(true, true);
     }
@@ -4623,7 +4681,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testPassthroughRemotelyCloseProducer() throws Exception {
         final String BREAD_CRUMB = "ErrorMessageBreadCrumb";
 
@@ -4655,7 +4714,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             // Verify the producer gets marked closed
             testPeer.waitForAllHandlersToComplete(1000);
-            assertTrue("producer never closed.", Wait.waitFor(new Wait.Condition() {
+            assertTrue(Wait.waitFor(new Wait.Condition() {
                 @Override
                 public boolean isSatisfied() throws Exception {
                     try {
@@ -4674,9 +4733,9 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
                     return false;
                 }
-            }, 10000, 10));
+            }, 10000, 10), "producer never closed.");
 
-            assertTrue("Producer closed callback didn't trigger", producerClosed.await(10, TimeUnit.SECONDS));
+            assertTrue(producerClosed.await(10, TimeUnit.SECONDS), "Producer closed callback didn't trigger");
 
             // Try closing it explicitly, should effectively no-op in client.
             // The test peer will throw during close if it sends anything.
@@ -4689,7 +4748,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testPassthroughOfSendFailsWhenDelayedDeliveryIsNotSupported() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
 
@@ -4735,7 +4795,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testPassthroughOfSendTimesOutWhenNoDispostionArrives() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
@@ -4782,7 +4843,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testPassthroughOfRollbackErrorCoordinatorClosedOnCommit() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
@@ -4823,7 +4885,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testPassthroughOfSessionCreateFailsOnDeclareTimeout() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
@@ -4859,7 +4922,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testConnectionPropertiesExtensionAppliedOnEachReconnect() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer finalPeer = new TestAmqpPeer();) {
@@ -4941,8 +5005,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             finalPeer.waitForAllHandlersToComplete(2000);
 
-            assertTrue("Should connect to original peer", originalConnected.await(3, TimeUnit.SECONDS));
-            assertTrue("Should connect to final peer", finalConnected.await(3, TimeUnit.SECONDS));
+            assertTrue(originalConnected.await(3, TimeUnit.SECONDS), "Should connect to original peer");
+            assertTrue(finalConnected.await(3, TimeUnit.SECONDS), "Should connect to final peer");
 
             finalPeer.expectClose();
             connection.close();
@@ -4950,7 +5014,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             finalPeer.waitForAllHandlersToComplete(1000);        }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSessionCreationRecoversAfterDropWithNoBeginResponse() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer finalPeer = new TestAmqpPeer();) {
@@ -4997,7 +5062,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testMultipleSessionCreationRecoversAfterDropWithNoBeginResponseAndFailedRecoveryAttempt() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer intermediatePeer = new TestAmqpPeer();
@@ -5066,7 +5132,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testMultipleSenderCreationRecoversAfterDropWithNoAttachResponseAndFailedRecoveryAttempt() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer intermediatePeer = new TestAmqpPeer();
@@ -5123,7 +5190,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSenderAndReceiverCreationRecoversAfterDropWithNoAttachResponseAndFailedRecoveryAttempt() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer intermediatePeer = new TestAmqpPeer();

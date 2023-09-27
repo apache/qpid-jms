@@ -19,8 +19,8 @@
 package org.apache.qpid.jms.integration;
 
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.ANONYMOUS_RELAY;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.UUID;
 
@@ -31,7 +31,8 @@ import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 public class JMSContextIntegrationTest extends QpidJmsTestCase {
 
@@ -39,7 +40,8 @@ public class JMSContextIntegrationTest extends QpidJmsTestCase {
 
     private Symbol[] SERVER_ANONYMOUS_RELAY = new Symbol[]{ANONYMOUS_RELAY};
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateAndCloseContext() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JMSContext context = testFixture.createJMSContext(testPeer);
@@ -50,7 +52,8 @@ public class JMSContextIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateContextWithClientId() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JMSContext context = testFixture.createJMSContext(testPeer, false, null, null, null, true);
@@ -61,7 +64,8 @@ public class JMSContextIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateContextAndSetClientID() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JMSContext context = testFixture.createJMSContext(testPeer, false, null, null, null, false);
@@ -73,7 +77,8 @@ public class JMSContextIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateAutoAckSessionByDefault() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JMSContext context = testFixture.createJMSContext(testPeer);
@@ -88,7 +93,8 @@ public class JMSContextIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateContextWithTransactedSessionMode() throws Exception {
         Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
 
@@ -114,7 +120,8 @@ public class JMSContextIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateContextFromContextWithSessionsActive() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JMSContext context = testFixture.createJMSContext(testPeer);
@@ -142,7 +149,8 @@ public class JMSContextIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testOnlyOneProducerCreatedInSingleContext() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JMSContext context = testFixture.createJMSContext(testPeer, SERVER_ANONYMOUS_RELAY);
@@ -166,7 +174,8 @@ public class JMSContextIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testEachContextGetsItsOwnProducer() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JMSContext context = testFixture.createJMSContext(testPeer, SERVER_ANONYMOUS_RELAY);

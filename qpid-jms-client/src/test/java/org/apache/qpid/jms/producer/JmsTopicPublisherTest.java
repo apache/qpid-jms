@@ -16,10 +16,10 @@
  */
 package org.apache.qpid.jms.producer;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import javax.jms.Destination;
 import javax.jms.InvalidDestinationException;
@@ -32,9 +32,11 @@ import org.apache.qpid.jms.JmsConnectionTestSupport;
 import org.apache.qpid.jms.JmsTopicSession;
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
 import org.apache.qpid.jms.provider.mock.MockRemotePeer;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.Timeout;
 
 public class JmsTopicPublisherTest extends JmsConnectionTestSupport {
 
@@ -42,16 +44,16 @@ public class JmsTopicPublisherTest extends JmsConnectionTestSupport {
     private final MockRemotePeer remotePeer = new MockRemotePeer();
 
     @Override
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
+        super.setUp(testInfo);
         remotePeer.start();
         connection = createConnectionToMockProvider();
         session = (JmsTopicSession) connection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
     }
 
     @Override
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         try {
             remotePeer.terminate();
@@ -60,7 +62,8 @@ public class JmsTopicPublisherTest extends JmsConnectionTestSupport {
         }
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testMultipleCloseCallsNoErrors() throws Exception {
         Topic topic = session.createTopic(getTestName());
         TopicPublisher publisher = session.createPublisher(topic);
@@ -68,14 +71,16 @@ public class JmsTopicPublisherTest extends JmsConnectionTestSupport {
         publisher.close();
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testGetTopic() throws Exception {
         Topic topic = session.createTopic(getTestName());
         TopicPublisher publisher = session.createPublisher(topic);
         assertSame(topic, publisher.getTopic());
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testPublishMessage() throws Exception {
         Topic topic = session.createTopic(getTestName());
         TopicPublisher publisher = session.createPublisher(topic);
@@ -89,7 +94,8 @@ public class JmsTopicPublisherTest extends JmsConnectionTestSupport {
         assertEquals(topic, destination);
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testPublishMessageOnProvidedTopic() throws Exception {
         Topic topic = session.createTopic(getTestName());
         TopicPublisher publisher = session.createPublisher(null);
@@ -103,7 +109,8 @@ public class JmsTopicPublisherTest extends JmsConnectionTestSupport {
         assertEquals(topic, destination);
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testPublishMessageOnProvidedTopicWhenNotAnonymous() throws Exception {
         Topic topic = session.createTopic(getTestName());
         TopicPublisher publisher = session.createPublisher(topic);
@@ -120,7 +127,8 @@ public class JmsTopicPublisherTest extends JmsConnectionTestSupport {
         } catch (InvalidDestinationException ide) {}
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testPublishMessageWithDeliveryOptions() throws Exception {
         Topic topic = session.createTopic(getTestName());
         TopicPublisher publisher = session.createPublisher(topic);
@@ -134,7 +142,8 @@ public class JmsTopicPublisherTest extends JmsConnectionTestSupport {
         assertEquals(topic, destination);
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testPublishMessageWithOptionsOnProvidedTopic() throws Exception {
         Topic topic = session.createTopic(getTestName());
         TopicPublisher publisher = session.createPublisher(null);
@@ -148,7 +157,8 @@ public class JmsTopicPublisherTest extends JmsConnectionTestSupport {
         assertEquals(topic, destination);
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testPublishMessageWithOptionsOnProvidedTopicWhenNotAnonymous() throws Exception {
         Topic topic = session.createTopic(getTestName());
         TopicPublisher publisher = session.createPublisher(topic);

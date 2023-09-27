@@ -19,11 +19,11 @@
 package org.apache.qpid.jms.integration;
 
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Date;
 import java.util.concurrent.CountDownLatch;
@@ -46,7 +46,8 @@ import org.apache.qpid.jms.test.testpeer.describedtypes.sections.PropertiesDescr
 import org.apache.qpid.jms.test.testpeer.matchers.AcceptedMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.ModifiedMatcher;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,7 +56,8 @@ public class MessageExpirationIntegrationTest extends QpidJmsTestCase {
 
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testIncomingExpiredMessageGetsFiltered() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -89,9 +91,9 @@ public class MessageExpirationIntegrationTest extends QpidJmsTestCase {
             testPeer.expectDisposition(true, new AcceptedMatcher(), 2, 2);
 
             Message m = consumer.receive(3000);
-            assertNotNull("Message should have been received", m);
+            assertNotNull(m, "Message should have been received");
             assertTrue(m instanceof TextMessage);
-            assertEquals("Unexpected message content", liveMsgContent, ((TextMessage)m).getText());
+            assertEquals(liveMsgContent, ((TextMessage)m).getText(), "Unexpected message content");
 
             // Verify the other message is not there. Will drain to be sure there are no messages.
             testPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.valueOf(JmsDefaultPrefetchPolicy.DEFAULT_QUEUE_PREFETCH - 2)));
@@ -99,7 +101,7 @@ public class MessageExpirationIntegrationTest extends QpidJmsTestCase {
             testPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.valueOf(JmsDefaultPrefetchPolicy.DEFAULT_QUEUE_PREFETCH)));
 
             m = consumer.receive(10);
-            assertNull("Message should not have been received", m);
+            assertNull(m, "Message should not have been received");
 
             testPeer.expectClose();
             connection.close();
@@ -108,7 +110,8 @@ public class MessageExpirationIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testIncomingExpiredMessageGetsConsumedWhenFilterDisabled() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.localMessageExpiry=false");
@@ -137,17 +140,17 @@ public class MessageExpirationIntegrationTest extends QpidJmsTestCase {
             testPeer.expectDisposition(true, new AcceptedMatcher(), 1, 1);
 
             Message m = consumer.receive(3000);
-            assertNotNull("Message should have been received", m);
+            assertNotNull(m, "Message should have been received");
             assertTrue(m instanceof TextMessage);
-            assertEquals("Unexpected message content", expiredMsgContent, ((TextMessage)m).getText());
+            assertEquals(expiredMsgContent, ((TextMessage)m).getText(), "Unexpected message content");
 
             // Verify the other message is there
             testPeer.expectDisposition(true, new AcceptedMatcher(), 2, 2);
 
             m = consumer.receive(3000);
-            assertNotNull("Message should have been received", m);
+            assertNotNull(m, "Message should have been received");
             assertTrue(m instanceof TextMessage);
-            assertEquals("Unexpected message content", liveMsgContent, ((TextMessage)m).getText());
+            assertEquals(liveMsgContent, ((TextMessage)m).getText(), "Unexpected message content");
 
             testPeer.expectClose();
             connection.close();
@@ -156,7 +159,8 @@ public class MessageExpirationIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testIncomingExpiredMessageGetsFilteredAsync() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -211,8 +215,8 @@ public class MessageExpirationIntegrationTest extends QpidJmsTestCase {
                 }
             });
 
-            assertTrue("didn't get expected message", success.await(5, TimeUnit.SECONDS));
-            assertFalse("There was a failure in the listener, see logs", listenerFailure.get());
+            assertTrue(success.await(5, TimeUnit.SECONDS), "didn't get expected message");
+            assertFalse(listenerFailure.get(), "There was a failure in the listener, see logs");
 
             testPeer.waitForAllHandlersToComplete(3000);
 
@@ -223,7 +227,8 @@ public class MessageExpirationIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testIncomingExpiredMessageGetsConsumedWhenFilterDisabledAsync() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.localMessageExpiry=false");
@@ -273,8 +278,8 @@ public class MessageExpirationIntegrationTest extends QpidJmsTestCase {
                 }
             });
 
-            assertTrue("didn't get expected messages", success.await(5, TimeUnit.SECONDS));
-            assertFalse("There was a failure in the listener, see logs", listenerFailure.get());
+            assertTrue(success.await(5, TimeUnit.SECONDS), "didn't get expected messages");
+            assertFalse(listenerFailure.get(), "There was a failure in the listener, see logs");
 
             testPeer.waitForAllHandlersToComplete(3000);
 

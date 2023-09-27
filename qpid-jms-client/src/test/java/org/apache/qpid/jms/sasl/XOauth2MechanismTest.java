@@ -16,15 +16,15 @@
  */
 package org.apache.qpid.jms.sasl;
 
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import org.junit.jupiter.api.Test;
 
 public class XOauth2MechanismTest {
 
@@ -60,35 +60,35 @@ public class XOauth2MechanismTest {
     public void testIsNotApplicableWithNoCredentials() {
         XOauth2Mechanism mech = new XOauth2Mechanism();
 
-        assertFalse("Should not be applicable with no credentials", mech.isApplicable(null, null, null));
+        assertFalse(mech.isApplicable(null, null, null), "Should not be applicable with no credentials");
     }
 
     @Test
     public void testIsNotApplicableWithNoUser() {
         XOauth2Mechanism mech = new XOauth2Mechanism();
 
-        assertFalse("Should not be applicable with no username", mech.isApplicable(null, "pass", null));
+        assertFalse(mech.isApplicable(null, "pass", null), "Should not be applicable with no username");
     }
 
     @Test
     public void testIsNotApplicableWithNoToken() {
         XOauth2Mechanism mech = new XOauth2Mechanism();
 
-        assertFalse("Should not be applicable with no token", mech.isApplicable("user", null, null));
+        assertFalse(mech.isApplicable("user", null, null), "Should not be applicable with no token");
     }
 
     @Test
     public void testIsNotApplicableWithEmtpyUser() {
         XOauth2Mechanism mech = new XOauth2Mechanism();
 
-        assertFalse("Should not be applicable with empty username", mech.isApplicable("", "pass", null));
+        assertFalse(mech.isApplicable("", "pass", null), "Should not be applicable with empty username");
     }
 
     @Test
     public void testIsNotApplicableWithEmtpyToken() {
         XOauth2Mechanism mech = new XOauth2Mechanism();
 
-        assertFalse("Should not be applicable with empty token", mech.isApplicable("user", "", null));
+        assertFalse(mech.isApplicable("user", "", null), "Should not be applicable with empty token");
     }
 
     /** RFC6749 defines the OAUTH2 an access token as comprising VSCHAR elements (\x20-7E) */
@@ -96,7 +96,7 @@ public class XOauth2MechanismTest {
     public void testIsNotApplicableWithIllegalAccessToken() {
         XOauth2Mechanism mech = new XOauth2Mechanism();
 
-        assertFalse("Should not be applicable with non vschars", mech.isApplicable("user", "illegalChar\000", null));
+        assertFalse(mech.isApplicable("user", "illegalChar\000", null), "Should not be applicable with non vschars");
     }
 
 
@@ -104,32 +104,32 @@ public class XOauth2MechanismTest {
     public void testIsNotApplicableWithEmtpyUserAndToken() {
         XOauth2Mechanism mech = new XOauth2Mechanism();
 
-        assertFalse("Should not be applicable with empty user and token", mech.isApplicable("", "", null));
+        assertFalse(mech.isApplicable("", "", null), "Should not be applicable with empty user and token");
     }
 
     @Test
     public void testIsApplicableWithUserAndToken() {
         XOauth2Mechanism mech = new XOauth2Mechanism();
 
-        assertTrue("Should be applicable with user and token", mech.isApplicable("user", "2YotnFZFEjr1zCsicMWpAA", null));
+        assertTrue(mech.isApplicable("user", "2YotnFZFEjr1zCsicMWpAA", null), "Should be applicable with user and token");
     }
 
     @Test
     public void testIsApplicableWithUserAndPasswordAndPrincipal() {
         XOauth2Mechanism mech = new XOauth2Mechanism();
 
-        assertTrue("Should be applicable with user and token and principal", mech.isApplicable("user", "2YotnFZFEjr1zCsicMWpAA", new Principal() {
+        assertTrue(mech.isApplicable("user", "2YotnFZFEjr1zCsicMWpAA", new Principal() {
             @Override
             public String getName() {
                 return "name";
             }
-        }));
+        }), "Should be applicable with user and token and principal");
     }
 
     @Test
     public void testIsEnabledByDefault() {
         XOauth2Mechanism mech = new XOauth2Mechanism();
 
-        assertTrue("Should be enabled by default", mech.isEnabledByDefault());
+        assertTrue(mech.isEnabledByDefault(), "Should be enabled by default");
     }
 }

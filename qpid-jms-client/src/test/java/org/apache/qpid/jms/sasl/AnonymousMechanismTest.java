@@ -16,12 +16,12 @@
  */
 package org.apache.qpid.jms.sasl;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.security.Principal;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class AnonymousMechanismTest {
 
@@ -47,67 +47,67 @@ public class AnonymousMechanismTest {
     public void testIsApplicableWithNoCredentials() {
         AnonymousMechanism mech = new AnonymousMechanism();
 
-        assertTrue("Should be applicable with no credentials", mech.isApplicable(null, null, null));
+        assertTrue(mech.isApplicable(null, null, null), "Should be applicable with no credentials");
     }
 
     @Test
     public void testIsNotApplicableWithNoUser() {
         AnonymousMechanism mech = new AnonymousMechanism();
 
-        assertTrue("Should be applicable with no username", mech.isApplicable(null, "pass", null));
+        assertTrue(mech.isApplicable(null, "pass", null), "Should be applicable with no username");
     }
 
     @Test
     public void testIsApplicableWithNoPassword() {
         AnonymousMechanism mech = new AnonymousMechanism();
 
-        assertTrue("Should be applicable with no password", mech.isApplicable("user", null, null));
+        assertTrue(mech.isApplicable("user", null, null), "Should be applicable with no password");
     }
 
     @Test
     public void testIsApplicableWithEmtpyUser() {
         AnonymousMechanism mech = new AnonymousMechanism();
 
-        assertTrue("Should be applicable with empty username", mech.isApplicable("", "pass", null));
+        assertTrue(mech.isApplicable("", "pass", null), "Should be applicable with empty username");
     }
 
     @Test
     public void testIsApplicableWithEmtpyPassword() {
         AnonymousMechanism mech = new AnonymousMechanism();
 
-        assertTrue("Should be applicable with empty password", mech.isApplicable("user", "", null));
+        assertTrue(mech.isApplicable("user", "", null), "Should be applicable with empty password");
     }
 
     @Test
     public void testIsApplicableWithEmtpyUserAndPassword() {
         AnonymousMechanism mech = new AnonymousMechanism();
 
-        assertTrue("Should be applicable with empty user and password", mech.isApplicable("", "", null));
+        assertTrue(mech.isApplicable("", "", null), "Should be applicable with empty user and password");
     }
 
     @Test
     public void testIsApplicableWithUserAndPassword() {
         AnonymousMechanism mech = new AnonymousMechanism();
 
-        assertTrue("Should be applicable with user and password", mech.isApplicable("user", "password", null));
+        assertTrue(mech.isApplicable("user", "password", null), "Should be applicable with user and password");
     }
 
     @Test
     public void testIsApplicableWithUserAndPasswordAndPrincipal() {
         AnonymousMechanism mech = new AnonymousMechanism();
 
-        assertTrue("Should be applicable with user and password and principal", mech.isApplicable("user", "password", new Principal() {
+        assertTrue(mech.isApplicable("user", "password", new Principal() {
             @Override
             public String getName() {
                 return "name";
             }
-        }));
+        }), "Should be applicable with user and password and principal");
     }
 
     @Test
     public void testIsEnabledByDefault() {
         AnonymousMechanism mech = new AnonymousMechanism();
 
-        assertTrue("Should be enabled by default", mech.isEnabledByDefault());
+        assertTrue(mech.isEnabledByDefault(), "Should be enabled by default");
     }
 }

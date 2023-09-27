@@ -16,10 +16,10 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -31,7 +31,7 @@ import org.apache.qpid.jms.provider.exceptions.ProviderConnectionRedirectedExcep
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.transport.AmqpError;
 import org.apache.qpid.proton.amqp.transport.ErrorCondition;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 public class AmqpSupportTest {
@@ -65,7 +65,7 @@ public class AmqpSupportTest {
         URI redirection = pre.getRedirectionURI();
 
         assertEquals(5672, redirection.getPort());
-        assertTrue("localhost.localdomain", redirection.getQuery().contains("amqp.vhost=localhost.localdomain"));
+        assertTrue(redirection.getQuery().contains("amqp.vhost=localhost.localdomain"), "localhost.localdomain");
         assertEquals("localhost", redirection.getHost());
         assertEquals("amqp", redirection.getScheme());
         assertEquals("/websocket", redirection.getPath());

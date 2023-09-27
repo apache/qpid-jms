@@ -16,14 +16,14 @@
  */
 package org.apache.qpid.jms.provider.failover;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.net.InetAddress;
 import java.net.URI;
@@ -36,8 +36,9 @@ import java.util.Map;
 
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.util.URISupport;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 
 /**
  * Test for the behavior of the FailoverUriPool
@@ -47,9 +48,9 @@ public class FailoverUriPoolTest extends QpidJmsTestCase {
     private List<URI> uris;
 
     @Override
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
+        super.setUp(testInfo);
 
         uris = new ArrayList<URI>();
 
@@ -445,9 +446,9 @@ public class FailoverUriPoolTest extends QpidJmsTestCase {
         }
 
         if (shouldShuffle) {
-            assertTrue("URIs did not get randomized", shuffled);
+            assertTrue(shuffled, "URIs did not get randomized");
         } else {
-            assertFalse("URIs should not get randomized", shuffled);
+            assertFalse(shuffled, "URIs should not get randomized");
         }
     }
 

@@ -16,12 +16,12 @@
  */
 package org.apache.qpid.jms.transports.netty;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.lang.reflect.Field;
 import java.net.URI;
@@ -31,10 +31,9 @@ import javax.net.ssl.SSLContext;
 import org.apache.qpid.jms.transports.Transport;
 import org.apache.qpid.jms.transports.TransportOptions;
 import org.apache.qpid.jms.transports.TransportSupport;
-import org.apache.qpid.jms.util.QpidJMSTestRunner;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,17 +46,18 @@ import io.netty.handler.ssl.SslHandler;
 /**
  * Test basic functionality of the Netty based TCP Transport ruuing in secure mode (SSL).
  */
-@RunWith(QpidJMSTestRunner.class)
 public class NettyOpenSslTransportTest extends NettySslTransportTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(NettyOpenSslTransportTest.class);
 
-    @Test(timeout = 240 * 1000)
+    @Test
+    @Timeout(240)
     public void testConnectToServerWithOpenSSLEnabled() throws Exception {
         doTestOpenSSLSupport(true);
     }
 
-    @Test(timeout = 60 * 1000)
+    @Test
+    @Timeout(60)
     public void testConnectToServerWithOpenSSLDisabled() throws Exception {
         doTestOpenSSLSupport(false);
     }
@@ -98,7 +98,8 @@ public class NettyOpenSslTransportTest extends NettySslTransportTest {
         assertTrue(data.isEmpty());
     }
 
-    @Test(timeout = 60 * 1000)
+    @Test
+    @Timeout(60)
     public void testConnectToServerWithUserSuppliedSSLContextWorksWhenOpenSSLRequested() throws Exception {
         assumeTrue(OpenSsl.isAvailable());
         assumeTrue(OpenSsl.supportsKeyManagerFactory());
@@ -161,7 +162,7 @@ public class NettyOpenSslTransportTest extends NettySslTransportTest {
             }
         }
 
-        assertNotNull("Transport implementation unknown", channel);
+        assertNotNull(channel, "Transport implementation unknown");
 
         channel.setAccessible(true);
 
@@ -172,15 +173,16 @@ public class NettyOpenSslTransportTest extends NettySslTransportTest {
         SslHandler sslHandler = (SslHandler) handler;
 
         if (expected) {
-            assertTrue(message, sslHandler.engine() instanceof OpenSslEngine);
+            assertTrue(sslHandler.engine() instanceof OpenSslEngine, message);
         } else {
-            assertFalse(message, sslHandler.engine() instanceof OpenSslEngine);
+            assertFalse(sslHandler.engine() instanceof OpenSslEngine, message);
         }
     }
 
     @Override
-    @Ignore("Can't apply keyAlias in Netty OpenSSL impl")
-    @Test(timeout = 60 * 1000)
+    @Disabled("Can't apply keyAlias in Netty OpenSSL impl")
+    @Test
+    @Timeout(60)
     public void testConnectWithSpecificClientAuthKeyAlias() throws Exception {
         // TODO - Revert to superclass version if keyAlias becomes supported for Netty.
     }

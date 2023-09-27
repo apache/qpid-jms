@@ -16,12 +16,13 @@
  */
 package org.apache.qpid.jms.meta;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -32,8 +33,8 @@ import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;
 import org.apache.qpid.jms.policy.JmsDefaultPresettlePolicy;
 import org.apache.qpid.jms.policy.JmsDefaultRedeliveryPolicy;
 import org.apache.qpid.jms.util.IdGenerator;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests for the JmsSessionInfo object
@@ -45,7 +46,7 @@ public class JmsSessionInfoTest {
 
     private JmsConnectionInfo connectionInfo;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         IdGenerator generator = new IdGenerator();
 
@@ -58,14 +59,18 @@ public class JmsSessionInfoTest {
         connectionInfo = new JmsConnectionInfo(connectionId);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test
     public void testExceptionWhenCreatedWithNullConnectionId() {
-        new JmsSessionInfo(null, 1);
+        assertThrows(IllegalArgumentException.class, () -> {
+            new JmsSessionInfo(null, 1);
+        });
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test
     public void testExceptionWhenCreatedWithNullSessionId() {
-        new JmsSessionInfo(null);
+        assertThrows(IllegalArgumentException.class, () -> {
+            new JmsSessionInfo(null);
+        });
     }
 
     @Test

@@ -16,16 +16,17 @@
  */
 package org.apache.qpid.jms.meta;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.qpid.jms.util.IdGenerator;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  *
@@ -35,7 +36,7 @@ public class JmsProducerIdTest {
     private JmsSessionId firstId;
     private JmsSessionId secondId;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         IdGenerator generator = new IdGenerator();
 
@@ -45,34 +46,46 @@ public class JmsProducerIdTest {
         secondId = new JmsSessionId(rootId, 2);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test
     public void testCreateFromStringThrowsWhenNull() {
-        new JmsProducerId((String) null);
+        assertThrows(IllegalArgumentException.class, () -> {
+            new JmsProducerId((String) null);
+        });
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test
     public void testCreateFromStringThrowsWhenEmpty() {
-        new JmsProducerId("");
+        assertThrows(IllegalArgumentException.class, () -> {
+            new JmsProducerId("");
+        });
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test
     public void testCreateFromConnectionStringThrowsWhenNull() {
-        new JmsProducerId((String) null, 1, 1);
+        assertThrows(IllegalArgumentException.class, () -> {
+            new JmsProducerId((String) null, 1, 1);
+        });
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test
     public void testCreateConnectionFromStringThrowsWhenEmpty() {
-        new JmsProducerId("", 1, 1);
+        assertThrows(IllegalArgumentException.class, () -> {
+            new JmsProducerId("", 1, 1);
+        });
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test
     public void testCreateFromSessionIdThrowsWhenNull() {
-        new JmsProducerId((JmsSessionId) null, 1);
+        assertThrows(IllegalArgumentException.class, () -> {
+            new JmsProducerId((JmsSessionId) null, 1);
+        });
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test
     public void testCreateFromConsumerIdThrowsWhenNull() {
-        new JmsProducerId((JmsProducerId) null);
+        assertThrows(IllegalArgumentException.class, () -> {
+            new JmsProducerId((JmsProducerId) null);
+        });
     }
 
     @Test

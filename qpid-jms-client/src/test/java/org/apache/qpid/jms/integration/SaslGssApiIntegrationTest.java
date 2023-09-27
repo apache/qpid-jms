@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.jms.integration;
 
-import static junit.framework.TestCase.assertTrue;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -52,11 +52,13 @@ import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.proton.amqp.Symbol;
-import org.junit.AfterClass;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,7 +82,7 @@ public class SaslGssApiIntegrationTest extends QpidJmsTestCase {
     private static MiniKdc kdc;
     private static final boolean DEBUG = false;
 
-    @BeforeClass
+    @BeforeAll
     public static void setUpKerberos() throws Exception {
         servicePrincipal = prepareServiceName();
         LOG.info("Using service principal: " + servicePrincipal);
@@ -145,31 +147,33 @@ public class SaslGssApiIntegrationTest extends QpidJmsTestCase {
         return "amqp/localhost";
     }
 
-    @AfterClass
+    @AfterAll
     public static void cleanUpKerberos() {
         if (kdc != null) {
            kdc.stop();
         }
     }
 
-    @Before
+    @BeforeEach
     @Override
-    public void setUp() throws Exception {
-        super.setUp();
+    public void setUp(TestInfo testInfo) throws Exception {
+        super.setUp(testInfo);
 
-        Assume.assumeFalse(System.getProperty("java.vendor").contains("IBM"));
+        Assumptions.assumeFalse(System.getProperty("java.vendor").contains("IBM"));
 
         // NOTE: we may need to isolate this test later if we use login.config in others
         setTestSystemProperty("java.security.auth.login.config",
                 SaslGssApiIntegrationTest.class.getClassLoader().getResource(LOGIN_CONFIG).getPath());
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSaslGssApiKrbConnection() throws Exception {
         doSaslGssApiKrbConnectionTestImpl("KRB5-CLIENT", CLIENT_PRINCIPAL_LOGIN_CONFIG + "@EXAMPLE.COM");
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSaslGssApiKrbConnectionWithDefaultScope() throws Exception {
         doSaslGssApiKrbConnectionTestImpl(null, CLIENT_PRINCIPAL_DEFAULT_CONFIG_SCOPE + "@EXAMPLE.COM");
     }
@@ -200,7 +204,8 @@ public class SaslGssApiIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSaslGssApiKrbConnectionWithPrincipalViaJmsUsernameUri() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             testPeer.expectSaslGSSAPI(servicePrincipal, KRB5_KEYTAB, CLIENT_PRINCIPAL_URI_USERNAME + "@EXAMPLE.COM");
@@ -228,7 +233,8 @@ public class SaslGssApiIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSaslGssApiKrbConnectionWithPrincipalViaJmsUsernameConnFactory() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             testPeer.expectSaslGSSAPI(servicePrincipal, KRB5_KEYTAB, CLIENT_PRINCIPAL_FACTORY_USERNAME + "@EXAMPLE.COM");
@@ -254,7 +260,8 @@ public class SaslGssApiIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSaslGssApiKrbConfigError() throws Exception {
         final String loginConfigScope = "KRB5-CLIENT-DOES-NOT-EXIST";
 
@@ -271,7 +278,8 @@ public class SaslGssApiIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testGssapiOnlySelectedWhenPresentIfExplicitlyEnabled() throws Exception {
         doMechanismSelectedTestImpl("username", "password", PLAIN, new Symbol[] {Symbol.valueOf(GSSAPI), PLAIN, ANONYMOUS}, false);
         doMechanismSelectedTestImpl("username", "password", Symbol.valueOf(GSSAPI), new Symbol[] {Symbol.valueOf(GSSAPI), PLAIN, ANONYMOUS}, true);

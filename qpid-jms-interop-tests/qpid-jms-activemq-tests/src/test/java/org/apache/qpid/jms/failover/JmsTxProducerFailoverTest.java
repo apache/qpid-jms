@@ -16,9 +16,9 @@
  */
 package org.apache.qpid.jms.failover;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.net.URI;
 import java.util.concurrent.TimeUnit;
@@ -31,18 +31,15 @@ import javax.jms.Session;
 import javax.jms.TransactionRolledBackException;
 
 import org.apache.activemq.broker.jmx.QueueViewMBean;
-import org.apache.activemq.junit.ActiveMQTestRunner;
-import org.apache.activemq.junit.Repeat;
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.apache.qpid.jms.support.Wait;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Test MessageProducer behavior when in a TX and failover occurs.
  */
-@RunWith(ActiveMQTestRunner.class)
 public class JmsTxProducerFailoverTest extends AmqpTestSupport {
 
     @Override
@@ -54,9 +51,9 @@ public class JmsTxProducerFailoverTest extends AmqpTestSupport {
      * Test that the TX doesn't start until the first send so a failover
      * before then should allow Commit to work as expected.
      */
-    @Test(timeout=60000)
-    @Repeat(repetitions = 1)
-    public void testTxProducerSendAfterFailoverCommits() throws Exception {
+    @Test
+    @Timeout(60)
+    void testTxProducerSendAfterFailoverCommits() throws Exception {
         URI brokerURI = new URI(getAmqpFailoverURI());
 
         connection = createAmqpConnection(brokerURI);
@@ -64,38 +61,38 @@ public class JmsTxProducerFailoverTest extends AmqpTestSupport {
 
         final int MSG_COUNT = 5;
         final Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         final MessageProducer producer = session.createProducer(queue);
         producer.setDeliveryMode(DeliveryMode.PERSISTENT);
 
-        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        QueueViewMBean proxy = getProxyToQueue(testMethodName);
         assertEquals(0, proxy.getQueueSize());
 
         stopPrimaryBroker();
         restartPrimaryBroker();
 
-        assertTrue("Should have a new connection.", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return brokerService.getAdminView().getCurrentConnectionsCount() == 1;
             }
-        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(100)));
+        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(100)), "Should have a new connection.");
 
-        assertTrue("Should have a recovered producer.", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return brokerService.getAdminView().getQueueProducers().length == 1;
             }
-        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(50)));
+        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(50)), "Should have a recovered producer.");
 
         for (int i = 0; i < MSG_COUNT; ++i) {
             LOG.debug("Producer sening message #{}", i + 1);
             producer.send(session.createTextMessage("Message: " + i));
         }
 
-        proxy = getProxyToQueue(name.getMethodName());
+        proxy = getProxyToQueue(testMethodName);
         assertEquals(0, proxy.getQueueSize());
 
         try {
@@ -112,9 +109,9 @@ public class JmsTxProducerFailoverTest extends AmqpTestSupport {
      * Tests that even if all sends complete prior to failover the commit that follows
      * will fail and the message are not present on the broker.
      */
-    @Test(timeout=60000)
-    @Repeat(repetitions = 1)
-    public void testTxProducerSendsThenFailoverCommitFails() throws Exception {
+    @Test
+    @Timeout(60)
+    void testTxProducerSendsThenFailoverCommitFails() throws Exception {
         URI brokerURI = new URI(getAmqpFailoverURI());
 
         connection = createAmqpConnection(brokerURI);
@@ -122,11 +119,11 @@ public class JmsTxProducerFailoverTest extends AmqpTestSupport {
 
         final int MSG_COUNT = 5;
         final Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         final MessageProducer producer = session.createProducer(queue);
         producer.setDeliveryMode(DeliveryMode.PERSISTENT);
 
-        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        QueueViewMBean proxy = getProxyToQueue(testMethodName);
         assertEquals(0, proxy.getQueueSize());
 
         for (int i = 0; i < MSG_COUNT; ++i) {
@@ -139,7 +136,7 @@ public class JmsTxProducerFailoverTest extends AmqpTestSupport {
         stopPrimaryBroker();
         restartPrimaryBroker();
 
-        proxy = getProxyToQueue(name.getMethodName());
+        proxy = getProxyToQueue(testMethodName);
         assertEquals(0, proxy.getQueueSize());
 
         try {
@@ -152,9 +149,9 @@ public class JmsTxProducerFailoverTest extends AmqpTestSupport {
         assertEquals(0, proxy.getQueueSize());
     }
 
-    @Test(timeout=60000)
-    @Repeat(repetitions = 1)
-    public void testTxProducerRollbackAfterFailoverGetsNoErrors() throws Exception {
+    @Test
+    @Timeout(60)
+    void testTxProducerRollbackAfterFailoverGetsNoErrors() throws Exception {
         URI brokerURI = new URI(getAmqpFailoverURI());
 
         connection = createAmqpConnection(brokerURI);
@@ -165,11 +162,11 @@ public class JmsTxProducerFailoverTest extends AmqpTestSupport {
 
         final int MSG_COUNT = 5;
         final Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         final MessageProducer producer = session.createProducer(queue);
         producer.setDeliveryMode(DeliveryMode.PERSISTENT);
 
-        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        QueueViewMBean proxy = getProxyToQueue(testMethodName);
         assertEquals(0, proxy.getQueueSize());
 
         for (int i = 0; i < MSG_COUNT; ++i) {
@@ -182,7 +179,7 @@ public class JmsTxProducerFailoverTest extends AmqpTestSupport {
         stopPrimaryBroker();
         restartPrimaryBroker();
 
-        proxy = getProxyToQueue(name.getMethodName());
+        proxy = getProxyToQueue(testMethodName);
         assertEquals(0, proxy.getQueueSize());
 
         try {
@@ -202,9 +199,9 @@ public class JmsTxProducerFailoverTest extends AmqpTestSupport {
      * Tests that if some sends happen and then a failover followed by additional
      * sends the commit will fail and no messages are left on the broker.
      */
-    @Test(timeout=60000)
-    @Repeat(repetitions = 1)
-    public void testTxProducerSendWorksButCommitFails() throws Exception {
+    @Test
+    @Timeout(60)
+    void testTxProducerSendWorksButCommitFails() throws Exception {
         URI brokerURI = new URI(getAmqpFailoverURI());
 
         connection = createAmqpConnection(brokerURI);
@@ -212,11 +209,11 @@ public class JmsTxProducerFailoverTest extends AmqpTestSupport {
 
         final int MSG_COUNT = 10;
         final Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         final MessageProducer producer = session.createProducer(queue);
         producer.setDeliveryMode(DeliveryMode.PERSISTENT);
 
-        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        QueueViewMBean proxy = getProxyToQueue(testMethodName);
         assertEquals(0, proxy.getQueueSize());
 
         for (int i = 0; i < MSG_COUNT / 2; ++i) {
@@ -229,7 +226,7 @@ public class JmsTxProducerFailoverTest extends AmqpTestSupport {
         stopPrimaryBroker();
         restartPrimaryBroker();
 
-        proxy = getProxyToQueue(name.getMethodName());
+        proxy = getProxyToQueue(testMethodName);
         assertEquals(0, proxy.getQueueSize());
 
         for (int i = MSG_COUNT / 2; i < MSG_COUNT; ++i) {

@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.jms.jndi;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -44,8 +44,9 @@ import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.JmsQueue;
 import org.apache.qpid.jms.JmsTopic;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 
 public class JNDIReferenceFactoryTest extends QpidJmsTestCase {
 
@@ -62,9 +63,9 @@ public class JNDIReferenceFactoryTest extends QpidJmsTestCase {
     private Hashtable<?, ?> testEnvironment;
     private ObjectFactory referenceFactory;
 
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
+        super.setUp(testInfo);
 
         mockName = mock(Name.class);
         mockContext = mock(Context.class);
@@ -79,9 +80,9 @@ public class JNDIReferenceFactoryTest extends QpidJmsTestCase {
 
         Object connFactory = referenceFactory.getObjectInstance(reference, mockName, mockContext, testEnvironment);
 
-        assertNotNull("Expected object to be created", connFactory);
-        assertEquals("Unexpected object type created", JmsConnectionFactory.class, connFactory.getClass());
-        assertEquals("Unexpected URI", TEST_CONNECTION_URL, ((JmsConnectionFactory) connFactory).getRemoteURI());
+        assertNotNull(connFactory, "Expected object to be created");
+        assertEquals(JmsConnectionFactory.class, connFactory.getClass(), "Unexpected object type created");
+        assertEquals(TEST_CONNECTION_URL, ((JmsConnectionFactory) connFactory).getRemoteURI(), "Unexpected URI");
     }
 
     @Test
@@ -99,10 +100,10 @@ public class JNDIReferenceFactoryTest extends QpidJmsTestCase {
 
         Object queue = referenceFactory.getObjectInstance(reference, mockName, mockContext, testEnvironment);
 
-        assertNotNull("Expected object to be created", queue);
-        assertEquals("Unexpected object type created", JmsQueue.class, queue.getClass());
-        assertEquals("Unexpected address", TEST_QUEUE_ADDRESS, ((JmsQueue) queue).getAddress());
-        assertEquals("Unexpected queue name", TEST_QUEUE_ADDRESS, ((Queue) queue).getQueueName());
+        assertNotNull(queue, "Expected object to be created");
+        assertEquals(JmsQueue.class, queue.getClass(), "Unexpected object type created");
+        assertEquals(TEST_QUEUE_ADDRESS, ((JmsQueue) queue).getAddress(), "Unexpected address");
+        assertEquals(TEST_QUEUE_ADDRESS, ((Queue) queue).getQueueName(), "Unexpected queue name");
 
     }
 
@@ -121,10 +122,10 @@ public class JNDIReferenceFactoryTest extends QpidJmsTestCase {
 
         Object topic = referenceFactory.getObjectInstance(reference, mockName, mockContext, testEnvironment);
 
-        assertNotNull("Expected object to be created", topic);
-        assertEquals("Unexpected object type created", JmsTopic.class, topic.getClass());
-        assertEquals("Unexpected address", TEST_TOPIC_ADDRESS, ((JmsTopic) topic).getAddress());
-        assertEquals("Unexpected queue name", TEST_TOPIC_ADDRESS, ((Topic) topic).getTopicName());
+        assertNotNull(topic, "Expected object to be created");
+        assertEquals(JmsTopic.class, topic.getClass(), "Unexpected object type created");
+        assertEquals(TEST_TOPIC_ADDRESS, ((JmsTopic) topic).getAddress(), "Unexpected address");
+        assertEquals(TEST_TOPIC_ADDRESS, ((Topic) topic).getTopicName(), "Unexpected queue name");
     }
 
     private Reference createTestReference(String className, String addressType, Object content) {
@@ -170,6 +171,6 @@ public class JNDIReferenceFactoryTest extends QpidJmsTestCase {
         Reference reference = createTestReference(Object.class.getName(), "redundant", "redundant");
 
         Object factory = referenceFactory.getObjectInstance(reference, mockName, mockContext, testEnvironment);
-        assertNull("Expected null when given unknown class name", factory);
+        assertNull(factory, "Expected null when given unknown class name");
     }
 }

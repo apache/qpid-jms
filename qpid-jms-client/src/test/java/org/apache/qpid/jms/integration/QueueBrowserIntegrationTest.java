@@ -18,10 +18,10 @@ package org.apache.qpid.jms.integration;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.util.Enumeration;
@@ -45,7 +45,8 @@ import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.hamcrest.Matchers;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
 
@@ -53,7 +54,8 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
 
     //----- Test basic create and destroy mechanisms -------------------------//
 
-    @Test(timeout=30000)
+    @Test
+    @Timeout(30)
     public void testCreateQueueBrowserWithoutEnumeration() throws IOException, Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -77,7 +79,8 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=30000)
+    @Test
+    @Timeout(30)
     public void testCreateQueueBrowserAndEnumeration() throws IOException, Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -108,7 +111,8 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
 
     //----- Tests for expected behaviors of a QueueBrowser implementation ----//
 
-    @Test(timeout=30000)
+    @Test
+    @Timeout(30)
     public void testQueueBrowserNextElementWithNoMessage() throws IOException, Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -148,7 +152,8 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=30000)
+    @Test
+    @Timeout(30)
     public void testQueueBrowserPrefetchOne() throws IOException, Exception {
         final DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
 
@@ -188,7 +193,8 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
 
     //----- Tests that cover QueueBrowser and Session Ack mode interaction ---//
 
-    @Test(timeout=30000)
+    @Test
+    @Timeout(30)
     public void testCreateQueueBrowserAutoAckSession() throws IOException, Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -226,7 +232,8 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=30000)
+    @Test
+    @Timeout(30)
     public void testCreateQueueBrowserClientAckSession() throws IOException, Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -267,7 +274,8 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=30000)
+    @Test
+    @Timeout(30)
     public void testCreateQueueBrowserTransactedSession() throws IOException, Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -315,7 +323,8 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
 
     //----- Tests that cover QueueBrowser when prefetch is zero --------------//
 
-    @Test(timeout=30000)
+    @Test
+    @Timeout(30)
     public void testCreateQueueBrowserAndEnumerationZeroPrefetch() throws IOException, Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.prefetchPolicy.all=0");
@@ -343,7 +352,8 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=30000)
+    @Test
+    @Timeout(30)
     public void testQueueBrowserHasMoreElementsZeroPrefetchNoMessage() throws IOException, Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.prefetchPolicy.all=0");
@@ -373,7 +383,8 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=30000)
+    @Test
+    @Timeout(30)
     public void testQueueBrowserHasMoreElementsZeroPrefetchDrainedMessage() throws IOException, Exception {
         DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
 

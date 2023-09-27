@@ -16,8 +16,8 @@
  */
 package org.apache.qpid.jms;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -35,11 +35,11 @@ import javax.net.ServerSocketFactory;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.activemq.broker.BrokerService;
 import org.apache.activemq.broker.TransportConnector;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TestName;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,15 +50,14 @@ public class JmsWSConnectionTest {
 
     protected static final Logger LOG = LoggerFactory.getLogger(JmsWSConnectionTest.class);
 
-    @Rule
-    public TestName testName = new TestName();
-
+    private String testName;
     private BrokerService brokerService;
     private URI connectionURI;
     private final int DEFAULT_WS_PORT = 5679;
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
+        this.testName = testInfo.getTestMethod().get().getName();
         brokerService = new BrokerService();
         brokerService.setPersistent(false);
         brokerService.setAdvisorySupport(false);
@@ -74,13 +73,14 @@ public class JmsWSConnectionTest {
         brokerService.waitUntilStarted();
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         brokerService.stop();
         brokerService.waitUntilStopped();
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testCreateConnectionAndStart() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(getConnectionURI());
         JmsConnection connection = (JmsConnection) factory.createConnection();
@@ -89,7 +89,8 @@ public class JmsWSConnectionTest {
         connection.close();
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testSendLargeMessageToClientFromOpenWire() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(getConnectionURI());
         JmsConnection connection = (JmsConnection) factory.createConnection();
@@ -136,7 +137,7 @@ public class JmsWSConnectionTest {
     }
 
     protected String getQueueName() {
-        return testName.getMethodName();
+        return testName;
     }
 
     protected String getConnectionURI() throws Exception {

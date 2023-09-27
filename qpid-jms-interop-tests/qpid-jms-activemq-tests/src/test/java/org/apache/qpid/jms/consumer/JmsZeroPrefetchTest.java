@@ -16,10 +16,10 @@
  */
 package org.apache.qpid.jms.consumer;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
@@ -33,7 +33,8 @@ import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.policy.JmsDefaultRedeliveryPolicy;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.apache.qpid.jms.support.Wait;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Test for MessageConsumer that has a prefetch value of zero.
@@ -45,7 +46,8 @@ public class JmsZeroPrefetchTest extends AmqpTestSupport {
         return "jms.prefetchPolicy.all=0";
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testBlockingReceivesUnBlocksOnMessageSend() throws Exception {
         connection = createAmqpConnection();
         connection.start();
@@ -70,7 +72,7 @@ public class JmsZeroPrefetchTest extends AmqpTestSupport {
 
         MessageConsumer consumer = session.createConsumer(queue);
         Message answer = consumer.receive();
-        assertNotNull("Should have received a message!", answer);
+        assertNotNull(answer, "Should have received a message!");
 
         final QueueViewMBean queueView = getProxyToQueue(getDestinationName());
 
@@ -85,7 +87,8 @@ public class JmsZeroPrefetchTest extends AmqpTestSupport {
         }));
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testRepeatedPullAttempts() throws Exception {
         connection = createAmqpConnection();
         connection.start();
@@ -98,16 +101,17 @@ public class JmsZeroPrefetchTest extends AmqpTestSupport {
         // now lets receive it
         MessageConsumer consumer = session.createConsumer(queue);
         Message answer = consumer.receive(5000);
-        assertNotNull("Should have received a message!", answer);
+        assertNotNull(answer, "Should have received a message!");
 
         // check if method will return at all and will return a null
         answer = consumer.receive(1);
-        assertNull("Should have not received a message!", answer);
+        assertNull(answer, "Should have not received a message!");
         answer = consumer.receiveNoWait();
-        assertNull("Should have not received a message!", answer);
+        assertNull(answer, "Should have not received a message!");
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testTwoConsumers() throws Exception {
         connection = createAmqpConnection();
         connection.start();
@@ -124,16 +128,17 @@ public class JmsZeroPrefetchTest extends AmqpTestSupport {
         MessageConsumer consumer2 = session.createConsumer(queue);
         TextMessage answer = (TextMessage)consumer1.receive(5000);
         assertNotNull(answer);
-        assertEquals("Should have received a message!", answer.getText(), "Msg1");
+        assertEquals(answer.getText(), "Msg1", "Should have received a message!");
         answer = (TextMessage)consumer2.receive(5000);
         assertNotNull(answer);
-        assertEquals("Should have received a message!", answer.getText(), "Msg2");
+        assertEquals(answer.getText(), "Msg2", "Should have received a message!");
 
         answer = (TextMessage)consumer2.receiveNoWait();
-        assertNull("Should have not received a message!", answer);
+        assertNull(answer, "Should have not received a message!");
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testConsumerWithNoMessageDoesNotHogMessages() throws Exception {
         connection = createAmqpConnection();
         connection.start();
@@ -155,10 +160,11 @@ public class JmsZeroPrefetchTest extends AmqpTestSupport {
         MessageConsumer consumer2 = session.createConsumer(queue);
         TextMessage answer = (TextMessage)consumer2.receive(3000);
         assertNotNull(answer);
-        assertEquals("Should have received a message!", answer.getText(), "Msg1");
+        assertEquals(answer.getText(), "Msg1", "Should have received a message!");
     }
 
-    @Test(timeout=60000)
+    @Test
+    @Timeout(60)
     public void testConsumerReceivePrefetchZeroRedeliveryZero() throws Exception {
         connection = createAmqpConnection();
         connection.start();

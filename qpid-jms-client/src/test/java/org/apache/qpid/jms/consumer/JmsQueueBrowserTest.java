@@ -16,10 +16,10 @@
  */
 package org.apache.qpid.jms.consumer;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Enumeration;
 
@@ -30,8 +30,10 @@ import javax.jms.QueueBrowser;
 import javax.jms.Session;
 
 import org.apache.qpid.jms.JmsConnectionTestSupport;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Test basic contract of QueueBroser implementation.
@@ -43,30 +45,33 @@ public class JmsQueueBrowserTest extends JmsConnectionTestSupport {
     protected QueueBrowser browser;
 
     @Override
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
+        super.setUp(testInfo);
         connection = createConnectionToMockProvider();
         session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        queue = session.createQueue(_testName.getMethodName());
+        queue = session.createQueue(_testMethodName);
         browser = session.createBrowser(queue);
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testCreateBrowser() throws Exception {
         QueueBrowser browser = session.createBrowser(queue);
         assertEquals(queue, browser.getQueue());
         assertNull(browser.getMessageSelector());
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testCreateBrowserAndCloseTwice() throws Exception {
         browser = session.createBrowser(queue);
         browser.close();
         browser.close();  // Should not throw on multiple close.
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testHasMoreElementsOnClosedBrowser() throws Exception {
         browser = session.createBrowser(queue);
 
@@ -78,7 +83,8 @@ public class JmsQueueBrowserTest extends JmsConnectionTestSupport {
         assertFalse(browse.hasMoreElements());
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testGetEnumerationClosedBrowser() throws Exception {
         browser = session.createBrowser(queue);
 

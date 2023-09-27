@@ -16,12 +16,12 @@
  */
 package org.apache.qpid.jms.sasl;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import javax.security.sasl.SaslException;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * The quoted text in the test method javadoc is taken from RFC 5802.

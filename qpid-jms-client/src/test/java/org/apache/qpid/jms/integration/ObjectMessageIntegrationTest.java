@@ -20,12 +20,12 @@ package org.apache.qpid.jms.integration;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -65,7 +65,8 @@ import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedDataMatcher;
 import org.apache.qpid.jms.util.SimplePojo;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,17 +78,20 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase {
 
     //==== Java serialization encoding ====
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendBasicObjectMessageWithSerializedContent() throws Exception {
         doSendBasicObjectMessageWithSerializedContentTestImpl("myObjectString", false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendBasicObjectMessageWithSerializedContentExplicitNull() throws Exception {
         doSendBasicObjectMessageWithSerializedContentTestImpl(null, true);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendBasicObjectMessageWithSerializedContentImplicitNull() throws Exception {
         doSendBasicObjectMessageWithSerializedContentTestImpl(null, false);
     }
@@ -166,7 +170,8 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceiveBasicObjectMessageWithSerializedContent() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -207,8 +212,8 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase {
             ObjectMessage objectMessage = (ObjectMessage)receivedMessage;
 
             Object object = objectMessage.getObject();
-            assertNotNull("Expected object but got null", object);
-            assertEquals("Message body object was not as expected", expectedContent, object);
+            assertNotNull(object, "Expected object but got null");
+            assertEquals(expectedContent, object, "Message body object was not as expected");
 
             assertTrue(receivedMessage.isBodyAssignableTo(String.class));
             assertTrue(receivedMessage.isBodyAssignableTo(Serializable.class));
@@ -231,7 +236,8 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceiveAndThenResendBasicObjectMessageWithSerializedContent() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -309,37 +315,43 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceiveBlockedSerializedContentFailsOnGetObject() throws Exception {
         // We aren't allowing the test class
         doTestReceiveSerializedContentPolicyTest("java.lang,java.util", null, false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceiveBlockAllSerializedContentFailsOnGetObject() throws Exception {
         // We are blocking everything
         doTestReceiveSerializedContentPolicyTest(null, "*", false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceiveBlockSomeSerializedContentFailsOnGetObject() throws Exception {
         // We aren't allowing the UUID
         doTestReceiveSerializedContentPolicyTest("org.apache.qpid.jms", null, false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceiveWithWrongUnblockedSerializedContentFailsOnGetObject() throws Exception {
         // We aren't allowing the UUID a different way
         doTestReceiveSerializedContentPolicyTest("java.lang,org.apache.qpid.jms", null, false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceiveWithFullyAllowedSerializedContentSucceeds() throws Exception {
         // We are allowing everything needed
         doTestReceiveSerializedContentPolicyTest("java.lang,java.util,org.apache.qpid.jms", null, true);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceiveWithFullyAllowedSerializedContentFailsDueToDenyList() throws Exception {
         // We are allowing everything needed, but then the deny list is overriding to block some
         doTestReceiveSerializedContentPolicyTest("java.lang,java.util,org.apache.qpid.jms", "java.util", false);
@@ -413,7 +425,7 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase {
             }
 
             if (succeed) {
-                assertEquals("Content not as expected", expectedContent, received);
+                assertEquals(expectedContent, received, "Content not as expected");
             }
 
             testPeer.expectClose();
@@ -425,7 +437,8 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase {
 
     //==== AMQP type system encoding ====
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendBasicObjectMessageWithAmqpTypedContent() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -480,7 +493,8 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRecieveBasicObjectMessageWithAmqpTypedContentAndJMSMessageTypeAnnotation() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -508,12 +522,12 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase {
             Message receivedMessage = messageConsumer.receive(3000);
 
             assertNotNull(receivedMessage);
-            assertTrue("Expected ObjectMessage instance, but got: " + receivedMessage.getClass().getName(), receivedMessage instanceof ObjectMessage);
+            assertTrue(receivedMessage instanceof ObjectMessage, "Expected ObjectMessage instance, but got: " + receivedMessage.getClass().getName());
             ObjectMessage objectMessage = (ObjectMessage)receivedMessage;
 
             Object object = objectMessage.getObject();
-            assertNotNull("Expected object but got null", object);
-            assertEquals("Message body object was not as expected", map, object);
+            assertNotNull(object, "Expected object but got null");
+            assertEquals(map, object, "Message body object was not as expected");
 
             assertTrue(receivedMessage.isBodyAssignableTo(Map.class));
             assertTrue(receivedMessage.isBodyAssignableTo(Serializable.class));
@@ -536,7 +550,8 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAsyncSendDoesNotMarkObjectMessageReadOnly() throws Exception {
         try(TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
@@ -639,7 +654,8 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAsyncCompletionSendMarksObjectMessageReadOnly() throws Exception {
         try(TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);

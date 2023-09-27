@@ -16,15 +16,17 @@
  */
 package org.apache.qpid.jms;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import javax.jms.JMSException;
 import javax.jms.JMSSecurityException;
 import javax.jms.TopicConnection;
 
 import org.apache.qpid.jms.support.AmqpTestSupport;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 /**
  *
@@ -39,7 +41,8 @@ public class JmsTopicConnectionTest extends AmqpTestSupport {
         assertTrue(connection instanceof TopicConnection);
     }
 
-    @Test(timeout=30000)
+    @Test
+    @Timeout(30)
     public void testCreateConnectionAsSystemAdmin() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
         factory.setUsername("system");
@@ -49,7 +52,8 @@ public class JmsTopicConnectionTest extends AmqpTestSupport {
         connection.start();
     }
 
-    @Test(timeout=30000)
+    @Test
+    @Timeout(30)
     public void testCreateConnectionCallSystemAdmin() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
         connection = factory.createTopicConnection("system", "manager");
@@ -57,21 +61,27 @@ public class JmsTopicConnectionTest extends AmqpTestSupport {
         connection.start();
     }
 
-    @Test(timeout=30000, expected = JMSSecurityException.class)
+    @Test
+    @Timeout(30)
     public void testCreateConnectionAsUnknwonUser() throws Exception {
-        JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
-        factory.setUsername("unknown");
-        factory.setPassword("unknown");
-        connection = factory.createTopicConnection();
-        assertNotNull(connection);
-        connection.start();
+        assertThrows(JMSSecurityException.class, () -> {
+            JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
+            factory.setUsername("unknown");
+            factory.setPassword("unknown");
+            connection = factory.createTopicConnection();
+            assertNotNull(connection);
+            connection.start();
+        });
     }
 
-    @Test(timeout=30000, expected = JMSSecurityException.class)
+    @Test
+    @Timeout(30)
     public void testCreateConnectionCallUnknownUser() throws Exception {
-        JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
-        connection = factory.createTopicConnection("unknown", "unknown");
-        assertNotNull(connection);
-        connection.start();
+        assertThrows(JMSSecurityException.class, () -> {
+            JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
+            connection = factory.createTopicConnection("unknown", "unknown");
+            assertNotNull(connection);
+            connection.start();
+        });
     }
 }

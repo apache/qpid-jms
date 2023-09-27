@@ -16,10 +16,10 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -42,8 +42,8 @@ import org.apache.qpid.proton.engine.Sasl;
 import org.apache.qpid.proton.engine.Sasl.SaslOutcome;
 import org.apache.qpid.proton.engine.Sasl.SaslState;
 import org.apache.qpid.proton.engine.Transport;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.stubbing.Answer;
 
 public class AmqpSaslAuthenticatorTest {
@@ -57,7 +57,7 @@ public class AmqpSaslAuthenticatorTest {
     private final Sasl sasl = mock(Sasl.class);
     private final Transport transport = mock(Transport.class);
 
-    @Before
+    @BeforeEach
     public void setUp() {
         when(sasl.getState()).thenReturn(SaslState.PN_SASL_IDLE);
         when(sasl.getRemoteMechanisms()).thenReturn(new String[]{MECHANISM_NAME});

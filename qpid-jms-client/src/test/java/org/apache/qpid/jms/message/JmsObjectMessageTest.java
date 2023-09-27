@@ -16,14 +16,15 @@
  */
 package org.apache.qpid.jms.message;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -39,7 +40,7 @@ import javax.jms.ObjectMessage;
 import org.apache.qpid.jms.message.facade.JmsObjectMessageFacade;
 import org.apache.qpid.jms.message.facade.test.JmsTestMessageFactory;
 import org.apache.qpid.jms.message.facade.test.JmsTestObjectMessageFacade;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 /**
@@ -101,9 +102,9 @@ public class JmsObjectMessageTest {
         JmsObjectMessage objectMessage = new JmsObjectMessage(facade);
         objectMessage.onDispatch();
 
-        assertTrue("Message should not be writable", objectMessage.isReadOnlyBody());
+        assertTrue(objectMessage.isReadOnlyBody(), "Message should not be writable");
         objectMessage.clearBody();
-        assertFalse("Message should be writable", objectMessage.isReadOnlyBody());
+        assertFalse(objectMessage.isReadOnlyBody(), "Message should be writable");
     }
 
     /**
@@ -120,14 +121,14 @@ public class JmsObjectMessageTest {
         JmsObjectMessage objectMessage = new JmsObjectMessage(facade);
         objectMessage.onDispatch();
 
-        assertNotNull("Expected body section but none was present", facade.getSerializedObject());
+        assertNotNull(facade.getSerializedObject(), "Expected body section but none was present");
         objectMessage.clearBody();
 
         // check that the returned object is now null
-        assertNull("Unexpected object value", objectMessage.getObject());
+        assertNull(objectMessage.getObject(), "Unexpected object value");
 
         // verify the underlying message facade has no body
-        assertNull("Expected no body section", facade.getSerializedObject());
+        assertNull(facade.getSerializedObject(), "Expected no body section");
     }
 
     /**
@@ -149,24 +150,24 @@ public class JmsObjectMessageTest {
 
         // verify we get a different-but-equal object back
         Serializable serialized = objectMessage.getObject();
-        assertTrue("Unexpected object type returned", serialized instanceof Map<?,?>);
+        assertTrue(serialized instanceof Map<?,?>, "Unexpected object type returned");
         Map<?,?> returnedObject1 = (Map<?,?>) serialized;
-        assertNotSame("Expected different objects, due to snapshot being taken", origMap, returnedObject1);
-        assertEquals("Expected equal objects, due to snapshot being taken", origMap, returnedObject1);
+        assertNotSame(origMap, returnedObject1, "Expected different objects, due to snapshot being taken");
+        assertEquals(origMap, returnedObject1, "Expected equal objects, due to snapshot being taken");
 
         // mutate the original object
         origMap.put("key2", "value2");
 
         // verify we get a different-but-equal object back when compared to the previously retrieved object
         Serializable serialized2 = objectMessage.getObject();
-        assertTrue("Unexpected object type returned", serialized2 instanceof Map<?,?>);
+        assertTrue(serialized2 instanceof Map<?,?>, "Unexpected object type returned");
         Map<?,?> returnedObject2 = (Map<?,?>) serialized2;
-        assertNotSame("Expected different objects, due to snapshot being taken", origMap, returnedObject2);
-        assertEquals("Expected equal objects, due to snapshot being taken", returnedObject1, returnedObject2);
+        assertNotSame(origMap, returnedObject2, "Expected different objects, due to snapshot being taken");
+        assertEquals(returnedObject1, returnedObject2, "Expected equal objects, due to snapshot being taken");
 
         // verify the mutated map is a different and not equal object
-        assertNotSame("Expected different objects, due to snapshot being taken", returnedObject1, returnedObject2);
-        assertNotEquals("Expected objects to differ, due to snapshot being taken", origMap, returnedObject2);
+        assertNotSame(returnedObject1, returnedObject2, "Expected different objects, due to snapshot being taken");
+        assertNotEquals(origMap, returnedObject2, "Expected objects to differ, due to snapshot being taken");
     }
 
     /**
@@ -202,12 +203,14 @@ public class JmsObjectMessageTest {
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(expected=MessageFormatException.class)
+    @Test
     public void testGetObjectWithFailedDeserialisationThrowsJMSMFE() throws Exception {
-        JmsObjectMessageFacade facade = Mockito.mock(JmsTestObjectMessageFacade.class);
-        Mockito.when(facade.getObject()).thenThrow(new ClassCastException("Failed to get object"));
-        JmsObjectMessage objectMessage = new JmsObjectMessage(facade);
-        objectMessage.getObject();
+        assertThrows(MessageFormatException.class, () -> {
+            JmsObjectMessageFacade facade = Mockito.mock(JmsTestObjectMessageFacade.class);
+            Mockito.when(facade.getObject()).thenThrow(new ClassCastException("Failed to get object"));
+            JmsObjectMessage objectMessage = new JmsObjectMessage(facade);
+            objectMessage.getObject();
+        });
     }
 
     @Test

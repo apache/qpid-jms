@@ -16,11 +16,11 @@
  */
 package org.apache.qpid.jms.transactions;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -36,7 +36,8 @@ import javax.jms.TextMessage;
 import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.apache.qpid.jms.support.Wait;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * test redelivery policy application in a TX session.
@@ -48,7 +49,8 @@ public class JmsTransactionRedeliveryPolicyTest extends AmqpTestSupport {
         return "jms.redeliveryPolicy.maxRedeliveries=5";
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testSyncConsumeAndRollbackWithMaxRedeliveries() throws Exception {
         final int MAX_REDELIVERIES = 5;
         final int MSG_COUNT = 5;
@@ -92,13 +94,13 @@ public class JmsTransactionRedeliveryPolicyTest extends AmqpTestSupport {
 
         assertNull(consumer.receive(50));
 
-        assertTrue("Message should get DLQ'd", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return queueView.getQueueSize() == 0;
             }
-        }));
+        }), "Message should get DLQ'd");
 
         QueueViewMBean dlq = getProxyToQueue("ActiveMQ.DLQ");
         assertEquals(MSG_COUNT, dlq.getQueueSize());
@@ -106,7 +108,8 @@ public class JmsTransactionRedeliveryPolicyTest extends AmqpTestSupport {
         session.commit();
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testAsyncConsumeAndRollbackWithMaxRedeliveries() throws Exception {
         final int MAX_REDELIVERIES = 5;
         final int MSG_COUNT = 5;
@@ -138,7 +141,7 @@ public class JmsTransactionRedeliveryPolicyTest extends AmqpTestSupport {
             final CountDownLatch done = new CountDownLatch(MSG_COUNT);
             consumer.setMessageListener(new MaxRedeliveryListener(done, i));
 
-            assertTrue("Not All Messages Received", done.await(10, TimeUnit.SECONDS));
+            assertTrue(done.await(10, TimeUnit.SECONDS), "Not All Messages Received");
             assertEquals(MSG_COUNT, queueView.getQueueSize());
 
             consumer.setMessageListener(null);
@@ -148,13 +151,13 @@ public class JmsTransactionRedeliveryPolicyTest extends AmqpTestSupport {
 
         assertNull(consumer.receive(50));
 
-        assertTrue("Message should get DLQ'd", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return queueView.getQueueSize() == 0;
             }
-        }));
+        }), "Message should get DLQ'd");
 
         QueueViewMBean dlq = getProxyToQueue("ActiveMQ.DLQ");
         assertEquals(MSG_COUNT, dlq.getQueueSize());

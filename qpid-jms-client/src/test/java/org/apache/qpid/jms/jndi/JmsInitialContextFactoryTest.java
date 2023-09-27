@@ -16,12 +16,13 @@
  */
 package org.apache.qpid.jms.jndi;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -41,7 +42,7 @@ import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.JmsQueue;
 import org.apache.qpid.jms.JmsTopic;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
 
@@ -57,7 +58,7 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
     private Context createInitialContext(final Hashtable<Object, Object> environment) throws NamingException {
         factory = new JmsInitialContextFactory();
         context = factory.getInitialContext(environment);
-        assertNotNull("No context created", context);
+        assertNotNull(context, "No context created");
 
         return context;
     }
@@ -70,9 +71,9 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
         for (String factoryName : JmsInitialContextFactory.DEFAULT_CONNECTION_FACTORY_NAMES) {
             Object o = ctx.lookup(factoryName);
 
-            assertNotNull("No object returned", o);
-            assertEquals("Unexpected class type for returned object", JmsConnectionFactory.class, o.getClass());
-            assertEquals("Unexpected URI for returned factory", JmsConnectionFactory.getDefaultRemoteAddress(), ((JmsConnectionFactory) o).getRemoteURI());
+            assertNotNull(o, "No object returned");
+            assertEquals(JmsConnectionFactory.class, o.getClass(), "Unexpected class type for returned object");
+            assertEquals(JmsConnectionFactory.getDefaultRemoteAddress(), ((JmsConnectionFactory) o).getRemoteURI(), "Unexpected URI for returned factory");
         }
     }
 
@@ -87,9 +88,9 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
         for (String factoryName : JmsInitialContextFactory.DEFAULT_CONNECTION_FACTORY_NAMES) {
             Object o = ctx.lookup(factoryName);
 
-            assertNotNull("No object returned", o);
-            assertEquals("Unexpected class type for returned object", JmsConnectionFactory.class, o.getClass());
-            assertEquals("Unexpected URI for returned factory", updatedDefaultURI, ((JmsConnectionFactory) o).getRemoteURI());
+            assertNotNull(o, "No object returned");
+            assertEquals(JmsConnectionFactory.class, o.getClass(), "Unexpected class type for returned object");
+            assertEquals(updatedDefaultURI, ((JmsConnectionFactory) o).getRemoteURI(), "Unexpected URI for returned factory");
         }
     }
 
@@ -104,7 +105,7 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
     }
 
     private void doDefaultConnectionFactorySeesFactorySpecificPropertyTestImpl(String propertyPrefix, String factoryName) throws Exception {
-        String updatedClientID = _testName.getMethodName();
+        String updatedClientID = _testMethodName;
 
         Hashtable<Object, Object> env = new Hashtable<Object, Object>();
         env.put(propertyPrefix + factoryName + "." + "clientID", updatedClientID);
@@ -112,9 +113,9 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
 
         Object o = ctx.lookup(factoryName);
 
-        assertNotNull("No object returned", o);
-        assertEquals("Unexpected class type for returned object", JmsConnectionFactory.class, o.getClass());
-        assertEquals("Unexpected ClientID for returned factory", updatedClientID, ((JmsConnectionFactory) o).getClientID());
+        assertNotNull(o, "No object returned");
+        assertEquals(JmsConnectionFactory.class, o.getClass(), "Unexpected class type for returned object");
+        assertEquals(updatedClientID, ((JmsConnectionFactory) o).getClientID(), "Unexpected ClientID for returned factory");
     }
 
     @Test
@@ -145,7 +146,7 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
     }
 
     private void doDefaultConnectionFactorySeesDefaultPropertyUpdatePropertyTestImpl(String propertyPrefix, String factoryName) throws Exception {
-        String updatedClientID = _testName.getMethodName();
+        String updatedClientID = _testMethodName;
 
         Hashtable<Object, Object> env = new Hashtable<Object, Object>();
         env.put(propertyPrefix + "clientID", updatedClientID);
@@ -153,9 +154,9 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
 
         Object o = ctx.lookup(factoryName);
 
-        assertNotNull("No object returned", o);
-        assertEquals("Unexpected class type for returned object", JmsConnectionFactory.class, o.getClass());
-        assertEquals("Unexpected ClientID for returned factory", updatedClientID, ((JmsConnectionFactory) o).getClientID());
+        assertNotNull(o, "No object returned");
+        assertEquals(JmsConnectionFactory.class, o.getClass(), "Unexpected class type for returned object");
+        assertEquals(updatedClientID, ((JmsConnectionFactory) o).getClientID(), "Unexpected ClientID for returned factory");
     }
 
     @Test
@@ -176,9 +177,9 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
 
         Object o = ctx.lookup(factoryName);
 
-        assertNotNull("No object returned", o);
-        assertEquals("Unexpected class type for returned object", JmsConnectionFactory.class, o.getClass());
-        assertEquals("Unexpected URI for returned factory", uri, ((JmsConnectionFactory) o).getRemoteURI());
+        assertNotNull(o, "No object returned");
+        assertEquals(JmsConnectionFactory.class, o.getClass(), "Unexpected class type for returned object");
+        assertEquals(uri, ((JmsConnectionFactory) o).getRemoteURI(), "Unexpected URI for returned factory");
     }
 
     @Test
@@ -197,7 +198,7 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
             fail("Should have thrown exception");
         } catch (NamingException ne) {
             // Expected
-            assertTrue("Should have had a cause", ne.getCause() != null);
+            assertTrue(ne.getCause() != null, "Should have had a cause");
         }
     }
 
@@ -217,7 +218,7 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
             fail("Should have thrown exception");
         } catch (NamingException ne) {
             // Expected
-            assertTrue("Should have had a cause", ne.getCause() != null);
+            assertTrue(ne.getCause() != null, "Should have had a cause");
         }
     }
 
@@ -240,9 +241,9 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
 
         Object o = ctx.lookup(factoryName);
 
-        assertNotNull("No object returned", o);
-        assertEquals("Unexpected class type for returned object", JmsConnectionFactory.class, o.getClass());
-        assertEquals("Unexpected URI for returned factory", JmsConnectionFactory.getDefaultRemoteAddress(), ((JmsConnectionFactory) o).getRemoteURI());
+        assertNotNull(o, "No object returned");
+        assertEquals(JmsConnectionFactory.class, o.getClass(), "Unexpected class type for returned object");
+        assertEquals(JmsConnectionFactory.getDefaultRemoteAddress(), ((JmsConnectionFactory) o).getRemoteURI(), "Unexpected URI for returned factory");
     }
 
     @Test
@@ -256,9 +257,9 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
         Context ctx = createInitialContext(env);
         Object o = ctx.lookup(lookupName);
 
-        assertNotNull("No object returned", o);
-        assertEquals("Unexpected class type for returned object", JmsQueue.class, o.getClass());
-        assertEquals("Unexpected name for returned object", actualName, ((JmsQueue) o).getQueueName());
+        assertNotNull(o, "No object returned");
+        assertEquals(JmsQueue.class, o.getClass(), "Unexpected class type for returned object");
+        assertEquals(actualName, ((JmsQueue) o).getQueueName(), "Unexpected name for returned object");
     }
 
     @Test
@@ -269,9 +270,9 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
         Context ctx = createInitialContext(new Hashtable<Object, Object>());
         Object o = ctx.lookup(lookupName);
 
-        assertNotNull("No object returned", o);
-        assertEquals("Unexpected class type for returned object", JmsQueue.class, o.getClass());
-        assertEquals("Unexpected name for returned object", actualName, ((JmsQueue) o).getQueueName());
+        assertNotNull(o, "No object returned");
+        assertEquals(JmsQueue.class, o.getClass(), "Unexpected class type for returned object");
+        assertEquals(actualName, ((JmsQueue) o).getQueueName(), "Unexpected name for returned object");
     }
 
     @Test
@@ -285,9 +286,9 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
         Context ctx = createInitialContext(env);
         Object o = ctx.lookup(lookupName);
 
-        assertNotNull("No object returned", o);
-        assertEquals("Unexpected class type for returned object", JmsTopic.class, o.getClass());
-        assertEquals("Unexpected name for returned object", actualName, ((JmsTopic) o).getTopicName());
+        assertNotNull(o, "No object returned");
+        assertEquals(JmsTopic.class, o.getClass(), "Unexpected class type for returned object");
+        assertEquals(actualName, ((JmsTopic) o).getTopicName(), "Unexpected name for returned object");
     }
 
     @Test
@@ -298,9 +299,9 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
         Context ctx = createInitialContext(new Hashtable<Object, Object>());
         Object o = ctx.lookup(lookupName);
 
-        assertNotNull("No object returned", o);
-        assertEquals("Unexpected class type for returned object", JmsTopic.class, o.getClass());
-        assertEquals("Unexpected name for returned object", actualName, ((JmsTopic) o).getTopicName());
+        assertNotNull(o, "No object returned");
+        assertEquals(JmsTopic.class, o.getClass(), "Unexpected class type for returned object");
+        assertEquals(actualName, ((JmsTopic) o).getTopicName(), "Unexpected name for returned object");
     }
 
     @Test
@@ -314,9 +315,9 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
         Context ctx = createInitialContext(env);
         Object o = ctx.lookup(lookupName);
 
-        assertNotNull("No object returned", o);
-        assertEquals("Unexpected class type for returned object", JmsQueue.class, o.getClass());
-        assertEquals("Unexpected name for returned object", actualName, ((JmsQueue) o).getQueueName());
+        assertNotNull(o, "No object returned");
+        assertEquals(JmsQueue.class, o.getClass(), "Unexpected class type for returned object");
+        assertEquals(actualName, ((JmsQueue) o).getQueueName(), "Unexpected name for returned object");
     }
 
     @Test
@@ -330,33 +331,39 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
         Context ctx = createInitialContext(env);
         Object o = ctx.lookup(lookupName);
 
-        assertNotNull("No object returned", o);
-        assertEquals("Unexpected class type for returned object", JmsTopic.class, o.getClass());
-        assertEquals("Unexpected name for returned object", actualName, ((JmsTopic) o).getTopicName());
+        assertNotNull(o, "No object returned");
+        assertEquals(JmsTopic.class, o.getClass(), "Unexpected class type for returned object");
+        assertEquals(actualName, ((JmsTopic) o).getTopicName(), "Unexpected name for returned object");
     }
 
-    @Test(expected = OperationNotSupportedException.class)
+    @Test
     public void testContextPreventsUnbind() throws Exception {
-        Hashtable<Object, Object> env = new Hashtable<Object, Object>();
-        Context ctx = createInitialContext(env);
+        assertThrows(OperationNotSupportedException.class, () -> {
+            Hashtable<Object, Object> env = new Hashtable<Object, Object>();
+            Context ctx = createInitialContext(env);
 
-        ctx.unbind("lookupName");
+            ctx.unbind("lookupName");
+        });
     }
 
-    @Test(expected = OperationNotSupportedException.class)
+    @Test
     public void testContextPreventsRebind() throws Exception {
-        Hashtable<Object, Object> env = new Hashtable<Object, Object>();
-        Context ctx = createInitialContext(env);
+        assertThrows(OperationNotSupportedException.class, () -> {
+            Hashtable<Object, Object> env = new Hashtable<Object, Object>();
+            Context ctx = createInitialContext(env);
 
-        ctx.rebind("lookupName", new Object());
+            ctx.rebind("lookupName", new Object());
+        });
     }
 
-    @Test(expected = OperationNotSupportedException.class)
+    @Test
     public void testContextPreventsRename() throws Exception {
-        Hashtable<Object, Object> env = new Hashtable<Object, Object>();
-        Context ctx = createInitialContext(env);
+        assertThrows(OperationNotSupportedException.class, () -> {
+            Hashtable<Object, Object> env = new Hashtable<Object, Object>();
+            Context ctx = createInitialContext(env);
 
-        ctx.rename("lookupName", "");
+            ctx.rename("lookupName", "");
+        });
     }
 
     @Test
@@ -369,7 +376,7 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
             fail("Should have thrown exception");
         } catch (NamingException ne) {
             // Expected
-            assertTrue("Should have had a cause", ne.getCause() != null);
+            assertTrue(ne.getCause() != null, "Should have had a cause");
         }
     }
 
@@ -412,8 +419,8 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
             InitialContext context = new InitialContext(env);
 
             ConnectionFactory factory = (ConnectionFactory) context.lookup(myFactory);
-            assertEquals("Unexpected type of object", JmsConnectionFactory.class, factory.getClass());
-            assertEquals("Unexpected URI value", myURI, ((JmsConnectionFactory) factory).getRemoteURI());
+            assertEquals(JmsConnectionFactory.class, factory.getClass(), "Unexpected type of object");
+            assertEquals(myURI, ((JmsConnectionFactory) factory).getRemoteURI(), "Unexpected URI value");
 
             context.close();
         } finally {
@@ -450,8 +457,8 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
             InitialContext context = new InitialContext();
 
             ConnectionFactory factory = (ConnectionFactory) context.lookup(myFactory);
-            assertEquals("Unexpected type of object", JmsConnectionFactory.class, factory.getClass());
-            assertEquals("Unexpected URI value", myURI, ((JmsConnectionFactory) factory).getRemoteURI());
+            assertEquals(JmsConnectionFactory.class, factory.getClass(), "Unexpected type of object");
+            assertEquals(myURI, ((JmsConnectionFactory) factory).getRemoteURI(), "Unexpected URI value");
 
             context.close();
         } finally {
@@ -485,10 +492,10 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
 
         Object o = ctx.lookup("myFactory");
 
-        assertNotNull("No object returned", o);
-        assertEquals("Unexpected class type for returned object", JmsConnectionFactory.class, o.getClass());
+        assertNotNull(o, "No object returned");
+        assertEquals(JmsConnectionFactory.class, o.getClass(), "Unexpected class type for returned object");
 
-        assertEquals("Unexpected URI for returned factory", "amqp://" + nowKnownHostValue + ":1234", ((JmsConnectionFactory) o).getRemoteURI());
+        assertEquals("amqp://" + nowKnownHostValue + ":1234", ((JmsConnectionFactory) o).getRemoteURI(), "Unexpected URI for returned factory");
     }
 
     @Test
@@ -505,10 +512,10 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
         //Verify the default is picked up when the variable doesn't resolve
         Context ctx = createInitialContext(env);
         Object o = ctx.lookup("myFactory");
-        assertNotNull("No object returned", o);
-        assertEquals("Unexpected class type for returned object", JmsConnectionFactory.class, o.getClass());
+        assertNotNull(o, "No object returned");
+        assertEquals(JmsConnectionFactory.class, o.getClass(), "Unexpected class type for returned object");
 
-        assertEquals("Unexpected URI for returned factory", "amqp://" + unknownVariableDefault + ":1234", ((JmsConnectionFactory) o).getRemoteURI());
+        assertEquals("amqp://" + unknownVariableDefault + ":1234", ((JmsConnectionFactory) o).getRemoteURI(), "Unexpected URI for returned factory");
 
         //Now make the variable resolve, check the exact same env+URI now produces different result
         String nowSetHostVarValue = "nowSetHostVarValue";
@@ -516,10 +523,10 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
 
         ctx = createInitialContext(env);
         o = ctx.lookup("myFactory");
-        assertNotNull("No object returned", o);
-        assertEquals("Unexpected class type for returned object", JmsConnectionFactory.class, o.getClass());
+        assertNotNull(o, "No object returned");
+        assertEquals(JmsConnectionFactory.class, o.getClass(), "Unexpected class type for returned object");
 
-        assertEquals("Unexpected URI for returned factory", "amqp://" + nowSetHostVarValue + ":1234", ((JmsConnectionFactory) o).getRemoteURI());
+        assertEquals("amqp://" + nowSetHostVarValue + ":1234", ((JmsConnectionFactory) o).getRemoteURI(), "Unexpected URI for returned factory");
     }
 
     @Test
@@ -546,11 +553,11 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
         if(useEnvVarForHost) {
             // Verify variable is set (by Surefire config),
             // prevents spurious failure if not manually configured when run in IDE.
-            assertEquals("Expected to use env variable name", TEST_ENV_VARIABLE_NAME, hostVariableName);
-            assumeTrue("Environment variable not set as required", System.getenv().containsKey(TEST_ENV_VARIABLE_NAME));
-            assertEquals("Environment variable value not as expected", TEST_ENV_VARIABLE_VALUE, System.getenv(TEST_ENV_VARIABLE_NAME));
+            assertEquals(TEST_ENV_VARIABLE_NAME, hostVariableName, "Expected to use env variable name");
+            assumeTrue(System.getenv().containsKey(TEST_ENV_VARIABLE_NAME), "Environment variable not set as required");
+            assertEquals(TEST_ENV_VARIABLE_VALUE, System.getenv(TEST_ENV_VARIABLE_NAME), "Environment variable value not as expected");
         } else {
-            assertNotEquals("Expected to use a different name", TEST_ENV_VARIABLE_NAME, hostVariableName);
+            assertNotEquals(TEST_ENV_VARIABLE_NAME, hostVariableName, "Expected to use a different name");
 
             setTestSystemProperty(hostVariableName, hostVariableValue);
         }
@@ -566,13 +573,13 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
 
         Object o = ctx.lookup(factoryName);
 
-        assertNotNull("No object returned", o);
-        assertEquals("Unexpected class type for returned object", JmsConnectionFactory.class, o.getClass());
+        assertNotNull(o, "No object returned");
+        assertEquals(JmsConnectionFactory.class, o.getClass(), "Unexpected class type for returned object");
 
-        assertEquals("Unexpected ClientID for returned factory", clientIdVariableValue, ((JmsConnectionFactory) o).getClientID());
+        assertEquals(clientIdVariableValue, ((JmsConnectionFactory) o).getClientID(), "Unexpected ClientID for returned factory");
 
         String expectedURI = "amqp://" + hostVariableValue + ":" + portVariableValue;
-        assertEquals("Unexpected URI for returned factory", expectedURI, ((JmsConnectionFactory) o).getRemoteURI());
+        assertEquals(expectedURI, ((JmsConnectionFactory) o).getRemoteURI(), "Unexpected URI for returned factory");
     }
 
     @Test
@@ -590,10 +597,10 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
 
         Object o = ctx.lookup(lookupName);
 
-        assertNotNull("No object returned", o);
-        assertEquals("Unexpected class type for returned object", JmsQueue.class, o.getClass());
+        assertNotNull(o, "No object returned");
+        assertEquals(JmsQueue.class, o.getClass(), "Unexpected class type for returned object");
 
-        assertEquals("Unexpected name for returned queue", variableValue, ((JmsQueue) o).getQueueName());
+        assertEquals(variableValue, ((JmsQueue) o).getQueueName(), "Unexpected name for returned queue");
     }
 
     @Test
@@ -611,10 +618,10 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
 
         Object o = ctx.lookup(lookupName);
 
-        assertNotNull("No object returned", o);
-        assertEquals("Unexpected class type for returned object", JmsTopic.class, o.getClass());
+        assertNotNull(o, "No object returned");
+        assertEquals(JmsTopic.class, o.getClass(), "Unexpected class type for returned object");
 
-        assertEquals("Unexpected name for returned queue", variableValue, ((JmsTopic) o).getTopicName());
+        assertEquals(variableValue, ((JmsTopic) o).getTopicName(), "Unexpected name for returned queue");
     }
 
     @Test

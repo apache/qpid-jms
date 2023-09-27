@@ -19,12 +19,12 @@ package org.apache.qpid.jms.sasl;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.charset.StandardCharsets;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * The known good used by these tests was generated using external tooling.
@@ -80,7 +80,7 @@ public class ScramSHA512MechanismTest extends AbstractScramSHAMechanismTestBase 
     public void testIsEnabledByDefault() {
         ScramSHA512Mechanism mech = new ScramSHA512Mechanism();
 
-        assertTrue("Should be enabled by default", mech.isEnabledByDefault());
+        assertTrue(mech.isEnabledByDefault(), "Should be enabled by default");
     }
 
     @Test

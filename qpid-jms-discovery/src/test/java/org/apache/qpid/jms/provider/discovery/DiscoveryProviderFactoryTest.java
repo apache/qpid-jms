@@ -16,7 +16,11 @@
  */
 package org.apache.qpid.jms.provider.discovery;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -24,7 +28,7 @@ import java.net.URISyntaxException;
 import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.provider.failover.FailoverProvider;
 import org.apache.qpid.jms.provider.failover.FailoverProviderFactory;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class DiscoveryProviderFactoryTest {
 
@@ -33,29 +37,29 @@ public class DiscoveryProviderFactoryTest {
         URI discoveryUri = new URI("discovery:(multicast://default)");
         Provider provider = DiscoveryProviderFactory.create(discoveryUri);
 
-        assertNotNull("Provider was not created", provider);
-        assertEquals("Provider was not of expected type", DiscoveryProvider.class, provider.getClass());
+        assertNotNull(provider, "Provider was not created");
+        assertEquals(DiscoveryProvider.class, provider.getClass(), "Provider was not of expected type");
 
         DiscoveryProvider discovery = (DiscoveryProvider) provider;
 
-        assertNotNull("Next provider was not present", discovery.getNext());
-        assertEquals("Next Provider was not of expected type", FailoverProvider.class, discovery.getNext().getClass());
+        assertNotNull(discovery.getNext(), "Next provider was not present");
+        assertEquals(FailoverProvider.class, discovery.getNext().getClass(), "Next Provider was not of expected type");
 
         FailoverProvider failoverProvider = (FailoverProvider) discovery.getNext();
-        assertTrue("Expected no nested options", failoverProvider.getNestedOptions().isEmpty());
+        assertTrue(failoverProvider.getNestedOptions().isEmpty(), "Expected no nested options");
     }
 
     @Test
     public void testCreateDiscoveryProviderWithFailoverSyntaxMainOption() throws Exception {
         String optionPrefix = FailoverProviderFactory.FAILOVER_OPTION_PREFIX;
-        assertEquals("Unexpected option prefix", "failover.", optionPrefix);
+        assertEquals("failover.", optionPrefix, "Unexpected option prefix");
         doCreateDiscoveryProviderWithMainOptionTestImpl(optionPrefix);
     }
 
     @Test
     public void testCreateDiscoveryProviderWithDiscoverSyntaxMainOption() throws Exception {
         String optionPrefix = DiscoveryProviderFactory.DISCOVERY_OPTION_PREFIX;
-        assertEquals("Unexpected option prefix", "discovery.", optionPrefix);
+        assertEquals("discovery.", optionPrefix, "Unexpected option prefix");
         doCreateDiscoveryProviderWithMainOptionTestImpl(optionPrefix);
     }
 
@@ -69,30 +73,30 @@ public class DiscoveryProviderFactoryTest {
         URI discoveryUri = new URI("discovery:(multicast://default)?" + optionPrefix  + optionKey + "=" + optionValue);
         Provider provider = DiscoveryProviderFactory.create(discoveryUri);
 
-        assertNotNull("Provider was not created", provider);
-        assertEquals("Provider was not of expected type", DiscoveryProvider.class, provider.getClass());
+        assertNotNull(provider, "Provider was not created");
+        assertEquals(DiscoveryProvider.class, provider.getClass(), "Provider was not of expected type");
 
         DiscoveryProvider discovery = (DiscoveryProvider) provider;
 
-        assertNotNull("Next provider was not present", discovery.getNext());
-        assertEquals("Next Provider was not of expected type", FailoverProvider.class, discovery.getNext().getClass());
+        assertNotNull(discovery.getNext(), "Next provider was not present");
+        assertEquals(FailoverProvider.class, discovery.getNext().getClass(), "Next Provider was not of expected type");
 
         FailoverProvider failoverProvider = (FailoverProvider) discovery.getNext();
 
-        assertEquals("option not as expected", option, failoverProvider.getReconnectBackOffMultiplier(), 0.0);
+        assertEquals(option, failoverProvider.getReconnectBackOffMultiplier(), 0.0, "option not as expected");
     }
 
     @Test
     public void testCreateDiscoveryProviderWithFailoverSyntaxNestedOptions() throws Exception {
         String optionPrefix = FailoverProviderFactory.FAILOVER_OPTION_PREFIX + FailoverProviderFactory.FAILOVER_NESTED_OPTION_PREFIX_ADDON;
-        assertEquals("Unexpected option prefix", "failover.nested.", optionPrefix);
+        assertEquals("failover.nested.", optionPrefix, "Unexpected option prefix");
         doCreateDiscoveryProviderWithNestedOptionsTestImpl(optionPrefix);
     }
 
     @Test
     public void testCreateDiscoveryProviderWithDiscoveredSyntaxNestedOption() throws Exception {
         String optionPrefix = DiscoveryProviderFactory.DISCOVERY_OPTION_PREFIX + DiscoveryProviderFactory.DISCOVERY_DISCOVERED_OPTION_PREFIX_ADON;
-        assertEquals("Unexpected option prefix", "discovery.discovered.", optionPrefix);
+        assertEquals("discovery.discovered.", optionPrefix, "Unexpected option prefix");
         doCreateDiscoveryProviderWithNestedOptionsTestImpl(optionPrefix);
     }
 
@@ -102,20 +106,20 @@ public class DiscoveryProviderFactoryTest {
         URI discoveryUri = new URI("discovery:(multicast://default)?" + optionPrefix  + clientIdOptionKey + "=" + clientIdValue);
         Provider provider = DiscoveryProviderFactory.create(discoveryUri);
 
-        assertNotNull("Provider was not created", provider);
-        assertEquals("Provider was not of expected type", DiscoveryProvider.class, provider.getClass());
+        assertNotNull(provider, "Provider was not created");
+        assertEquals(DiscoveryProvider.class, provider.getClass(), "Provider was not of expected type");
 
         DiscoveryProvider discovery = (DiscoveryProvider) provider;
 
-        assertNotNull("Next provider was not present", discovery.getNext());
-        assertEquals("Next Provider was not of expected type", FailoverProvider.class, discovery.getNext().getClass());
+        assertNotNull(discovery.getNext(), "Next provider was not present");
+        assertEquals(FailoverProvider.class, discovery.getNext().getClass(), "Next Provider was not of expected type");
 
         FailoverProvider failoverProvider = (FailoverProvider) discovery.getNext();
         failoverProvider.getNestedOptions();
 
-        assertEquals("Expected nested options", 1, failoverProvider.getNestedOptions().size());
-        assertTrue("Expected nested clientID option to be present", failoverProvider.getNestedOptions().containsKey(clientIdOptionKey));
-        assertEquals("nested clientID option not as expected", clientIdValue, failoverProvider.getNestedOptions().get(clientIdOptionKey));
+        assertEquals(1, failoverProvider.getNestedOptions().size(), "Expected nested options");
+        assertTrue(failoverProvider.getNestedOptions().containsKey(clientIdOptionKey), "Expected nested clientID option to be present");
+        assertEquals(clientIdValue, failoverProvider.getNestedOptions().get(clientIdOptionKey), "nested clientID option not as expected");
     }
 
     @Test

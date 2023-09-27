@@ -16,12 +16,12 @@
  */
 package org.apache.qpid.jms.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.qpid.jms.util.URISupport.CompositeData;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class URISupportTest {
 
@@ -131,8 +131,8 @@ public class URISupportTest {
     @Test
     public void testParsingCompositeURI() throws URISyntaxException {
         CompositeData data = URISupport.parseComposite(new URI("broker://(tcp://localhost:61616)?name=foo"));
-        assertEquals("one component", 1, data.getComponents().size());
-        assertEquals("Size: " + data.getParameters(), 1, data.getParameters().size());
+        assertEquals(1, data.getComponents().size(), "one component");
+        assertEquals(1, data.getParameters().size(), "Size: " + data.getParameters());
     }
 
     //---- parseQuery --------------------------------------------------------//
@@ -143,13 +143,13 @@ public class URISupportTest {
 
         Map<String, String> map = PropertyUtil.parseQuery(source);
 
-        assertEquals("Size: " + map, 2, map.size());
+        assertEquals(2, map.size(), "Size: " + map);
         assertMapKey(map, "cheese", "Edam");
         assertMapKey(map, "x", "123");
 
         URI result = URISupport.removeQuery(source);
 
-        assertEquals("result", new URI("tcp://localhost:61626/foo/bar"), result);
+        assertEquals(new URI("tcp://localhost:61626/foo/bar"), result, "result");
     }
 
     @Test
@@ -158,17 +158,17 @@ public class URISupportTest {
 
         Map<String, String> map = PropertyUtil.parseQuery(source);
 
-        assertEquals("Size: " + map, 2, map.size());
+        assertEquals(2, map.size(), "Size: " + map);
         assertMapKey(map, "cheese", "");
         assertMapKey(map, "x", "");
 
         URI result = URISupport.removeQuery(source);
 
-        assertEquals("result", new URI("tcp://localhost:61626/foo/bar"), result);
+        assertEquals(new URI("tcp://localhost:61626/foo/bar"), result, "result");
     }
 
     protected void assertMapKey(Map<String, String> map, String key, Object expected) {
-        assertEquals("Map key: " + key, map.get(key), expected);
+        assertEquals(expected, map.get(key), "Unexpected value for map key: " + key);
     }
 
     //---- checkParenthesis --------------------------------------------------------//
@@ -210,10 +210,10 @@ public class URISupportTest {
         URI source = new URI("vm://localhost");
         URI dest = PropertyUtil.replaceQuery(source, "network=true&one=two");
 
-        assertEquals("correct param count", 2, URISupport.parseParameters(dest).size());
-        assertEquals("same uri, host", source.getHost(), dest.getHost());
-        assertEquals("same uri, scheme", source.getScheme(), dest.getScheme());
-        assertFalse("same uri, ssp", dest.getQuery().equals(source.getQuery()));
+        assertEquals(2, URISupport.parseParameters(dest).size(), "correct param count");
+        assertEquals(source.getHost(), dest.getHost(), "same uri, host");
+        assertEquals(source.getScheme(), dest.getScheme(), "same uri, scheme");
+        assertFalse(dest.getQuery().equals(source.getQuery()), "same uri, ssp");
     }
 
     @Test
@@ -226,14 +226,14 @@ public class URISupportTest {
 
         uri = URISupport.applyParameters(uri, parameters);
         Map<String,String> appliedParameters = URISupport.parseParameters(uri);
-        assertEquals("all params applied  with no prefix", 2, appliedParameters.size());
+        assertEquals(2, appliedParameters.size(), "all params applied  with no prefix");
 
         // strip off params again
         uri = PropertyUtil.eraseQuery(uri);
 
         uri = URISupport.applyParameters(uri, parameters, "joe");
         appliedParameters = URISupport.parseParameters(uri);
-        assertTrue("no params applied as none match joe", appliedParameters.isEmpty());
+        assertTrue(appliedParameters.isEmpty(), "no params applied as none match joe");
 
         uri = URISupport.applyParameters(uri, parameters, "t.");
         verifyParams(URISupport.parseParameters(uri));
@@ -274,7 +274,7 @@ public class URISupportTest {
 
         uri = URISupport.applyParameters(uri, parameters, "t.");
         Map<String,String> appliedParameters = URISupport.parseParameters(uri);
-        assertEquals("all params applied with no prefix", 3, appliedParameters.size());
+        assertEquals(3, appliedParameters.size(), "all params applied with no prefix");
         verifyParams(appliedParameters);
     }
 
@@ -288,7 +288,7 @@ public class URISupportTest {
 
         uri = URISupport.applyParameters(uri, parameters);
         Map<String,String> appliedParameters = URISupport.parseParameters(uri);
-        assertEquals("all params applied with no prefix", 3, appliedParameters.size());
+        assertEquals(3, appliedParameters.size(), "all params applied with no prefix");
         verifyParams(appliedParameters);
     }
 
@@ -303,7 +303,7 @@ public class URISupportTest {
     public void testIsCompositeURIWithQueryNoSlashes() throws URISyntaxException {
         URI[] compositeURIs = new URI[] { new URI("test:(part1://host?part1=true)?outside=true"), new URI("broker:(tcp://localhost:61616)?name=foo") };
         for (URI uri : compositeURIs) {
-            assertTrue(uri + " must be detected as composite URI", URISupport.isCompositeURI(uri));
+            assertTrue(URISupport.isCompositeURI(uri), uri + " must be detected as composite URI");
         }
     }
 
@@ -311,7 +311,7 @@ public class URISupportTest {
     public void testIsCompositeURIWithQueryAndSlashes() throws URISyntaxException {
         URI[] compositeURIs = new URI[] { new URI("test://(part1://host?part1=true)?outside=true"), new URI("broker://(tcp://localhost:61616)?name=foo") };
         for (URI uri : compositeURIs) {
-            assertTrue(uri + " must be detected as composite URI", URISupport.isCompositeURI(uri));
+            assertTrue(URISupport.isCompositeURI(uri), uri + " must be detected as composite URI");
         }
     }
 
@@ -319,7 +319,7 @@ public class URISupportTest {
     public void testIsCompositeURINoQueryNoSlashes() throws URISyntaxException {
         URI[] compositeURIs = new URI[] { new URI("test:(part1://host,part2://(sub1://part,sube2:part))"), new URI("test:(path)/path") };
         for (URI uri : compositeURIs) {
-            assertTrue(uri + " must be detected as composite URI", URISupport.isCompositeURI(uri));
+            assertTrue(URISupport.isCompositeURI(uri), uri + " must be detected as composite URI");
         }
     }
 
@@ -331,7 +331,7 @@ public class URISupportTest {
 
     @Test
     public void testIsCompositeURINoQueryNoSlashesNoParentheses() throws URISyntaxException {
-        assertFalse("test:part1" + " must be detected as non-composite URI", URISupport.isCompositeURI(new URI("test:part1")));
+        assertFalse(URISupport.isCompositeURI(new URI("test:part1")), "test:part1" + " must be detected as non-composite URI");
     }
 
     @Test
@@ -339,7 +339,7 @@ public class URISupportTest {
         URI[] compositeURIs = new URI[] { new URI("failover://(tcp://bla:61616,tcp://bla:61617)"),
                 new URI("failover://(tcp://localhost:61616,ssl://anotherhost:61617)") };
         for (URI uri : compositeURIs) {
-            assertTrue(uri + " must be detected as composite URI", URISupport.isCompositeURI(uri));
+            assertTrue(URISupport.isCompositeURI(uri), uri + " must be detected as composite URI");
         }
     }
 

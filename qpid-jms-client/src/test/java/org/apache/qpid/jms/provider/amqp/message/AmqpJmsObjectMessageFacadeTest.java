@@ -17,15 +17,15 @@
 package org.apache.qpid.jms.provider.amqp.message;
 
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_OBJECT_MESSAGE;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -40,7 +40,7 @@ import org.apache.qpid.proton.amqp.messaging.Data;
 import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
 import org.apache.qpid.proton.amqp.messaging.Section;
 import org.apache.qpid.proton.message.Message;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests for class AmqpJmsObjectMessageFacade
@@ -55,7 +55,7 @@ public class AmqpJmsObjectMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
 
         MessageAnnotations annotations = amqpObjectMessageFacade.getMessageAnnotations();
 
-        assertNull("MessageAnnotations section was present", annotations);
+        assertNull(annotations, "MessageAnnotations section was present");
         assertEquals(JMS_OBJECT_MESSAGE, amqpObjectMessageFacade.getJmsMsgType());
     }
 
@@ -90,11 +90,11 @@ public class AmqpJmsObjectMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
         AmqpJmsObjectMessageFacade amqpObjectMessageFacade = createNewObjectMessageFacade(amqpTyped);
         amqpObjectMessageFacade.onSend(0);
 
-        assertNotNull("Message body should be presents", amqpObjectMessageFacade.getBody());
+        assertNotNull(amqpObjectMessageFacade.getBody(), "Message body should be presents");
         if(amqpTyped) {
-            assertSame("Expected existing body section to be replaced", AmqpTypedObjectDelegate.NULL_OBJECT_BODY, amqpObjectMessageFacade.getBody());
+            assertSame(AmqpTypedObjectDelegate.NULL_OBJECT_BODY, amqpObjectMessageFacade.getBody(), "Expected existing body section to be replaced");
         } else {
-            assertSame("Expected existing body section to be replaced", AmqpSerializedObjectDelegate.NULL_OBJECT_BODY, amqpObjectMessageFacade.getBody());
+            assertSame(AmqpSerializedObjectDelegate.NULL_OBJECT_BODY, amqpObjectMessageFacade.getBody(), "Expected existing body section to be replaced");
         }
     }
 
@@ -124,7 +124,7 @@ public class AmqpJmsObjectMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
         Section section = amqpObjectMessageFacade.getBody();
         assertNotNull(section);
         assertEquals(Data.class, section.getClass());
-        assertArrayEquals("Underlying message data section did not contain the expected bytes", bytes, ((Data) section).getValue().getArray());
+        assertArrayEquals(bytes, ((Data) section).getValue().getArray(), "Underlying message data section did not contain the expected bytes");
     }
 
     /**
@@ -144,7 +144,7 @@ public class AmqpJmsObjectMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
         Section section = amqpObjectMessageFacade.getBody();
         assertNotNull(section);
         assertEquals(AmqpValue.class, section.getClass());
-        assertEquals("Underlying message body did not contain the expected content", content, ((AmqpValue) section).getValue());
+        assertEquals(content, ((AmqpValue) section).getValue(), "Underlying message body did not contain the expected content");
     }
 
     /**
@@ -161,10 +161,10 @@ public class AmqpJmsObjectMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
 
         AmqpJmsObjectMessageFacade amqpObjectMessageFacade = createReceivedObjectMessageFacade(createMockAmqpConsumer(), protonMessage);
 
-        assertNotNull("Expected existing body section to be found", amqpObjectMessageFacade.getBody());
+        assertNotNull(amqpObjectMessageFacade.getBody(), "Expected existing body section to be found");
         amqpObjectMessageFacade.setObject(null);
-        assertSame("Expected existing body section to be replaced", AmqpSerializedObjectDelegate.NULL_OBJECT_BODY, amqpObjectMessageFacade.getBody());
-        assertNull("Expected null object", amqpObjectMessageFacade.getObject());
+        assertSame(AmqpSerializedObjectDelegate.NULL_OBJECT_BODY, amqpObjectMessageFacade.getBody(), "Expected existing body section to be replaced");
+        assertNull(amqpObjectMessageFacade.getObject(), "Expected null object");
     }
 
     /**
@@ -181,10 +181,10 @@ public class AmqpJmsObjectMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
 
         AmqpJmsObjectMessageFacade amqpObjectMessageFacade = createReceivedObjectMessageFacade(createMockAmqpConsumer(), protonMessage);
 
-        assertNotNull("Expected existing body section to be found", amqpObjectMessageFacade.getBody());
+        assertNotNull(amqpObjectMessageFacade.getBody(), "Expected existing body section to be found");
         amqpObjectMessageFacade.clearBody();
-        assertSame("Expected existing body section to be replaced", AmqpSerializedObjectDelegate.NULL_OBJECT_BODY, amqpObjectMessageFacade.getBody());
-        assertNull("Expected null object", amqpObjectMessageFacade.getObject());
+        assertSame(AmqpSerializedObjectDelegate.NULL_OBJECT_BODY, amqpObjectMessageFacade.getBody(), "Expected existing body section to be replaced");
+        assertNull(amqpObjectMessageFacade.getObject(), "Expected null object");
     }
 
     /**
@@ -203,24 +203,24 @@ public class AmqpJmsObjectMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
 
         // verify we get a different-but-equal object back
         Serializable serialized = amqpObjectMessageFacade.getObject();
-        assertTrue("Unexpected object type returned", serialized instanceof Map<?, ?>);
+        assertTrue(serialized instanceof Map<?, ?>, "Unexpected object type returned");
         Map<?, ?> returnedObject1 = (Map<?, ?>) serialized;
-        assertNotSame("Expected different objects, due to snapshot being taken", origMap, returnedObject1);
-        assertEquals("Expected equal objects, due to snapshot being taken", origMap, returnedObject1);
+        assertNotSame(origMap, returnedObject1, "Expected different objects, due to snapshot being taken");
+        assertEquals(origMap, returnedObject1, "Expected equal objects, due to snapshot being taken");
 
         // mutate the original object
         origMap.put("key2", "value2");
 
         // verify we get a different-but-equal object back when compared to the previously retrieved object
         Serializable serialized2 = amqpObjectMessageFacade.getObject();
-        assertTrue("Unexpected object type returned", serialized2 instanceof Map<?, ?>);
+        assertTrue(serialized2 instanceof Map<?, ?>, "Unexpected object type returned");
         Map<?, ?> returnedObject2 = (Map<?, ?>) serialized2;
-        assertNotSame("Expected different objects, due to snapshot being taken", origMap, returnedObject2);
-        assertEquals("Expected equal objects, due to snapshot being taken", returnedObject1, returnedObject2);
+        assertNotSame(origMap, returnedObject2, "Expected different objects, due to snapshot being taken");
+        assertEquals(returnedObject1, returnedObject2, "Expected equal objects, due to snapshot being taken");
 
         // verify the mutated map is a different and not equal object
-        assertNotSame("Expected different objects, due to snapshot being taken", returnedObject1, returnedObject2);
-        assertNotEquals("Expected objects to differ, due to snapshot being taken", origMap, returnedObject2);
+        assertNotSame(returnedObject1, returnedObject2, "Expected different objects, due to snapshot being taken");
+        assertNotEquals(origMap, returnedObject2, "Expected objects to differ, due to snapshot being taken");
     }
 
     // ---------- test handling of received messages -------------------------//
@@ -242,7 +242,7 @@ public class AmqpJmsObjectMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
         }
         AmqpJmsObjectMessageFacade amqpObjectMessageFacade = createReceivedObjectMessageFacade(createMockAmqpConsumer(), message);
 
-        assertNull("Expected null object", amqpObjectMessageFacade.getObject());
+        assertNull(amqpObjectMessageFacade.getObject(), "Expected null object");
     }
 
     @Test
@@ -253,7 +253,7 @@ public class AmqpJmsObjectMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
 
         AmqpJmsObjectMessageFacade amqpObjectMessageFacade = createReceivedObjectMessageFacade(createMockAmqpConsumer(), message);
 
-        assertNull("Expected null object", amqpObjectMessageFacade.getObject());
+        assertNull(amqpObjectMessageFacade.getObject(), "Expected null object");
     }
 
     @Test
@@ -305,24 +305,24 @@ public class AmqpJmsObjectMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
 
         // verify we get a different-but-equal object back
         Serializable serialized = amqpObjectMessageFacade.getObject();
-        assertTrue("Unexpected object type returned", serialized instanceof Map<?, ?>);
+        assertTrue(serialized instanceof Map<?, ?>, "Unexpected object type returned");
         Map<String, String> returnedObject1 = (Map<String, String>) serialized;
-        assertNotSame("Expected different objects, due to snapshot being taken", origMap, returnedObject1);
-        assertEquals("Expected equal objects, due to snapshot being taken", origMap, returnedObject1);
+        assertNotSame(origMap, returnedObject1, "Expected different objects, due to snapshot being taken");
+        assertEquals(origMap, returnedObject1, "Expected equal objects, due to snapshot being taken");
 
         // verify we get a different-but-equal object back when compared to the previously retrieved object
         Serializable serialized2 = amqpObjectMessageFacade.getObject();
-        assertTrue("Unexpected object type returned", serialized2 instanceof Map<?, ?>);
+        assertTrue(serialized2 instanceof Map<?, ?>, "Unexpected object type returned");
         Map<String, String> returnedObject2 = (Map<String, String>) serialized2;
-        assertNotSame("Expected different objects, due to snapshot being taken", returnedObject1, returnedObject2);
-        assertEquals("Expected equal objects, due to snapshot being taken", returnedObject1, returnedObject2);
+        assertNotSame(returnedObject1, returnedObject2, "Expected different objects, due to snapshot being taken");
+        assertEquals(returnedObject1, returnedObject2, "Expected equal objects, due to snapshot being taken");
 
         // mutate the first returned object
         returnedObject1.put("key2", "value2");
 
         // verify the mutated map is a different and not equal object
-        assertNotSame("Expected different objects, due to snapshot being taken", returnedObject1, returnedObject2);
-        assertNotEquals("Expected objects to differ, due to snapshot being taken", returnedObject1, returnedObject2);
+        assertNotSame(returnedObject1, returnedObject2, "Expected different objects, due to snapshot being taken");
+        assertNotEquals(returnedObject1, returnedObject2, "Expected objects to differ, due to snapshot being taken");
     }
 
     private static byte[] getSerializedBytes(Serializable value) throws IOException {

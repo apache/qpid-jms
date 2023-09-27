@@ -26,13 +26,13 @@ import javax.jms.Session;
 
 import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.apache.qpid.jms.support.AmqpTestSupport;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 /**
  * Compares send rate using a TX Session for QPid JMS and ActiveMQ JMS
  */
-@Ignore
+@Disabled
 public class TransactedProducerSendRateTest extends AmqpTestSupport {
 
     private final int ITERATIONS = 20;

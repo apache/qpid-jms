@@ -16,9 +16,10 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.net.URI;
@@ -27,9 +28,11 @@ import java.net.URLEncoder;
 import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Test basic functionality of the AmqpProviderFactory
@@ -40,14 +43,15 @@ public class AmqpProviderFactoryTest extends QpidJmsTestCase {
     private URI peerURI;
 
     @Override
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
+        super.setUp(testInfo);
         testPeer = new TestAmqpPeer();
         peerURI = new URI("amqp://localhost:" + testPeer.getServerPort());
     }
 
     @Override
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         if (testPeer != null) {
             testPeer.close();
@@ -55,42 +59,52 @@ public class AmqpProviderFactoryTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testGetName() throws IOException, Exception {
         AmqpProviderFactory factory = new AmqpProviderFactory();
         assertEquals("AMQP", factory.getName());
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateProvider() throws IOException, Exception {
         Provider provider = AmqpProviderFactory.create(peerURI);
         assertNotNull(provider);
         assertTrue(provider instanceof AmqpProvider);
     }
 
-    @Test(timeout = 20000, expected=IllegalArgumentException.class)
+    @Test
+    @Timeout(20)
     public void testCreateProviderFailsWithBadOption() throws IOException, Exception {
-        URI badOptionsURI = new URI(peerURI.toString() + "?amqp.badOption=true");
-        AmqpProviderFactory.create(badOptionsURI);
+        assertThrows(IllegalArgumentException.class, () -> {
+            URI badOptionsURI = new URI(peerURI.toString() + "?amqp.badOption=true");
+            AmqpProviderFactory.create(badOptionsURI);
+        });
     }
 
-    @Test(timeout = 20000, expected=IOException.class)
+    @Test
+    @Timeout(20)
     public void testCreateProviderFailsWithMissingScheme() throws IOException, Exception {
-        URI missingSchemeURI = new URI(null, null, peerURI.getHost(), peerURI.getPort(), null, null, null);
-        AmqpProviderFactory.create(missingSchemeURI);
+        assertThrows(IOException.class, () -> {
+            URI missingSchemeURI = new URI(null, null, peerURI.getHost(), peerURI.getPort(), null, null, null);
+            AmqpProviderFactory.create(missingSchemeURI);
+        });
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateProviderHasDefaultIdleTimeoutValue() throws IOException, Exception {
         Provider provider = AmqpProviderFactory.create(new URI(peerURI.toString()));
         assertNotNull(provider);
         assertTrue(provider instanceof AmqpProvider);
         AmqpProvider amqpProvider = (AmqpProvider) provider;
 
-        assertTrue("No default idle timeout", amqpProvider.getIdleTimeout() > 0);
+        assertTrue(amqpProvider.getIdleTimeout() > 0, "No default idle timeout");
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateProviderAppliesIdleTimeoutURIOption() throws IOException, Exception {
         int timeout = 54321;
         Provider provider = AmqpProviderFactory.create(new URI(peerURI.toString() + "?amqp.idleTimeout=" + timeout));
@@ -98,10 +112,11 @@ public class AmqpProviderFactoryTest extends QpidJmsTestCase {
         assertTrue(provider instanceof AmqpProvider);
         AmqpProvider amqpProvider = (AmqpProvider) provider;
 
-        assertEquals("idle timeout option was not applied", timeout, amqpProvider.getIdleTimeout());
+        assertEquals(timeout, amqpProvider.getIdleTimeout(), "idle timeout option was not applied");
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateProviderAppliesMaxFrameSizeURIOption() throws IOException, Exception {
         int frameSize = 274893;
         Provider provider = AmqpProviderFactory.create(new URI(peerURI.toString() + "?amqp.maxFrameSize=" + frameSize));
@@ -109,10 +124,11 @@ public class AmqpProviderFactoryTest extends QpidJmsTestCase {
         assertTrue(provider instanceof AmqpProvider);
         AmqpProvider amqpProvider = (AmqpProvider) provider;
 
-        assertEquals("maxFrameSize option was not applied", frameSize, amqpProvider.getMaxFrameSize());
+        assertEquals(frameSize, amqpProvider.getMaxFrameSize(), "maxFrameSize option was not applied");
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateProviderAppliesOptions() throws IOException, Exception {
         URI configuredURI = new URI(peerURI.toString() +
             "?amqp.traceFrames=true" +
@@ -129,7 +145,8 @@ public class AmqpProviderFactoryTest extends QpidJmsTestCase {
         assertEquals(32, amqpProvider.getChannelMax());
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateProviderEncodedVhost() throws IOException, Exception {
         URI configuredURI = new URI(peerURI.toString() +
             "?amqp.vhost=" + URLEncoder.encode("v+host", "utf-8"));

@@ -16,7 +16,7 @@
  */
 package org.apache.qpid.jms.consumer;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.concurrent.TimeUnit;
 
@@ -39,7 +39,7 @@ public class JmsMessageConsumerFailedTest extends JmsMessageConsumerClosedTest {
     protected MessageConsumer createConsumer() throws Exception {
         connection = createConnectionToMockProvider();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue destination = session.createQueue(_testName.getMethodName());
+        Queue destination = session.createQueue(_testMethodName);
         MessageConsumer consumer = session.createConsumer(destination);
         connection.setExceptionListener(new ExceptionListener() {
 

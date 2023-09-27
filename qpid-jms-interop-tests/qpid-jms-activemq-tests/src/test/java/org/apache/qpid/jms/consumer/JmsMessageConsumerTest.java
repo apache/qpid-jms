@@ -16,10 +16,10 @@
  */
 package org.apache.qpid.jms.consumer;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -42,7 +42,8 @@ import org.apache.qpid.jms.JmsMessageAvailableListener;
 import org.apache.qpid.jms.JmsMessageConsumer;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.apache.qpid.jms.support.Wait;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,73 +59,77 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         return true;
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testCreateMessageConsumer() throws Exception {
         connection = createAmqpConnection();
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         session.createConsumer(queue);
 
-        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        QueueViewMBean proxy = getProxyToQueue(testMethodName);
         assertEquals(0, proxy.getQueueSize());
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testSyncConsumeFromQueue() throws Exception {
         connection = createAmqpConnection();
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         MessageConsumer consumer = session.createConsumer(queue);
 
         sendToAmqQueue(1);
 
-        final QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        final QueueViewMBean proxy = getProxyToQueue(testMethodName);
         assertEquals(1, proxy.getQueueSize());
 
-        assertNotNull("Failed to receive any message.", consumer.receive(3000));
+        assertNotNull(consumer.receive(3000), "Failed to receive any message.");
 
-        assertTrue("Queued message not consumed.", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return proxy.getQueueSize() == 0;
             }
-        }));
+        }), "Queued message not consumed.");
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testSyncConsumeFromTopic() throws Exception {
         connection = createAmqpConnection();
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
-        Topic topic = session.createTopic(name.getMethodName());
+        Topic topic = session.createTopic(testMethodName);
         MessageConsumer consumer = session.createConsumer(topic);
 
         sendToAmqTopic(1);
 
-        final TopicViewMBean proxy = getProxyToTopic(name.getMethodName());
+        final TopicViewMBean proxy = getProxyToTopic(testMethodName);
         assertEquals(1, proxy.getEnqueueCount());
 
-        assertNotNull("Failed to receive any message.", consumer.receive(3000));
+        assertNotNull(consumer.receive(3000), "Failed to receive any message.");
 
-        assertTrue("Published message not consumed.", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return proxy.getQueueSize() == 0;
             }
-        }));
+        }), "Published message not consumed.");
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testMessageAvailableConsumer() throws Exception {
         connection = createAmqpConnection();
         connection.start();
@@ -134,7 +139,7 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         MessageConsumer consumer = session.createConsumer(queue);
         ((JmsMessageConsumer) consumer).setAvailableListener(new JmsMessageAvailableListener() {
 
@@ -146,29 +151,29 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
 
         sendToAmqQueue(MSG_COUNT);
 
-        final QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        final QueueViewMBean proxy = getProxyToQueue(testMethodName);
         assertEquals(MSG_COUNT, proxy.getQueueSize());
 
-        assertTrue("Listener not notified of correct number of messages.", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return available.get() == MSG_COUNT;
             }
-        }));
+        }), "Listener not notified of correct number of messages.");
 
         // All should be immediately ready for consume.
         for (int i = 0; i < MSG_COUNT; ++i) {
             assertNotNull(consumer.receiveNoWait());
         }
 
-        assertTrue("Queued message not consumed.", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return proxy.getQueueSize() == 0;
             }
-        }));
+        }), "Queued message not consumed.");
     }
 
     /**
@@ -180,14 +185,15 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
      *
      * @throws Exception on error found during test run.
      */
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testConsumerReceiveBeforeMessageDispatched() throws Exception {
         final Connection connection = createAmqpConnection();
         this.connection = connection;
         connection.start();
 
         final Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        final Queue queue = session.createQueue(name.getMethodName());
+        final Queue queue = session.createQueue(testMethodName);
 
         Thread t = new Thread() {
             @Override
@@ -207,7 +213,8 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         assertNotNull(msg);
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testAsynchronousMessageConsumption() throws Exception {
         final int msgCount = 4;
         final Connection connection = createAmqpConnection();
@@ -217,7 +224,7 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
 
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue destination = session.createQueue(name.getMethodName());
+        Queue destination = session.createQueue(testMethodName);
         MessageConsumer consumer = session.createConsumer(destination);
 
         consumer.setMessageListener(new MessageListener() {
@@ -236,14 +243,15 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         assertEquals(msgCount, counter.get());
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testMessagesAreAckedAMQProducer() throws Exception {
         int messagesSent = 3;
         assertTrue(brokerService.isPersistent());
 
         connection = createActiveMQConnection();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         MessageProducer p = session.createProducer(queue);
         TextMessage message = null;
         for (int i=0; i < messagesSent; i++) {
@@ -257,24 +265,25 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
 
         // After the first restart we should get all messages sent above
         restartPrimaryBroker();
-        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        QueueViewMBean proxy = getProxyToQueue(testMethodName);
         assertEquals(messagesSent, proxy.getQueueSize());
         int messagesReceived = readAllMessages();
         assertEquals(messagesSent, messagesReceived);
 
         // This time there should be no messages on this queue
         restartPrimaryBroker();
-        proxy = getProxyToQueue(name.getMethodName());
+        proxy = getProxyToQueue(testMethodName);
         assertEquals(0, proxy.getQueueSize());
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testMessagesAreAckedAMQPProducer() throws Exception {
         int messagesSent = 3;
 
         connection = createAmqpConnection();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         MessageProducer producer = session.createProducer(queue);
         producer.setDeliveryMode(DeliveryMode.PERSISTENT);
         TextMessage message = null;
@@ -290,14 +299,14 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
 
         // After the first restart we should get all messages sent above
         restartPrimaryBroker();
-        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        QueueViewMBean proxy = getProxyToQueue(testMethodName);
         assertEquals(messagesSent, proxy.getQueueSize());
         int messagesReceived = readAllMessages();
         assertEquals(messagesSent, messagesReceived);
 
         // This time there should be no messages on this queue
         restartPrimaryBroker();
-        proxy = getProxyToQueue(name.getMethodName());
+        proxy = getProxyToQueue(testMethodName);
         assertEquals(0, proxy.getQueueSize());
     }
 
@@ -310,7 +319,7 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         connection.start();
         try {
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            Queue queue = session.createQueue(name.getMethodName());
+            Queue queue = session.createQueue(testMethodName);
             int messagesReceived = 0;
             MessageConsumer consumer;
 
@@ -337,12 +346,13 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         }
     }
 
-    @Test(timeout=30000)
-    public void testSelectors() throws Exception{
+    @Test
+    @Timeout(30)
+    public void testSelectors() throws Exception {
         connection = createAmqpConnection();
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         MessageProducer p = session.createProducer(queue);
 
         TextMessage message = session.createTextMessage();
@@ -355,23 +365,24 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
 
         p.close();
 
-        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        QueueViewMBean proxy = getProxyToQueue(testMethodName);
         assertEquals(2, proxy.getQueueSize());
 
         MessageConsumer consumer = session.createConsumer(queue, "JMSPriority > 8");
         Message msg = consumer.receive(5000);
-        assertNotNull("No message was recieved", msg);
+        assertNotNull(msg, "No message was recieved");
         assertTrue(msg instanceof TextMessage);
         assertEquals("hello + 9", ((TextMessage) msg).getText());
         assertNull(consumer.receive(1000));
     }
 
-    @Test(timeout=45000)
+    @Test
+    @Timeout(45)
     public void testSelectorsWithJMSType() throws Exception {
         connection = createAmqpConnection();
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         MessageProducer producer = session.createProducer(queue);
 
         TextMessage message = session.createTextMessage();
@@ -386,20 +397,20 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
 
         producer.close();
 
-        final QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
-        assertTrue("Queue did not get all expected messages", Wait.waitFor(new Wait.Condition() {
+        final QueueViewMBean proxy = getProxyToQueue(testMethodName);
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return proxy.getQueueSize() == 2;
             }
-        }));
+        }), "Queue did not get all expected messages");
 
         MessageConsumer consumer = session.createConsumer(queue, "JMSType = '" + type + "'");
         Message msg = consumer.receive(5000);
-        assertNotNull("No message was recieved", msg);
+        assertNotNull(msg, "No message was recieved");
         assertTrue(msg instanceof TextMessage);
-        assertEquals("Unexpected JMSType value", type, msg.getJMSType());
-        assertEquals("Unexpected message content", "text + type", ((TextMessage) msg).getText());
+        assertEquals(type, msg.getJMSType(), "Unexpected JMSType value");
+        assertEquals("text + type", ((TextMessage) msg).getText(), "Unexpected message content");
     }
 }

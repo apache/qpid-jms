@@ -16,13 +16,17 @@
  */
 package org.apache.qpid.jms;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import javax.jms.IllegalStateException;
 import javax.jms.JMSException;
 import javax.jms.ServerSessionPool;
 import javax.jms.Session;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Test various contract aspects of the QueueConnection implementation
@@ -30,21 +34,27 @@ import org.junit.Test;
 public class JmsQueueConnectionTest extends JmsConnectionTestSupport {
 
     @Override
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
+        super.setUp(testInfo);
         queueConnection = createQueueConnectionToMockProvider();
         queueConnection.start();
     }
 
-    @Test(timeout = 30000, expected=IllegalStateException.class)
-    public void testCreateConnectionConsumerOnQueueConnection() throws JMSException{
-        queueConnection.createConnectionConsumer(new JmsTopic(), "subscriptionName", (ServerSessionPool)null, 1);
+    @Test
+    @Timeout(30)
+    public void testCreateConnectionConsumerOnQueueConnection() throws JMSException {
+        assertThrows(IllegalStateException.class, () -> {
+            queueConnection.createConnectionConsumer(new JmsTopic(), "subscriptionName", (ServerSessionPool) null, 1);
+        });
     }
 
-    @Test(timeout = 30000, expected=IllegalStateException.class)
-    public void testCreateTopicSessionOnTopicConnection() throws JMSException{
-        queueConnection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
+    @Test
+    @Timeout(30)
+    public void testCreateTopicSessionOnTopicConnection() throws JMSException {
+        assertThrows(IllegalStateException.class, () -> {
+            queueConnection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
+        });
     }
 
     /**
@@ -57,8 +67,11 @@ public class JmsQueueConnectionTest extends JmsConnectionTestSupport {
      *
      * @throws JMSException if an error occurs during the test.
      */
-    @Test(timeout = 30000, expected=IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testCreateDurableConnectionConsumerOnQueueConnection() throws JMSException {
-        queueConnection.createDurableConnectionConsumer(new JmsTopic(), "subscriptionName", "", (ServerSessionPool)null, 1);
+        assertThrows(IllegalStateException.class, () -> {
+            queueConnection.createDurableConnectionConsumer(new JmsTopic(), "subscriptionName", "", (ServerSessionPool) null, 1);
+        });
     }
 }

@@ -16,7 +16,8 @@
  */
 package org.apache.qpid.jms.session;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import javax.jms.IllegalStateException;
 import javax.jms.JMSException;
@@ -27,8 +28,10 @@ import org.apache.qpid.jms.JmsConnectionTestSupport;
 import org.apache.qpid.jms.JmsQueue;
 import org.apache.qpid.jms.JmsQueueSession;
 import org.apache.qpid.jms.JmsTopic;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Test the contract of JmsQueueSession against JMS Spec requirements.
@@ -40,78 +43,105 @@ public class JmsQueueSessionTest extends JmsConnectionTestSupport {
     private final JmsQueue queue = new JmsQueue();
 
     @Override
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
+        super.setUp(testInfo);
         queueConnection = createQueueConnectionToMockProvider();
         queueConnection.start();
 
         queueSession = queueConnection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
     }
 
-    @Test(timeout = 30000, expected=IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testCreateConsumerToTopic() throws JMSException {
-        queueSession.createConsumer(topic);
+        assertThrows(IllegalStateException.class, () -> {
+            queueSession.createConsumer(topic);
+        });
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testCreateReceiver() throws JMSException {
         assertNotNull(queueSession.createReceiver(queue));
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testCreateReceiverWithSelector() throws JMSException {
         assertNotNull(queueSession.createReceiver(queue, "color = red"));
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testCreateConsumerToQueue() throws JMSException {
         assertNotNull(queueSession.createConsumer(queue));
     }
 
-    @Test(timeout = 30000, expected=IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testCreateConsumerWithSelector() throws JMSException {
-        queueSession.createConsumer(topic, "color = red");
+        assertThrows(IllegalStateException.class, () -> {
+            queueSession.createConsumer(topic, "color = red");
+        });
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testCreateConsumerToQueueWithSelector() throws JMSException {
         assertNotNull(queueSession.createConsumer(queue, "color = red"));
     }
 
-    @Test(timeout = 30000, expected=IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testCreateConsumerWithSelectorNoLocal() throws JMSException {
-        queueSession.createConsumer(topic, "color = red", false);
+        assertThrows(IllegalStateException.class, () -> {
+            queueSession.createConsumer(topic, "color = red", false);
+        });
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testCreateConsumerToQueueWithSelectorNoLocal() throws JMSException {
         assertNotNull(queueSession.createConsumer(queue, "color = red", false));
     }
 
-    @Test(timeout = 30000, expected=IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testCreateSubscriber() throws JMSException {
-        ((JmsQueueSession) queueSession).createSubscriber(topic);
+        assertThrows(IllegalStateException.class, () -> {
+            ((JmsQueueSession) queueSession).createSubscriber(topic);
+        });
     }
 
-    @Test(timeout = 30000, expected=IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testCreateSubscriberSelector() throws JMSException {
-        ((JmsQueueSession) queueSession).createSubscriber(topic, "color = red", false);
+        assertThrows(IllegalStateException.class, () -> {
+            ((JmsQueueSession) queueSession).createSubscriber(topic, "color = red", false);
+        });
     }
 
-    @Test(timeout = 30000, expected=IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testCreateProducerToTopic() throws JMSException {
-        queueSession.createProducer(topic);
+        assertThrows(IllegalStateException.class, () -> {
+            queueSession.createProducer(topic);
+        });
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testCreateProducerToQueue() throws JMSException {
         assertNotNull(queueSession.createProducer(queue));
     }
 
-    @Test(timeout = 30000, expected=IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testCreateTopicPublisher() throws JMSException {
-        ((JmsQueueSession) queueSession).createPublisher(topic);
+        assertThrows(IllegalStateException.class, () -> {
+            ((JmsQueueSession) queueSession).createPublisher(topic);
+        });
     }
 
     /**
@@ -124,44 +154,68 @@ public class JmsQueueSessionTest extends JmsConnectionTestSupport {
      *
      * @throws JMSException if an error occurs during the test.
      */
-    @Test(timeout = 30000, expected=IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testCreateDurableSubscriberOnQueueSession() throws JMSException {
-        queueSession.createDurableSubscriber(topic, "subscriptionName");
+        assertThrows(IllegalStateException.class, () -> {
+            queueSession.createDurableSubscriber(topic, "subscriptionName");
+        });
     }
 
-    @Test(timeout = 30000, expected=IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testCreateDurableSubscriberWithSelectorOnQueueSession() throws JMSException {
-        queueSession.createDurableSubscriber(topic, "subscriptionName", "color = red", false);
+        assertThrows(IllegalStateException.class, () -> {
+            queueSession.createDurableSubscriber(topic, "subscriptionName", "color = red", false);
+        });
     }
 
-    @Test(timeout = 30000, expected=IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testCreateDurableConsumerOnQueueSession() throws JMSException {
-        queueSession.createDurableConsumer(topic, "subscriptionName");
+        assertThrows(IllegalStateException.class, () -> {
+            queueSession.createDurableConsumer(topic, "subscriptionName");
+        });
     }
 
-    @Test(timeout = 30000, expected=IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testCreateDurableConsumerWithSelectorOnQueueSession() throws JMSException {
-        queueSession.createDurableConsumer(topic, "subscriptionName", "color = red", false);
+        assertThrows(IllegalStateException.class, () -> {
+            queueSession.createDurableConsumer(topic, "subscriptionName", "color = red", false);
+        });
     }
 
-    @Test(timeout = 30000, expected=IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testCreateSharedConsumerOnQueueSession() throws JMSException {
-        queueSession.createSharedConsumer(topic, "subscriptionName");
+        assertThrows(IllegalStateException.class, () -> {
+            queueSession.createSharedConsumer(topic, "subscriptionName");
+        });
     }
 
-    @Test(timeout = 30000, expected=IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testCreateSharedConsumerWithSelectorOnQueueSession() throws JMSException {
-        queueSession.createSharedConsumer(topic, "subscriptionName", "color = red");
+        assertThrows(IllegalStateException.class, () -> {
+            queueSession.createSharedConsumer(topic, "subscriptionName", "color = red");
+        });
     }
 
-    @Test(timeout = 30000, expected=IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testCreateSharedDurableConsumerOnQueueSession() throws JMSException {
-        queueSession.createSharedDurableConsumer(topic, "subscriptionName");
+        assertThrows(IllegalStateException.class, () -> {
+            queueSession.createSharedDurableConsumer(topic, "subscriptionName");
+        });
     }
 
-    @Test(timeout = 30000, expected=IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testCreateSharedDurableConsumerWithSelectorOnQueueSession() throws JMSException {
-        queueSession.createSharedConsumer(topic, "subscriptionName", "color = red");
+        assertThrows(IllegalStateException.class, () -> {
+            queueSession.createSharedConsumer(topic, "subscriptionName", "color = red");
+        });
     }
 
     /**
@@ -174,9 +228,12 @@ public class JmsQueueSessionTest extends JmsConnectionTestSupport {
      *
      * @throws JMSException if an error occurs during the test.
      */
-    @Test(timeout = 30000, expected=IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testCreateTemporaryTopicOnQueueSession() throws JMSException {
-        queueSession.createTemporaryTopic();
+        assertThrows(IllegalStateException.class, () -> {
+            queueSession.createTemporaryTopic();
+        });
     }
 
     /**
@@ -189,9 +246,12 @@ public class JmsQueueSessionTest extends JmsConnectionTestSupport {
      *
      * @throws JMSException if an error occurs during the test.
      */
-    @Test(timeout = 30000, expected=IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testCreateTopicOnQueueSession() throws JMSException {
-        queueSession.createTopic("test-topic");
+        assertThrows(IllegalStateException.class, () -> {
+            queueSession.createTopic("test-topic");
+        });
     }
 
     /**
@@ -204,8 +264,11 @@ public class JmsQueueSessionTest extends JmsConnectionTestSupport {
      *
      * @throws JMSException if an error occurs during the test.
      */
-    @Test(timeout = 30000, expected=IllegalStateException.class)
-    public void testUnsubscribeOnQueueSession() throws JMSException  {
-        queueSession.unsubscribe("subscriptionName");
+    @Test
+    @Timeout(30)
+    public void testUnsubscribeOnQueueSession() throws JMSException {
+        assertThrows(IllegalStateException.class, () -> {
+            queueSession.unsubscribe("subscriptionName");
+        });
     }
 }

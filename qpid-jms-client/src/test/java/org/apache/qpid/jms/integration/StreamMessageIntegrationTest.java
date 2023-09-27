@@ -19,12 +19,12 @@
 package org.apache.qpid.jms.integration;
 
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,7 +54,8 @@ import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompos
 import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedAmqpSequenceMatcher;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 public class StreamMessageIntegrationTest extends QpidJmsTestCase {
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
@@ -66,7 +67,8 @@ public class StreamMessageIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceiveBasicStreamMessage() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -118,21 +120,21 @@ public class StreamMessageIntegrationTest extends QpidJmsTestCase {
             Message receivedMessage = messageConsumer.receive(3000);
 
             //verify the content is as expected
-            assertNotNull("Message was not received", receivedMessage);
-            assertTrue("Message was not a MapMessage", receivedMessage instanceof StreamMessage);
+            assertNotNull(receivedMessage, "Message was not received");
+            assertTrue(receivedMessage instanceof StreamMessage, "Message was not a MapMessage");
             StreamMessage receivedStreamMessage  = (StreamMessage) receivedMessage;
 
-            assertEquals("Unexpected boolean value", myBool, receivedStreamMessage.readBoolean());
-            assertEquals("Unexpected byte value", myByte, receivedStreamMessage.readByte());
+            assertEquals(myBool, receivedStreamMessage.readBoolean(), "Unexpected boolean value");
+            assertEquals(myByte, receivedStreamMessage.readByte(), "Unexpected byte value");
             byte[] readBytes = (byte[]) receivedStreamMessage.readObject();//using readObject to get a new byte[]
-            assertArrayEquals("Read bytes were not as expected", myBytes, readBytes);
-            assertEquals("Unexpected char value", myChar, receivedStreamMessage.readChar());
-            assertEquals("Unexpected double value", myDouble, receivedStreamMessage.readDouble(), 0.0);
-            assertEquals("Unexpected float value", myFloat, receivedStreamMessage.readFloat(), 0.0);
-            assertEquals("Unexpected int value", myInt, receivedStreamMessage.readInt());
-            assertEquals("Unexpected long value", myLong, receivedStreamMessage.readLong());
-            assertEquals("Unexpected short value", myShort, receivedStreamMessage.readShort());
-            assertEquals("Unexpected UTF value", myString, receivedStreamMessage.readString());
+            assertArrayEquals(myBytes, readBytes, "Read bytes were not as expected");
+            assertEquals(myChar, receivedStreamMessage.readChar(), "Unexpected char value");
+            assertEquals(myDouble, receivedStreamMessage.readDouble(), 0.0, "Unexpected double value");
+            assertEquals(myFloat, receivedStreamMessage.readFloat(), 0.0, "Unexpected float value");
+            assertEquals(myInt, receivedStreamMessage.readInt(), "Unexpected int value");
+            assertEquals(myLong, receivedStreamMessage.readLong(), "Unexpected long value");
+            assertEquals(myShort, receivedStreamMessage.readShort(), "Unexpected short value");
+            assertEquals(myString, receivedStreamMessage.readString(), "Unexpected UTF value");
 
             assertFalse(receivedStreamMessage.isBodyAssignableTo(String.class));
             assertFalse(receivedStreamMessage.isBodyAssignableTo(Object.class));
@@ -178,7 +180,8 @@ public class StreamMessageIntegrationTest extends QpidJmsTestCase {
      * an AmqpValue section containing a list which holds entries of the various supported entry
      * types with the expected values.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendBasicStreamMessage() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -272,7 +275,8 @@ public class StreamMessageIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSentStreamMessageIsReadOnly() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -320,7 +324,8 @@ public class StreamMessageIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAsyncSendDoesNotMarkStreamMessageReadOnly() throws Exception {
         try(TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
@@ -428,7 +433,8 @@ public class StreamMessageIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAsyncCompletionSendMarksStreamMessageReadOnly() throws Exception {
         try(TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);

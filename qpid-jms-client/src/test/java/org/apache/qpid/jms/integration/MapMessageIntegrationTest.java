@@ -19,12 +19,12 @@
 package org.apache.qpid.jms.integration;
 
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -55,7 +55,8 @@ import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompos
 import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedAmqpValueMatcher;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 public class MapMessageIntegrationTest extends QpidJmsTestCase {
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
@@ -67,7 +68,8 @@ public class MapMessageIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an error occurs during the test.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testReceiveBasicMapMessage() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -132,23 +134,23 @@ public class MapMessageIntegrationTest extends QpidJmsTestCase {
             Message receivedMessage = messageConsumer.receive(3000);
 
             // verify the content is as expected
-            assertNotNull("Message was not received", receivedMessage);
-            assertTrue("Message was not a MapMessage", receivedMessage instanceof MapMessage);
+            assertNotNull(receivedMessage, "Message was not received");
+            assertTrue(receivedMessage instanceof MapMessage, "Message was not a MapMessage");
             MapMessage receivedMapMessage = (MapMessage) receivedMessage;
 
-            assertEquals("Unexpected boolean value", myBool, receivedMapMessage.getBoolean(myBoolKey));
-            assertEquals("Unexpected byte value", myByte, receivedMapMessage.getByte(myByteKey));
+            assertEquals(myBool, receivedMapMessage.getBoolean(myBoolKey), "Unexpected boolean value");
+            assertEquals(myByte, receivedMapMessage.getByte(myByteKey), "Unexpected byte value");
             byte[] readBytes = receivedMapMessage.getBytes(myBytesKey);
-            assertTrue("Read bytes were not as expected: " + Arrays.toString(readBytes), Arrays.equals(myBytes, readBytes));
-            assertEquals("Unexpected char value", myChar, receivedMapMessage.getChar(myCharKey));
-            assertEquals("Unexpected double value", myDouble, receivedMapMessage.getDouble(myDoubleKey), 0.0);
-            assertEquals("Unexpected float value", myFloat, receivedMapMessage.getFloat(myFloatKey), 0.0);
-            assertEquals("Unexpected int value", myInt, receivedMapMessage.getInt(myIntKey));
-            assertEquals("Unexpected long value", myLong, receivedMapMessage.getLong(myLongKey));
-            assertEquals("Unexpected short value", myShort, receivedMapMessage.getShort(myShortKey));
-            assertEquals("Unexpected UTF value", myString, receivedMapMessage.getString(myStringKey));
-            assertEquals("Unexpected value", "", receivedMapMessage.getString(myEmptyStringKey));
-            assertNull("Unexpected value", receivedMapMessage.getString(myNullStringKey));
+            assertTrue(Arrays.equals(myBytes, readBytes), "Read bytes were not as expected: " + Arrays.toString(readBytes));
+            assertEquals(myChar, receivedMapMessage.getChar(myCharKey), "Unexpected char value");
+            assertEquals(myDouble, receivedMapMessage.getDouble(myDoubleKey), 0.0, "Unexpected double value");
+            assertEquals(myFloat, receivedMapMessage.getFloat(myFloatKey), 0.0, "Unexpected float value");
+            assertEquals(myInt, receivedMapMessage.getInt(myIntKey), "Unexpected int value");
+            assertEquals(myLong, receivedMapMessage.getLong(myLongKey), "Unexpected long value");
+            assertEquals(myShort, receivedMapMessage.getShort(myShortKey), "Unexpected short value");
+            assertEquals(myString, receivedMapMessage.getString(myStringKey), "Unexpected UTF value");
+            assertEquals("", receivedMapMessage.getString(myEmptyStringKey), "Unexpected value");
+            assertNull(receivedMapMessage.getString(myNullStringKey), "Unexpected value");
 
             assertTrue(receivedMapMessage.isBodyAssignableTo(Map.class));
             assertTrue(receivedMapMessage.isBodyAssignableTo(Object.class));
@@ -179,7 +181,8 @@ public class MapMessageIntegrationTest extends QpidJmsTestCase {
      * This doesn't happen in the above test as the reversed roles mean it is protons DecoderImpl doing the decoding
      * and it does a similarly ugly cast on the integer value to char before output.
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendBasicMapMessage() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -274,7 +277,8 @@ public class MapMessageIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSendMapMessageIsWritable() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -328,7 +332,8 @@ public class MapMessageIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAsyncSendDoesNotMarkMapMessageReadOnly() throws Exception {
         try(TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
@@ -431,7 +436,8 @@ public class MapMessageIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAsyncCompletionSendMarksMapMessageReadOnly() throws Exception {
         try(TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);

@@ -56,10 +56,9 @@ import org.apache.activemq.security.SimpleAuthenticationPlugin;
 import org.apache.activemq.security.TempDestinationAuthorizationEntry;
 import org.apache.activemq.store.kahadb.KahaDBStore;
 import org.apache.activemq.util.JMXSupport;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.rules.TestName;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,8 +71,6 @@ public class QpidJmsTestSupport {
 
     public static final String KAHADB_DIRECTORY = "target/activemq-data";
 
-    @Rule public TestName name = new TestName();
-
     protected static final Logger LOG = LoggerFactory.getLogger(QpidJmsTestSupport.class);
     protected BrokerService brokerService;
     protected final List<BrokerService> brokers = new ArrayList<BrokerService>();
@@ -81,15 +78,17 @@ public class QpidJmsTestSupport {
     protected int numberOfMessages;
     protected Connection connection;
 
-    @Before
-    public void setUp() throws Exception {
+    protected String testMethodName;
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
+        this.testMethodName = testInfo.getTestMethod().get().getName();
         LOG.info("========== setUp " + getTestName() + " ==========");
         exceptions.clear();
         startPrimaryBroker();
         this.numberOfMessages = 2000;
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         LOG.info("========== tearDown " + getTestName() + " ==========");
         Exception firstError = null;
@@ -125,7 +124,7 @@ public class QpidJmsTestSupport {
     }
 
     public String getDestinationName() {
-        return name.getMethodName();
+        return testMethodName;
     }
 
     public URI getBrokerActiveMQClientConnectionURI() {
@@ -386,7 +385,7 @@ public class QpidJmsTestSupport {
     protected void sendToAmqQueue(int count) throws Exception {
         Connection activemqConnection = createActiveMQConnection();
         Session amqSession = activemqConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue amqTestQueue = amqSession.createQueue(name.getMethodName());
+        Queue amqTestQueue = amqSession.createQueue(testMethodName);
         sendMessages(activemqConnection, amqTestQueue, count);
         activemqConnection.close();
     }
@@ -394,7 +393,7 @@ public class QpidJmsTestSupport {
     protected void sendToAmqTopic(int count) throws Exception {
         Connection activemqConnection = createActiveMQConnection();
         Session amqSession = activemqConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Topic amqTestTopic = amqSession.createTopic(name.getMethodName());
+        Topic amqTestTopic = amqSession.createTopic(testMethodName);
         sendMessages(activemqConnection, amqTestTopic, count);
         activemqConnection.close();
     }
@@ -483,6 +482,6 @@ public class QpidJmsTestSupport {
     }
 
     protected String getTestName() {
-        return getClass().getSimpleName() + "." + name.getMethodName();
+        return getClass().getSimpleName() + "." + testMethodName;
     }
 }

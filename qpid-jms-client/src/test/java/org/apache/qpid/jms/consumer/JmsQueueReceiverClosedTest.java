@@ -16,6 +16,8 @@
  */
 package org.apache.qpid.jms.consumer;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import javax.jms.Queue;
 import javax.jms.QueueConnection;
 import javax.jms.QueueReceiver;
@@ -23,8 +25,10 @@ import javax.jms.QueueSession;
 import javax.jms.Session;
 
 import org.apache.qpid.jms.JmsConnectionTestSupport;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Tests QueueReceiver method contracts after the QueueReceiver is closed.
@@ -36,30 +40,39 @@ public class JmsQueueReceiverClosedTest extends JmsConnectionTestSupport {
     protected void createTestResources() throws Exception {
         connection = createQueueConnectionToMockProvider();
         QueueSession session = ((QueueConnection) connection).createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue destination = session.createQueue(_testName.getMethodName());
+        Queue destination = session.createQueue(_testMethodName);
         receiver = session.createReceiver(destination);
         receiver.close();
     }
 
     @Override
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
+        super.setUp(testInfo);
         createTestResources();
     }
 
-    @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testGetMessageListenerFails() throws Exception {
-        receiver.getMessageListener();
+        assertThrows(javax.jms.IllegalStateException.class, () -> {
+            receiver.getMessageListener();
+        });
     }
 
-    @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testGetMessageSelectorFails() throws Exception {
-        receiver.getMessageSelector();
+        assertThrows(javax.jms.IllegalStateException.class, () -> {
+            receiver.getMessageSelector();
+        });
     }
 
-    @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
+    @Test
+    @Timeout(30)
     public void testGetTopicFails() throws Exception {
-        receiver.getQueue();
+        assertThrows(javax.jms.IllegalStateException.class, () -> {
+            receiver.getQueue();
+        });
     }
 }

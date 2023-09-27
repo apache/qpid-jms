@@ -31,12 +31,12 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.net.URI;
@@ -77,23 +77,21 @@ import org.apache.qpid.jms.test.testpeer.basictypes.ConnectionError;
 import org.apache.qpid.jms.test.testpeer.matchers.CoordinatorMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompositeMatcher;
 import org.apache.qpid.jms.util.MetaDataSupport;
-import org.apache.qpid.jms.util.QpidJMSTestRunner;
-import org.apache.qpid.jms.util.Repeat;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.apache.qpid.proton.amqp.transaction.TxnCapability;
 import org.apache.qpid.proton.engine.impl.AmqpHeader;
 import org.hamcrest.Matcher;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
-@RunWith(QpidJMSTestRunner.class)
 public class ConnectionIntegrationTest extends QpidJmsTestCase {
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateAndCloseConnection() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -102,12 +100,14 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testCreateConnectionToNonSaslPeer() throws Exception {
         doConnectionWithUnexpectedHeaderTestImpl(AmqpHeader.HEADER);
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testCreateConnectionToNonAmqpPeer() throws Exception {
         byte[] responseHeader = new byte[] { 'N', 'O', 'T', '-', 'A', 'M', 'Q', 'P' };
         doConnectionWithUnexpectedHeaderTestImpl(responseHeader);
@@ -128,7 +128,8 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCloseConnectionTimesOut() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
@@ -137,14 +138,15 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             testPeer.expectClose(false);
 
             connection.start();
-            assertNotNull("Connection should not be null", connection);
+            assertNotNull(connection, "Connection should not be null");
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCloseConnectionCompletesWhenConnectionDropsBeforeResponse() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
@@ -153,14 +155,15 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             testPeer.dropAfterLastHandler();
 
             connection.start();
-            assertNotNull("Connection should not be null", connection);
+            assertNotNull(connection, "Connection should not be null");
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateConnectionWithClientId() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, false, null, null, null, true);
@@ -169,43 +172,47 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateAutoAckSession() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
             testPeer.expectBegin();
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            assertNotNull("Session should not be null", session);
+            assertNotNull(session, "Session should not be null");
             testPeer.expectClose();
             connection.close();
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateAutoAckSessionByDefault() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
             testPeer.expectBegin();
             Session session = connection.createSession();
-            assertNotNull("Session should not be null", session);
+            assertNotNull(session, "Session should not be null");
             testPeer.expectClose();
             connection.close();
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateAutoAckSessionUsingAckModeOnlyMethod() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
             testPeer.expectBegin();
             Session session = connection.createSession(Session.AUTO_ACKNOWLEDGE);
-            assertNotNull("Session should not be null", session);
+            assertNotNull(session, "Session should not be null");
             testPeer.expectClose();
             connection.close();
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateTransactedSession() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -225,13 +232,14 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             testPeer.expectClose();
 
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
-            assertNotNull("Session should not be null", session);
+            assertNotNull(session, "Session should not be null");
 
             connection.close();
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateTransactedSessionUsingAckModeOnlyMethod() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -251,13 +259,14 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             testPeer.expectClose();
 
             Session session = connection.createSession(Session.SESSION_TRANSACTED);
-            assertNotNull("Session should not be null", session);
+            assertNotNull(session, "Session should not be null");
 
             connection.close();
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateTransactedSessionFailsWhenNoDetachResponseSent() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -287,7 +296,8 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRemotelyCloseConnectionDuringSessionCreation() throws Exception {
         final String BREAD_CRUMB = "ErrorMessageBreadCrumb";
 
@@ -303,8 +313,8 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
                 fail("Expected exception to be thrown");
             } catch (JMSException jmse) {
                 // Expected
-                assertNotNull("Expected exception to have a message", jmse.getMessage());
-                assertTrue("Expected breadcrumb to be present in message", jmse.getMessage().contains(BREAD_CRUMB));
+                assertNotNull(jmse.getMessage(), "Expected exception to have a message");
+                assertTrue(jmse.getMessage().contains(BREAD_CRUMB), "Expected breadcrumb to be present in message");
             }
 
             testPeer.waitForAllHandlersToComplete(3000);
@@ -313,7 +323,8 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRemotelyDropConnectionDuringSessionCreation() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -335,8 +346,8 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRemotelyDropConnectionDuringSessionCreationTransacted() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             testPeer.expectSaslAnonymous();
@@ -360,7 +371,7 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
                 // Expected
             }
 
-            assertTrue("Exception listener did not fire", exceptionListenerFired.await(5, TimeUnit.SECONDS));
+            assertTrue(exceptionListenerFired.await(5, TimeUnit.SECONDS), "Exception listener did not fire");
 
             testPeer.waitForAllHandlersToComplete(3000);
 
@@ -368,7 +379,8 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testConnectionPropertiesContainExpectedMetaData() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
@@ -391,13 +403,15 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testMaxFrameSizeOptionCommunicatedInOpen() throws Exception {
         int frameSize = 39215;
         doMaxFrameSizeOptionTestImpl(frameSize, UnsignedInteger.valueOf(frameSize));
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testMaxFrameSizeOptionCommunicatedInOpenDefault() throws Exception {
         doMaxFrameSizeOptionTestImpl(-1, UnsignedInteger.MAX_VALUE);
     }
@@ -421,7 +435,8 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testMaxFrameSizeInfluencesOutgoingFrameSize() throws Exception {
         doMaxFrameSizeInfluencesOutgoingFrameSizeTestImpl(1000, 10001, 11);
         doMaxFrameSizeInfluencesOutgoingFrameSizeTestImpl(1500, 6001, 5);
@@ -476,18 +491,21 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
         return payload;
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAmqpHostnameSetByDefault() throws Exception {
         doAmqpHostnameTestImpl("localhost", false, equalTo("localhost"));
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAmqpHostnameSetByVhostOption() throws Exception {
         String vhost = "myAmqpHost";
         doAmqpHostnameTestImpl(vhost, true, equalTo(vhost));
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAmqpHostnameNotSetWithEmptyVhostOption() throws Exception {
         doAmqpHostnameTestImpl("", true, nullValue());
     }
@@ -517,7 +535,8 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRemotelyEndConnectionListenerInvoked() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             final CountDownLatch done = new CountDownLatch(1);
@@ -540,7 +559,7 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             // Trigger the underlying AMQP connection
             connection.start();
 
-            assertTrue("Connection should report failure", done.await(5, TimeUnit.SECONDS));
+            assertTrue(done.await(5, TimeUnit.SECONDS), "Connection should report failure");
 
             testPeer.waitForAllHandlersToComplete(1000);
 
@@ -548,7 +567,8 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRemotelyEndConnectionWithRedirect() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             final CountDownLatch done = new CountDownLatch(1);
@@ -582,7 +602,7 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             // Trigger the underlying AMQP connection
             connection.start();
 
-            assertTrue("Connection should report failure", done.await(5, TimeUnit.SECONDS));
+            assertTrue(done.await(5, TimeUnit.SECONDS), "Connection should report failure");
 
             assertTrue(asyncError.get() instanceof JMSException);
             assertTrue(asyncError.get().getCause() instanceof ProviderConnectionRedirectedException);
@@ -591,7 +611,7 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             URI redirectionURI = redirect.getRedirectionURI();
 
             assertNotNull(redirectionURI);
-            assertTrue(redirectVhost, redirectionURI.getQuery().contains("amqp.vhost=" + redirectVhost));
+            assertTrue(redirectionURI.getQuery().contains("amqp.vhost=" + redirectVhost), "Unexpected query, got: " + redirectionURI.getQuery());
             assertEquals(redirectNetworkHost, redirectionURI.getHost());
             assertEquals(redirectPort, redirectionURI.getPort());
 
@@ -601,7 +621,8 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRemotelyEndConnectionWithSessionWithConsumer() throws Exception {
         final String BREAD_CRUMB = "ErrorMessage";
 
@@ -620,12 +641,12 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             MessageConsumer consumer = session.createConsumer(queue);
 
             testPeer.waitForAllHandlersToComplete(1000);
-            assertTrue("connection never closed.", Wait.waitFor(new Wait.Condition() {
+            assertTrue(Wait.waitFor(new Wait.Condition() {
                 @Override
                 public boolean isSatisfied() throws Exception {
                     return !((JmsConnection) connection).isConnected();
                 }
-            }, 10000, 10));
+            }, 10000, 10), "connection never closed.");
 
             try {
                 connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -664,8 +685,9 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
-    public void  testRemotelyEndConnectionWithSessionWithProducerWithSendWaitingOnCredit() throws Exception {
+    @Test
+    @Timeout(20)
+    public void testRemotelyEndConnectionWithSessionWithProducerWithSendWaitingOnCredit() throws Exception {
         final String BREAD_CRUMB = "ErrorMessageBreadCrumb";
 
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
@@ -690,8 +712,8 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
                 fail("Expected exception to be thrown");
             } catch (ResourceAllocationException jmse) {
                 // Expected
-                assertNotNull("Expected exception to have a message", jmse.getMessage());
-                assertTrue("Expected breadcrumb to be present in message", jmse.getMessage().contains(BREAD_CRUMB));
+                assertNotNull(jmse.getMessage(), "Expected exception to have a message");
+                assertTrue(jmse.getMessage().contains(BREAD_CRUMB), "Expected breadcrumb to be present in message");
             } catch (Throwable t) {
                 fail("Caught unexpected exception: " + t);
             }
@@ -702,8 +724,9 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
-    public void  testRemotelyEndConnectionWithSessionWithProducerWithSendWaitingOnOutcome() throws Exception {
+    @Test
+    @Timeout(20)
+    public void testRemotelyEndConnectionWithSessionWithProducerWithSendWaitingOnOutcome() throws Exception {
         final String BREAD_CRUMB = "ErrorMessageBreadCrumb";
 
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
@@ -728,8 +751,8 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
                 fail("Expected exception to be thrown");
             } catch (JmsConnectionRemotelyClosedException jmse) {
                 // Expected
-                assertNotNull("Expected exception to have a message", jmse.getMessage());
-                assertTrue("Expected breadcrumb to be present in message", jmse.getMessage().contains(BREAD_CRUMB));
+                assertNotNull(jmse.getMessage(), "Expected exception to have a message");
+                assertTrue(jmse.getMessage().contains(BREAD_CRUMB), "Expected breadcrumb to be present in message");
             } catch (Throwable t) {
                 fail("Caught unexpected exception: " + t);
             }
@@ -740,7 +763,8 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateConnectionWithServerSendingPreemptiveData() throws Exception {
         boolean sendServerSaslHeaderPreEmptively = true;
         try (TestAmqpPeer testPeer = new TestAmqpPeer(null, false, sendServerSaslHeaderPreEmptively);) {
@@ -758,7 +782,8 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testDontAwaitClientIDBeforeOpen() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
@@ -783,12 +808,14 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testWaitForClientIDDoesNotOpenUntilPromptedWithSetClientID() throws Exception {
         doTestWaitForClientIDDoesNotOpenUntilPrompted(true);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testWaitForClientIDDoesNotOpenUntilPromptedWithStart() throws Exception {
         doTestWaitForClientIDDoesNotOpenUntilPrompted(false);
     }
@@ -821,7 +848,8 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testUseDaemonThreadURIOption() throws Exception {
         doUseDaemonThreadTestImpl(null);
         doUseDaemonThreadTestImpl(false);
@@ -858,7 +886,7 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
 
             connection.start();
 
-            assertTrue("Connection established callback didn't trigger", connectionEstablished.await(5, TimeUnit.SECONDS));
+            assertTrue(connectionEstablished.await(5, TimeUnit.SECONDS), "Connection established callback didn't trigger");
 
             testPeer.expectClose();
             connection.close();
@@ -875,7 +903,8 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testConnectionWithPreemptiveServerOpen() throws Exception {
 
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
@@ -909,7 +938,8 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testConnectionPropertiesExtensionAddedValues() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             final String property1 = "property1";
@@ -953,7 +983,8 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testConnectionPropertiesExtensionAddedValuesOfNonString() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             final String property1 = "property1";
@@ -992,7 +1023,8 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testConnectionPropertiesExtensionProtectsClientProperties() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
@@ -1028,7 +1060,8 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testConnectionFailsWhenUserSuppliesIllegalProperties() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
@@ -1061,8 +1094,9 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Ignore("Disabled due to requirement of hard coded port")
-    @Test(timeout = 20000)
+    @Disabled("Disabled due to requirement of hard coded port")
+    @Test
+    @Timeout(20)
     public void testLocalPortOption() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             testPeer.expectSaslAnonymous();

@@ -18,8 +18,8 @@ package org.apache.qpid.jms.meta;
 
 import org.apache.qpid.jms.JmsTemporaryTopic;
 import org.apache.qpid.jms.util.IdGenerator;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  *
@@ -32,7 +32,7 @@ public class JmsDefaultResourceVisitorTest {
     private JmsConsumerId consumerId;
     private JmsTransactionId transactionId;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         IdGenerator generator = new IdGenerator();
 

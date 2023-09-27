@@ -19,12 +19,12 @@ package org.apache.qpid.jms.message;
 import static org.apache.qpid.jms.message.JmsMessageSupport.ACCEPTED;
 import static org.apache.qpid.jms.message.JmsMessageSupport.JMS_AMQP_ACK_TYPE;
 import static org.apache.qpid.jms.message.JmsMessageSupport.RELEASED;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.Serializable;
 import java.util.Enumeration;
@@ -50,8 +50,8 @@ import org.apache.qpid.jms.JmsTopic;
 import org.apache.qpid.jms.message.facade.JmsMessageFacade;
 import org.apache.qpid.jms.message.facade.test.JmsTestMessageFacade;
 import org.apache.qpid.jms.message.facade.test.JmsTestMessageFactory;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,7 +74,7 @@ public class JmsMessageTest {
     private long jmsTimestamp;
     private long[] consumerIDs;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         this.jmsMessageID = "ID:TEST-ID:0:0:0:1";
         this.jmsCorrelationID = "testcorrelationid";
@@ -445,9 +445,9 @@ public class JmsMessageTest {
         assertTrue(testFacade.propertyExists(invalidPropName));
 
         if(!disableValidation) {
-            assertFalse("Property should be indicated to not exist", msg.propertyExists(invalidPropName));
+            assertFalse(msg.propertyExists(invalidPropName), "Property should be indicated to not exist");
         } else {
-            assertTrue("Property should be indicated to exist", msg.propertyExists(invalidPropName));
+            assertTrue(msg.propertyExists(invalidPropName), "Property should be indicated to exist");
         }
     }
 
@@ -575,10 +575,10 @@ public class JmsMessageTest {
             jmsxNameFound |= element.equals(jmsxName);
             headerNameFound1 |= element.equals(headerName);
         }
-        assertTrue("prop name not found", propNameFound);
-        assertTrue("jmsx prop name not found", jmsxNameFound);
+        assertTrue(propNameFound, "prop name not found");
+        assertTrue(jmsxNameFound, "jmsx prop name not found");
         // spec compliance, only non-'JMS header' props returned
-        assertFalse("header name should not have been found", headerNameFound1);
+        assertFalse(headerNameFound1, "header name should not have been found");
     }
 
     @Test
@@ -626,18 +626,18 @@ public class JmsMessageTest {
         }
 
         if (!disableValidation) {
-            assertFalse("Invalid prop name 1 was found", invalidPropName1Found);
-            assertFalse("Invalid prop name 2 was found", invalidPropName2Found);
+            assertFalse(invalidPropName1Found, "Invalid prop name 1 was found");
+            assertFalse(invalidPropName2Found, "Invalid prop name 2 was found");
         } else {
-            assertTrue("Invalid prop name 1 was not found", invalidPropName1Found);
-            assertTrue("Invalid prop name 2 was not found", invalidPropName2Found);
+            assertTrue(invalidPropName1Found, "Invalid prop name 1 was not found");
+            assertTrue(invalidPropName2Found, "Invalid prop name 2 was not found");
         }
-        assertTrue("valid prop name was not found", validPropNameFound);
+        assertTrue(validPropNameFound, "valid prop name was not found");
     }
 
     @Test
     @SuppressWarnings("rawtypes")
-    public void testGetAllPropertyNames() throws JMSException {
+    void testGetAllPropertyNames() throws JMSException {
         JmsMessage msg = factory.createMessage();
         String name1 = "floatProperty";
         msg.setFloatProperty(name1, 1.3f);
@@ -654,9 +654,9 @@ public class JmsMessageTest {
             found2 |= element.equals(name2);
             found3 |= element.equals(name3);
         }
-        assertTrue("prop name1 found", found1);
-        assertTrue("prop name2 found", found2);
-        assertTrue("prop name4 found", found3);
+        assertTrue(found1, "prop name1 found");
+        assertTrue(found2, "prop name2 found");
+        assertTrue(found3, "prop name4 found");
     }
 
     @Test
@@ -755,7 +755,7 @@ public class JmsMessageTest {
         JmsMessage msg = factory.createMessage();
         msg.setIntProperty("JMSXDeliveryCount", 1);
         int count = msg.getIntProperty("JMSXDeliveryCount");
-        assertTrue("expected delivery count = 1 - got: " + count, count == 1);
+        assertTrue(count == 1, "expected delivery count = 1 - got: " + count);
     }
 
     @Test
@@ -1525,11 +1525,11 @@ public class JmsMessageTest {
         JmsAcknowledgeCallback callback = new JmsAcknowledgeCallback(session);
         message.setAcknowledgeCallback(callback);
 
-        assertEquals("Unexpected ack type value", ACCEPTED, callback.getAckType());
+        assertEquals(ACCEPTED, callback.getAckType(), "Unexpected ack type value");
 
         message.setIntProperty(JMS_AMQP_ACK_TYPE, RELEASED);
 
-        assertEquals("Unexpected ack type value after setting prop", RELEASED, callback.getAckType());
+        assertEquals(RELEASED, callback.getAckType(), "Unexpected ack type value after setting prop");
     }
 
     //--------- Test isBodyAssignableTo method -------------------------------//

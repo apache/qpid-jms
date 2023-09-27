@@ -18,16 +18,17 @@
  */
 package org.apache.qpid.jms.integration;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.util.ArrayDeque;
@@ -74,29 +75,26 @@ import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageAnnotationsSec
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageHeaderSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompositeMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedAmqpValueMatcher;
-import org.apache.qpid.jms.util.QpidJMSTestRunner;
-import org.apache.qpid.jms.util.Repeat;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
-import org.hamcrest.MatcherAssert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Tests for behavior of Transacted Session operations.
  */
-@RunWith(QpidJMSTestRunner.class)
 public class TransactionsIntegrationTest extends QpidJmsTestCase {
 
     private static final Logger LOG = LoggerFactory.getLogger(TransactionsIntegrationTest.class);
 
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testTransactionRolledBackOnSessionClose() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -123,7 +121,8 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testTransactionCommitFailWithEmptyRejectedDisposition() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -187,7 +186,8 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testProducedMessagesAfterCommitOfSentMessagesFails() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -266,7 +266,8 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testProducedMessagesAfterRollbackSentMessagesFails() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -345,32 +346,38 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testCommitTransactedSessionWithConsumerReceivingAllMessages() throws Exception {
         doCommitTransactedSessionWithConsumerTestImpl(1, 1, false, false);
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testCommitTransactedSessionWithConsumerReceivingAllMessagesAndCloseBefore() throws Exception {
         doCommitTransactedSessionWithConsumerTestImpl(1, 1, true, true);
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testCommitTransactedSessionWithConsumerReceivingAllMessagesAndCloseAfter() throws Exception {
         doCommitTransactedSessionWithConsumerTestImpl(1, 1, true, false);
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testCommitTransactedSessionWithConsumerReceivingSomeMessages() throws Exception {
         doCommitTransactedSessionWithConsumerTestImpl(5, 2, false, false);
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testCommitTransactedSessionWithConsumerReceivingSomeMessagesAndClosesBefore() throws Exception {
         doCommitTransactedSessionWithConsumerTestImpl(5, 2, true, true);
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testCommitTransactedSessionWithConsumerReceivingSomeMessagesAndClosesAfter() throws Exception {
         doCommitTransactedSessionWithConsumerTestImpl(5, 2, true, false);
     }
@@ -424,7 +431,7 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             }
 
             // Ensure all the messages arrived so that the matching below is deterministic
-            assertTrue("Expected transfers didnt occur: " + expected.getCount(), expected.await(10, TimeUnit.SECONDS));
+            assertTrue(expected.await(10, TimeUnit.SECONDS), "Expected transfers didnt occur: " + expected.getCount());
 
             // Expect the consumer to close now
             if (closeConsumer && closeBeforeCommit) {
@@ -485,7 +492,8 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testConsumerWithNoMessageCanCloseBeforeCommit() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -532,7 +540,8 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testConsumerWithNoMessageCanCloseBeforeRollback() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -579,7 +588,8 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testProducedMessagesOnTransactedSessionCarryTxnId() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -627,7 +637,8 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testProducedMessagesOnTransactedSessionCanBeReused() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -684,22 +695,26 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testRollbackTransactedSessionWithConsumerReceivingAllMessages() throws Exception {
         doRollbackTransactedSessionWithConsumerTestImpl(1, 1, false);
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testRollbackTransactedSessionWithConsumerReceivingAllMessagesThenCloses() throws Exception {
         doRollbackTransactedSessionWithConsumerTestImpl(1, 1, true);
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testRollbackTransactedSessionWithConsumerReceivingSomeMessages() throws Exception {
         doRollbackTransactedSessionWithConsumerTestImpl(5, 2, false);
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testRollbackTransactedSessionWithConsumerReceivingSomeMessagesThenCloses() throws Exception {
         doRollbackTransactedSessionWithConsumerTestImpl(5, 2, true);
     }
@@ -796,7 +811,8 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testRollbackTransactedSessionWithPrefetchFullBeforeStoppingConsumer() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             final int messageCount = 5;
@@ -862,7 +878,8 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testRollbackTransactedSessionWithPrefetchFullyUtilisedByDrainWhenStoppingConsumer() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             final int messageCount = 5;
@@ -933,7 +950,8 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testDefaultOutcomeIsModifiedForConsumerSourceOnTransactedSession() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -970,7 +988,8 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testCoordinatorLinkSupportedOutcomes() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1001,7 +1020,8 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testRollbackErrorCoordinatorClosedOnCommit() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1035,7 +1055,8 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testRollbackErrorWhenCoordinatorRemotelyClosed() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1071,7 +1092,8 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testJMSErrorCoordinatorClosedOnRollback() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1105,7 +1127,8 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testJMSExceptionOnRollbackWhenCoordinatorRemotelyClosed() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1141,7 +1164,8 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testSendAfterCoordinatorLinkClosedDuringTX() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1191,7 +1215,8 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testReceiveAfterCoordinatorLinkClosedDuringTX() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1246,7 +1271,8 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testSessionCreateFailsOnDeclareTimeout() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
@@ -1275,7 +1301,8 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testSessionCreateFailsOnDeclareRejection() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1304,7 +1331,8 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testSessionCreateFailsOnCoordinatorLinkRefusal() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1325,7 +1353,7 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
                 fail("should have thrown");
             } catch (JMSException jmse) {
                 assertNotNull(jmse.getMessage());
-                assertTrue("Expected exception message to contain breadcrumb", jmse.getMessage().contains(errorMessage));
+                assertTrue(jmse.getMessage().contains(errorMessage), "Expected exception message to contain breadcrumb");
             }
 
             testPeer.expectClose();
@@ -1335,7 +1363,8 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testTransactionRolledBackOnSessionCloseTimesOut() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
@@ -1369,7 +1398,8 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testTransactionRolledBackTimesOut() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
@@ -1410,7 +1440,8 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testTransactionCommitTimesOut() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
@@ -1451,7 +1482,8 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testTransactionCommitTimesOutAndNoNextBeginTimesOut() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
@@ -1494,7 +1526,8 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRollbackWithNoResponseForSuspendConsumer() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?amqp.drainTimeout=1000");
@@ -1553,8 +1586,8 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=30000)
-    @Repeat(repetitions = 1)
+    @Test
+    @Timeout(30)
     public void testConsumerMessageOrderOnTransactedSession() throws IOException, Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1614,7 +1647,8 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=60000)
+    @Test
+    @Timeout(60)
     public void testConsumeManyWithSingleTXPerMessage() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1688,8 +1722,8 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Repeat(repetitions = 1)
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testTransactionDeclaredDispositionWithoutTxnId() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1721,11 +1755,11 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
                 // Expected
             }
 
-            assertTrue("The ExceptionListener should have been alerted", exceptionListenerFired.await(3, TimeUnit.SECONDS));
+            assertTrue(exceptionListenerFired.await(3, TimeUnit.SECONDS), "The ExceptionListener should have been alerted");
             JMSException ex = failure.get();
-            assertTrue("Unexpected exception type: " + ex, ex instanceof JmsConnectionFailedException);
+            assertTrue(ex instanceof JmsConnectionFailedException, "Unexpected exception type: " + ex);
 
-            MatcherAssert.assertThat("Unexpected exception type: ", ex.getMessage(),
+            assertThat("Unexpected exception type: ", ex.getMessage(),
                     equalTo("The JMS connection has failed: Error in proton Transport: The txn-id field cannot be omitted [condition = amqp:decode-error]"));
 
             testPeer.waitForAllHandlersToComplete(1000);
@@ -1734,7 +1768,8 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 30_000)
+    @Test
+    @Timeout(30)
     public void testAsyncConsumerAcksAfterCommitAndBeginWhenCommitCalledInOnMessage() throws Exception {
         final Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
 

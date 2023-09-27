@@ -21,7 +21,8 @@ import java.net.URI;
 import org.apache.qpid.jms.test.proxy.TestProxy;
 import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.transports.TransportOptions;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Test the NettyWsTransport with channel level security enabled.
@@ -42,12 +43,14 @@ public class NettyWssTransportTest extends NettySslTransportTest {
         }
     }
 
-    @Test(timeout = 60 * 1000)
+    @Test
+    @Timeout(60)
     public void testConnectViaHttpProxyToServerVerifyHost() throws Exception {
         doConnectToServerVerifyHostTestImpl(true, TestProxy.ProxyType.HTTP);
     }
 
-    @Test(timeout = 60 * 1000)
+    @Test
+    @Timeout(60)
     public void testConnectViaHttpProxyToServerNoVerifyHost() throws Exception {
         doConnectToServerVerifyHostTestImpl(false, TestProxy.ProxyType.HTTP);
     }

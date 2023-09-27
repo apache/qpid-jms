@@ -23,9 +23,11 @@ import java.util.Random;
 import javax.jms.Connection;
 
 import org.apache.qpid.jms.support.AmqpTestSupport;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Test for creation of several open connections in a series of randomly
@@ -41,30 +43,33 @@ public class JmsConnectionInRandomBatchesTest extends AmqpTestSupport  {
     private final int MAX_BATCH_ITERATIONS = 10;
 
     @Override
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
+        super.setUp(testInfo);
         batchSizeGenerator.setSeed(System.nanoTime());
-        super.setUp();
     }
 
     @Override
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         doCloseConnectionBatch();
         super.tearDown();
     }
 
-    @Test(timeout = 60 * 1000)
+    @Test
+    @Timeout(60)
     public void testSingleBatch() throws Exception {
         doCreateConnectionBatch(MAX_BATCH_SIZE);
     }
 
-    @Test(timeout = 60 * 1000)
+    @Test
+    @Timeout(60)
     public void testCreateManyBatches() throws Exception {
         doCreateConnectionInBatches(MAX_BATCH_ITERATIONS, MAX_BATCH_SIZE);
     }
 
-    @Test(timeout = 60 * 1000)
+    @Test
+    @Timeout(60)
     public void testCreateRandomSizedBatches() throws Exception {
         doCreateConnectionInBatches(MAX_BATCH_ITERATIONS, RANDOM_SIZE_MARKER);
     }

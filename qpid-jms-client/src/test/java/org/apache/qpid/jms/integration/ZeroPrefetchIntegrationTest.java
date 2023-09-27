@@ -19,10 +19,10 @@
 package org.apache.qpid.jms.integration;
 
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Date;
 import java.util.concurrent.CountDownLatch;
@@ -49,12 +49,14 @@ import org.apache.qpid.jms.test.testpeer.describedtypes.sections.PropertiesDescr
 import org.apache.qpid.jms.test.testpeer.matchers.AcceptedMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.ModifiedMatcher;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 public class ZeroPrefetchIntegrationTest extends QpidJmsTestCase {
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testZeroPrefetchConsumerReceiveWithMessageExpiredInFlight() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // Create a connection with zero prefetch
@@ -92,9 +94,9 @@ public class ZeroPrefetchIntegrationTest extends QpidJmsTestCase {
             testPeer.expectDisposition(true, new AcceptedMatcher(), 2, 2);
 
             Message m = consumer.receive(5000);
-            assertNotNull("Message should have been received", m);
+            assertNotNull(m, "Message should have been received");
             assertTrue(m instanceof TextMessage);
-            assertEquals("Unexpected message content", liveMsgContent, ((TextMessage) m).getText());
+            assertEquals(liveMsgContent, ((TextMessage) m).getText(), "Unexpected message content");
 
             testPeer.expectClose();
             connection.close();
@@ -103,7 +105,8 @@ public class ZeroPrefetchIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testZeroPrefetchConsumerReceiveNoWaitDrainsWithOneCredit() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // Create a connection with zero prefetch
@@ -129,9 +132,9 @@ public class ZeroPrefetchIntegrationTest extends QpidJmsTestCase {
             testPeer.expectDisposition(true, new AcceptedMatcher(), 1, 1);
 
             Message m = consumer.receiveNoWait();
-            assertNotNull("Message should have been received", m);
+            assertNotNull(m, "Message should have been received");
             assertTrue(m instanceof TextMessage);
-            assertEquals("Unexpected message content", msgContent, ((TextMessage) m).getText());
+            assertEquals(msgContent, ((TextMessage) m).getText(), "Unexpected message content");
 
             testPeer.expectClose();
             connection.close();
@@ -140,7 +143,8 @@ public class ZeroPrefetchIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testZeroPrefetchMessageListener() throws Exception {
         final CountDownLatch msgReceived = new CountDownLatch(1);
         final CountDownLatch completeOnMessage = new CountDownLatch(1);
@@ -182,7 +186,7 @@ public class ZeroPrefetchIntegrationTest extends QpidJmsTestCase {
             consumer.setMessageListener(listener);
 
             // Wait for message to arrive
-            assertTrue("message not received in given time", msgReceived.await(6, TimeUnit.SECONDS));
+            assertTrue(msgReceived.await(6, TimeUnit.SECONDS), "message not received in given time");
 
             // Ensure the handlers are complete at the peer
             testPeer.waitForAllHandlersToComplete(2000);
@@ -206,17 +210,20 @@ public class ZeroPrefetchIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=40000)
+    @Test
+    @Timeout(40)
     public void testZeroPrefetchConsumerReceiveUnblockedOnSessionClose() throws Exception {
         doTestZeroPrefetchConsumerReceiveUnblockedOnSessionClose(0);
     }
 
-    @Test(timeout=40000)
+    @Test
+    @Timeout(40)
     public void testZeroPrefetchConsumerReceiveTimedUnblockedOnSessionClose() throws Exception {
         doTestZeroPrefetchConsumerReceiveUnblockedOnSessionClose(1);
     }
 
-    @Test(timeout=40000)
+    @Test
+    @Timeout(40)
     public void testZeroPrefetchConsumerReceiveNoWaitUnblockedOnSessionClose() throws Exception {
         doTestZeroPrefetchConsumerReceiveUnblockedOnSessionClose(-1);
     }
@@ -274,8 +281,8 @@ public class ZeroPrefetchIntegrationTest extends QpidJmsTestCase {
 
                 session.close();
 
-                assertTrue("Consumer did not unblock", done.await(10, TimeUnit.SECONDS));
-                assertNull("Consumer receive errored", error.get());
+                assertTrue(done.await(10, TimeUnit.SECONDS), "Consumer did not unblock");
+                assertNull(error.get(), "Consumer receive errored");
             } finally {
                 executor.shutdownNow();
             }
@@ -288,7 +295,8 @@ public class ZeroPrefetchIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testZeroPrefetchConsumerReceiveTimedPullWithInFlightArrival() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // Create a connection with zero prefetch
@@ -326,9 +334,9 @@ public class ZeroPrefetchIntegrationTest extends QpidJmsTestCase {
                         try {
                             Message m = consumer.receive(20);
 
-                            assertNotNull("Message should have been received", m);
+                            assertNotNull(m, "Message should have been received");
                             assertTrue(m instanceof TextMessage);
-                            assertEquals("Unexpected message content", msgContent, ((TextMessage) m).getText());
+                            assertEquals(msgContent, ((TextMessage) m).getText(), "Unexpected message content");
                         } catch (Throwable t) {
                             error.set(t);
                         } finally {
@@ -337,8 +345,8 @@ public class ZeroPrefetchIntegrationTest extends QpidJmsTestCase {
                     }
                 });
 
-                assertTrue("Consumer receive task did not complete", done.await(4, TimeUnit.SECONDS));
-                assertNull("Consumer receive errored", error.get());
+                assertTrue(done.await(4, TimeUnit.SECONDS), "Consumer receive task did not complete");
+                assertNull(error.get(), "Consumer receive errored");
             } finally {
                 executor.shutdownNow();
             }
@@ -350,7 +358,8 @@ public class ZeroPrefetchIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testZeroPrefetchConsumerReceiveTimedPullWithInFlightArrivalTimesOutIfNotCompleted() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // Create a connection with zero prefetch
@@ -393,16 +402,16 @@ public class ZeroPrefetchIntegrationTest extends QpidJmsTestCase {
                     }
                 });
 
-                assertTrue("Consumer receive task did not complete", done.await(4, TimeUnit.SECONDS));
+                assertTrue(done.await(4, TimeUnit.SECONDS), "Consumer receive task did not complete");
 
                 Throwable t = error.get();
-                assertNotNull("Consumer receive did not throw as expected", t);
-                assertTrue("Consumer receive did not throw as expected", t instanceof JMSException);
+                assertNotNull(t, "Consumer receive did not throw as expected");
+                assertTrue(t instanceof JMSException, "Consumer receive did not throw as expected");
             } finally {
                 executor.shutdownNow();
             }
 
-            assertTrue("Consumer should be closed", Wait.waitFor(new Wait.Condition() {
+            assertTrue(Wait.waitFor(new Wait.Condition() {
                 @Override
                 public boolean isSatisfied() throws Exception {
                     try {
@@ -412,7 +421,7 @@ public class ZeroPrefetchIntegrationTest extends QpidJmsTestCase {
                         return true;
                     }
                 }
-            }, 5000, 10));
+            }, 5000, 10), "Consumer should be closed");
 
             testPeer.waitForAllHandlersToComplete(2000);
 

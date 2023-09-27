@@ -16,12 +16,12 @@
  */
 package org.apache.qpid.jms.provider.failover;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -48,9 +48,11 @@ import org.apache.qpid.jms.provider.DefaultProviderListener;
 import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.provider.ProviderFutureFactory;
 import org.apache.qpid.jms.test.Wait;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,8 +70,10 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
     private JmsConnectionInfo connection;
 
     @Override
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
+        super.setUp(testInfo);
+
         uris = new ArrayList<URI>();
 
         uris.add(new URI("mock://192.168.2.1:5672"));
@@ -78,12 +82,10 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         uris.add(new URI("mock://192.168.2.4:5672"));
 
         connection = createConnectionInfo();
-
-        super.setUp();
     }
 
     @Override
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         if (provider != null) {
             provider.close();
@@ -91,7 +93,8 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         super.tearDown();
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testCreateProviderOnlyUris() {
         provider = new FailoverProvider(uris, Collections.emptyMap(), futuresFactory);
         assertEquals(FailoverUriPool.DEFAULT_RANDOMIZE_ENABLED, provider.isRandomize());
@@ -100,7 +103,8 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         assertTrue(provider.getNestedOptions().isEmpty());
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testCreateProviderOnlyNestedOptions() {
         Map<String, String> options = new HashMap<String, String>();
         options.put("transport.tcpNoDelay", "true");
@@ -113,7 +117,8 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         assertTrue(provider.getNestedOptions().containsKey("transport.tcpNoDelay"));
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testCreateProviderWithNestedOptions() {
         provider = new FailoverProvider(uris, Collections.<String, String>emptyMap(), futuresFactory);
         assertEquals(FailoverUriPool.DEFAULT_RANDOMIZE_ENABLED, provider.isRandomize());
@@ -122,7 +127,8 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         assertTrue(provider.getNestedOptions().isEmpty());
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testProviderListener() {
         provider = new FailoverProvider(uris, Collections.<String, String>emptyMap(), futuresFactory);
         assertNull(provider.getProviderListener());
@@ -130,38 +136,41 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         assertNotNull(provider.getProviderListener());
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testGetRemoteURI() throws Exception {
         provider = new FailoverProvider(uris, Collections.<String, String>emptyMap(), futuresFactory);
 
         assertNull(provider.getRemoteURI());
         provider.connect(connection);
-        assertTrue("Should have a remote URI after connect", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return provider.getRemoteURI() != null;
             }
-        }, TimeUnit.SECONDS.toMillis(20), 10));
+        }, TimeUnit.SECONDS.toMillis(20), 10), "Should have a remote URI after connect");
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testToString() throws Exception {
         provider = new FailoverProvider(uris, Collections.<String, String>emptyMap(), futuresFactory);
 
         assertNotNull(provider.toString());
         provider.connect(connection);
-        assertTrue("Should have a mock scheme after connect", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 LOG.info("FailoverProvider: toString = {}", provider.toString());
                 return provider.toString().contains("mock://");
             }
-        }, TimeUnit.SECONDS.toMillis(20), 10));
+        }, TimeUnit.SECONDS.toMillis(20), 10), "Should have a mock scheme after connect");
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testConnectToMock() throws Exception {
         provider = new FailoverProvider(uris, Collections.<String, String>emptyMap(), futuresFactory);
         assertEquals(FailoverUriPool.DEFAULT_RANDOMIZE_ENABLED, provider.isRandomize());
@@ -192,7 +201,8 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         assertEquals(1, mockPeer.getContextStats().getConnectionAttempts());
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testCannotStartWithoutListener() throws Exception {
         provider = new FailoverProvider(uris, Collections.<String, String>emptyMap(), futuresFactory);
         assertEquals(FailoverUriPool.DEFAULT_RANDOMIZE_ENABLED, provider.isRandomize());
@@ -208,7 +218,8 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         provider.close();
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testStartupMaxReconnectAttempts() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(
             "failover:(mock://localhost?mock.failOnConnect=true)" +
@@ -232,7 +243,8 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         assertEquals(5, mockPeer.getContextStats().getCloseAttempts());
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testMaxReconnectAttemptsWithOneURI() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(
             "failover:(mock://localhost1?mock.failOnConnect=true)" +
@@ -256,7 +268,8 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         assertEquals(5, mockPeer.getContextStats().getCloseAttempts());
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testMaxReconnectAttemptsWithMultipleURIs() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(
             "failover:(mock://192.168.2.1?mock.failOnConnect=true," +
@@ -284,7 +297,8 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         assertEquals(15, mockPeer.getContextStats().getCloseAttempts());
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testMaxReconnectAttemptsWithBackOff() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(
             "failover:(mock://localhost?mock.failOnConnect=true)" +
@@ -310,7 +324,8 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         assertEquals(5, mockPeer.getContextStats().getCloseAttempts());
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testFailureOnCloseIsSwallowed() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(
             "failover:(mock://localhost?mock.failOnClose=true)");
@@ -324,7 +339,8 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         assertEquals(1, mockPeer.getContextStats().getCloseAttempts());
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testSessionLifeCyclePassthrough() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(
             "failover:(mock://localhost)");
@@ -338,7 +354,8 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         assertEquals(1, mockPeer.getContextStats().getDestroyResourceCalls(JmsSessionInfo.class));
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testConsumerLifeCyclePassthrough() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(
             "failover:(mock://localhost)");
@@ -346,7 +363,7 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         Connection connection = factory.createConnection();
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Destination destination = session.createTopic(_testName.getMethodName());
+        Destination destination = session.createTopic(_testMethodName);
         session.createConsumer(destination).close();
         connection.close();
 
@@ -355,7 +372,8 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         assertEquals(1, mockPeer.getContextStats().getDestroyResourceCalls(JmsConsumerInfo.class));
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testProducerLifeCyclePassthrough() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(
             "failover:(mock://localhost)");
@@ -363,7 +381,7 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         Connection connection = factory.createConnection();
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Destination destination = session.createTopic(_testName.getMethodName());
+        Destination destination = session.createTopic(_testMethodName);
         session.createProducer(destination).close();
         connection.close();
 
@@ -371,7 +389,8 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         assertEquals(1, mockPeer.getContextStats().getDestroyResourceCalls(JmsProducerInfo.class));
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testSessionRecoverPassthrough() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(
             "failover:(mock://localhost)");
@@ -385,7 +404,8 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         assertEquals(1, mockPeer.getContextStats().getRecoverCalls());
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testSessionUnsubscribePassthrough() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(
             "failover:(mock://localhost)");
@@ -399,7 +419,8 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         assertEquals(1, mockPeer.getContextStats().getUnsubscribeCalls());
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testSendMessagePassthrough() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(
             "failover:(mock://localhost)");
@@ -416,7 +437,8 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         assertEquals(1, mockPeer.getContextStats().getSendCalls());
     }
 
-    @Test(timeout=10000)
+    @Test
+    @Timeout(10)
     public void testTimeoutsSetFromConnectionInfo() throws Exception {
         final long CONNECT_TIMEOUT = TimeUnit.SECONDS.toMillis(4);
         final long CLOSE_TIMEOUT = TimeUnit.SECONDS.toMillis(5);
@@ -450,13 +472,15 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         assertEquals(REQUEST_TIMEOUT, provider.getRequestTimeout());
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testAmqpOpenServerListActionDefault() {
         provider = new FailoverProvider(uris, Collections.emptyMap(), futuresFactory);
         assertEquals("REPLACE", provider.getAmqpOpenServerListAction());
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testSetGetAmqpOpenServerListAction() {
         provider = new FailoverProvider(uris, Collections.emptyMap(), futuresFactory);
         String action = "ADD";
@@ -466,7 +490,8 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         assertEquals(action, provider.getAmqpOpenServerListAction());
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testSetInvalidAmqpOpenServerListActionThrowsIAE() {
         provider = new FailoverProvider(uris, Collections.emptyMap(), futuresFactory);
         try {

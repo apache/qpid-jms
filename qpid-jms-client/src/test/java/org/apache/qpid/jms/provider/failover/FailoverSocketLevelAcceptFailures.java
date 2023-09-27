@@ -16,7 +16,7 @@
  */
 package org.apache.qpid.jms.provider.failover;
 
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.net.ServerSocket;
 
@@ -26,9 +26,11 @@ import javax.net.ServerSocketFactory;
 
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,14 +45,14 @@ public class FailoverSocketLevelAcceptFailures extends QpidJmsTestCase {
     private ServerSocket server;
 
     @Override
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
+        super.setUp(testInfo);
         server = ServerSocketFactory.getDefault().createServerSocket(0);
     }
 
     @Override
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         try {
             server.close();
@@ -61,8 +63,9 @@ public class FailoverSocketLevelAcceptFailures extends QpidJmsTestCase {
         super.tearDown();
     }
 
-    @Test(timeout = 40000)
-    public void testFailoverHandlesSocketNotAccepted() throws Exception {
+    @Test
+    @Timeout(40)
+    void testFailoverHandlesSocketNotAccepted() throws Exception {
         final String remoteURI = "failover:(amqp://localhost:" + server.getLocalPort() +
             ")?jms.connectTimeout=666&failover.maxReconnectAttempts=1&failover.startupMaxReconnectAttempts=1";
 

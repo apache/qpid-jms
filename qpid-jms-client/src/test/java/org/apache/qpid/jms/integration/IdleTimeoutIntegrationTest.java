@@ -22,9 +22,9 @@ package org.apache.qpid.jms.integration;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -40,7 +40,8 @@ import org.apache.qpid.jms.test.testpeer.AmqpPeerRunnable;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.hamcrest.Matchers;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,7 +49,8 @@ public class IdleTimeoutIntegrationTest extends QpidJmsTestCase {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(IdleTimeoutIntegrationTest.class);
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testIdleTimeoutIsAdvertisedByDefault() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             testPeer.expectSaslAnonymous();
@@ -69,7 +71,8 @@ public class IdleTimeoutIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testAdvertisedIdleTimeoutIsHalfOfActualTimeoutValue() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             int configuredTimeout = 54320;
@@ -94,7 +97,8 @@ public class IdleTimeoutIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testClientSendsEmptyFramesWhenPeerAdvertisesIdleTimeout() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             int period = 20;
@@ -132,7 +136,8 @@ public class IdleTimeoutIntegrationTest extends QpidJmsTestCase {
 
     //TODO: Could use JUnit categories to make this slowish test skipable?
     //      If so, make it slower still and more granular.
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testClientSendsEmptyFramesWithExpectedFrequency() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             int period = 250;
@@ -169,7 +174,8 @@ public class IdleTimeoutIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testConnectionSetFailedWhenPeerNeglectsToSendEmptyFrames() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             int configuredTimeout = 200;
@@ -198,14 +204,15 @@ public class IdleTimeoutIntegrationTest extends QpidJmsTestCase {
                 }
             }, 10000, 10);
 
-            assertTrue("connection didnt fail in expected timeframe", failed);
+            assertTrue(failed, "connection didnt fail in expected timeframe");
             testPeer.waitForAllHandlersToComplete(1000);
 
             connection.close();
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testConnectionNotMarkedFailedWhenPeerSendsEmptyFrames() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             int configuredTimeout = 2000;
@@ -229,9 +236,9 @@ public class IdleTimeoutIntegrationTest extends QpidJmsTestCase {
             connection.setClientID("clientName");
 
             boolean framesSent = latch.await(cycles * period * 2, TimeUnit.MILLISECONDS);
-            assertTrue("idle frames were not sent as expected", framesSent);
+            assertTrue(framesSent, "idle frames were not sent as expected");
 
-            assertFalse("connection shouldnt fail", connection.isFailed());
+            assertFalse(connection.isFailed(), "connection shouldnt fail");
             testPeer.expectClose();
             connection.close();
 

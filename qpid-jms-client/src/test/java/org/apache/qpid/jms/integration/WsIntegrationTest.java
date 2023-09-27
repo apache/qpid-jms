@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.jms.integration;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import javax.jms.JMSException;
 
@@ -31,14 +31,16 @@ import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.transports.TransportOptions;
 import org.apache.qpid.jms.transports.netty.NettyBlackHoleServer;
 import org.apache.qpid.jms.transports.netty.NettySimpleAmqpServer;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 public class WsIntegrationTest extends QpidJmsTestCase {
 
     private static final String BROKER_PKCS12_KEYSTORE = "src/test/resources/broker-pkcs12.keystore";
     private static final String PASSWORD = "password";
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testNonSslWebSocketConnectionFailsToSslServer() throws Exception {
         TransportOptions serverOptions = new TransportOptions();
         serverOptions.setKeyStoreLocation(BROKER_PKCS12_KEYSTORE);
@@ -57,12 +59,13 @@ public class WsIntegrationTest extends QpidJmsTestCase {
             catch (JMSException jmse) {
                 String message = jmse.getMessage();
                 assertNotNull(message);
-                assertTrue("Unexpected message: " + message, message.contains("Connection failed"));
+                assertTrue(message.contains("Connection failed"), "Unexpected message: " + message);
             }
         }
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testWebsocketConnectionToBlackHoleServerTimesOut() throws Exception {
         TransportOptions serverOptions = new TransportOptions();
 
@@ -78,7 +81,7 @@ public class WsIntegrationTest extends QpidJmsTestCase {
             catch (JMSException jmse) {
                 String message = jmse.getMessage();
                 assertNotNull(message);
-                assertTrue("Unexpected message: " + message, message.contains("WebSocket handshake timed out"));
+                assertTrue(message.contains("WebSocket handshake timed out"), "Unexpected message: " + message);
             }
         }
     }

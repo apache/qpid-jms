@@ -16,9 +16,9 @@
  */
 package org.apache.qpid.jms.session;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.concurrent.TimeUnit;
 
@@ -33,14 +33,16 @@ import javax.jms.Topic;
 import org.apache.activemq.broker.jmx.BrokerViewMBean;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.apache.qpid.jms.support.Wait;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Test basic Session functionality.
  */
 public class JmsSessionTest extends AmqpTestSupport {
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testCreateSession() throws Exception {
         connection = createAmqpConnection();
         assertNotNull(connection);
@@ -52,7 +54,8 @@ public class JmsSessionTest extends AmqpTestSupport {
         session.close();
     }
 
-    @Test(timeout=30000)
+    @Test
+    @Timeout(30)
     public void testSessionCreateProducer() throws Exception {
         connection = createAmqpConnection();
         assertNotNull(connection);
@@ -66,7 +69,8 @@ public class JmsSessionTest extends AmqpTestSupport {
         session.close();
     }
 
-    @Test(timeout=30000)
+    @Test
+    @Timeout(30)
     public void testSessionCreateConsumer() throws Exception {
         connection = createAmqpConnection();
         assertNotNull(connection);
@@ -80,7 +84,8 @@ public class JmsSessionTest extends AmqpTestSupport {
         session.close();
     }
 
-    @Test(timeout=30000)
+    @Test
+    @Timeout(30)
     public void testCreateTemporaryQueue() throws Exception {
         connection = createAmqpConnection();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -92,7 +97,8 @@ public class JmsSessionTest extends AmqpTestSupport {
         assertEquals(1, broker.getTemporaryQueues().length);
     }
 
-    @Test(timeout=30000)
+    @Test
+    @Timeout(30)
     public void testDeleteTemporaryQueue() throws Exception {
         connection = createAmqpConnection();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -106,16 +112,17 @@ public class JmsSessionTest extends AmqpTestSupport {
         TemporaryQueue tempQueue = (TemporaryQueue) queue;
         tempQueue.delete();
 
-        assertTrue("Temp Queue should be deleted.", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return broker.getTemporaryQueues().length == 0;
             }
-        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(50)));
+        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(50)), "Temp Queue should be deleted.");
     }
 
-    @Test(timeout=30000)
+    @Test
+    @Timeout(30)
     public void testCreateTemporaryTopic() throws Exception {
         connection = createAmqpConnection();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -127,7 +134,8 @@ public class JmsSessionTest extends AmqpTestSupport {
         assertEquals(1, broker.getTemporaryTopics().length);
     }
 
-    @Test(timeout=30000)
+    @Test
+    @Timeout(30)
     public void testDeleteTemporaryTopic() throws Exception {
         connection = createAmqpConnection();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -141,12 +149,12 @@ public class JmsSessionTest extends AmqpTestSupport {
         TemporaryTopic tempTopic = (TemporaryTopic) topic;
         tempTopic.delete();
 
-        assertTrue("Temp Topic should be deleted.", Wait.waitFor(new Wait.Condition() {
+        assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisfied() throws Exception {
                 return broker.getTemporaryTopics().length == 0;
             }
-        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(50)));
+        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(50)), "Temp Topic should be deleted.");
     }
 }

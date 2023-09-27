@@ -16,9 +16,9 @@
  */
 package org.apache.qpid.jms.destinations;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import javax.jms.Connection;
 import javax.jms.IllegalStateException;
@@ -30,7 +30,8 @@ import javax.jms.Session;
 import javax.jms.TemporaryQueue;
 
 import org.apache.qpid.jms.support.AmqpTestSupport;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +42,8 @@ public class JmsTemporaryQueueTest extends AmqpTestSupport {
 
     protected static final Logger LOG = LoggerFactory.getLogger(JmsTemporaryQueueTest.class);
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testCreateTemporaryQueue() throws Exception {
         connection = createAmqpConnection();
         connection.start();
@@ -54,7 +56,8 @@ public class JmsTemporaryQueueTest extends AmqpTestSupport {
         assertEquals(1, brokerService.getAdminView().getTemporaryQueues().length);
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testCantConsumeFromTemporaryQueueCreatedOnAnotherConnection() throws Exception {
         connection = createAmqpConnection();
         connection.start();
@@ -77,7 +80,8 @@ public class JmsTemporaryQueueTest extends AmqpTestSupport {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testCantSendToTemporaryQueueFromClosedConnection() throws Exception {
         connection = createAmqpConnection();
         connection.start();
@@ -105,7 +109,8 @@ public class JmsTemporaryQueueTest extends AmqpTestSupport {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testCantDeleteTemporaryQueueWithConsumers() throws Exception {
         connection = createAmqpConnection();
         connection.start();

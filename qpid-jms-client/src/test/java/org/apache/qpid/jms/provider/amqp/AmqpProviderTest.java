@@ -16,12 +16,13 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -42,9 +43,11 @@ import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.util.IdGenerator;
 import org.apache.qpid.proton.engine.impl.TransportImpl;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Test some basic functionality of the AmqpProvider
@@ -59,13 +62,14 @@ public class AmqpProviderTest extends QpidJmsTestCase {
     private JmsConnectionInfo connectionInfo;
 
     @Override
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
+        super.setUp(testInfo);
         connectionInfo = new JmsConnectionInfo(new JmsConnectionId("ID:TEST-Connection:1"));
     }
 
     @Override
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         if (provider != null) {
             provider.close();
@@ -73,54 +77,65 @@ public class AmqpProviderTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testCreate() throws Exception {
         provider = new AmqpProviderFactory().createProvider(getDefaultURI());
     }
 
-    @Test(timeout=20000, expected=RuntimeException.class)
+    @Test
+    @Timeout(20)
     public void testGetMessageFactoryTrowsWhenNotConnected() throws Exception {
-        provider = new AmqpProviderFactory().createProvider(getDefaultURI());
-        provider.getMessageFactory();
+        assertThrows(RuntimeException.class, () -> {
+            provider = new AmqpProviderFactory().createProvider(getDefaultURI());
+            provider.getMessageFactory();
+        });
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testUnInitializedProviderReturnsDefaultConnectTimeout() throws Exception {
         provider = new AmqpProviderFactory().createProvider(getDefaultURI());
         assertEquals(JmsConnectionInfo.DEFAULT_CONNECT_TIMEOUT, provider.getConnectTimeout());
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testUnInitializedProviderReturnsDefaultCloseTimeout() throws Exception {
         provider = new AmqpProviderFactory().createProvider(getDefaultURI());
         assertEquals(JmsConnectionInfo.DEFAULT_CLOSE_TIMEOUT, provider.getCloseTimeout());
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testUnInitializedProviderReturnsDefaultSendTimeout() throws Exception {
         provider = new AmqpProviderFactory().createProvider(getDefaultURI());
         assertEquals(JmsConnectionInfo.DEFAULT_SEND_TIMEOUT, provider.getSendTimeout());
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testUnInitializedProviderReturnsDefaultRequestTimeout() throws Exception {
         provider = new AmqpProviderFactory().createProvider(getDefaultURI());
         assertEquals(JmsConnectionInfo.DEFAULT_REQUEST_TIMEOUT, provider.getRequestTimeout());
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testGetDefaultDrainTimeout() throws Exception {
         provider = new AmqpProviderFactory().createProvider(getDefaultURI());
         assertEquals(TimeUnit.MINUTES.toMillis(1), provider.getDrainTimeout());
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testGetDefaultIdleTimeout() throws Exception {
         provider = new AmqpProviderFactory().createProvider(getDefaultURI());
         assertEquals(TimeUnit.MINUTES.toMillis(1), provider.getIdleTimeout());
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testEnableTraceFrames() throws Exception {
         provider = new AmqpProviderFactory().createProvider(getDefaultURI());
         TransportImpl transport = (TransportImpl) provider.getProtonTransport();
@@ -130,7 +145,8 @@ public class AmqpProviderTest extends QpidJmsTestCase {
         assertNotNull(transport.getProtocolTracer());
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testCreateFailsWithUnknownProtocol() throws Exception {
         try {
             AmqpProviderFactory factory = new AmqpProviderFactory();
@@ -141,7 +157,8 @@ public class AmqpProviderTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testConnectThrowsWhenNoPeer() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
             URI peerURI = getPeerURI(testPeer);
@@ -156,7 +173,8 @@ public class AmqpProviderTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testDisableSaslLayer() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
 
@@ -175,7 +193,8 @@ public class AmqpProviderTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testSetIdleTimeout() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
             testPeer.expectSaslAnonymous();
@@ -200,7 +219,8 @@ public class AmqpProviderTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testSetMaxFrameSize() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
             testPeer.expectSaslAnonymous();
@@ -225,7 +245,8 @@ public class AmqpProviderTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testSkipSetMaxFrameSize() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
             testPeer.expectSaslAnonymous();
@@ -249,7 +270,9 @@ public class AmqpProviderTest extends QpidJmsTestCase {
             testPeer.waitForAllHandlersToComplete(1000);
         }
     }
-    @Test(timeout=20000)
+
+    @Test
+    @Timeout(20)
     public void testStartThrowsIfNoListenerSet() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
             testPeer.expectSaslAnonymous();
@@ -284,7 +307,8 @@ public class AmqpProviderTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testToString() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
             testPeer.expectSaslAnonymous();
@@ -303,7 +327,8 @@ public class AmqpProviderTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testClosedProviderThrowsIOException() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
             testPeer.expectSaslAnonymous();
@@ -336,7 +361,8 @@ public class AmqpProviderTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
+    @Timeout(20)
     public void testTimeoutsSetFromConnectionInfo() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
             final long CONNECT_TIMEOUT = TimeUnit.SECONDS.toMillis(4);
@@ -376,22 +402,26 @@ public class AmqpProviderTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testErrorDuringCreateResourceFailsRequest() throws Exception {
         doErrorDuringOperationFailsRequestTestImpl(Op.CREATE);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testErrorDuringStartResourceFailsRequest() throws Exception {
         doErrorDuringOperationFailsRequestTestImpl(Op.START);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testErrorDuringStopResourceFailsRequest() throws Exception {
         doErrorDuringOperationFailsRequestTestImpl(Op.STOP);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testErrorDuringDestroyResourceFailsRequest() throws Exception {
         doErrorDuringOperationFailsRequestTestImpl(Op.DESTROY);
     }
@@ -420,7 +450,7 @@ public class AmqpProviderTest extends QpidJmsTestCase {
                 }
             };
 
-            assertFalse("Error should not yet be thrown", errorThrown.get());
+            assertFalse(errorThrown.get(), "Error should not yet be thrown");
             ProviderFuture request = provider.newProviderFuture();
 
             switch(operation) {
@@ -447,7 +477,7 @@ public class AmqpProviderTest extends QpidJmsTestCase {
                 // Expected
             }
 
-            assertTrue("Error should have been thrown", errorThrown.get());
+            assertTrue(errorThrown.get(), "Error should have been thrown");
 
             provider.close();
 
@@ -455,22 +485,26 @@ public class AmqpProviderTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateResourceFailsWhenNoConnectCalled() throws Exception {
         doErrorDuringOperationFailsWhenNoConnectCalledTestImpl(Op.CREATE);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testStartResourceFailsWhenNoConnectCalled() throws Exception {
         doErrorDuringOperationFailsWhenNoConnectCalledTestImpl(Op.START);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testStopResourceFailsWhenNoConnectCalled() throws Exception {
         doErrorDuringOperationFailsWhenNoConnectCalledTestImpl(Op.STOP);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testDestroyResourceFailsWhenNoConnectCalled() throws Exception {
         doErrorDuringOperationFailsWhenNoConnectCalledTestImpl(Op.DESTROY);
     }
@@ -495,7 +529,7 @@ public class AmqpProviderTest extends QpidJmsTestCase {
                 }
             };
 
-            assertFalse("Error should not have been thrown", errorThrown.get());
+            assertFalse(errorThrown.get(), "Error should not have been thrown");
             ProviderFuture request = provider.newProviderFuture();
 
             switch(operation) {
@@ -535,7 +569,7 @@ public class AmqpProviderTest extends QpidJmsTestCase {
                 throw new IllegalArgumentException("Unexpected operation given");
             }
 
-            assertFalse("Error should not have been thrown", errorThrown.get());
+            assertFalse(errorThrown.get(), "Error should not have been thrown");
 
             provider.close();
 

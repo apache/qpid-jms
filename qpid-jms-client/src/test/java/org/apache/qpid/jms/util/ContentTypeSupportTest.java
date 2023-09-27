@@ -16,40 +16,51 @@
  */
 package org.apache.qpid.jms.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 import org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class ContentTypeSupportTest {
 
-    @Test (expected = InvalidContentTypeException.class)
+    @Test
     public void testParseContentTypeWithOnlyType() throws Exception {
-        doParseContentTypeTestImpl("type", null);
+        assertThrows(InvalidContentTypeException.class, () -> {
+            doParseContentTypeTestImpl("type", null);
+        });
     }
 
-    @Test (expected = InvalidContentTypeException.class)
+    @Test
     public void testParseContentTypeEndsWithSlash() throws Exception {
-        doParseContentTypeTestImpl("type/", null);
+        assertThrows(InvalidContentTypeException.class, () -> {
+            doParseContentTypeTestImpl("type/", null);
+        });
     }
 
-    @Test (expected = InvalidContentTypeException.class)
+    @Test
     public void testParseContentTypeMissingSubtype() throws Exception {
-        doParseContentTypeTestImpl("type/;", null);
+        assertThrows(InvalidContentTypeException.class, () -> {
+            doParseContentTypeTestImpl("type/;", null);
+        });
     }
 
-    @Test (expected = InvalidContentTypeException.class)
+    @Test
     public void testParseContentTypeEmptyString() throws Exception {
-        doParseContentTypeTestImpl("", null);
+        assertThrows(InvalidContentTypeException.class, () -> {
+            doParseContentTypeTestImpl("", null);
+        });
     }
 
-    @Test (expected = InvalidContentTypeException.class)
+    @Test
     public void testParseContentTypeNullString() throws Exception {
-        doParseContentTypeTestImpl(null, null);
+        assertThrows(InvalidContentTypeException.class, () -> {
+            doParseContentTypeTestImpl(null, null);
+        });
     }
 
     @Test
@@ -93,24 +104,32 @@ public class ContentTypeSupportTest {
         doParseContentTypeTestImpl("text/plain;charset=\"us-ascii\"", StandardCharsets.US_ASCII);
     }
 
-    @Test (expected = InvalidContentTypeException.class)
+    @Test
     public void testParseContentTypeWithCharsetQuotedEmpty() throws Exception {
-        doParseContentTypeTestImpl("text/plain;charset=\"\"", null);
+        assertThrows(InvalidContentTypeException.class, () -> {
+            doParseContentTypeTestImpl("text/plain;charset=\"\"", null);
+        });
     }
 
-    @Test (expected = InvalidContentTypeException.class)
+    @Test
     public void testParseContentTypeWithCharsetQuoteNotClosed() throws Exception {
-        doParseContentTypeTestImpl("text/plain;charset=\"unclosed", null);
+        assertThrows(InvalidContentTypeException.class, () -> {
+            doParseContentTypeTestImpl("text/plain;charset=\"unclosed", null);
+        });
     }
 
-    @Test (expected = InvalidContentTypeException.class)
+    @Test
     public void testParseContentTypeWithCharsetQuoteNotClosedEmpty() throws Exception {
-        doParseContentTypeTestImpl("text/plain;charset=\"", null);
+        assertThrows(InvalidContentTypeException.class, () -> {
+            doParseContentTypeTestImpl("text/plain;charset=\"", null);
+        });
     }
 
-    @Test (expected = InvalidContentTypeException.class)
+    @Test
     public void testParseContentTypeWithNoCharsetValue() throws Exception {
-        doParseContentTypeTestImpl("text/plain;charset=", null);
+        assertThrows(InvalidContentTypeException.class, () -> {
+            doParseContentTypeTestImpl("text/plain;charset=", null);
+        });
     }
 
     @Test
@@ -222,9 +241,9 @@ public class ContentTypeSupportTest {
     private void doParseContentTypeTestImpl(String contentType, Charset expected) throws InvalidContentTypeException {
         Charset charset = ContentTypeSupport.parseContentTypeForTextualCharset(contentType);
         if (expected == null) {
-            assertNull("Expected no charset, but got:" + charset, charset);
+            assertNull(charset, "Expected no charset, but got:" + charset);
         } else {
-            assertEquals("Charset not as expected", expected, charset);
+            assertEquals(expected, charset, "Charset not as expected");
         }
     }
 }

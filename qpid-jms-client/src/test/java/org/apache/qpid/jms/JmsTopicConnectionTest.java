@@ -16,13 +16,17 @@
  */
 package org.apache.qpid.jms;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import javax.jms.IllegalStateException;
 import javax.jms.JMSException;
 import javax.jms.ServerSessionPool;
 import javax.jms.Session;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Test various contract aspects of the TopicConnection implementation
@@ -30,21 +34,27 @@ import org.junit.Test;
 public class JmsTopicConnectionTest extends JmsConnectionTestSupport {
 
     @Override
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
+        super.setUp(testInfo);
 
         topicConnection = createTopicConnectionToMockProvider();
         topicConnection.start();
     }
 
-    @Test(timeout = 30000, expected=IllegalStateException.class)
-    public void testCreateConnectionConsumerOnTopicConnection() throws JMSException{
-        topicConnection.createConnectionConsumer(new JmsQueue(), "subscriptionName", (ServerSessionPool)null, 1);
+    @Test
+    @Timeout(30)
+    public void testCreateConnectionConsumerOnTopicConnection() throws JMSException {
+        assertThrows(IllegalStateException.class, () -> {
+            topicConnection.createConnectionConsumer(new JmsQueue(), "subscriptionName", (ServerSessionPool) null, 1);
+        });
     }
 
-    @Test(timeout = 30000, expected=IllegalStateException.class)
-    public void testCreateQueueSessionOnTopicConnection() throws JMSException{
-        topicConnection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
+    @Test
+    @Timeout(30)
+    public void testCreateQueueSessionOnTopicConnection() throws JMSException {
+        assertThrows(IllegalStateException.class, () -> {
+            topicConnection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
+        });
     }
 }

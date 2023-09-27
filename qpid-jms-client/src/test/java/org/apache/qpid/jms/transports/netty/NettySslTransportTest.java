@@ -16,11 +16,11 @@
  */
 package org.apache.qpid.jms.transports.netty;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -37,10 +37,8 @@ import org.apache.qpid.jms.test.proxy.TestProxy;
 import org.apache.qpid.jms.transports.Transport;
 import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.transports.TransportOptions;
-import org.apache.qpid.jms.util.QpidJMSTestRunner;
-import org.apache.qpid.jms.util.Repeat;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,7 +49,6 @@ import io.netty.handler.proxy.Socks5ProxyHandler;
 /**
  * Test basic functionality of the Netty based TCP Transport ruuing in secure mode (SSL).
  */
-@RunWith(QpidJMSTestRunner.class)
 public class NettySslTransportTest extends NettyTcpTransportTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(NettySslTransportTest.class);
@@ -73,7 +70,8 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
     public static final String KEYSTORE_TYPE = "jks";
 
     @Override
-    @Test(timeout = 60 * 1000)
+    @Test
+    @Timeout(60)
     public void testCreateWithNullOptionsThrowsIAE() throws Exception {
         URI serverLocation = new URI("tcp://localhost:5762");
 
@@ -84,7 +82,8 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
         }
     }
 
-    @Test(timeout = 60 * 1000)
+    @Test
+    @Timeout(60)
     public void testConnectToServerWithoutTrustStoreFails() throws Exception {
         try (NettyEchoServer server = createEchoServer(createServerOptions())) {
             server.start();
@@ -110,8 +109,8 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
         assertTrue(exceptions.isEmpty());
     }
 
-    @Test(timeout = 60 * 1000)
-    @Repeat(repetitions = 1)
+    @Test
+    @Timeout(60)
     public void testConnectToServerUsingUntrustedKeyFails() throws Exception {
         try (NettyEchoServer server = createEchoServer(createServerOptions())) {
             server.start();
@@ -138,7 +137,8 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
         }
     }
 
-    @Test(timeout = 60 * 1000)
+    @Test
+    @Timeout(60)
     public void testConnectToServerClientTrustsAll() throws Exception {
         try (NettyEchoServer server = createEchoServer(createServerOptions())) {
             server.start();
@@ -164,7 +164,8 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
         assertTrue(exceptions.isEmpty());
     }
 
-    @Test(timeout = 60 * 1000)
+    @Test
+    @Timeout(60)
     public void testConnectWithNeedClientAuth() throws Exception {
         TransportOptions serverOptions = createServerOptions();
 
@@ -188,7 +189,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
             assertTrue(transport.isSecure());
 
             // Verify there was a certificate sent to the server
-            assertTrue("Server handshake did not complete in alotted time", server.getSslHandler().handshakeFuture().await(2, TimeUnit.SECONDS));
+            assertTrue(server.getSslHandler().handshakeFuture().await(2, TimeUnit.SECONDS), "Server handshake did not complete in alotted time");
             assertNotNull(server.getSslHandler().engine().getSession().getPeerCertificates());
 
             transport.close();
@@ -198,7 +199,8 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
         assertTrue(exceptions.isEmpty());
     }
 
-    @Test(timeout = 60 * 1000)
+    @Test
+    @Timeout(60)
     public void testConnectWithSpecificClientAuthKeyAlias() throws Exception {
         doClientAuthAliasTestImpl(CLIENT_KEY_ALIAS, CLIENT_DN);
         doClientAuthAliasTestImpl(CLIENT2_KEY_ALIAS, CLIENT2_DN);
@@ -228,7 +230,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
             assertTrue(transport.isConnected());
             assertTrue(transport.isSecure());
 
-            assertTrue("Server handshake did not complete in alotted time", server.getSslHandler().handshakeFuture().await(2, TimeUnit.SECONDS));
+            assertTrue(server.getSslHandler().handshakeFuture().await(2, TimeUnit.SECONDS), "Server handshake did not complete in alotted time");
 
             Certificate[] peerCertificates = server.getSslHandler().engine().getSession().getPeerCertificates();
             assertNotNull(peerCertificates);
@@ -236,7 +238,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
             Certificate cert = peerCertificates[0];
             assertTrue(cert instanceof X509Certificate);
             String dn = ((X509Certificate)cert).getSubjectX500Principal().getName();
-            assertEquals("Unexpected certificate DN", expectedDN, dn);
+            assertEquals(expectedDN, dn, "Unexpected certificate DN");
 
             transport.close();
         }
@@ -245,22 +247,26 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
         assertTrue(exceptions.isEmpty());
     }
 
-    @Test(timeout = 60 * 1000)
+    @Test
+    @Timeout(60)
     public void testConnectToServerVerifyHost() throws Exception {
         doConnectToServerVerifyHostTestImpl(true, null);
     }
 
-    @Test(timeout = 60 * 1000)
+    @Test
+    @Timeout(60)
     public void testConnectToServerNoVerifyHost() throws Exception {
         doConnectToServerVerifyHostTestImpl(false, null);
     }
 
-    @Test(timeout = 60 * 1000)
+    @Test
+    @Timeout(60)
     public void testConnectViaSocksProxyToServerVerifyHost() throws Exception {
         doConnectToServerVerifyHostTestImpl(true, TestProxy.ProxyType.SOCKS5);
     }
 
-    @Test(timeout = 60 * 1000)
+    @Test
+    @Timeout(60)
     public void testConnectViaSocksProxyToServerNoVerifyHost() throws Exception {
         doConnectToServerVerifyHostTestImpl(false, TestProxy.ProxyType.SOCKS5);
     }
@@ -287,9 +293,9 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
             }
 
             if (verifyHost) {
-                assertTrue("Expected verifyHost to be true", clientOptions.isVerifyHost());
+                assertTrue(clientOptions.isVerifyHost(), "Expected verifyHost to be true");
             } else {
-                assertFalse("Expected verifyHost to be false", clientOptions.isVerifyHost());
+                assertFalse(clientOptions.isVerifyHost(), "Expected verifyHost to be false");
             }
 
             Transport transport = createTransport(serverLocation, testListener, clientOptions);

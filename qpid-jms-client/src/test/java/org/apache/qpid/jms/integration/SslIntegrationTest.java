@@ -20,13 +20,13 @@
  */
 package org.apache.qpid.jms.integration;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -47,8 +47,8 @@ import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.transports.TransportOptions;
 import org.apache.qpid.jms.transports.TransportSupport;
 import org.apache.qpid.jms.transports.netty.NettySimpleAmqpServer;
-import org.junit.Test;
-
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import io.netty.handler.ssl.OpenSsl;
 
 public class SslIntegrationTest extends QpidJmsTestCase {
@@ -83,12 +83,14 @@ public class SslIntegrationTest extends QpidJmsTestCase {
 
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateAndCloseSslConnectionJDK() throws Exception {
         testCreateAndCloseSslConnection(false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateAndCloseSslConnectionOpenSSL() throws Exception {
         assumeTrue(OpenSsl.isAvailable());
         assumeTrue(OpenSsl.supportsKeyManagerFactory());
@@ -118,12 +120,14 @@ public class SslIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateSslConnectionWithServerSendingPreemptiveDataJDK() throws Exception {
         doTestCreateSslConnectionWithServerSendingPreemptiveData(false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateSslConnectionWithServerSendingPreemptiveDataOpenSSL() throws Exception {
         assumeTrue(OpenSsl.isAvailable());
         assumeTrue(OpenSsl.supportsKeyManagerFactory());
@@ -162,12 +166,14 @@ public class SslIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateAndCloseSslConnectionWithClientAuthJDK() throws Exception {
         doTestCreateAndCloseSslConnectionWithClientAuth(false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateAndCloseSslConnectionWithClientAuthOpenSSL() throws Exception {
         assumeTrue(OpenSsl.isAvailable());
         assumeTrue(OpenSsl.supportsKeyManagerFactory());
@@ -202,13 +208,15 @@ public class SslIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateAndCloseSslConnectionWithAliasJDK() throws Exception {
         doConnectionWithAliasTestImpl(CLIENT_KEY_ALIAS, CLIENT_DN, false);
         doConnectionWithAliasTestImpl(CLIENT2_KEY_ALIAS, CLIENT2_DN, false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateAndCloseSslConnectionWithAliasOpenSSL() throws Exception {
         assumeTrue(OpenSsl.isAvailable());
         assumeTrue(OpenSsl.supportsKeyManagerFactory());
@@ -247,19 +255,21 @@ public class SslIntegrationTest extends QpidJmsTestCase {
             Certificate cert = peerCertificates[0];
             assertTrue(cert instanceof X509Certificate);
             String dn = ((X509Certificate)cert).getSubjectX500Principal().getName();
-            assertEquals("Unexpected certificate DN", expectedDN, dn);
+            assertEquals(expectedDN, dn, "Unexpected certificate DN");
 
             testPeer.expectClose();
             connection.close();
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateConnectionWithAliasThatDoesNotExist() throws Exception {
         doCreateConnectionWithInvalidAliasTestImpl(ALIAS_DOES_NOT_EXIST);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateConnectionWithAliasThatDoesNotRepresentKeyEntry() throws Exception {
         doCreateConnectionWithInvalidAliasTestImpl(ALIAS_CA_CERT);
     }
@@ -290,7 +300,7 @@ public class SslIntegrationTest extends QpidJmsTestCase {
                 // Expected
             }
 
-            assertNull("Attempt should have failed locally, peer should not have accepted any TCP connection", testPeer.getClientSocket());
+            assertNull(testPeer.getClientSocket(), "Attempt should have failed locally, peer should not have accepted any TCP connection");
         }
     }
 
@@ -301,7 +311,8 @@ public class SslIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an unexpected error is encountered
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateConnectionWithSslContextOverride() throws Exception {
         assertNotEquals(CLIENT_JKS_KEYSTORE, CLIENT2_JKS_KEYSTORE);
         assertNotEquals(CLIENT_DN, CLIENT2_DN);
@@ -312,7 +323,8 @@ public class SslIntegrationTest extends QpidJmsTestCase {
         doConnectionWithSslContextOverride(CLIENT2_JKS_KEYSTORE, CLIENT2_DN, false);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateConnectionWithSslContextOverrideByExtension() throws Exception {
         assertNotEquals(CLIENT_JKS_KEYSTORE, CLIENT2_JKS_KEYSTORE);
         assertNotEquals(CLIENT_DN, CLIENT2_DN);
@@ -371,7 +383,7 @@ public class SslIntegrationTest extends QpidJmsTestCase {
             Certificate cert = peerCertificates[0];
             assertTrue(cert instanceof X509Certificate);
             String dn = ((X509Certificate)cert).getSubjectX500Principal().getName();
-            assertEquals("Unexpected certificate DN", expectedDN, dn);
+            assertEquals(expectedDN, dn, "Unexpected certificate DN");
 
             testPeer.expectClose();
             connection.close();
@@ -386,7 +398,8 @@ public class SslIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an unexpected error is encountered
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateConnectionWithSslContextOverrideAndURIConfig() throws Exception {
         assertNotEquals(CLIENT_JKS_KEYSTORE, CLIENT2_JKS_KEYSTORE);
         assertNotEquals(CLIENT_DN, CLIENT2_DN);
@@ -442,14 +455,15 @@ public class SslIntegrationTest extends QpidJmsTestCase {
             Certificate cert = peerCertificates[0];
             assertTrue(cert instanceof X509Certificate);
             String dn = ((X509Certificate)cert).getSubjectX500Principal().getName();
-            assertEquals("Unexpected certificate DN", expectedDN, dn);
+            assertEquals(expectedDN, dn, "Unexpected certificate DN");
 
             testPeer.expectClose();
             connection.close();
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testConfigureStoresWithSslSystemProperties() throws Exception {
         // Set properties and expect connection as Client1
         setSslSystemPropertiesForCurrentTest(CLIENT_JKS_KEYSTORE, PASSWORD, CLIENT_JKS_TRUSTSTORE, PASSWORD);
@@ -487,14 +501,16 @@ public class SslIntegrationTest extends QpidJmsTestCase {
         doConfigureStoresWithSslSystemPropertiesTestImpl(CLIENT2_DN);
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testConfigurePkcs12StoresWithSslSystemProperties() throws Exception {
         // Set properties and expect connection as Client1
         setSslSystemPropertiesForCurrentTest(CLIENT_PKCS12_KEYSTORE, CUSTOM_STORE_TYPE_PKCS12, PASSWORD, CLIENT_PKCS12_TRUSTSTORE, CUSTOM_STORE_TYPE_PKCS12, PASSWORD);
         doConfigureStoresWithSslSystemPropertiesTestImpl(CLIENT_DN);
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testNonSslConnectionFailsToSslServer() throws Exception {
         TransportOptions serverOptions = new TransportOptions();
         serverOptions.setKeyStoreLocation(BROKER_PKCS12_KEYSTORE);
@@ -513,7 +529,7 @@ public class SslIntegrationTest extends QpidJmsTestCase {
             catch (JMSException jmse) {
                 String message = jmse.getMessage();
                 assertNotNull(message);
-                assertTrue("Unexpected message: " + message, message.contains("Timed out while waiting to connect"));
+                assertTrue(message.contains("Timed out while waiting to connect"), "Unexpected message: " + message);
             }
         }
     }
@@ -557,7 +573,7 @@ public class SslIntegrationTest extends QpidJmsTestCase {
             Certificate cert = peerCertificates[0];
             assertTrue(cert instanceof X509Certificate);
             String dn = ((X509Certificate)cert).getSubjectX500Principal().getName();
-            assertEquals("Unexpected certificate DN", expectedDN, dn);
+            assertEquals(expectedDN, dn, "Unexpected certificate DN");
 
             testPeer.expectClose();
             connection.close();

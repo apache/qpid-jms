@@ -16,10 +16,10 @@
  */
 package org.apache.qpid.jms.transactions;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import javax.jms.Destination;
 import javax.jms.Message;
@@ -31,14 +31,16 @@ import javax.jms.TextMessage;
 
 import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.apache.qpid.jms.support.AmqpTestSupport;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Basic tests for Session in Transacted mode.
  */
 public class JmsTransactedSessionTest extends AmqpTestSupport {
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testCreateTxSession() throws Exception {
         connection = createAmqpConnection();
         assertNotNull(connection);
@@ -51,7 +53,8 @@ public class JmsTransactedSessionTest extends AmqpTestSupport {
         session.close();
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testCommitOnSessionWithNoWork() throws Exception {
         connection = createAmqpConnection();
         assertNotNull(connection);
@@ -64,7 +67,8 @@ public class JmsTransactedSessionTest extends AmqpTestSupport {
         session.commit();
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testRollbackOnSessionWithNoWork() throws Exception {
         connection = createAmqpConnection();
         assertNotNull(connection);
@@ -77,18 +81,19 @@ public class JmsTransactedSessionTest extends AmqpTestSupport {
         session.rollback();
     }
 
-    @Test(timeout=60000)
+    @Test
+    @Timeout(60)
     public void testCloseSessionRollsBack() throws Exception {
         connection = createAmqpConnection();
         connection.start();
 
         sendToAmqQueue(2);
 
-        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        QueueViewMBean proxy = getProxyToQueue(testMethodName);
         assertEquals(2, proxy.getQueueSize());
 
         Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         MessageConsumer consumer = session.createConsumer(queue);
         Message message = consumer.receive(5000);
         assertNotNull(message);
@@ -100,12 +105,14 @@ public class JmsTransactedSessionTest extends AmqpTestSupport {
         assertEquals(2, proxy.getQueueSize());
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testRollbackSentMessagesThenConsumeWithTopic() throws Exception {
         doRollbackSentMessagesThenConsumeTestImpl(true);
     }
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testRollbackSentMessagesThenConsumeWithQueue() throws Exception {
         doRollbackSentMessagesThenConsumeTestImpl(false);
     }

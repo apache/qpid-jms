@@ -16,12 +16,13 @@
  */
 package org.apache.qpid.jms;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.UUID;
 
@@ -37,8 +38,10 @@ import javax.jms.TemporaryQueue;
 import javax.jms.TextMessage;
 import javax.jms.Topic;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.Timeout;
 import org.mockito.Mockito;
 
 /**
@@ -51,13 +54,14 @@ public class JmsSessionTest extends JmsConnectionTestSupport {
     private static final int INDIVIDUAL_ACKNOWLEDGE = 101;
 
     @Override
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
+        super.setUp(testInfo);
         connection = createConnectionToMockProvider();
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testGetMessageListener() throws JMSException {
         JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNull(session.getMessageListener());
@@ -70,7 +74,8 @@ public class JmsSessionTest extends JmsConnectionTestSupport {
         assertNotNull(session.getMessageListener());
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testGetAcknowledgementMode() throws JMSException {
         JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertEquals(Session.AUTO_ACKNOWLEDGE, session.getAcknowledgeMode());
@@ -88,7 +93,8 @@ public class JmsSessionTest extends JmsConnectionTestSupport {
         assertEquals(INDIVIDUAL_ACKNOWLEDGE, session.getAcknowledgeMode());
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testIsAutoAcknowledge() throws JMSException {
         JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertTrue(session.isAutoAcknowledge());
@@ -98,7 +104,8 @@ public class JmsSessionTest extends JmsConnectionTestSupport {
         assertFalse(session.isIndividualAcknowledge());
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testIsDupsOkAcknowledge() throws JMSException {
         JmsSession session = (JmsSession) connection.createSession(false, Session.DUPS_OK_ACKNOWLEDGE);
         assertFalse(session.isAutoAcknowledge());
@@ -108,7 +115,8 @@ public class JmsSessionTest extends JmsConnectionTestSupport {
         assertFalse(session.isIndividualAcknowledge());
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testIsClientAcknowledge() throws JMSException {
         JmsSession session = (JmsSession) connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         assertFalse(session.isAutoAcknowledge());
@@ -118,7 +126,8 @@ public class JmsSessionTest extends JmsConnectionTestSupport {
         assertFalse(session.isIndividualAcknowledge());
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testIsNoAcknowledge() throws JMSException {
         JmsSession session = (JmsSession) connection.createSession(false, NO_ACKNOWLEDGE);
         assertFalse(session.isAutoAcknowledge());
@@ -128,7 +137,8 @@ public class JmsSessionTest extends JmsConnectionTestSupport {
         assertFalse(session.isIndividualAcknowledge());
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testIsNoAcknowledgeWithArtemisMode() throws JMSException {
         JmsSession session = (JmsSession) connection.createSession(false, ARTEMIS_PRE_ACKNOWLEDGE);
         assertFalse(session.isAutoAcknowledge());
@@ -138,7 +148,8 @@ public class JmsSessionTest extends JmsConnectionTestSupport {
         assertFalse(session.isIndividualAcknowledge());
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testIsTransacted() throws JMSException {
         JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertFalse(session.isTransacted());
@@ -146,7 +157,8 @@ public class JmsSessionTest extends JmsConnectionTestSupport {
         assertTrue(session.isTransacted());
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testIsIndividualAcknowledge() throws JMSException {
         JmsSession session = (JmsSession) connection.createSession(false, INDIVIDUAL_ACKNOWLEDGE);
         assertFalse(session.isAutoAcknowledge());
@@ -156,61 +168,77 @@ public class JmsSessionTest extends JmsConnectionTestSupport {
         assertTrue(session.isIndividualAcknowledge());
     }
 
-    @Test(timeout = 10000, expected=IllegalStateException.class)
+    @Test
+    @Timeout(10)
     public void testRecoverThrowsForTxSession() throws JMSException {
-        JmsSession session = (JmsSession) connection.createSession(true, Session.SESSION_TRANSACTED);
-        session.recover();
+        assertThrows(IllegalStateException.class, () -> {
+            JmsSession session = (JmsSession) connection.createSession(true, Session.SESSION_TRANSACTED);
+            session.recover();
+        });
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testRecoverWithNoSessionActivity() throws JMSException {
         JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         session.recover();
     }
 
-    @Test(timeout = 10000, expected=JMSException.class)
+    @Test
+    @Timeout(10)
     public void testRollbackThrowsOnNonTxSession() throws JMSException {
-        JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        session.rollback();
+        assertThrows(JMSException.class, () -> {
+            JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            session.rollback();
+        });
     }
 
-    @Test(timeout = 10000, expected=JMSException.class)
+    @Test
+    @Timeout(10)
     public void testCommitThrowsOnNonTxSession() throws JMSException {
-        JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        session.commit();
+        assertThrows(JMSException.class, () -> {
+            JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            session.commit();
+        });
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testCreateMessage() throws JMSException {
         JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session.createMessage());
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testCreateBytesMessage() throws JMSException {
         JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session.createBytesMessage());
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testCreateStreamMessage() throws JMSException {
         JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session.createStreamMessage());
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testCreateMapMessage() throws JMSException {
         JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session.createMapMessage());
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testCreateObjectMessage() throws JMSException {
         JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session.createObjectMessage());
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testCreateObjectMessageWithValue() throws JMSException {
         JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         ObjectMessage message = session.createObjectMessage("TEST-MESSAGE");
@@ -220,13 +248,15 @@ public class JmsSessionTest extends JmsConnectionTestSupport {
         assertEquals("TEST-MESSAGE", message.getObject());
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testCreateTextMessage() throws JMSException {
         JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session.createTextMessage());
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testCreateTextMessageWithValue() throws JMSException {
         JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         TextMessage message = session.createTextMessage("TEST-MESSAGE");
@@ -234,91 +264,132 @@ public class JmsSessionTest extends JmsConnectionTestSupport {
         assertEquals("TEST-MESSAGE", message.getText());
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testUnsubscribe() throws JMSException {
         JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         session.unsubscribe("some-subscription");
     }
 
-    @Test(timeout = 10000, expected=InvalidDestinationException.class)
+    @Test
+    @Timeout(10)
     public void testCreateConsumerNullDestinationThrowsIDE() throws JMSException {
-        JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        session.createConsumer(null);
+        assertThrows(InvalidDestinationException.class, () -> {
+            JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            session.createConsumer(null);
+        });
     }
 
-    @Test(timeout = 10000, expected=InvalidDestinationException.class)
+    @Test
+    @Timeout(10)
     public void testCreateConsumerNullDestinationWithSelectorThrowsIDE() throws JMSException {
-        JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        session.createConsumer(null, "a > b");
+        assertThrows(InvalidDestinationException.class, () -> {
+            JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            session.createConsumer(null, "a > b");
+        });
     }
 
-    @Test(timeout = 10000, expected=InvalidDestinationException.class)
+    @Test
+    @Timeout(10)
     public void testCreateConsumerNullDestinationWithSelectorNoLocalThrowsIDE() throws JMSException {
-        JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        session.createConsumer(null, "a > b", true);
+        assertThrows(InvalidDestinationException.class, () -> {
+            JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            session.createConsumer(null, "a > b", true);
+        });
     }
 
-    @Test(timeout = 10000, expected=InvalidDestinationException.class)
+    @Test
+    @Timeout(10)
     public void testCreateReceiverNullDestinationThrowsIDE() throws JMSException {
-        JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        session.createReceiver(null);
+        assertThrows(InvalidDestinationException.class, () -> {
+            JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            session.createReceiver(null);
+        });
     }
 
-    @Test(timeout = 10000, expected=InvalidDestinationException.class)
+    @Test
+    @Timeout(10)
     public void testCreateReceiverNullDestinationWithSelectorThrowsIDE() throws JMSException {
-        JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        session.createConsumer(null, "a > b");
+        assertThrows(InvalidDestinationException.class, () -> {
+            JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            session.createConsumer(null, "a > b");
+        });
     }
 
-    @Test(timeout = 10000, expected=InvalidDestinationException.class)
+    @Test
+    @Timeout(10)
     public void testCreateBrowserNullDestinationThrowsIDE() throws JMSException {
-        JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        session.createBrowser(null);
+        assertThrows(InvalidDestinationException.class, () -> {
+            JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            session.createBrowser(null);
+        });
     }
 
-    @Test(timeout = 10000, expected=InvalidDestinationException.class)
+    @Test
+    @Timeout(10)
     public void testCreateBrowserNullDestinationWithSelectorThrowsIDE() throws JMSException {
-        JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        session.createBrowser(null, "a > b");
+        assertThrows(InvalidDestinationException.class, () -> {
+            JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            session.createBrowser(null, "a > b");
+        });
     }
 
-    @Test(timeout = 10000, expected=InvalidDestinationException.class)
+    @Test
+    @Timeout(10)
     public void testCreateSubscriberNullDestinationThrowsIDE() throws JMSException {
-        JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        session.createSubscriber(null);
+        assertThrows(InvalidDestinationException.class, () -> {
+            JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            session.createSubscriber(null);
+        });
     }
 
-    @Test(timeout = 10000, expected=InvalidDestinationException.class)
+    @Test
+    @Timeout(10)
     public void testCreateSubscriberNullDestinationWithSelectorNoLocalThrowsIDE() throws JMSException {
-        JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        session.createSubscriber(null, "a > b", true);
+        assertThrows(InvalidDestinationException.class, () -> {
+            JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            session.createSubscriber(null, "a > b", true);
+        });
     }
 
-    @Test(timeout = 10000, expected=InvalidDestinationException.class)
+    @Test
+    @Timeout(10)
     public void testCreateDurableSubscriberNullDestinationThrowsIDE() throws JMSException {
-        JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        session.createDurableSubscriber(null, "name");
+        assertThrows(InvalidDestinationException.class, () -> {
+            JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            session.createDurableSubscriber(null, "name");
+        });
     }
 
-    @Test(timeout = 10000, expected=InvalidDestinationException.class)
+    @Test
+    @Timeout(10)
     public void testCreateDurableSubscriberNullDestinationWithSelectorNoLocalThrowsIDE() throws JMSException {
-        JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        session.createDurableSubscriber(null, "name", "a > b", true);
+        assertThrows(InvalidDestinationException.class, () -> {
+            JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            session.createDurableSubscriber(null, "name", "a > b", true);
+        });
     }
 
-    @Test(timeout = 10000, expected=InvalidDestinationException.class)
+    @Test
+    @Timeout(10)
     public void testCreateDurableConsumerNullDestinationThrowsIDE() throws JMSException {
-        JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        session.createDurableConsumer(null, "name");
+        assertThrows(InvalidDestinationException.class, () -> {
+            JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            session.createDurableConsumer(null, "name");
+        });
     }
 
-    @Test(timeout = 10000, expected=InvalidDestinationException.class)
+    @Test
+    @Timeout(10)
     public void testCreateDurableConsumerNullDestinationWithSelectorNoLocalThrowsIDE() throws JMSException {
-        JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        session.createDurableConsumer(null, "name", "a > b", true);
+        assertThrows(InvalidDestinationException.class, () -> {
+            JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            session.createDurableConsumer(null, "name", "a > b", true);
+        });
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testSendWithNullDestThrowsIDE() throws JMSException {
         JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         JmsMessageProducer mockProducer = Mockito.mock(JmsMessageProducer.class);
@@ -329,7 +400,8 @@ public class JmsSessionTest extends JmsConnectionTestSupport {
         } catch (InvalidDestinationException idex) {}
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testCannotCreateConsumerOnTempDestinationFromSomeOtherSource() throws JMSException {
         JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         TemporaryQueue tempQueue = new JmsTemporaryQueue("ID:" + UUID.randomUUID().toString());
@@ -340,7 +412,8 @@ public class JmsSessionTest extends JmsConnectionTestSupport {
         } catch (InvalidDestinationException idex) {}
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testCannotCreateConsumerOnDeletedTemporaryDestination() throws JMSException {
         JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         TemporaryQueue tempQueue = session.createTemporaryQueue();
@@ -360,7 +433,8 @@ public class JmsSessionTest extends JmsConnectionTestSupport {
         } catch (IllegalStateException ise) {}
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testSessionRunFailsWhenSessionIsClosed() throws Exception {
         JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -372,7 +446,8 @@ public class JmsSessionTest extends JmsConnectionTestSupport {
         } catch (RuntimeException re) {}
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testCreateSharedConsumer() throws Exception {
         JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -380,11 +455,12 @@ public class JmsSessionTest extends JmsConnectionTestSupport {
         JmsMessageConsumer consumer = (JmsMessageConsumer) session.createSharedConsumer(topic, "subscription");
 
         assertNotNull(consumer);
-        assertNull("unexpected selector", consumer.getMessageSelector());
-        assertEquals("unexpected topic", topic, consumer.getDestination());
+        assertNull(consumer.getMessageSelector(), "unexpected selector");
+        assertEquals(topic, consumer.getDestination(), "unexpected topic");
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testCreateSharedConsumerWithSelector() throws Exception {
         JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -393,11 +469,12 @@ public class JmsSessionTest extends JmsConnectionTestSupport {
         JmsMessageConsumer consumer = (JmsMessageConsumer) session.createSharedConsumer(topic, "subscription", selector);
 
         assertNotNull(consumer);
-        assertEquals("unexpected selector", selector, consumer.getMessageSelector());
-        assertEquals("unexpected topic", topic, consumer.getDestination());
+        assertEquals(selector, consumer.getMessageSelector(), "unexpected selector");
+        assertEquals(topic, consumer.getDestination(), "unexpected topic");
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testCreateSharedDurableConsumer() throws Exception {
         JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -405,11 +482,12 @@ public class JmsSessionTest extends JmsConnectionTestSupport {
         JmsMessageConsumer consumer = (JmsMessageConsumer) session.createSharedDurableConsumer(topic, "subscription");
 
         assertNotNull(consumer);
-        assertNull("unexpected selector", consumer.getMessageSelector());
-        assertEquals("unexpected topic", topic, consumer.getDestination());
+        assertNull(consumer.getMessageSelector(), "unexpected selector");
+        assertEquals(topic, consumer.getDestination(), "unexpected topic");
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(10)
     public void testCreateSharedDurableConsumerWithSelector() throws Exception {
         JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -418,7 +496,7 @@ public class JmsSessionTest extends JmsConnectionTestSupport {
         JmsMessageConsumer consumer = (JmsMessageConsumer) session.createSharedDurableConsumer(topic, "subscription", selector);
 
         assertNotNull(consumer);
-        assertEquals("unexpected selector", selector, consumer.getMessageSelector());
-        assertEquals("unexpected topic", topic, consumer.getDestination());
+        assertEquals(selector, consumer.getMessageSelector(), "unexpected selector");
+        assertEquals(topic, consumer.getDestination(), "unexpected topic");
     }
 }

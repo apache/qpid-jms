@@ -16,7 +16,7 @@
  */
 package org.apache.qpid.jms.usecases;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -29,7 +29,8 @@ import javax.jms.Queue;
 import javax.jms.Session;
 
 import org.apache.qpid.jms.support.AmqpTestSupport;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,7 +44,8 @@ public class JmsLargeMessagesInGroupsTest extends AmqpTestSupport {
     private static final int RECEIVE_TIMEOUT = 5000;
     private static final String JMSX_GROUP_ID = "JmsGroupsTest";
 
-    @Test(timeout = 60 * 1000)
+    @Test
+    @Timeout(60)
     public void testGroupSeqIsNeverLost() throws Exception {
         AtomicInteger sequenceCounter = new AtomicInteger();
 

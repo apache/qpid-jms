@@ -19,11 +19,11 @@ package org.apache.qpid.jms.integration;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.NETWORK_HOST;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.OPEN_HOSTNAME;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.PORT;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.net.URI;
 import java.util.HashMap;
@@ -44,7 +44,8 @@ import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.basictypes.AmqpError;
 import org.apache.qpid.jms.test.testpeer.basictypes.ConnectionError;
 import org.apache.qpid.proton.amqp.Symbol;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,7 +57,8 @@ public class FailedConnectionsIntegrationTest extends QpidJmsTestCase {
 
     private static final Logger LOG = LoggerFactory.getLogger(FailedConnectionsIntegrationTest.class);
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testConnectWithInvalidClientIdThrowsJMSEWhenInvalidContainerHintNotPresent() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             testPeer.rejectConnect(AmqpError.INVALID_FIELD, "Client ID already in use", null);
@@ -73,7 +75,8 @@ public class FailedConnectionsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testConnectThrowsTimedOutExceptioWhenResponseNotSent() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             testPeer.expectSaslAnonymous();
@@ -92,7 +95,8 @@ public class FailedConnectionsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testConnectWithNotFoundErrorThrowsJMSEWhenInvalidContainerHintNotPresent() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             testPeer.rejectConnect(AmqpError.NOT_FOUND, "Virtual Host does not exist", null);
@@ -112,7 +116,8 @@ public class FailedConnectionsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testConnectWithInvalidClientIdThrowsICIDEWhenInvalidContainerHintPresent() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             final String remoteURI = "amqp://localhost:" + testPeer.getServerPort();
@@ -141,7 +146,8 @@ public class FailedConnectionsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testConnectionFactoryCreateConnectionWithInvalidClientIdThrowsICIDEWhenInvalidContainerHintPresent() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             final String remoteURI = "amqp://localhost:" + testPeer.getServerPort();
@@ -174,7 +180,8 @@ public class FailedConnectionsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testConnectSecurityViolation() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             testPeer.rejectConnect(AmqpError.UNAUTHORIZED_ACCESS, "Anonymous connections not allowed", null);
@@ -190,7 +197,8 @@ public class FailedConnectionsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testConnectWithRedirect() throws Exception {
         Map<Symbol, Object> redirectInfo = new HashMap<Symbol, Object>();
 
@@ -210,7 +218,7 @@ public class FailedConnectionsIntegrationTest extends QpidJmsTestCase {
                 URI redirectionURI = redirectEx.getRedirectionURI();
 
                 assertNotNull(redirectionURI);
-                assertTrue("vhost", redirectionURI.getQuery().contains("amqp.vhost=vhost"));
+                assertTrue(redirectionURI.getQuery().contains("amqp.vhost=vhost"), "Unexpected query, got: " + redirectionURI.getQuery());
                 assertEquals("127.0.0.1", redirectionURI.getHost());
                 assertEquals(5672, redirectionURI.getPort());
             } catch (Exception ex) {

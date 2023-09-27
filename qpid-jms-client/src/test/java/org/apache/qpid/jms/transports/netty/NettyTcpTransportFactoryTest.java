@@ -16,18 +16,20 @@
  */
 package org.apache.qpid.jms.transports.netty;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.net.URI;
 
 import org.apache.qpid.jms.transports.Transport;
 import org.apache.qpid.jms.transports.TransportOptions;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Test the NettyTcpTransportFactory class
@@ -46,7 +48,8 @@ public class NettyTcpTransportFactoryTest {
     private static final int CUSTOM_LOCAL_PORT = 30000;
     private static final int CUSTOM_SHARED_EVENT_LOOP_THREADS = 7;
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testCreateWithDefaultOptions() throws Exception {
         URI BASE_URI = new URI("tcp://localhost:5672");
 
@@ -74,44 +77,57 @@ public class NettyTcpTransportFactoryTest {
         assertEquals(TransportOptions.DEFAULT_SHARED_EVENT_LOOP_THREADS, options.getSharedEventLoopThreads());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testCreateTransportWithUnknownOption() throws Exception {
-        URI BASE_URI = new URI("tcp://localhost:5672?transport.someOption=true");
-        NettyTcpTransportFactory factory = new NettyTcpTransportFactory();
-        factory.createTransport(BASE_URI);
+        assertThrows(IllegalArgumentException.class, () -> {
+            URI BASE_URI = new URI("tcp://localhost:5672?transport.someOption=true");
+            NettyTcpTransportFactory factory = new NettyTcpTransportFactory();
+            factory.createTransport(BASE_URI);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testCreateTransportWithBadOption() throws Exception {
-        URI BASE_URI = new URI("tcp://localhost:5672?transport.trafficClass=4096");
-        NettyTcpTransportFactory factory = new NettyTcpTransportFactory();
-        factory.createTransport(BASE_URI);
+        assertThrows(IllegalArgumentException.class, () -> {
+            URI BASE_URI = new URI("tcp://localhost:5672?transport.trafficClass=4096");
+            NettyTcpTransportFactory factory = new NettyTcpTransportFactory();
+            factory.createTransport(BASE_URI);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testCreateTransportWithHttpHeaders() throws Exception {
-        URI BASE_URI = new URI("tcp://localhost:5672?transport.httpHeaders=A");
-        NettyTcpTransportFactory factory = new NettyTcpTransportFactory();
-        factory.createTransport(BASE_URI);
+        assertThrows(IllegalArgumentException.class, () -> {
+            URI BASE_URI = new URI("tcp://localhost:5672?transport.httpHeaders=A");
+            NettyTcpTransportFactory factory = new NettyTcpTransportFactory();
+            factory.createTransport(BASE_URI);
+        });
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void testCreateWithBadKey() throws Exception {
-        URI BASE_URI = new URI("tcp://localhost:5672?transport.trafficClass=4096");
-        NettyTcpTransportFactory.create("foo", BASE_URI);
+        assertThrows(IOException.class, () -> {
+            URI BASE_URI = new URI("tcp://localhost:5672?transport.trafficClass=4096");
+            NettyTcpTransportFactory.create("foo", BASE_URI);
+        });
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void testFindFactoryFailsWithNullKey() throws Exception {
-        NettyTcpTransportFactory.findTransportFactory(null);
+        assertThrows(IOException.class, () -> {
+            NettyTcpTransportFactory.findTransportFactory(null);
+        });
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void testFindFactoryFailsWithInvalidKey() throws Exception {
-        NettyTcpTransportFactory.findTransportFactory("ssh");
+        assertThrows(IOException.class, () -> {
+            NettyTcpTransportFactory.findTransportFactory("ssh");
+        });
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testCreateWithCustomOptions() throws Exception {
         URI BASE_URI = new URI("tcp://localhost:5672");
 

@@ -27,8 +27,9 @@ import org.apache.qpid.jms.meta.JmsSessionInfo;
 import org.apache.qpid.jms.provider.mock.MockRemotePeer;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.util.IdGenerator;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInfo;
 
 /**
  * Utility methods useful in testing the FailoverProvider
@@ -42,19 +43,19 @@ public class FailoverProviderTestSupport extends QpidJmsTestCase {
     protected MockRemotePeer mockPeer;
 
     @Override
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
+        super.setUp(testInfo);
+
         nextSessionId.set(0);
         nextConsumerId.set(0);
 
         mockPeer = new MockRemotePeer();
         mockPeer.start();
-
-        super.setUp();
     }
 
     @Override
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         if (mockPeer != null) {
             mockPeer.terminate();

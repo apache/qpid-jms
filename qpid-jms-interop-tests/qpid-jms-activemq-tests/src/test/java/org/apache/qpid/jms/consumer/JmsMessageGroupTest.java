@@ -16,9 +16,9 @@
  */
 package org.apache.qpid.jms.consumer;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import javax.jms.Connection;
 import javax.jms.Message;
@@ -29,7 +29,8 @@ import javax.jms.Session;
 import javax.jms.TextMessage;
 
 import org.apache.qpid.jms.support.AmqpTestSupport;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,12 +38,13 @@ public class JmsMessageGroupTest extends AmqpTestSupport {
 
     private static final Logger LOG = LoggerFactory.getLogger(JmsMessageGroupTest.class);
 
-    @Test(timeout = 60000)
+    @Test
+    @Timeout(60)
     public void testGroupedMessagesDeliveredToOnlyOneConsumer() throws Exception {
         connection = createAmqpConnection();
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(testMethodName);
         MessageConsumer consumer1 = session.createConsumer(queue);
         MessageProducer producer = session.createProducer(queue);
 
@@ -59,7 +61,7 @@ public class JmsMessageGroupTest extends AmqpTestSupport {
         // the first 3
         for (int i = 0; i < 3; i++) {
             TextMessage m1 = (TextMessage) consumer1.receive(3000);
-            assertNotNull("m1 is null for index: " + i, m1);
+            assertNotNull(m1, "m1 is null for index: " + i);
             assertEquals(m1.getIntProperty("JMSXGroupSeq"), i + 1);
         }
 
@@ -75,13 +77,13 @@ public class JmsMessageGroupTest extends AmqpTestSupport {
         // The last messages should now go the the second consumer.
         for (int i = 0; i < 1; i++) {
             TextMessage m1 = (TextMessage) consumer2.receive(3000);
-            assertNotNull("m1 is null for index: " + i, m1);
+            assertNotNull(m1, "m1 is null for index: " + i);
             assertEquals(m1.getIntProperty("JMSXGroupSeq"), 4 + i);
         }
 
         // assert that there are no other messages left for the consumer 2
         Message m = consumer2.receive(100);
-        assertNull("consumer 2 has some messages left", m);
+        assertNull(m, "consumer 2 has some messages left");
         connection1.close();
     }
 }

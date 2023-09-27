@@ -16,6 +16,8 @@
  */
 package org.apache.qpid.jms.producer;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -23,8 +25,10 @@ import javax.jms.MessageProducer;
 import javax.jms.Session;
 
 import org.apache.qpid.jms.JmsConnectionTestSupport;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Test the contract of MessageProducer that has been closed.
@@ -46,90 +50,136 @@ public class JmsMessageProducerClosedTest extends JmsConnectionTestSupport {
     }
 
     @Override
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws Exception {
+        super.setUp(testInfo);
         producer = createProducer();
     }
 
-    @Test(timeout=30000)
+    @Test
+    @Timeout(30)
     public void testClose() throws Exception {
         producer.close();
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testSetDisableMessageIDFails() throws Exception {
-        producer.setDisableMessageID(true);
+        assertThrows(JMSException.class, () -> {
+            producer.setDisableMessageID(true);
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testGetDisableMessageIDFails() throws Exception {
-        producer.getDisableMessageID();
+        assertThrows(JMSException.class, () -> {
+            producer.getDisableMessageID();
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testSetDisableMessageTimestampFails() throws Exception {
-        producer.setDisableMessageTimestamp(false);
+        assertThrows(JMSException.class, () -> {
+            producer.setDisableMessageTimestamp(false);
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testGetDisableMessageTimestampFails() throws Exception {
-        producer.getDisableMessageTimestamp();
+        assertThrows(JMSException.class, () -> {
+            producer.getDisableMessageTimestamp();
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testSetDeliveryModeFails() throws Exception {
-        producer.setDeliveryMode(1);
+        assertThrows(JMSException.class, () -> {
+            producer.setDeliveryMode(1);
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testGetDeliveryModeFails() throws Exception {
-        producer.getDeliveryMode();
+        assertThrows(JMSException.class, () -> {
+            producer.getDeliveryMode();
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testSetPriorityFails() throws Exception {
-        producer.setPriority(1);
+        assertThrows(JMSException.class, () -> {
+            producer.setPriority(1);
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testGetPriorityFails() throws Exception {
-        producer.getPriority();
+        assertThrows(JMSException.class, () -> {
+            producer.getPriority();
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testSetTimeToLiveFails() throws Exception {
-        producer.setTimeToLive(1);
+        assertThrows(JMSException.class, () -> {
+            producer.setTimeToLive(1);
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testGetTimeToLiveFails() throws Exception {
-        producer.getTimeToLive();
+        assertThrows(JMSException.class, () -> {
+            producer.getTimeToLive();
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testGetDestinationFails() throws Exception {
-        producer.getDestination();
+        assertThrows(JMSException.class, () -> {
+            producer.getDestination();
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testSendFails() throws Exception {
-        producer.send(message);
+        assertThrows(JMSException.class, () -> {
+            producer.send(message);
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testSendWithDestinationFails() throws Exception {
-        producer.send(destination, message);
+        assertThrows(JMSException.class, () -> {
+            producer.send(destination, message);
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testSendWithModePriorityTTLFails() throws Exception {
-        producer.send(message, 1, 3, 111);
+        assertThrows(JMSException.class, () -> {
+            producer.send(message, 1, 3, 111);
+        });
     }
 
-    @Test(timeout=30000, expected=JMSException.class)
+    @Test
+    @Timeout(30)
     public void testSendWithDestinationModePriorityTTLFails() throws Exception {
-        producer.send(destination, message, 1, 3, 111);
+        assertThrows(JMSException.class, () -> {
+            producer.send(destination, message, 1, 3, 111);
+        });
     }
 }
 

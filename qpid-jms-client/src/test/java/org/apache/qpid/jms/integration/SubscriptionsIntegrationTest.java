@@ -21,10 +21,10 @@ package org.apache.qpid.jms.integration;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.SHARED_SUBS;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.SUB_NAME_DELIMITER;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
@@ -48,7 +48,8 @@ import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.basictypes.AmqpError;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.hamcrest.Matcher;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,7 +74,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an unexpected exception occurs
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCloseSharedDurableTopicSubscriberDetachesWithCloseFalse() throws Exception {
         doSharedTopicSubscriberDetachTestImpl(true);
     }
@@ -83,7 +85,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an unexpected exception occurs
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCloseSharedVolatileTopicSubscriberDetachesWithCloseTrue() throws Exception {
         doSharedTopicSubscriberDetachTestImpl(false);
     }
@@ -137,7 +140,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an unexpected exception occurs
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSharedDurableSubscriberLinkNames() throws Exception {
         doSharedSubsriberLinkNamesHaveUniqueCounterSuffixTestImpl(true, true);
     }
@@ -148,7 +152,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an unexpected exception occurs
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSharedVolatileSubscriberLinkNamesHaveUniqueCounterSuffix() throws Exception {
         doSharedSubsriberLinkNamesHaveUniqueCounterSuffixTestImpl(false, true);
     }
@@ -160,7 +165,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an unexpected exception occurs
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSharedDurableSubscriberLinkNamesNoClientID() throws Exception {
         doSharedSubsriberLinkNamesHaveUniqueCounterSuffixTestImpl(true, false);
     }
@@ -172,7 +178,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an unexpected exception occurs
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSharedVolatileSubscriberLinkNamesHaveUniqueCounterSuffixNoClientID() throws Exception {
         doSharedSubsriberLinkNamesHaveUniqueCounterSuffixTestImpl(false, false);
     }
@@ -262,7 +269,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an unexpected exception occurs
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSharedDurableSubsriberLinkNamesMultipleConnectionSubs() throws Exception {
         doMultipleConnectionSharedSubscriberLinkNamesHaveUniqueCounterSuffixTestImpl(true);
     }
@@ -273,7 +281,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an unexpected exception occurs
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSharedVolatileSubsriberLinkNamesHaveUniqueCounterSuffixMultipleConnectionSubs() throws Exception {
         doMultipleConnectionSharedSubscriberLinkNamesHaveUniqueCounterSuffixTestImpl(false);
     }
@@ -352,7 +361,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an unexpected exception occurs
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSharedDurableSubsriberLinkNamesMultipleSessionSubs() throws Exception {
         doMultipleSessionSharedSubscriberLinkNamesHaveUniqueCounterSuffixTestImpl(true);
     }
@@ -363,7 +373,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an unexpected exception occurs
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSharedVolatileSubsriberLinkNamesHaveUniqueCounterSuffixMultipleSessionSubs() throws Exception {
         doMultipleSessionSharedSubscriberLinkNamesHaveUniqueCounterSuffixTestImpl(false);
     }
@@ -433,7 +444,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an unexpected exception occurs
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSharedDurableSubsriberLinkNamesMultipleNamedSubs() throws Exception {
         doMultipleNamedSharedSubscriberLinkNamesHaveUniqueCounterSuffixTestImpl(true);
     }
@@ -444,7 +456,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an unexpected exception occurs
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSharedVolatileSubsriberLinkNamesHaveUniqueCounterSuffixMultipleNamedSubs() throws Exception {
         doMultipleNamedSharedSubscriberLinkNamesHaveUniqueCounterSuffixTestImpl(false);
     }
@@ -529,7 +542,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an unexpected exception occurs
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSharedDurableAndVolatileSubsCoexistUsingDistinctLinkNames() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // Add server connection capability to indicate support for shared-subs
@@ -576,7 +590,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an unexpected exception occurs
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateSharedDurableTopicSubscriberFailsIfNotSupported() throws Exception {
         doSharedSubscriptionNotSupportedTestImpl(true, false);
     }
@@ -588,7 +603,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an unexpected exception occurs
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateSharedVolatileTopicSubscriberFailsIfNotSupported() throws Exception {
         doSharedSubscriptionNotSupportedTestImpl(false, false);
     }
@@ -601,7 +617,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an unexpected exception occurs
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateSharedDurableTopicSubscriberFailsIfNotSupportedReleasesLinkName() throws Exception {
         doSharedSubscriptionNotSupportedTestImpl(true, true);
     }
@@ -614,7 +631,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an unexpected exception occurs
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateSharedVolatileTopicSubscriberFailsIfNotSupportedReleasesLinkName() throws Exception {
         doSharedSubscriptionNotSupportedTestImpl(false, true);
     }
@@ -675,7 +693,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an unexpected exception occurs
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateSharedDurableTopicSubscriberSucceedsWithOnlyLinkCapability() throws Exception {
         doSharedSubscriptionLinkCapabilitySupportedTestImpl(true);
     }
@@ -687,7 +706,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an unexpected exception occurs
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testCreateSharedVolatileTopicSubscriberSucceedsWithOnlyLinkCapability() throws Exception {
         doSharedSubscriptionLinkCapabilitySupportedTestImpl(false);
     }
@@ -739,7 +759,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an unexpected exception occurs
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSharedAndExclusiveDurableSubsCantCoexistSharedFirst() throws Exception {
         doSharedAndExclusiveDurableSubsCantCoexistTestImpl(true);
     }
@@ -750,7 +771,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an unexpected exception occurs
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSharedAndExclusiveDurableSubsCantCoexistExclusiveFirst() throws Exception {
         doSharedAndExclusiveDurableSubsCantCoexistTestImpl(false);
     }
@@ -809,7 +831,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
 
     // -------------------------------------- //
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testExclusiveDurableSubCanOnlyBeActiveOnceAtATime() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // Establish connection
@@ -863,7 +886,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an unexpected exception occurs
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testUnsubscribeNonExistingSubscription() throws Exception {
         doUnsubscribeNonExistingSubscriptionTestImpl(true);
     }
@@ -876,7 +900,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an unexpected exception occurs
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testUnsubscribeNonExistingSubscriptionWithoutClientID() throws Exception {
         doUnsubscribeNonExistingSubscriptionTestImpl(false);
     }
@@ -923,7 +948,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an unexpected exception occurs
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testUnsubscribeExclusiveDurableSubWhileActiveThenInactive() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -941,7 +967,7 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
             testPeer.expectLinkFlow();
 
             TopicSubscriber subscriber = session.createDurableSubscriber(dest, subscriptionName);
-            assertNotNull("TopicSubscriber object was null", subscriber);
+            assertNotNull(subscriber, "TopicSubscriber object was null");
 
             // Now try to unsubscribe, should fail
             try {
@@ -977,7 +1003,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an unexpected exception occurs
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testUnsubscribeSharedDurableSubWhileActiveThenInactive() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // Add server connection capability to indicate support for shared-subs
@@ -1062,7 +1089,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an unexpected exception occurs
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testUnsubscribeAfterFailedCreation() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // Add server connection capability to indicate support for shared-subs
@@ -1113,7 +1141,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an unexpected exception occurs
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testUnsubscribeFailsWhenRemoteDetachResponseIndicatesFailure() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1153,7 +1182,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an unexpected error is encountered
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRemotelyDetachLinkWithDurableSharedConsumer() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // Add server connection capability to indicate support for shared-subs
@@ -1202,7 +1232,7 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
             MessageConsumer subscriber2 = session2.createSharedDurableConsumer(dest,  subscriptionName);
             assertNotNull(subscriber2);
 
-            assertTrue("Consumer closed callback didn't trigger", subscriberClosed.await(5, TimeUnit.SECONDS));
+            assertTrue(subscriberClosed.await(5, TimeUnit.SECONDS), "Consumer closed callback didn't trigger");
 
             testPeer.waitForAllHandlersToComplete(1000);
 
@@ -1241,7 +1271,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an unexpected exception occurs
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSharedDurableSubChangeOfTopic() throws Exception {
         doSharedSubChangeOfDetailsTestImpl(true, true, false);
     }
@@ -1253,7 +1284,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an unexpected exception occurs
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSharedVolatileSubChangeOfTopic() throws Exception {
         doSharedSubChangeOfDetailsTestImpl(false, true, false);
     }
@@ -1265,7 +1297,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an unexpected exception occurs
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSharedDurableSubChangeOfSelector() throws Exception {
         doSharedSubChangeOfDetailsTestImpl(true, false, true);
     }
@@ -1277,7 +1310,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an unexpected exception occurs
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSharedVolatileSubChangeOfSelector() throws Exception {
         doSharedSubChangeOfDetailsTestImpl(false, false, true);
     }
@@ -1289,7 +1323,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an unexpected exception occurs
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSharedDurableSubChangeOfTopicAndSelector() throws Exception {
         doSharedSubChangeOfDetailsTestImpl(true, true, true);
     }
@@ -1301,7 +1336,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an unexpected exception occurs
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSharedVolatileSubChangeOfTopicAndSelector() throws Exception {
         doSharedSubChangeOfDetailsTestImpl(false, true, true);
     }
@@ -1407,7 +1443,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an unexpected error is encountered
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testRemotelyEndSessionWithDurableSharedConsumer() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // Add server connection capability to indicate support for shared-subs
@@ -1456,7 +1493,7 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
             MessageConsumer subscriber2 = session2.createSharedDurableConsumer(dest,  subscriptionName);
             assertNotNull(subscriber2);
 
-            assertTrue("Session closed callback didn't trigger", sessionClosed.await(5, TimeUnit.SECONDS));
+            assertTrue(sessionClosed.await(5, TimeUnit.SECONDS), "Session closed callback didn't trigger");
 
             testPeer.waitForAllHandlersToComplete(1000);
 
@@ -1491,7 +1528,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an unexpected error is encountered
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testLocallyEndSessionWithSharedConsumer() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // Add server connection capability to indicate support for shared-subs
@@ -1575,7 +1613,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
      *
      * @throws Exception if an unexpected error is encountered
      */
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSubscriptionNameNotAllowedToHaveNameSeparator() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // Add server connection capability to indicate support for shared-subs
@@ -1640,7 +1679,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
 
     // -------------------------------------- //
 
-    @Test(timeout = 20000)
+    @Test
+    @Timeout(20)
     public void testSharedTopicSubscriberBehavesLikeNoClientIDWasSetWhenAwaitClientIdOptionIsFalse() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             int serverPort = testPeer.getServerPort();

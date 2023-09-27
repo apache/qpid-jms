@@ -16,22 +16,28 @@
  */
 package org.apache.qpid.jms.util;
 
-import junit.framework.TestCase;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.Test;
 
 /**
  *
  */
-public class StopWatchTest extends TestCase {
+public class StopWatchTest {
 
+    @Test
     public void testStopWatch() throws Exception {
         StopWatch watch = new StopWatch();
         Thread.sleep(200);
         long taken = watch.stop();
 
         assertEquals(taken, watch.taken());
-        assertTrue("Should take approx 200 millis, was: " + taken, taken > 150);
+        assertTrue(taken > 150, "Should take approx 200 millis, was: " + taken);
     }
 
+    @Test
     public void testStopWatchNotStarted() throws Exception {
         StopWatch watch = new StopWatch(false);
         long taken = watch.stop();
@@ -42,25 +48,27 @@ public class StopWatchTest extends TestCase {
         taken = watch.stop();
 
         assertEquals(taken, watch.taken());
-        assertTrue("Should take approx 200 millis, was: " + taken, taken > 150);
+        assertTrue(taken > 150, "Should take approx 200 millis, was: " + taken);
     }
 
+    @Test
     public void testStopWatchRestart() throws Exception {
         StopWatch watch = new StopWatch();
         Thread.sleep(200);
         long taken = watch.stop();
 
         assertEquals(taken, watch.taken());
-        assertTrue("Should take approx 200 millis, was: " + taken, taken > 150);
+        assertTrue(taken > 150, "Should take approx 200 millis, was: " + taken);
 
         watch.restart();
         Thread.sleep(100);
         taken = watch.stop();
 
         assertEquals(taken, watch.taken());
-        assertTrue("Should take approx 100 millis, was: " + taken, taken > 50);
+        assertTrue(taken > 50, "Should take approx 100 millis, was: " + taken);
     }
 
+    @Test
     public void testStopWatchTaken() throws Exception {
         StopWatch watch = new StopWatch();
         Thread.sleep(100);

@@ -16,13 +16,13 @@
  */
 package org.apache.qpid.jms.tracing.opentracing;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.net.URI;
 
 import org.apache.qpid.jms.tracing.JmsTracer;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import io.opentracing.Tracer;
@@ -35,7 +35,7 @@ public class OpenTracingTracerFactoryTest {
         Tracer mock = Mockito.mock(Tracer.class);
         JmsTracer jmsTracer  = OpenTracingTracerFactory.create(mock);
 
-        assertEquals("Unexpected tracer instance type", OpenTracingTracer.class, jmsTracer.getClass());
+        assertEquals(OpenTracingTracer.class, jmsTracer.getClass(), "Unexpected tracer instance type");
 
         //Check it doesn't close underlying tracer
         Mockito.verifyNoInteractions(mock);
@@ -67,7 +67,7 @@ public class OpenTracingTracerFactoryTest {
         // As used when requesting tracing via URI option
         JmsTracer jmsTracer  = OpenTracingTracerFactory.create(new URI("amqp://localhost:1234"), OpenTracingTracerFactory.TYPE_NAME);
 
-        assertEquals("Unexpected tracer instance type", OpenTracingTracer.class, jmsTracer.getClass());
+        assertEquals(OpenTracingTracer.class, jmsTracer.getClass(), "Unexpected tracer instance type");
     }
 
     @Test

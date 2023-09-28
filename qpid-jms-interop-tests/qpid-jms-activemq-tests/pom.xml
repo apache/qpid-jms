@@ -123,12 +123,6 @@
         </exclusion>
       </exclusions>
     </dependency>
-    <dependency>
-      <groupId>org.apache.activemq.tooling</groupId>
-      <artifactId>activemq-junit</artifactId>
-      <version>${activemq-version}</version>
-      <scope>test</scope>
-    </dependency>
   </dependencies>
 
   <build>

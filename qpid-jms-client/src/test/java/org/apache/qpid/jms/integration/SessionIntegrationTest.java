@@ -2333,6 +2333,10 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             completed = new CountDownLatch(expected);
         }
 
+        public boolean hasCompleted() {
+            return completed.getCount() == 0;
+        }
+
         public boolean awaitCompletion(long timeout, TimeUnit units) throws InterruptedException {
             return completed.await(timeout, units);
         }
@@ -2833,6 +2837,82 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
             testPeer.expectClose();
             connection.close();
+        }
+    }
+
+    @Test
+    @Timeout(20)
+    public void testRemotelyEndSessionCompletesAsyncSends() throws Exception {
+        final String BREAD_CRUMB = "ErrorMessage";
+
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            final CountDownLatch sessionClosed = new CountDownLatch(1);
+            JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
+            connection.addConnectionListener(new JmsDefaultConnectionListener() {
+                @Override
+                public void onSessionClosed(Session session, Throwable exception) {
+                    sessionClosed.countDown();
+                }
+            });
+
+            testPeer.expectBegin();
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            // Create a producer, then remotely end the session afterwards.
+            testPeer.expectSenderAttach();
+
+            Queue queue = session.createQueue("myQueue");
+            final MessageProducer producer = session.createProducer(queue);
+
+            final int MSG_COUNT = 3;
+
+            for (int i = 0; i < MSG_COUNT; ++i) {
+                testPeer.expectTransferButDoNotRespond(new TransferPayloadCompositeMatcher());
+            }
+
+            TestJmsCompletionListener listener = new TestJmsCompletionListener(MSG_COUNT);
+            try {
+                for (int i = 0; i < MSG_COUNT; ++i) {
+                    Message message = session.createTextMessage("content");
+                    producer.send(message, listener);
+                }
+            } catch (JMSException e) {
+                LOG.warn("Caught unexpected error: {}", e.getMessage());
+                fail("No expected exception for this send.");
+            }
+
+            testPeer.waitForAllHandlersToComplete(2000);
+
+            assertFalse(listener.hasCompleted());
+
+            testPeer.expectSenderAttach();
+            testPeer.remotelyEndLastOpenedSession(true, 50, AmqpError.RESOURCE_DELETED, BREAD_CRUMB);
+
+            session.createProducer(queue);
+
+            // Verify the session gets marked closed
+            assertTrue(sessionClosed.await(5, TimeUnit.SECONDS), "Session closed callback didn't trigger");
+
+            try {
+                producer.getDeliveryMode();
+                fail("Expected ISE to be thrown due to being closed");
+            } catch (IllegalStateException jmsise) {
+                String errorMessage = jmsise.getCause().getMessage();
+                assertTrue(errorMessage.contains(AmqpError.RESOURCE_DELETED.toString()));
+                assertTrue(errorMessage.contains(BREAD_CRUMB));
+            }
+
+            assertTrue(listener.awaitCompletion(5, TimeUnit.SECONDS));
+            assertEquals(MSG_COUNT, listener.errorCount); // All sends should have been failed
+
+            // Try closing it explicitly, should effectively no-op in client.
+            // The test peer will throw during close if it sends anything.
+            session.close();
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
         }
     }
 

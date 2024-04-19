@@ -4560,6 +4560,69 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
     @Test
     @Timeout(20)
+    public void testFailoverDoesFailPendingAsyncCompletionSend() throws Exception {
+        try (TestAmqpPeer originalPeer = new TestAmqpPeer();
+             TestAmqpPeer finalPeer = new TestAmqpPeer();) {
+
+            // Create a peer to connect to, then one to reconnect to
+            final String originalURI = createPeerURI(originalPeer);
+            final String finalURI = createPeerURI(finalPeer);
+
+            LOG.info("Original peer is at: {}", originalURI);
+            LOG.info("Final peer is at: {}", finalURI);
+
+            originalPeer.expectSaslAnonymous();
+            originalPeer.expectOpen();
+            originalPeer.expectBegin();
+            originalPeer.expectBegin();
+            originalPeer.expectSenderAttach();
+            originalPeer.expectTransferButDoNotRespond(new TransferPayloadCompositeMatcher());
+            originalPeer.dropAfterLastHandler(15);  // Wait for sender to get into wait state
+
+            // --- Post Failover Expectations of sender --- //
+            finalPeer.expectSaslAnonymous();
+            finalPeer.expectOpen();
+            finalPeer.expectBegin();
+            finalPeer.expectBegin();
+            finalPeer.expectSenderAttach();
+
+            final JmsConnection connection = establishAnonymousConnecton("failover.initialReconnectDelay=25", originalPeer, finalPeer);
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            MessageProducer producer = session.createProducer(queue);
+
+            // Create and transfer a new message
+            String text = "myMessage";
+
+            TextMessage message = session.createTextMessage(text);
+            TestJmsCompletionListener listener = new TestJmsCompletionListener();
+
+            try {
+                producer.send(message, listener);
+            } catch (JMSException jmsEx) {
+                fail("Should not have failed the async completion send.");
+            }
+
+            // This should fire after reconnect without an error, if it fires with an error at
+            // any time then something is wrong.
+            assertTrue(listener.awaitCompletion(5, TimeUnit.SECONDS), "Did not get async callback");
+            assertNotNull(listener.exception, "Completion should have been due to error");
+            assertNotNull(listener.message);
+            assertTrue(listener.message instanceof TextMessage);
+
+            finalPeer.waitForAllHandlersToComplete(5000);
+            finalPeer.expectClose();
+
+            connection.close();
+
+            finalPeer.waitForAllHandlersToComplete(5000);
+        }
+    }
+
+    @Test
+    @Timeout(20)
     public void testFailoverHandlesAnonymousFallbackWaitingForClose() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer finalPeer = new TestAmqpPeer();) {

@@ -581,7 +581,7 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
     @Timeout(20)
     public void testAsyncCompletionSendMarksBytesMessageReadOnly() throws Exception {
         try(TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
+            JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer, "jms.closeTimeout=50");
             connection.setSendTimeout(15000);
 
             testPeer.expectBegin();

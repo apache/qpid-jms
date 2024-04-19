@@ -660,6 +660,7 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase {
         try(TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
             connection.setSendTimeout(15000);
+            connection.setCloseTimeout(10);
 
             testPeer.expectBegin();
 

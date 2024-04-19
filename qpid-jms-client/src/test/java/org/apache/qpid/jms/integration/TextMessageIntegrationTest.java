@@ -447,6 +447,7 @@ public class TextMessageIntegrationTest extends QpidJmsTestCase {
         try(TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
             connection.setSendTimeout(15000);
+            connection.setCloseTimeout(15);
 
             testPeer.expectBegin();
 

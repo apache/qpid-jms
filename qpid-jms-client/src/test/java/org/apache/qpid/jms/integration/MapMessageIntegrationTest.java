@@ -30,18 +30,6 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import jakarta.jms.CompletionListener;
-import jakarta.jms.Connection;
-import jakarta.jms.DeliveryMode;
-import jakarta.jms.MapMessage;
-import jakarta.jms.Message;
-import jakarta.jms.MessageConsumer;
-import jakarta.jms.MessageFormatException;
-import jakarta.jms.MessageNotWriteableException;
-import jakarta.jms.MessageProducer;
-import jakarta.jms.Queue;
-import jakarta.jms.Session;
-
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
@@ -57,6 +45,18 @@ import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+
+import jakarta.jms.CompletionListener;
+import jakarta.jms.Connection;
+import jakarta.jms.DeliveryMode;
+import jakarta.jms.MapMessage;
+import jakarta.jms.Message;
+import jakarta.jms.MessageConsumer;
+import jakarta.jms.MessageFormatException;
+import jakarta.jms.MessageNotWriteableException;
+import jakarta.jms.MessageProducer;
+import jakarta.jms.Queue;
+import jakarta.jms.Session;
 
 public class MapMessageIntegrationTest extends QpidJmsTestCase {
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
@@ -440,7 +440,7 @@ public class MapMessageIntegrationTest extends QpidJmsTestCase {
     @Timeout(20)
     public void testAsyncCompletionSendMarksMapMessageReadOnly() throws Exception {
         try(TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
+            JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer, "jms.closeTimeout=50");
             connection.setSendTimeout(15000);
 
             testPeer.expectBegin();

@@ -39,6 +39,36 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
+import org.apache.qpid.jms.exceptions.JmsConnectionFailedException;
+import org.apache.qpid.jms.exceptions.JmsExceptionSupport;
+import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
+import org.apache.qpid.jms.message.JmsMessage;
+import org.apache.qpid.jms.message.JmsMessageTransformation;
+import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
+import org.apache.qpid.jms.meta.JmsConsumerId;
+import org.apache.qpid.jms.meta.JmsConsumerInfo;
+import org.apache.qpid.jms.meta.JmsProducerId;
+import org.apache.qpid.jms.meta.JmsProducerInfo;
+import org.apache.qpid.jms.meta.JmsResource.ResourceState;
+import org.apache.qpid.jms.meta.JmsSessionId;
+import org.apache.qpid.jms.meta.JmsSessionInfo;
+import org.apache.qpid.jms.policy.JmsDeserializationPolicy;
+import org.apache.qpid.jms.policy.JmsMessageIDPolicy;
+import org.apache.qpid.jms.policy.JmsPrefetchPolicy;
+import org.apache.qpid.jms.policy.JmsPresettlePolicy;
+import org.apache.qpid.jms.policy.JmsRedeliveryPolicy;
+import org.apache.qpid.jms.provider.Provider;
+import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
+import org.apache.qpid.jms.provider.ProviderException;
+import org.apache.qpid.jms.provider.ProviderFuture;
+import org.apache.qpid.jms.provider.ProviderSynchronization;
+import org.apache.qpid.jms.selector.SelectorParser;
+import org.apache.qpid.jms.selector.filter.FilterException;
+import org.apache.qpid.jms.util.NoOpExecutor;
+import org.apache.qpid.jms.util.QpidJMSThreadFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import jakarta.jms.BytesMessage;
 import jakarta.jms.CompletionListener;
 import jakarta.jms.DeliveryMode;
@@ -71,36 +101,6 @@ import jakarta.jms.TopicPublisher;
 import jakarta.jms.TopicSession;
 import jakarta.jms.TopicSubscriber;
 
-import org.apache.qpid.jms.exceptions.JmsConnectionFailedException;
-import org.apache.qpid.jms.exceptions.JmsExceptionSupport;
-import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
-import org.apache.qpid.jms.message.JmsMessage;
-import org.apache.qpid.jms.message.JmsMessageTransformation;
-import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
-import org.apache.qpid.jms.meta.JmsConsumerId;
-import org.apache.qpid.jms.meta.JmsConsumerInfo;
-import org.apache.qpid.jms.meta.JmsProducerId;
-import org.apache.qpid.jms.meta.JmsProducerInfo;
-import org.apache.qpid.jms.meta.JmsResource.ResourceState;
-import org.apache.qpid.jms.meta.JmsSessionId;
-import org.apache.qpid.jms.meta.JmsSessionInfo;
-import org.apache.qpid.jms.policy.JmsDeserializationPolicy;
-import org.apache.qpid.jms.policy.JmsMessageIDPolicy;
-import org.apache.qpid.jms.policy.JmsPrefetchPolicy;
-import org.apache.qpid.jms.policy.JmsPresettlePolicy;
-import org.apache.qpid.jms.policy.JmsRedeliveryPolicy;
-import org.apache.qpid.jms.provider.Provider;
-import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
-import org.apache.qpid.jms.provider.ProviderException;
-import org.apache.qpid.jms.provider.ProviderFuture;
-import org.apache.qpid.jms.provider.ProviderSynchronization;
-import org.apache.qpid.jms.selector.SelectorParser;
-import org.apache.qpid.jms.selector.filter.FilterException;
-import org.apache.qpid.jms.util.NoOpExecutor;
-import org.apache.qpid.jms.util.QpidJMSThreadFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * JMS Session implementation
  */
@@ -126,6 +126,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
     private final ReentrantLock sendLock = new ReentrantLock();
     private volatile ThreadPoolExecutor deliveryExecutor;
     private volatile ThreadPoolExecutor completionExcecutor;
+    private volatile ProviderFuture asyncSendsCompletion;
     private AtomicReference<Thread> deliveryThread = new AtomicReference<Thread>();
     private boolean deliveryThreadCheckEnabled = true;
     private AtomicReference<Thread> completionThread = new AtomicReference<Thread>();
@@ -351,6 +352,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
                     for (JmsMessageProducer producer : new ArrayList<JmsMessageProducer>(this.producers.values())) {
                         producer.shutdown(cause);
                     }
+
                 } catch (JMSException jmsEx) {
                     shutdownError = jmsEx;
                 }
@@ -367,28 +369,50 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
                     }
                 }
 
-                // Ensure that no asynchronous completion sends remain blocked after close.
-                synchronized (sessionInfo) {
-                    if (cause == null) {
-                        cause = new JMSException("Session closed remotely before message transfer result was notified");
-                    }
-
-                    getCompletionExecutor().execute(new FailOrCompleteAsyncCompletionsTask(JmsExceptionSupport.create(cause)));
-                    getCompletionExecutor().shutdown();
-                }
-
-                try {
-                    getCompletionExecutor().awaitTermination(connection.getCloseTimeout(), TimeUnit.MILLISECONDS);
-                } catch (InterruptedException e) {
-                    LOG.trace("Session close awaiting send completions was interrupted");
-                }
-
                 try {
                     if (getSessionMode() == Session.CLIENT_ACKNOWLEDGE) {
                         acknowledge(ACK_TYPE.SESSION_SHUTDOWN);
                     }
                 } catch (Exception e) {
                     LOG.trace("Exception during session shutdown cleanup acknowledgement", e);
+                }
+
+                // Ensure that no asynchronous completion sends remain blocked after close but wait
+                // using the close timeout for the asynchronous sends to complete normally.
+                final ExecutorService completionExecutor = getCompletionExecutor();
+
+                synchronized (sessionInfo) {
+                    // Producers are now quiesced and we can await completion of asynchronous sends
+                    // that are still pending a result or timeout once we've done a quick check to
+                    // see if any are actually pending or have completed already.
+                    asyncSendsCompletion = connection.newProviderFuture();
+
+                    completionExecutor.execute(() -> {
+                        if (asyncSendQueue.isEmpty()) {
+                            asyncSendsCompletion.onSuccess();
+                        }
+                    });
+                }
+
+                try {
+                    asyncSendsCompletion.sync(connection.getCloseTimeout(), TimeUnit.MILLISECONDS);
+                } catch (Exception ex) {
+                    LOG.trace("Exception during wait for asynchronous sends to complete", ex);
+                } finally {
+                    if (cause == null) {
+                        cause = new JMSException("Session closed remotely before message transfer result was notified");
+                    }
+
+                    // as a last task we want to fail any stragglers in the asynchronous send queue and then
+                    // shutdown the queue to prevent any more submissions while the cleanup goes on.
+                    completionExecutor.execute(new FailOrCompleteAsyncCompletionsTask(JmsExceptionSupport.create(cause)));
+                    completionExecutor.shutdown();
+                }
+
+                try {
+                    completionExecutor.awaitTermination(connection.getCloseTimeout(), TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                    LOG.trace("Session close awaiting send completions was interrupted");
                 }
 
                 if (shutdownError != null) {
@@ -856,11 +880,12 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
     }
 
     private void send(JmsMessageProducer producer, JmsDestination destination, Message original, int deliveryMode, int priority, long timeToLive, boolean disableMsgId, boolean disableTimestamp, long deliveryDelay, CompletionListener listener) throws JMSException {
+        JmsMessage outbound = null;
         sendLock.lock();
 
-        JmsMessage outbound = null;
-
         try {
+            checkClosed();
+
             original.setJMSDeliveryMode(deliveryMode);
             original.setJMSPriority(priority);
             original.setJMSRedelivered(false);
@@ -909,7 +934,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
             }
 
             outbound.getFacade().setDeliveryTime(deliveryTime, hasDelay);
-            if(!isJmsMessage) {
+            if (!isJmsMessage) {
                 // If the original was a foreign message, we still need to update it too.
                 setForeignMessageDeliveryTime(original, deliveryTime);
             }
@@ -977,7 +1002,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
             }
         } catch (JMSException jmsEx) {
             // Ensure that on failure case the message is returned to usable state for another send attempt.
-            if(outbound != null) {
+            if (outbound != null) {
                 outbound.onSendComplete();
             }
             throw jmsEx;
@@ -1511,6 +1536,10 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
             if (producerId == null) {
                 asyncSendQueue.clear();
             }
+
+            if (closed.get() && asyncSendsCompletion != null && asyncSendQueue.isEmpty()) {
+                asyncSendsCompletion.onSuccess();
+            }
         }
     }
 
@@ -1576,6 +1605,10 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
                             }
                         }
                     }
+                }
+
+                if (closed.get() && asyncSendsCompletion != null && asyncSendQueue.isEmpty()) {
+                    asyncSendsCompletion.onSuccess();
                 }
             } catch (Exception ex) {
                 LOG.error("Async completion task encountered unexpected failure", ex);

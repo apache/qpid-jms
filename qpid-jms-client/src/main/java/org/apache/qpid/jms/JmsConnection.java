@@ -29,27 +29,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import jakarta.jms.Connection;
-import jakarta.jms.ConnectionConsumer;
-import jakarta.jms.ConnectionMetaData;
-import jakarta.jms.Destination;
-import jakarta.jms.ExceptionListener;
-import jakarta.jms.IllegalStateException;
-import jakarta.jms.InvalidClientIDException;
-import jakarta.jms.InvalidDestinationException;
-import jakarta.jms.JMSException;
-import jakarta.jms.JMSRuntimeException;
-import jakarta.jms.Queue;
-import jakarta.jms.QueueConnection;
-import jakarta.jms.QueueSession;
-import jakarta.jms.ServerSessionPool;
-import jakarta.jms.Session;
-import jakarta.jms.TemporaryQueue;
-import jakarta.jms.TemporaryTopic;
-import jakarta.jms.Topic;
-import jakarta.jms.TopicConnection;
-import jakarta.jms.TopicSession;
-
 import org.apache.qpid.jms.exceptions.JmsConnectionFailedException;
 import org.apache.qpid.jms.exceptions.JmsExceptionSupport;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
@@ -90,6 +69,27 @@ import org.apache.qpid.jms.util.ThreadPoolUtils;
 import org.apache.qpid.jms.util.URISupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import jakarta.jms.Connection;
+import jakarta.jms.ConnectionConsumer;
+import jakarta.jms.ConnectionMetaData;
+import jakarta.jms.Destination;
+import jakarta.jms.ExceptionListener;
+import jakarta.jms.IllegalStateException;
+import jakarta.jms.InvalidClientIDException;
+import jakarta.jms.InvalidDestinationException;
+import jakarta.jms.JMSException;
+import jakarta.jms.JMSRuntimeException;
+import jakarta.jms.Queue;
+import jakarta.jms.QueueConnection;
+import jakarta.jms.QueueSession;
+import jakarta.jms.ServerSessionPool;
+import jakarta.jms.Session;
+import jakarta.jms.TemporaryQueue;
+import jakarta.jms.TemporaryTopic;
+import jakarta.jms.Topic;
+import jakarta.jms.TopicConnection;
+import jakarta.jms.TopicSession;
 
 /**
  * Implementation of a JMS Connection
@@ -914,6 +914,14 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         } catch (Exception ioe) {
             throw JmsExceptionSupport.create(ioe);
         }
+    }
+
+    ProviderFuture newProviderFuture() {
+    	return newProviderFuture(null);
+    }
+
+    ProviderFuture newProviderFuture(ProviderSynchronization synchronization) {
+        return provider.newProviderFuture(synchronization);
     }
 
     //----- Property setters and getters -------------------------------------//

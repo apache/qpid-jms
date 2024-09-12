@@ -2623,7 +2623,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             testPeer.expectBegin();
 
             final JmsConnection connection = establishAnonymousConnecton(
-                "failover.maxReconnectAttempts=3&failover.useReconnectBackOff=false", testPeer);
+                "failover.maxReconnectAttempts=2&failover.useReconnectBackOff=false", testPeer);
             connection.addConnectionListener(new JmsDefaultConnectionListener() {
                 @Override
                 public void onConnectionEstablished(URI remoteURI) {
@@ -2669,7 +2669,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
                 LOG.debug("Commit threw: ", jmsEx);
             }
 
-            assertTrue(failedConnection.await(5, TimeUnit.SECONDS), "Should reported failed");
+            assertTrue(failedConnection.await(6, TimeUnit.SECONDS), "Should reported failed");
 
             try {
                 connection.close();

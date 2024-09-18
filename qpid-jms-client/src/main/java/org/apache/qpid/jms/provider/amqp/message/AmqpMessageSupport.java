@@ -84,6 +84,12 @@ public final class AmqpMessageSupport {
     public static final String JMS_AMQP_TYPED_ENCODING = "JMS_AMQP_TYPED_ENCODING";
 
     /**
+     * Used to set or access the content-encoding property, identifying the message's encoding.
+     * Must be a String when set.
+     */
+    public static final String JMS_AMQP_CONTENT_ENCODING = "JMS_AMQP_CONTENT_ENCODING";
+
+    /**
      * Content type used to mark Data sections as containing a serialized java object.
      */
     public static final Symbol SERIALIZED_JAVA_OBJECT_CONTENT_TYPE = Symbol.valueOf("application/x-java-serialized-object");

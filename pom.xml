@@ -50,7 +50,7 @@
     <junit.jupiter.version>5.11.0</junit.jupiter.version>
     <jetty-version>9.4.56.v20240826</jetty-version>
     <mockito-version>5.13.0</mockito-version>
-    <hamcrest-version>2.2</hamcrest-version>
+    <hamcrest-version>3.0</hamcrest-version>
     <hadoop-minikdc-version>3.3.6</hadoop-minikdc-version>
     <commons-io-version>2.13.0</commons-io-version>
 

@@ -47,7 +47,7 @@
     <!-- Test Dependency Versions for this Project -->
     <netty-tcnative-version>2.0.66.Final</netty-tcnative-version>
     <activemq-version>5.18.5</activemq-version>
-    <junit.jupiter.version>5.10.2</junit.jupiter.version>
+    <junit.jupiter.version>5.11.0</junit.jupiter.version>
     <jetty-version>9.4.56.v20240826</jetty-version>
     <mockito-version>5.13.0</mockito-version>
     <hamcrest-version>2.2</hamcrest-version>

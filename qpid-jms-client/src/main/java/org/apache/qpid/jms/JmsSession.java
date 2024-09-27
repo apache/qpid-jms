@@ -380,39 +380,45 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
                 // Ensure that no asynchronous completion sends remain blocked after close but wait
                 // using the close timeout for the asynchronous sends to complete normally.
                 final ExecutorService completionExecutor = getCompletionExecutor();
-
-                synchronized (sessionInfo) {
-                    // Producers are now quiesced and we can await completion of asynchronous sends
-                    // that are still pending a result or timeout once we've done a quick check to
-                    // see if any are actually pending or have completed already.
-                    asyncSendsCompletion = connection.newProviderFuture();
-
-                    completionExecutor.execute(() -> {
-                        if (asyncSendQueue.isEmpty()) {
-                            asyncSendsCompletion.onSuccess();
-                        }
-                    });
-                }
-
                 try {
-                    asyncSendsCompletion.sync(connection.getCloseTimeout(), TimeUnit.MILLISECONDS);
-                } catch (Exception ex) {
-                    LOG.trace("Exception during wait for asynchronous sends to complete", ex);
-                } finally {
-                    if (cause == null) {
-                        cause = new JMSException("Session closed remotely before message transfer result was notified");
+                    synchronized (sessionInfo) {
+                        // Producers are now quiesced and we can await completion of asynchronous sends
+                        // that are still pending a result or timeout once we've done a quick check to
+                        // see if any are actually pending or have completed already.
+                        asyncSendsCompletion = connection.newProviderFuture();
+
+                        if (asyncSendsCompletion != null) {
+                            completionExecutor.execute(() -> {
+                                if (asyncSendQueue.isEmpty()) {
+                                    asyncSendsCompletion.onSuccess();
+                                }
+                            });
+                        }
                     }
 
-                    // as a last task we want to fail any stragglers in the asynchronous send queue and then
-                    // shutdown the queue to prevent any more submissions while the cleanup goes on.
-                    completionExecutor.execute(new FailOrCompleteAsyncCompletionsTask(JmsExceptionSupport.create(cause)));
-                    completionExecutor.shutdown();
-                }
+                    try {
+                        if (asyncSendsCompletion != null) {
+                            asyncSendsCompletion.sync(connection.getCloseTimeout(), TimeUnit.MILLISECONDS);
+                        }
+                    } catch (Exception ex) {
+                        LOG.trace("Exception during wait for asynchronous sends to complete", ex);
+                    } finally {
+                        if (cause == null) {
+                            cause = new JMSException("Session closed remotely before message transfer result was notified");
+                        }
 
-                try {
-                    completionExecutor.awaitTermination(connection.getCloseTimeout(), TimeUnit.MILLISECONDS);
-                } catch (InterruptedException e) {
-                    LOG.trace("Session close awaiting send completions was interrupted");
+                        // as a last task we want to fail any stragglers in the asynchronous send queue and then
+                        // shutdown the queue to prevent any more submissions while the cleanup goes on.
+                        completionExecutor.execute(new FailOrCompleteAsyncCompletionsTask(JmsExceptionSupport.create(cause)));
+                    }
+                } finally {
+                    completionExecutor.shutdown();
+
+                    try {
+                        completionExecutor.awaitTermination(connection.getCloseTimeout(), TimeUnit.MILLISECONDS);
+                    } catch (InterruptedException e) {
+                        LOG.trace("Session close awaiting send completions was interrupted");
+                    }
                 }
 
                 if (shutdownError != null) {

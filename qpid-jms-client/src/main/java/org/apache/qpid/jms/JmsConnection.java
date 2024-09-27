@@ -921,7 +921,12 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
     }
 
     ProviderFuture newProviderFuture(ProviderSynchronization synchronization) {
-        return provider.newProviderFuture(synchronization);
+        Provider localProvider = provider;
+        if (localProvider != null) {
+            return localProvider.newProviderFuture(synchronization);
+        } else {
+            return null;
+        }
     }
 
     //----- Property setters and getters -------------------------------------//

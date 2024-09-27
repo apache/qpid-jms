@@ -2334,7 +2334,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
 
         public boolean hasCompleted() {
-        	return completed.getCount() == 0;
+            return completed.getCount() == 0;
         }
 
         public boolean awaitCompletion(long timeout, TimeUnit units) throws InterruptedException {
@@ -2851,7 +2851,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             connection.addConnectionListener(new JmsDefaultConnectionListener() {
                 @Override
                 public void onSessionClosed(Session session, Throwable exception) {
-                	sessionClosed.countDown();
+                    sessionClosed.countDown();
                 }
             });
 

@@ -3126,7 +3126,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
 
         public boolean hasCompleted() {
-        	return completed.getCount() == 0;
+            return completed.getCount() == 0;
         }
 
         public boolean awaitCompletion(long timeout, TimeUnit units) throws InterruptedException {
@@ -3336,7 +3336,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             connection.addConnectionListener(new JmsDefaultConnectionListener() {
                 @Override
                 public void onConnectionFailure(Throwable exception) {
-                	connectionClosed.countDown();
+                    connectionClosed.countDown();
                 }
             });
 

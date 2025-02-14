@@ -46,7 +46,7 @@
 
     <!-- Test Dependency Versions for this Project -->
     <netty-tcnative-version>2.0.70.Final</netty-tcnative-version>
-    <junit.jupiter.version>5.11.0</junit.jupiter.version>
+    <junit.jupiter.version>5.11.4</junit.jupiter.version>
     <mockito-version>5.13.0</mockito-version>
     <hamcrest-version>3.0</hamcrest-version>
     <hadoop-minikdc-version>3.4.0</hadoop-minikdc-version>

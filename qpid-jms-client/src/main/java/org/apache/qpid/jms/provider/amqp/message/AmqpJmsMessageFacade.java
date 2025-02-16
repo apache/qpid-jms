@@ -333,6 +333,37 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         properties.setMessageId(messageId);
     }
 
+    /**
+     * Retrieves the content encoding property, which identifies the encoding of the message content.
+     *
+     * @return the content encoding as a String, or null if not set.
+     */
+    public String getContentEncoding() {
+        if (properties != null) {
+            Symbol contentEncoding = properties.getContentEncoding();
+            if (contentEncoding != null) {
+                return contentEncoding.toString();
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Sets the content encoding property, which identifies the encoding of the message content.
+     *
+     * @param contentEncoding
+     *        the content encoding as a String, or null to clear.
+     */
+    public void setContentEncoding(String contentEncoding) {
+        if (contentEncoding != null) {
+            lazyCreateProperties();
+            properties.setContentEncoding(Symbol.valueOf(contentEncoding));
+        } else if (properties != null) {
+            properties.setContentEncoding(null);
+        }
+    }
+
     @Override
     public void setMessageId(String messageId) throws IdConversionException {
         Object value = AmqpMessageIdHelper.toIdObject(messageId);

@@ -16,6 +16,28 @@
  */
 package org.apache.qpid.jms.transports;
 
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.handler.ssl.OpenSsl;
+import io.netty.handler.ssl.OpenSslEngine;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslHandler;
+import org.apache.qpid.jms.test.QpidJmsTestCase;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.UnrecoverableKeyException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -25,25 +47,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
-
-import java.io.IOException;
-import java.security.UnrecoverableKeyException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
-
-import org.apache.qpid.jms.test.QpidJmsTestCase;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
-
-import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.handler.ssl.OpenSsl;
-import io.netty.handler.ssl.OpenSslEngine;
-import io.netty.handler.ssl.SslContext;
-import io.netty.handler.ssl.SslHandler;
 
 /**
  * Tests for the TransportSupport class.
@@ -67,6 +70,11 @@ public class TransportSupportTest extends QpidJmsTestCase {
     public static final String KEYSTORE_JCEKS_TYPE = "jceks";
     public static final String KEYSTORE_PKCS12_TYPE = "pkcs12";
 
+    public static final String KEYSTORE_SYSTEM_PROPERTY = "keystore.base64";
+    public static final String TRUSTSTORE_SYSTEM_PROPERTY = "truststore.base64";
+
+    public static final String BAD_STORE_CONTENT = "bad-store-content";
+
     public static final String[] ENABLED_PROTOCOLS = new String[] { "TLSv1" };
 
     // Currently the OpenSSL implementation cannot disable SSLv2Hello
@@ -75,9 +83,10 @@ public class TransportSupportTest extends QpidJmsTestCase {
     private static final String ALIAS_DOES_NOT_EXIST = "alias.does.not.exist";
     private static final String ALIAS_CA_CERT = "ca";
 
-    @Test
-    public void testLegacySslProtocolsDisabledByDefaultJDK() throws Exception {
-        TransportOptions options = createJksSslOptions(null);
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testLegacySslProtocolsDisabledByDefaultJDK(boolean useStoreLocation) throws Exception {
+        TransportOptions options = createJksSslOptions(null, useStoreLocation);
 
         SSLContext context = TransportSupport.createJdkSslContext(options);
         assertNotNull(context);
@@ -90,12 +99,13 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertFalse(engineProtocols.contains("SSLv2Hello"), "SSLv2Hello should not be enabled by default");
     }
 
-    @Test
-    public void testLegacySslProtocolsDisabledByDefaultOpenSSL() throws Exception {
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testLegacySslProtocolsDisabledByDefaultOpenSSL(boolean useStoreLocation) throws Exception {
         assumeTrue(OpenSsl.isAvailable());
         assumeTrue(OpenSsl.supportsKeyManagerFactory());
 
-        TransportOptions options = createJksSslOptions(null);
+        TransportOptions options = createJksSslOptions(null, useStoreLocation);
 
         SslContext context = TransportSupport.createOpenSslContext(options);
         assertNotNull(context);
@@ -110,9 +120,10 @@ public class TransportSupportTest extends QpidJmsTestCase {
         // assertFalse("SSLv2Hello should not be enabled by default", engineProtocols.contains("SSLv2Hello"));
     }
 
-    @Test
-    public void testCreateSslContextJksStoreJDK() throws Exception {
-        TransportOptions options = createJksSslOptions();
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslContextJksStoreJDK(boolean useStoreLocation) throws Exception {
+        TransportOptions options = createJksSslOptions(useStoreLocation);
 
         SSLContext context = TransportSupport.createJdkSslContext(options);
         assertNotNull(context);
@@ -120,12 +131,13 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertEquals("TLS", context.getProtocol());
     }
 
-    @Test
-    public void testCreateSslContextJksStoreOpenSSL() throws Exception {
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslContextJksStoreOpenSSL(boolean useStoreLocation) throws Exception {
         assumeTrue(OpenSsl.isAvailable());
         assumeTrue(OpenSsl.supportsKeyManagerFactory());
 
-        TransportOptions options = createJksSslOptions();
+        TransportOptions options = createJksSslOptions(useStoreLocation);
 
         SslContext context = TransportSupport.createOpenSslContext(options);
         assertNotNull(context);
@@ -134,9 +146,10 @@ public class TransportSupportTest extends QpidJmsTestCase {
         // assertEquals("TLS", context.getProtocol());
     }
 
-    @Test
-    public void testCreateSslContextJksStoreWithConfiguredContextProtocolJDK() throws Exception {
-        TransportOptions options = createJksSslOptions();
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslContextJksStoreWithConfiguredContextProtocolJDK(boolean useStoreLocation) throws Exception {
+        TransportOptions options = createJksSslOptions(useStoreLocation);
         String contextProtocol = "TLSv1.2";
         options.setContextProtocol(contextProtocol);
 
@@ -146,12 +159,13 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertEquals(contextProtocol, context.getProtocol());
     }
 
-    @Test
-    public void testCreateSslContextJksStoreWithConfiguredContextProtocolOpenSSL() throws Exception {
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslContextJksStoreWithConfiguredContextProtocolOpenSSL(boolean useStoreLocation) throws Exception {
         assumeTrue(OpenSsl.isAvailable());
         assumeTrue(OpenSsl.supportsKeyManagerFactory());
 
-        TransportOptions options = createJksSslOptions();
+        TransportOptions options = createJksSslOptions(useStoreLocation);
         String contextProtocol = "TLSv1.2";
         options.setContextProtocol(contextProtocol);
 
@@ -162,9 +176,10 @@ public class TransportSupportTest extends QpidJmsTestCase {
         // assertEquals(contextProtocol, context.getProtocol());
     }
 
-    @Test
-    public void testCreateSslContextNoKeyStorePasswordJDK() throws Exception {
-        TransportOptions options = createJksSslOptions();
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslContextNoKeyStorePasswordJDK(boolean useStoreLocation) throws Exception {
+        TransportOptions options = createJksSslOptions(useStoreLocation);
         options.setKeyStorePassword(null);
         try {
             TransportSupport.createJdkSslContext(options);
@@ -178,12 +193,13 @@ public class TransportSupportTest extends QpidJmsTestCase {
         }
     }
 
-    @Test
-    public void testCreateSslContextNoKeyStorePasswordOpenSSL() throws Exception {
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslContextNoKeyStorePasswordOpenSSL(boolean useStoreLocation) throws Exception {
         assumeTrue(OpenSsl.isAvailable());
         assumeTrue(OpenSsl.supportsKeyManagerFactory());
 
-        TransportOptions options = createJksSslOptions();
+        TransportOptions options = createJksSslOptions(useStoreLocation);
         options.setKeyStorePassword(null);
 
         try {
@@ -198,93 +214,122 @@ public class TransportSupportTest extends QpidJmsTestCase {
         }
     }
 
-    @Test
-    public void testCreateSslContextWrongKeyStorePasswordJDK() throws Exception {
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslContextWrongKeyStorePasswordJDK(boolean useStoreLocation) throws Exception {
         assertThrows(IOException.class, () -> {
-            TransportOptions options = createJksSslOptions();
+            TransportOptions options = createJksSslOptions(useStoreLocation);
             options.setKeyStorePassword("wrong");
             TransportSupport.createJdkSslContext(options);
         });
     }
 
-    @Test
-    public void testCreateSslContextWrongKeyStorePasswordOpenSSL() throws Exception {
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslContextWrongKeyStorePasswordOpenSSL(boolean useStoreLocation) throws Exception {
         assertThrows(IOException.class, () -> {
             assumeTrue(OpenSsl.isAvailable());
             assumeTrue(OpenSsl.supportsKeyManagerFactory());
 
-            TransportOptions options = createJksSslOptions();
+            TransportOptions options = createJksSslOptions(useStoreLocation);
             options.setKeyStorePassword("wrong");
             TransportSupport.createOpenSslContext(options);
         });
     }
 
-    @Test
-    public void testCreateSslContextBadPathToKeyStoreJDK() throws Exception {
-        assertThrows(IOException.class, () -> {
-            TransportOptions options = createJksSslOptions();
-            options.setKeyStoreLocation(CLIENT_JKS_KEYSTORE + ".bad");
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslContextBadPathToKeyStoreJDK(boolean useStoreLocation) throws Exception {
+        Class<? extends Exception> expectedException = useStoreLocation ? IOException.class : IllegalArgumentException.class;
+        assertThrows(expectedException, () -> {
+            TransportOptions options = createJksSslOptions(useStoreLocation);
+            if (useStoreLocation) {
+                options.setKeyStoreLocation(CLIENT_JKS_KEYSTORE + ".bad");
+            } else {
+                System.setProperty(KEYSTORE_SYSTEM_PROPERTY, BAD_STORE_CONTENT);
+            }
             TransportSupport.createJdkSslContext(options);
         });
     }
 
-    @Test
-    public void testCreateSslContextBadPathToKeyStoreOpenSSL() throws Exception {
-        assertThrows(IOException.class, () -> {
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslContextBadPathToKeyStoreOpenSSL(boolean useStoreLocation) throws Exception {
+        Class<? extends Exception> expectedException = useStoreLocation ? IOException.class : IllegalArgumentException.class;
+        assertThrows(expectedException, () -> {
             assumeTrue(OpenSsl.isAvailable());
             assumeTrue(OpenSsl.supportsKeyManagerFactory());
 
-            TransportOptions options = createJksSslOptions();
-            options.setKeyStoreLocation(CLIENT_JKS_KEYSTORE + ".bad");
+            TransportOptions options = createJksSslOptions(useStoreLocation);
+            if (useStoreLocation) {
+                options.setKeyStoreLocation(CLIENT_JKS_KEYSTORE + ".bad");
+            } else {
+                System.setProperty(KEYSTORE_SYSTEM_PROPERTY, BAD_STORE_CONTENT);
+            }
             TransportSupport.createOpenSslContext(options);
         });
     }
 
-    @Test
-    public void testCreateSslContextWrongTrustStorePasswordJDK() throws Exception {
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslContextWrongTrustStorePasswordJDK(boolean useStoreLocation) throws Exception {
         assertThrows(IOException.class, () -> {
-            TransportOptions options = createJksSslOptions();
+            TransportOptions options = createJksSslOptions(useStoreLocation);
             options.setTrustStorePassword("wrong");
             TransportSupport.createJdkSslContext(options);
         });
     }
 
-    @Test
-    public void testCreateSslContextWrongTrustStorePasswordOpenSSL() throws Exception {
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslContextWrongTrustStorePasswordOpenSSL(boolean useStoreLocation) throws Exception {
         assertThrows(IOException.class, () -> {
             assumeTrue(OpenSsl.isAvailable());
             assumeTrue(OpenSsl.supportsKeyManagerFactory());
 
-            TransportOptions options = createJksSslOptions();
+            TransportOptions options = createJksSslOptions(useStoreLocation);
             options.setTrustStorePassword("wrong");
             TransportSupport.createOpenSslContext(options);
         });
     }
 
-    @Test
-    public void testCreateSslContextBadPathToTrustStoreJDK() throws Exception {
-        assertThrows(IOException.class, () -> {
-            TransportOptions options = createJksSslOptions();
-            options.setTrustStoreLocation(CLIENT_JKS_TRUSTSTORE + ".bad");
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslContextBadPathToTrustStoreJDK(boolean useStoreLocation) throws Exception {
+        Class<? extends Exception> expectedException = useStoreLocation ? IOException.class : IllegalArgumentException.class;
+        assertThrows(expectedException, () -> {
+            TransportOptions options = createJksSslOptions(useStoreLocation);
+            if (useStoreLocation) {
+                options.setTrustStoreLocation(CLIENT_JKS_TRUSTSTORE + ".bad");
+            } else {
+                System.setProperty(TRUSTSTORE_SYSTEM_PROPERTY, BAD_STORE_CONTENT);
+            }
             TransportSupport.createJdkSslContext(options);
         });
     }
 
-    @Test
-    public void testCreateSslContextBadPathToTrustStoreOpenSSL() throws Exception {
-        assertThrows(IOException.class, () -> {
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslContextBadPathToTrustStoreOpenSSL(boolean useStoreLocation) throws Exception {
+        Class<? extends Exception> expectedException = useStoreLocation ? IOException.class : IllegalArgumentException.class;
+        assertThrows(expectedException, () -> {
             assumeTrue(OpenSsl.isAvailable());
             assumeTrue(OpenSsl.supportsKeyManagerFactory());
 
-            TransportOptions options = createJksSslOptions();
-            options.setTrustStoreLocation(CLIENT_JKS_TRUSTSTORE + ".bad");
+            TransportOptions options = createJksSslOptions(useStoreLocation);
+            if (useStoreLocation) {
+                options.setTrustStoreLocation(CLIENT_JKS_TRUSTSTORE + ".bad");
+            } else {
+                System.setProperty(TRUSTSTORE_SYSTEM_PROPERTY, BAD_STORE_CONTENT);
+            }
             TransportSupport.createOpenSslContext(options);
         });
     }
 
-    @Test
-    public void testCreateSslContextJceksStoreJDK() throws Exception {
-        TransportOptions options = createJceksSslOptions();
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslContextJceksStoreJDK(boolean useStoreLocation) throws Exception {
+        TransportOptions options = createJceksSslOptions(useStoreLocation);
 
         SSLContext context = TransportSupport.createJdkSslContext(options);
         assertNotNull(context);
@@ -292,21 +337,23 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertEquals("TLS", context.getProtocol());
     }
 
-    @Test
-    public void testCreateSslContextJceksStoreOpenSSL() throws Exception {
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslContextJceksStoreOpenSSL(boolean useStoreLocation) throws Exception {
         assumeTrue(OpenSsl.isAvailable());
         assumeTrue(OpenSsl.supportsKeyManagerFactory());
 
-        TransportOptions options = createJceksSslOptions();
+        TransportOptions options = createJceksSslOptions(useStoreLocation);
 
         SslContext context = TransportSupport.createOpenSslContext(options);
         assertNotNull(context);
         assertTrue(context.isClient());
     }
 
-    @Test
-    public void testCreateSslContextPkcs12StoreJDK() throws Exception {
-        TransportOptions options = createPkcs12SslOptions();
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslContextPkcs12StoreJDK(boolean useStoreLocation) throws Exception {
+        TransportOptions options = createPkcs12SslOptions(useStoreLocation);
 
         SSLContext context = TransportSupport.createJdkSslContext(options);
         assertNotNull(context);
@@ -314,42 +361,46 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertEquals("TLS", context.getProtocol());
     }
 
-    @Test
-    public void testCreateSslContextPkcs12StoreOpenSSL() throws Exception {
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslContextPkcs12StoreOpenSSL(boolean useStoreLocation) throws Exception {
         assumeTrue(OpenSsl.isAvailable());
         assumeTrue(OpenSsl.supportsKeyManagerFactory());
 
-        TransportOptions options = createPkcs12SslOptions();
+        TransportOptions options = createPkcs12SslOptions(useStoreLocation);
 
         SslContext context = TransportSupport.createOpenSslContext(options);
         assertNotNull(context);
         assertTrue(context.isClient());
     }
 
-    @Test
-    public void testCreateSslContextIncorrectStoreTypeJDK() throws Exception {
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslContextIncorrectStoreTypeJDK(boolean useStoreLocation) throws Exception {
         assertThrows(IOException.class, () -> {
-            TransportOptions options = createPkcs12SslOptions();
+            TransportOptions options = createPkcs12SslOptions(useStoreLocation);
             options.setStoreType(KEYSTORE_JCEKS_TYPE);
             TransportSupport.createJdkSslContext(options);
         });
     }
 
-    @Test
-    public void testCreateSslContextIncorrectStoreTypeOpenSSL() throws Exception {
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslContextIncorrectStoreTypeOpenSSL(boolean useStoreLocation) throws Exception {
         assertThrows(IOException.class, () -> {
             assumeTrue(OpenSsl.isAvailable());
             assumeTrue(OpenSsl.supportsKeyManagerFactory());
 
-            TransportOptions options = createPkcs12SslOptions();
+            TransportOptions options = createPkcs12SslOptions(useStoreLocation);
             options.setStoreType(KEYSTORE_JCEKS_TYPE);
             TransportSupport.createOpenSslContext(options);
         });
     }
 
-    @Test
-    public void testCreateSslEngineFromPkcs12StoreJDK() throws Exception {
-        TransportOptions options = createPkcs12SslOptions();
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslEngineFromPkcs12StoreJDK(boolean useStoreLocation) throws Exception {
+        TransportOptions options = createPkcs12SslOptions(useStoreLocation);
 
         SSLContext context = TransportSupport.createJdkSslContext(options);
         assertNotNull(context);
@@ -361,12 +412,13 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertFalse(engineProtocols.isEmpty());
     }
 
-    @Test
-    public void testCreateSslEngineFromPkcs12StoreOpenSSL() throws Exception {
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslEngineFromPkcs12StoreOpenSSL(boolean useStoreLocation) throws Exception {
         assumeTrue(OpenSsl.isAvailable());
         assumeTrue(OpenSsl.supportsKeyManagerFactory());
 
-        TransportOptions options = createPkcs12SslOptions();
+        TransportOptions options = createPkcs12SslOptions(useStoreLocation);
 
         SslContext context = TransportSupport.createOpenSslContext(options);
         assertNotNull(context);
@@ -378,9 +430,10 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertFalse(engineProtocols.isEmpty());
     }
 
-    @Test
-    public void testCreateSslEngineFromPkcs12StoreWithExplicitEnabledProtocolsJDK() throws Exception {
-        TransportOptions options = createPkcs12SslOptions(ENABLED_PROTOCOLS);
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslEngineFromPkcs12StoreWithExplicitEnabledProtocolsJDK(boolean useStoreLocation) throws Exception {
+        TransportOptions options = createPkcs12SslOptions(ENABLED_PROTOCOLS, useStoreLocation);
 
         SSLContext context = TransportSupport.createJdkSslContext(options);
         assertNotNull(context);
@@ -391,12 +444,13 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertArrayEquals(ENABLED_PROTOCOLS, engine.getEnabledProtocols(), "Enabled protocols not as expected");
     }
 
-    @Test
-    public void testCreateSslEngineFromPkcs12StoreWithExplicitEnabledProtocolsOpenSSL() throws Exception {
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslEngineFromPkcs12StoreWithExplicitEnabledProtocolsOpenSSL(boolean useStoreLocation) throws Exception {
         assumeTrue(OpenSsl.isAvailable());
         assumeTrue(OpenSsl.supportsKeyManagerFactory());
 
-        TransportOptions options = createPkcs12SslOptions(ENABLED_PROTOCOLS);
+        TransportOptions options = createPkcs12SslOptions(ENABLED_PROTOCOLS, useStoreLocation);
 
         SslContext context = TransportSupport.createOpenSslContext(options);
         assertNotNull(context);
@@ -407,9 +461,10 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertArrayEquals(ENABLED_OPENSSL_PROTOCOLS, engine.getEnabledProtocols(), "Enabled protocols not as expected");
     }
 
-    @Test
-    public void testCreateSslEngineFromJksStoreJDK() throws Exception {
-        TransportOptions options = createJksSslOptions();
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslEngineFromJksStoreJDK(boolean useStoreLocation) throws Exception {
+        TransportOptions options = createJksSslOptions(useStoreLocation);
 
         SSLContext context = TransportSupport.createJdkSslContext(options);
         assertNotNull(context);
@@ -421,12 +476,13 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertFalse(engineProtocols.isEmpty());
     }
 
-    @Test
-    public void testCreateSslEngineFromJksStoreOpenSSL() throws Exception {
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslEngineFromJksStoreOpenSSL(boolean useStoreLocation) throws Exception {
         assumeTrue(OpenSsl.isAvailable());
         assumeTrue(OpenSsl.supportsKeyManagerFactory());
 
-        TransportOptions options = createJksSslOptions();
+        TransportOptions options = createJksSslOptions(useStoreLocation);
 
         SslContext context = TransportSupport.createOpenSslContext(options);
         assertNotNull(context);
@@ -438,9 +494,10 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertFalse(engineProtocols.isEmpty());
     }
 
-    @Test
-    public void testCreateSslEngineFromJksStoreWithExplicitEnabledProtocolsJDK() throws Exception {
-        TransportOptions options = createJksSslOptions(ENABLED_PROTOCOLS);
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslEngineFromJksStoreWithExplicitEnabledProtocolsJDK(boolean useStoreLocation) throws Exception {
+        TransportOptions options = createJksSslOptions(ENABLED_PROTOCOLS, useStoreLocation);
 
         SSLContext context = TransportSupport.createJdkSslContext(options);
         assertNotNull(context);
@@ -451,12 +508,13 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertArrayEquals(ENABLED_PROTOCOLS, engine.getEnabledProtocols(), "Enabled protocols not as expected");
     }
 
-    @Test
-    public void testCreateSslEngineFromJksStoreWithExplicitEnabledProtocolsOpenSSL() throws Exception {
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslEngineFromJksStoreWithExplicitEnabledProtocolsOpenSSL(boolean useStoreLocation) throws Exception {
         assumeTrue(OpenSsl.isAvailable());
         assumeTrue(OpenSsl.supportsKeyManagerFactory());
 
-        TransportOptions options = createJksSslOptions(ENABLED_PROTOCOLS);
+        TransportOptions options = createJksSslOptions(ENABLED_PROTOCOLS, useStoreLocation);
 
         SslContext context = TransportSupport.createOpenSslContext(options);
         assertNotNull(context);
@@ -467,10 +525,11 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertArrayEquals(ENABLED_OPENSSL_PROTOCOLS, engine.getEnabledProtocols(), "Enabled protocols not as expected");
     }
 
-    @Test
-    public void testCreateSslEngineFromJksStoreWithExplicitDisabledProtocolsJDK() throws Exception {
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslEngineFromJksStoreWithExplicitDisabledProtocolsJDK(boolean useStoreLocation) throws Exception {
         // Discover the default enabled protocols
-        TransportOptions options = createJksSslOptions();
+        TransportOptions options = createJksSslOptions(useStoreLocation);
         SSLEngine directEngine = createSSLEngineDirectly(options);
         String[] protocols = directEngine.getEnabledProtocols();
         assertTrue(protocols.length > 0, "There were no initial protocols to choose from!");
@@ -487,13 +546,14 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertArrayEquals(trimmedProtocols, engine.getEnabledProtocols(), "Enabled protocols not as expected");
     }
 
-    @Test
-    public void testCreateSslEngineFromJksStoreWithExplicitDisabledProtocolsOpenSSL() throws Exception {
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslEngineFromJksStoreWithExplicitDisabledProtocolsOpenSSL(boolean useStoreLocation) throws Exception {
         assumeTrue(OpenSsl.isAvailable());
         assumeTrue(OpenSsl.supportsKeyManagerFactory());
 
         // Discover the default enabled protocols
-        TransportOptions options = createJksSslOptions();
+        TransportOptions options = createJksSslOptions(useStoreLocation);
         SSLEngine directEngine = createOpenSSLEngineDirectly(options);
         String[] protocols = directEngine.getEnabledProtocols();
         assertTrue(protocols.length > 0, "There were no initial protocols to choose from!");
@@ -510,10 +570,11 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertArrayEquals(trimmedProtocols, engine.getEnabledProtocols(), "Enabled protocols not as expected");
     }
 
-    @Test
-    public void testCreateSslEngineFromJksStoreWithExplicitEnabledAndDisabledProtocolsJDK() throws Exception {
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslEngineFromJksStoreWithExplicitEnabledAndDisabledProtocolsJDK(boolean useStoreLocation) throws Exception {
         // Discover the default enabled protocols
-        TransportOptions options = createJksSslOptions();
+        TransportOptions options = createJksSslOptions(useStoreLocation);
         SSLEngine directEngine = createSSLEngineDirectly(options);
         String[] protocols = directEngine.getEnabledProtocols();
         assumeTrue(protocols.length > 1 , "Insufficient initial protocols to filter from: " + Arrays.toString(protocols));
@@ -534,13 +595,14 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertArrayEquals(remainingProtocols, engine.getEnabledProtocols(), "Enabled protocols not as expected");
     }
 
-    @Test
-    public void testCreateSslEngineFromJksStoreWithExplicitEnabledAndDisabledProtocolsOpenSSL() throws Exception {
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslEngineFromJksStoreWithExplicitEnabledAndDisabledProtocolsOpenSSL(boolean useStoreLocation) throws Exception {
         assumeTrue(OpenSsl.isAvailable());
         assumeTrue(OpenSsl.supportsKeyManagerFactory());
 
         // Discover the default enabled protocols
-        TransportOptions options = createJksSslOptions();
+        TransportOptions options = createJksSslOptions(useStoreLocation);
         SSLEngine directEngine = createOpenSSLEngineDirectly(options);
         String[] protocols = directEngine.getEnabledProtocols();
         assumeTrue(protocols.length > 1 , "Insufficient initial protocols to filter from: " + Arrays.toString(protocols));
@@ -570,10 +632,11 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertTrue(remainingProtocolsList.containsAll(Arrays.asList(engine.getEnabledProtocols())), "Enabled protocols not as expected");
     }
 
-    @Test
-    public void testCreateSslEngineFromJksStoreWithExplicitEnabledCiphersJDK() throws Exception {
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslEngineFromJksStoreWithExplicitEnabledCiphersJDK(boolean useStoreLocation) throws Exception {
         // Discover the default enabled ciphers
-        TransportOptions options = createJksSslOptions();
+        TransportOptions options = createJksSslOptions(useStoreLocation);
         SSLEngine directEngine = createSSLEngineDirectly(options);
         String[] ciphers = directEngine.getEnabledCipherSuites();
         assertTrue(ciphers.length > 0, "There were no initial ciphers to choose from!");
@@ -590,13 +653,14 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertArrayEquals(enabledCipher, engine.getEnabledCipherSuites(), "Enabled ciphers not as expected");
     }
 
-    @Test
-    public void testCreateSslEngineFromJksStoreWithExplicitEnabledCiphersOpenSSL() throws Exception {
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslEngineFromJksStoreWithExplicitEnabledCiphersOpenSSL(boolean useStoreLocation) throws Exception {
         assumeTrue(OpenSsl.isAvailable());
         assumeTrue(OpenSsl.supportsKeyManagerFactory());
 
         // Discover the default enabled ciphers
-        TransportOptions options = createJksSslOptions();
+        TransportOptions options = createJksSslOptions(useStoreLocation);
         SSLEngine directEngine = createOpenSSLEngineDirectly(options);
         String[] ciphers = directEngine.getEnabledCipherSuites();
         assertTrue(ciphers.length > 0, "There were no initial ciphers to choose from!");
@@ -613,10 +677,11 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertArrayEquals(enabledCipher, engine.getEnabledCipherSuites(), "Enabled ciphers not as expected");
     }
 
-    @Test
-    public void testCreateSslEngineFromJksStoreWithExplicitDisabledCiphersJDK() throws Exception {
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslEngineFromJksStoreWithExplicitDisabledCiphersJDK(boolean useStoreLocation) throws Exception {
         // Discover the default enabled ciphers
-        TransportOptions options = createJksSslOptions();
+        TransportOptions options = createJksSslOptions(useStoreLocation);
         SSLEngine directEngine = createSSLEngineDirectly(options);
         String[] ciphers = directEngine.getEnabledCipherSuites();
         assertTrue(ciphers.length > 0, "There were no initial ciphers to choose from!");
@@ -633,13 +698,14 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertArrayEquals(trimmedCiphers, engine.getEnabledCipherSuites(), "Enabled ciphers not as expected");
     }
 
-    @Test
-    public void testCreateSslEngineFromJksStoreWithExplicitDisabledCiphersOpenSSL() throws Exception {
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslEngineFromJksStoreWithExplicitDisabledCiphersOpenSSL(boolean useStoreLocation) throws Exception {
         assumeTrue(OpenSsl.isAvailable());
         assumeTrue(OpenSsl.supportsKeyManagerFactory());
 
         // Discover the default enabled ciphers
-        TransportOptions options = createJksSslOptions();
+        TransportOptions options = createJksSslOptions(useStoreLocation);
         SSLEngine directEngine = createOpenSSLEngineDirectly(options);
         String[] ciphers = directEngine.getEnabledCipherSuites();
         assertTrue(ciphers.length > 0, "There were no initial ciphers to choose from!");
@@ -656,10 +722,11 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertArrayEquals(trimmedCiphers, engine.getEnabledCipherSuites(), "Enabled ciphers not as expected");
     }
 
-    @Test
-    public void testCreateSslEngineFromJksStoreWithExplicitEnabledAndDisabledCiphersJDK() throws Exception {
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslEngineFromJksStoreWithExplicitEnabledAndDisabledCiphersJDK(boolean useStoreLocation) throws Exception {
         // Discover the default enabled ciphers
-        TransportOptions options = createJksSslOptions();
+        TransportOptions options = createJksSslOptions(useStoreLocation);
         SSLEngine directEngine = createSSLEngineDirectly(options);
         String[] ciphers = directEngine.getEnabledCipherSuites();
         assertTrue(ciphers.length > 1, "There werent enough initial ciphers to choose from!");
@@ -680,13 +747,14 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertArrayEquals(remainingCipher, engine.getEnabledCipherSuites(), "Enabled ciphers not as expected");
     }
 
-    @Test
-    public void testCreateSslEngineFromJksStoreWithExplicitEnabledAndDisabledCiphersOpenSSL() throws Exception {
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslEngineFromJksStoreWithExplicitEnabledAndDisabledCiphersOpenSSL(boolean useStoreLocation) throws Exception {
         assumeTrue(OpenSsl.isAvailable());
         assumeTrue(OpenSsl.supportsKeyManagerFactory());
 
         // Discover the default enabled ciphers
-        TransportOptions options = createJksSslOptions();
+        TransportOptions options = createJksSslOptions(useStoreLocation);
         SSLEngine directEngine = createOpenSSLEngineDirectly(options);
         String[] ciphers = directEngine.getEnabledCipherSuites();
         assertTrue(ciphers.length > 1, "There werent enough initial ciphers to choose from!");
@@ -707,9 +775,10 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertArrayEquals(remainingCipher, engine.getEnabledCipherSuites(), "Enabled ciphers not as expected");
     }
 
-    @Test
-    public void testCreateSslEngineFromJceksStoreJDK() throws Exception {
-        TransportOptions options = createJceksSslOptions();
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslEngineFromJceksStoreJDK(boolean useStoreLocation) throws Exception {
+        TransportOptions options = createJceksSslOptions(useStoreLocation);
 
         SSLContext context = TransportSupport.createJdkSslContext(options);
         assertNotNull(context);
@@ -721,12 +790,13 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertFalse(engineProtocols.isEmpty());
     }
 
-    @Test
-    public void testCreateSslEngineFromJceksStoreOpenSSL() throws Exception {
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslEngineFromJceksStoreOpenSSL(boolean useStoreLocation) throws Exception {
         assumeTrue(OpenSsl.isAvailable());
         assumeTrue(OpenSsl.supportsKeyManagerFactory());
 
-        TransportOptions options = createJceksSslOptions();
+        TransportOptions options = createJceksSslOptions(useStoreLocation);
 
         SslContext context = TransportSupport.createOpenSslContext(options);
         assertNotNull(context);
@@ -738,9 +808,10 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertFalse(engineProtocols.isEmpty());
     }
 
-    @Test
-    public void testCreateSslEngineFromJceksStoreWithExplicitEnabledProtocolsJDK() throws Exception {
-        TransportOptions options = createJceksSslOptions(ENABLED_PROTOCOLS);
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslEngineFromJceksStoreWithExplicitEnabledProtocolsJDK(boolean useStoreLocation) throws Exception {
+        TransportOptions options = createJceksSslOptions(ENABLED_PROTOCOLS, useStoreLocation);
 
         SSLContext context = TransportSupport.createJdkSslContext(options);
         assertNotNull(context);
@@ -751,14 +822,15 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertArrayEquals(ENABLED_PROTOCOLS, engine.getEnabledProtocols(), "Enabled protocols not as expected");
     }
 
-    @Test
-    public void testCreateSslEngineFromJceksStoreWithExplicitEnabledProtocolsOpenSSL() throws Exception {
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslEngineFromJceksStoreWithExplicitEnabledProtocolsOpenSSL(boolean useStoreLocation) throws Exception {
         assumeTrue(OpenSsl.isAvailable());
         assumeTrue(OpenSsl.supportsKeyManagerFactory());
 
         // Try and disable all but the one we really want but for now expect that this one plus SSLv2Hello
         // is going to come back until the netty code can successfully disable them all.
-        TransportOptions options = createJceksSslOptions(ENABLED_PROTOCOLS);
+        TransportOptions options = createJceksSslOptions(ENABLED_PROTOCOLS, useStoreLocation);
 
         SslContext context = TransportSupport.createOpenSslContext(options);
         assertNotNull(context);
@@ -769,9 +841,10 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertArrayEquals(ENABLED_OPENSSL_PROTOCOLS, engine.getEnabledProtocols(), "Enabled protocols not as expected");
     }
 
-    @Test
-    public void testCreateSslEngineWithVerifyHostJDK() throws Exception {
-        TransportOptions options = createJksSslOptions();
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslEngineWithVerifyHostJDK(boolean useStoreLocation) throws Exception {
+        TransportOptions options = createJksSslOptions(useStoreLocation);
         options.setVerifyHost(true);
 
         SSLContext context = TransportSupport.createJdkSslContext(options);
@@ -783,13 +856,14 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertEquals("HTTPS", engine.getSSLParameters().getEndpointIdentificationAlgorithm());
     }
 
-    @Test
-    public void testCreateSslEngineWithVerifyHostOpenSSL() throws Exception {
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslEngineWithVerifyHostOpenSSL(boolean useStoreLocation) throws Exception {
         assumeTrue(OpenSsl.isAvailable());
         assumeTrue(OpenSsl.supportsKeyManagerFactory());
         assumeTrue(OpenSsl.supportsHostnameValidation());
 
-        TransportOptions options = createJksSslOptions();
+        TransportOptions options = createJksSslOptions(useStoreLocation);
         options.setVerifyHost(true);
 
         SslContext context = TransportSupport.createOpenSslContext(options);
@@ -801,9 +875,10 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertEquals("HTTPS", engine.getSSLParameters().getEndpointIdentificationAlgorithm());
     }
 
-    @Test
-    public void testCreateSslEngineWithoutVerifyHostJDK() throws Exception {
-        TransportOptions options = createJksSslOptions();
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslEngineWithoutVerifyHostJDK(boolean useStoreLocation) throws Exception {
+        TransportOptions options = createJksSslOptions(useStoreLocation);
         options.setVerifyHost(false);
 
         SSLContext context = TransportSupport.createJdkSslContext(options);
@@ -815,13 +890,14 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertNull(engine.getSSLParameters().getEndpointIdentificationAlgorithm());
     }
 
-    @Test
-    public void testCreateSslEngineWithoutVerifyHostOpenSSL() throws Exception {
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslEngineWithoutVerifyHostOpenSSL(boolean useStoreLocation) throws Exception {
         assumeTrue(OpenSsl.isAvailable());
         assumeTrue(OpenSsl.supportsKeyManagerFactory());
         assumeTrue(OpenSsl.supportsHostnameValidation());
 
-        TransportOptions options = createJksSslOptions();
+        TransportOptions options = createJksSslOptions(useStoreLocation);
         options.setVerifyHost(false);
 
         SslContext context = TransportSupport.createOpenSslContext(options);
@@ -833,9 +909,10 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertNull(engine.getSSLParameters().getEndpointIdentificationAlgorithm());
     }
 
-    @Test
-    public void testCreateSslContextWithKeyAliasWhichDoesntExist() throws Exception {
-        TransportOptions options = createJksSslOptions();
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslContextWithKeyAliasWhichDoesntExist(boolean useStoreLocation) throws Exception {
+        TransportOptions options = createJksSslOptions(useStoreLocation);
         options.setKeyAlias(ALIAS_DOES_NOT_EXIST);
 
         try {
@@ -846,9 +923,10 @@ public class TransportSupportTest extends QpidJmsTestCase {
         }
     }
 
-    @Test
-    public void testCreateSslContextWithKeyAliasWhichRepresentsNonKeyEntry() throws Exception {
-        TransportOptions options = createJksSslOptions();
+    @ValueSource(booleans = { true, false })
+    @ParameterizedTest(name = "{index}: useStoreLocation={0}")
+    public void testCreateSslContextWithKeyAliasWhichRepresentsNonKeyEntry(boolean useStoreLocation) throws Exception {
+        TransportOptions options = createJksSslOptions(useStoreLocation);
         options.setKeyAlias(ALIAS_CA_CERT);
 
         try {
@@ -948,15 +1026,22 @@ public class TransportSupportTest extends QpidJmsTestCase {
         } catch (IllegalArgumentException iae) {}
     }
 
-    private TransportOptions createJksSslOptions() {
-        return createJksSslOptions(null);
+    private TransportOptions createJksSslOptions(boolean useStoreLocation) throws IOException {
+        return createJksSslOptions(null, useStoreLocation);
     }
 
-    private TransportOptions createJksSslOptions(String[] enabledProtocols) {
+    private TransportOptions createJksSslOptions(String[] enabledProtocols, boolean useStoreLocation) throws IOException {
         TransportOptions options = new TransportOptions();
 
-        options.setKeyStoreLocation(CLIENT_JKS_KEYSTORE);
-        options.setTrustStoreLocation(CLIENT_JKS_TRUSTSTORE);
+        if (useStoreLocation) {
+            options.setKeyStoreLocation(CLIENT_JKS_KEYSTORE);
+            options.setTrustStoreLocation(CLIENT_JKS_TRUSTSTORE);
+        } else {
+            System.setProperty(KEYSTORE_SYSTEM_PROPERTY, readStoreBase64Content(CLIENT_JKS_KEYSTORE));
+            System.setProperty(TRUSTSTORE_SYSTEM_PROPERTY, readStoreBase64Content(CLIENT_JKS_TRUSTSTORE));
+            options.setKeyStoreBase64Property(KEYSTORE_SYSTEM_PROPERTY);
+            options.setTrustStoreBase64Property(TRUSTSTORE_SYSTEM_PROPERTY);
+        }
         options.setStoreType(KEYSTORE_JKS_TYPE);
         options.setKeyStorePassword(PASSWORD);
         options.setTrustStorePassword(PASSWORD);
@@ -967,15 +1052,22 @@ public class TransportSupportTest extends QpidJmsTestCase {
         return options;
     }
 
-    private TransportOptions createJceksSslOptions() {
-        return createJceksSslOptions(null);
+    private TransportOptions createJceksSslOptions(boolean useStoreLocation) throws IOException {
+        return createJceksSslOptions(null, useStoreLocation);
     }
 
-    private TransportOptions createJceksSslOptions(String[] enabledProtocols) {
+    private TransportOptions createJceksSslOptions(String[] enabledProtocols, boolean useStoreLocation) throws IOException {
         TransportOptions options = new TransportOptions();
 
-        options.setKeyStoreLocation(CLIENT_JCEKS_KEYSTORE);
-        options.setTrustStoreLocation(CLIENT_JCEKS_TRUSTSTORE);
+        if (useStoreLocation) {
+            options.setKeyStoreLocation(CLIENT_JCEKS_KEYSTORE);
+            options.setTrustStoreLocation(CLIENT_JCEKS_TRUSTSTORE);
+        } else {
+            System.setProperty(KEYSTORE_SYSTEM_PROPERTY, readStoreBase64Content(CLIENT_JCEKS_KEYSTORE));
+            System.setProperty(TRUSTSTORE_SYSTEM_PROPERTY, readStoreBase64Content(CLIENT_JCEKS_TRUSTSTORE));
+            options.setKeyStoreBase64Property(KEYSTORE_SYSTEM_PROPERTY);
+            options.setTrustStoreBase64Property(TRUSTSTORE_SYSTEM_PROPERTY);
+        }
         options.setStoreType(KEYSTORE_JCEKS_TYPE);
         options.setKeyStorePassword(PASSWORD);
         options.setTrustStorePassword(PASSWORD);
@@ -986,15 +1078,22 @@ public class TransportSupportTest extends QpidJmsTestCase {
         return options;
     }
 
-    private TransportOptions createPkcs12SslOptions() {
-        return createPkcs12SslOptions(null);
+    private TransportOptions createPkcs12SslOptions(boolean useStoreLocation) throws IOException {
+        return createPkcs12SslOptions(null, useStoreLocation);
     }
 
-    private TransportOptions createPkcs12SslOptions(String[] enabledProtocols) {
+    private TransportOptions createPkcs12SslOptions(String[] enabledProtocols, boolean useStoreLocation) throws IOException {
         TransportOptions options = new TransportOptions();
 
-        options.setKeyStoreLocation(CLIENT_PKCS12_KEYSTORE);
-        options.setTrustStoreLocation(CLIENT_PKCS12_TRUSTSTORE);
+        if (useStoreLocation) {
+            options.setKeyStoreLocation(CLIENT_PKCS12_KEYSTORE);
+            options.setTrustStoreLocation(CLIENT_PKCS12_TRUSTSTORE);
+        } else {
+            System.setProperty(KEYSTORE_SYSTEM_PROPERTY, readStoreBase64Content(CLIENT_PKCS12_KEYSTORE));
+            System.setProperty(TRUSTSTORE_SYSTEM_PROPERTY, readStoreBase64Content(CLIENT_PKCS12_TRUSTSTORE));
+            options.setKeyStoreBase64Property(KEYSTORE_SYSTEM_PROPERTY);
+            options.setTrustStoreBase64Property(TRUSTSTORE_SYSTEM_PROPERTY);
+        }
         options.setStoreType(KEYSTORE_PKCS12_TYPE);
         options.setKeyStorePassword(PASSWORD);
         options.setTrustStorePassword(PASSWORD);
@@ -1015,5 +1114,10 @@ public class TransportSupportTest extends QpidJmsTestCase {
         SslContext context = TransportSupport.createOpenSslContext(options);
         SSLEngine engine = context.newEngine(PooledByteBufAllocator.DEFAULT);
         return engine;
+    }
+
+    private String readStoreBase64Content(String storePath) throws IOException {
+        byte[] storeBytes = Files.readAllBytes(Paths.get(storePath));
+        return Base64.getEncoder().encodeToString(storeBytes);
     }
 }

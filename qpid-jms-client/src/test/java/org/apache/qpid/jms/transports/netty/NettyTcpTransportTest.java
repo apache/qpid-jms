@@ -343,7 +343,8 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
 
             assertTrue(transport.isConnected());
 
-            server.close();
+            // Ensure client connects and event handlers triggered.
+            Wait.waitFor(() -> server.getChannelActiveCount() > 0, 10000, 50);
         }
 
         final Transport connectedTransport = transport;

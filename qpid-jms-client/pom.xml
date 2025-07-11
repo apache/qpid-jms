@@ -170,10 +170,10 @@
             <Export-Package>org.apache.qpid.jms.*</Export-Package>
             <Import-Package>
             io.opentracing.*;resolution:="optional",
-            io.netty.channel.epoll;resolution:="optional";version="[4.1.0,4.2.0)",
-            io.netty.channel.kqueue;resolution:="optional";version="[4.1.0,4.2.0)",
-            io.netty.handler.proxy;resolution:="optional";version="[4.1.0,4.2.0)",
-            io.netty.*;version="[4.1.0,4.2.0)",
+            io.netty.channel.epoll;resolution:="optional";version="[4.1.0,4.3.0)",
+            io.netty.channel.kqueue;resolution:="optional";version="[4.1.0,4.3.0)",
+            io.netty.handler.proxy;resolution:="optional";version="[4.1.0,4.3.0)",
+            io.netty.*;version="[4.1.0,4.3.0)",
             org.apache.qpid.proton.*;version="[0.33.2,0.40.0)",
             *</Import-Package>
             <Dynamic-ImportPackage>*</Dynamic-ImportPackage>

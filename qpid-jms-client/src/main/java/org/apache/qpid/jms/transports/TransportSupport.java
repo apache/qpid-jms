@@ -179,15 +179,7 @@ public class TransportSupport {
             engine = context.createSSLEngine(remote.getHost(), remote.getPort());
         }
 
-        engine.setEnabledProtocols(buildEnabledProtocols(engine, options));
-        engine.setEnabledCipherSuites(buildEnabledCipherSuites(engine, options));
-        engine.setUseClientMode(true);
-
-        if (options.isVerifyHost()) {
-            SSLParameters sslParameters = engine.getSSLParameters();
-            sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
-            engine.setSSLParameters(sslParameters);
-        }
+        configureSslEngine(options, engine);
 
         return engine;
     }
@@ -262,20 +254,26 @@ public class TransportSupport {
             engine = context.newEngine(allocator, remote.getHost(), remote.getPort());
         }
 
-        engine.setEnabledProtocols(buildEnabledProtocols(engine, options));
-        engine.setEnabledCipherSuites(buildEnabledCipherSuites(engine, options));
-        engine.setUseClientMode(true);
-
-        if (options.isVerifyHost()) {
-            SSLParameters sslParameters = engine.getSSLParameters();
-            sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
-            engine.setSSLParameters(sslParameters);
-        }
+        configureSslEngine(options, engine);
 
         return engine;
     }
 
     //----- Internal support methods -----------------------------------------//
+
+    private static void configureSslEngine(TransportOptions options, SSLEngine engine) {
+        engine.setEnabledProtocols(buildEnabledProtocols(engine, options));
+        engine.setEnabledCipherSuites(buildEnabledCipherSuites(engine, options));
+        engine.setUseClientMode(true);
+
+        final SSLParameters sslParameters = engine.getSSLParameters();
+        if (options.isVerifyHost()) {
+            sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
+        } else {
+            sslParameters.setEndpointIdentificationAlgorithm(null);
+        }
+        engine.setSSLParameters(sslParameters);
+    }
 
     private static String[] buildEnabledProtocols(SSLEngine engine, TransportOptions options) {
         List<String> enabledProtocols = new ArrayList<String>();

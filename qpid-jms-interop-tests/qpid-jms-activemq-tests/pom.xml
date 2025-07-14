@@ -28,7 +28,7 @@
   <description>Tests the JMS client against the ActiveMQ Broker.</description>
   <packaging>jar</packaging>
   <properties>
-    <activemq-version>5.18.6</activemq-version>
+    <activemq-version>5.19.0</activemq-version>
     <jetty-version>9.4.57.v20241219</jetty-version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>

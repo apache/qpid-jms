@@ -208,9 +208,16 @@ public class AmqpSupport {
                 message = message + " [condition = " + condition + "]";
             }
 
-            Map<?, ?> info = errorCondition.getInfo();
-            if (info != null && !info.isEmpty()) {
-                message = message + " [info = " + info + "]";
+            try {
+                Map<?, ?> info = errorCondition.getInfo();
+                String messageWithInfo = message;
+                if (info != null && !info.isEmpty()) {
+                    messageWithInfo = message + " [info = " + info + "]";
+                }
+                return messageWithInfo;
+            }
+            catch (Exception e) {
+                return message;
             }
         }
 

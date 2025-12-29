@@ -200,11 +200,23 @@ public class JmsBytesMessage extends JmsMessage implements BytesMessage {
     @Override
     public String readUTF() throws JMSException {
         initializeReading();
+        final boolean canReset = this.dataIn.markSupported();
+        if (canReset) {
+            this.dataIn.mark(Integer.MAX_VALUE);
+        }
         try {
             return this.dataIn.readUTF();
         } catch (EOFException e) {
             throw JmsExceptionSupport.createMessageEOFException(e);
         } catch (IOException e) {
+            if (canReset) {
+                try {
+                    this.dataIn.reset();
+                } catch (IOException ignored)
+                {
+                    // if reset fails original failure should be propagated
+                }
+            }
             throw JmsExceptionSupport.createMessageFormatException(e);
         }
     }

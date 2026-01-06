@@ -212,8 +212,7 @@ public class JmsBytesMessage extends JmsMessage implements BytesMessage {
             if (canReset) {
                 try {
                     this.dataIn.reset();
-                } catch (IOException ignored)
-                {
+                } catch (IOException ignored) {
                     // if reset fails original failure should be propagated
                 }
             }

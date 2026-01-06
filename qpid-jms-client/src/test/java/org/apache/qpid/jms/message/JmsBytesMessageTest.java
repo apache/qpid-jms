@@ -439,6 +439,23 @@ public class JmsBytesMessageTest {
     }
 
     @Test
+    public void testReadUTFMessageFormatExceptionDoesNotAdvanceReadPointer() throws Exception {
+        JmsBytesMessage msg = factory.createBytesMessage();
+        msg.writeShort((short) 2);
+        msg.writeByte((byte) 0xC0);
+        msg.writeByte((byte) 0x00);
+        msg.reset();
+
+        assertThrows(MessageFormatException.class, msg::readUTF);
+
+        assertEquals(2, msg.readUnsignedShort());
+        assertEquals((byte) 0xC0, msg.readByte());
+        assertEquals((byte) 0x00, msg.readByte());
+
+        assertThrows(MessageEOFException.class, msg::readByte);
+    }
+
+    @Test
     public void testReadBytesbyteArray() throws JMSException {
         JmsBytesMessage msg = factory.createBytesMessage();
         byte[] data = new byte[50];

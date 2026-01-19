@@ -37,7 +37,7 @@
   <properties>
     <!-- Dependency Versions for this Project -->
     <proton-version>0.34.1</proton-version>
-    <netty-version>4.1.127.Final</netty-version>
+    <netty-version>4.1.130.Final</netty-version>
     <slf4j-version>2.0.17</slf4j-version>
     <jakarta.jms-api-version>3.1.0</jakarta.jms-api-version>
 
@@ -45,7 +45,7 @@
     <opentracing-version>0.33.0</opentracing-version>
 
     <!-- Test Dependency Versions for this Project -->
-    <netty-tcnative-version>2.0.73.Final</netty-tcnative-version>
+    <netty-tcnative-version>2.0.74.Final</netty-tcnative-version>
     <junit.jupiter.version>6.0.2</junit.jupiter.version>
     <mockito-version>5.21.0</mockito-version>
     <hamcrest-version>3.0</hamcrest-version>

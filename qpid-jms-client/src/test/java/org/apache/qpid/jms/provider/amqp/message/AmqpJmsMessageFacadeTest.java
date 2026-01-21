@@ -1769,6 +1769,50 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
     }
 
     @Test
+    public void testGetMessageAnnotationNamesOnMessageWithAnnotationsMap() {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+        final Symbol symbol = Symbol.valueOf("x-opt-testKey1");
+        amqpMessageFacade.setMessageAnnotation(symbol, "testValue1");
+
+        Set<Symbol> msgAnnotationNames = amqpMessageFacade.getMessageAnnotationNames();
+        assertNotNull(msgAnnotationNames);
+        assertEquals(symbol.toString(), msgAnnotationNames.iterator().next().toString());
+    }
+
+    @Test
+    public void testGetMessageAnnotationNamesOnMessageWithEmptyAnnotationsMap() {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        Set<Symbol> msgAnnotationNames = amqpMessageFacade.getMessageAnnotationNames();
+        assertNull(msgAnnotationNames);
+    }
+
+    @Test
+    public void testGetDeliveryAnnotationNamesOnMessageWithEmptyAnnotationsMap() {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+        Map<Symbol, Object> deliveryAnnotationsMap = new HashMap<>();
+        DeliveryAnnotations deliveryAnnotations = new DeliveryAnnotations(deliveryAnnotationsMap);
+        amqpMessageFacade.setDeliveryAnnotations(deliveryAnnotations);
+
+        Set<Symbol> deliveryAnnotationNames = amqpMessageFacade.getDeliveryAnnotationNames();
+        assertNull(deliveryAnnotationNames);
+    }
+
+    @Test
+    public void testGetDeliveryAnnotationNamesOnMessageWithAnnotationsMap() {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+        final Symbol symbol = Symbol.valueOf("testKey1");
+        Map<Symbol, Object> deliveryAnnotationsMap = new HashMap<>();
+        deliveryAnnotationsMap.put(symbol, "testValue1");
+        DeliveryAnnotations deliveryAnnotations = new DeliveryAnnotations(deliveryAnnotationsMap);
+        amqpMessageFacade.setDeliveryAnnotations(deliveryAnnotations);
+
+        Set<Symbol> deliveryAnnotationNames = amqpMessageFacade.getDeliveryAnnotationNames();
+        assertNotNull(deliveryAnnotationNames);
+        assertEquals(symbol.toString(), deliveryAnnotationNames.iterator().next().toString());
+    }
+
+    @Test
     public void testRemoveMessageAnnotation() {
         Symbol symbolKeyName = Symbol.valueOf("myTestSymbolName");
         String value = "myTestValue";

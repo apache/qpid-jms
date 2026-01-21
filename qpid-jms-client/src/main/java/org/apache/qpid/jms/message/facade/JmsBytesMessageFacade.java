@@ -16,8 +16,8 @@
  */
 package org.apache.qpid.jms.message.facade;
 
-import java.io.InputStream;
-import java.io.OutputStream;
+import io.netty.buffer.ByteBufInputStream;
+import io.netty.buffer.ByteBufOutputStream;
 
 import jakarta.jms.IllegalStateException;
 import jakarta.jms.JMSException;
@@ -58,7 +58,7 @@ public interface JmsBytesMessageFacade extends JmsMessageFacade {
      * @throws JMSException if an error occurs creating the stream.
      * @throws IllegalStateException if there is a current OutputStream in use.
      */
-    InputStream getInputStream() throws JMSException;
+    ByteBufInputStream getInputStream() throws JMSException;
 
     /**
      * Create and return a new OuputStream used to populate the body of the message. If an
@@ -73,7 +73,7 @@ public interface JmsBytesMessageFacade extends JmsMessageFacade {
      * @throws JMSException if an error occurs creating the stream.
      * @throws IllegalStateException if there is a current OutputStream in use.
      */
-    OutputStream getOutputStream() throws JMSException;
+    ByteBufOutputStream getOutputStream() throws JMSException;
 
     /**
      * Reset the message state such that a call to getInputStream or getOutputStream

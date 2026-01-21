@@ -84,7 +84,7 @@ public final class JmsTestBytesMessageFacade extends JmsTestMessageFacade implem
     }
 
     @Override
-    public InputStream getInputStream() throws JMSException {
+    public ByteBufInputStream getInputStream() throws JMSException {
         if (bytesOut != null) {
             throw new IllegalStateException("Body is being written to, cannot perform a read.");
         }
@@ -98,7 +98,7 @@ public final class JmsTestBytesMessageFacade extends JmsTestMessageFacade implem
     }
 
     @Override
-    public OutputStream getOutputStream() throws JMSException {
+    public ByteBufOutputStream getOutputStream() throws JMSException {
         if (bytesIn != null) {
             throw new IllegalStateException("Body is being read from, cannot perform a write.");
         }

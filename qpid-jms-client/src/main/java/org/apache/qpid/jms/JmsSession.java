@@ -108,9 +108,9 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
 
     private static final Logger LOG = LoggerFactory.getLogger(JmsSession.class);
 
-    private static final int INDIVIDUAL_ACKNOWLEDGE = 101;
-    private static final int ARTEMIS_PRE_ACKNOWLEDGE = 100;
-    private static final int NO_ACKNOWLEDGE = 257;
+    public static final int INDIVIDUAL_ACKNOWLEDGE = 101;
+    public static final int ARTEMIS_PRE_ACKNOWLEDGE = 100;
+    public static final int NO_ACKNOWLEDGE = 257;
 
     private final JmsConnection connection;
     private final int acknowledgementMode;

@@ -105,8 +105,6 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
     private static final Logger LOG = LoggerFactory.getLogger(SessionIntegrationTest.class);
 
-    private static final int INDIVIDUAL_ACK = 101;
-
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
 
     @Test
@@ -2281,7 +2279,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
             testPeer.expectBegin();
 
-            Session session = connection.createSession(INDIVIDUAL_ACK);
+            Session session = connection.createSession(JmsSession.INDIVIDUAL_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
 
             int msgCount = 5;

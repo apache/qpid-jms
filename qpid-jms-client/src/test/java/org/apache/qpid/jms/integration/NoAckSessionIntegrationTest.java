@@ -32,6 +32,7 @@ import jakarta.jms.TemporaryQueue;
 import jakarta.jms.TemporaryTopic;
 import jakarta.jms.Topic;
 
+import org.apache.qpid.jms.JmsSession;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.ListDescribedType;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
@@ -57,7 +58,7 @@ public class NoAckSessionIntegrationTest extends QpidJmsTestCase {
             Connection connection = testFixture.establishConnecton(testPeer);
             testPeer.expectBegin();
 
-            Session session = connection.createSession(false, 100);
+            Session session = connection.createSession(false, JmsSession.ARTEMIS_PRE_ACKNOWLEDGE);
 
             Destination destination = session.createQueue("MyQueue");
 
@@ -95,31 +96,31 @@ public class NoAckSessionIntegrationTest extends QpidJmsTestCase {
     @Test
     @Timeout(20)
     public void testNoAckSessionAppliedToTopic() throws Exception {
-        doTestConsumerWithPresettleOptions(100, Topic.class);
+        doTestConsumerWithPresettleOptions(JmsSession.ARTEMIS_PRE_ACKNOWLEDGE, Topic.class);
     }
 
     @Test
     @Timeout(20)
     public void testNoAckSessionAppliedToTopicAltMode() throws Exception {
-        doTestConsumerWithPresettleOptions(257, Topic.class);
+        doTestConsumerWithPresettleOptions(JmsSession.NO_ACKNOWLEDGE, Topic.class);
     }
 
     @Test
     @Timeout(20)
     public void testNoAckSessionAppliedToQueue() throws Exception {
-        doTestConsumerWithPresettleOptions(100, Queue.class);
+        doTestConsumerWithPresettleOptions(JmsSession.ARTEMIS_PRE_ACKNOWLEDGE, Queue.class);
     }
 
     @Test
     @Timeout(20)
     public void testNoAckSessionAppliedToTempTopic() throws Exception {
-        doTestConsumerWithPresettleOptions(100, TemporaryTopic.class);
+        doTestConsumerWithPresettleOptions(JmsSession.ARTEMIS_PRE_ACKNOWLEDGE, TemporaryTopic.class);
     }
 
     @Test
     @Timeout(20)
     public void testNoAckSessionAppliedToTempQueue() throws Exception {
-        doTestConsumerWithPresettleOptions(100, TemporaryQueue.class);
+        doTestConsumerWithPresettleOptions(JmsSession.ARTEMIS_PRE_ACKNOWLEDGE, TemporaryQueue.class);
     }
 
     //----- Test Method implementation ---------------------------------------//

@@ -39,6 +39,7 @@ import jakarta.jms.MessageListener;
 import jakarta.jms.Queue;
 import jakarta.jms.Session;
 
+import org.apache.qpid.jms.JmsSession;
 import org.apache.qpid.jms.message.JmsMessageSupport;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
@@ -55,7 +56,6 @@ import org.junit.jupiter.api.Timeout;
 
 public class AmqpAcknowledgementsIntegrationTest extends QpidJmsTestCase {
 
-    private static final int INDIVIDUAL_ACK = 101;
     private static final int SKIP = -1;
     private static final int INVALID = 99;
 
@@ -314,7 +314,7 @@ public class AmqpAcknowledgementsIntegrationTest extends QpidJmsTestCase {
 
             testPeer.expectBegin();
 
-            Session session = connection.createSession(INDIVIDUAL_ACK);
+            Session session = connection.createSession(JmsSession.INDIVIDUAL_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
 
             int msgCount = 6;

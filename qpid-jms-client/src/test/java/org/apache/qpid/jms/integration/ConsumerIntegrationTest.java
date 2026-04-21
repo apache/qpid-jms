@@ -53,6 +53,7 @@ import jakarta.jms.TopicSubscriber;
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsDefaultConnectionListener;
 import org.apache.qpid.jms.JmsOperationTimedOutException;
+import org.apache.qpid.jms.JmsSession;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
@@ -86,8 +87,6 @@ import org.slf4j.LoggerFactory;
 public class ConsumerIntegrationTest extends QpidJmsTestCase {
 
     private static final Logger LOG = LoggerFactory.getLogger(ConsumerIntegrationTest.class);
-
-    private static final int INDIVIDUAL_ACKNOWLEDGE = 101;
 
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
 
@@ -1228,7 +1227,7 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
     @Test
     @Timeout(20)
     public void testMessageListenerClosesItsConsumerAfterRecoverIndividualAck() throws Exception {
-        doMessageListenerClosesItsConsumerTestImpl(true, false, INDIVIDUAL_ACKNOWLEDGE);
+        doMessageListenerClosesItsConsumerTestImpl(true, false, JmsSession.INDIVIDUAL_ACKNOWLEDGE);
     }
 
     @Test
@@ -1252,7 +1251,7 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
     @Test
     @Timeout(20)
     public void testMessageListenerClosesItsConsumerBeforeRecoverIndividualAck() throws Exception {
-        doMessageListenerClosesItsConsumerTestImpl(false, true, INDIVIDUAL_ACKNOWLEDGE);
+        doMessageListenerClosesItsConsumerTestImpl(false, true, JmsSession.INDIVIDUAL_ACKNOWLEDGE);
     }
 
     private void doMessageListenerClosesItsConsumerTestImpl(boolean recoverAfterClose, boolean recoverBeforeClose, int ackMode) throws Exception {

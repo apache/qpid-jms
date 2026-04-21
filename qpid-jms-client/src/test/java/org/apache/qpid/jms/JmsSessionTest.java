@@ -49,10 +49,6 @@ import org.mockito.Mockito;
  */
 public class JmsSessionTest extends JmsConnectionTestSupport {
 
-    private static final int NO_ACKNOWLEDGE = 257;
-    private static final int ARTEMIS_PRE_ACKNOWLEDGE = 100;
-    private static final int INDIVIDUAL_ACKNOWLEDGE = 101;
-
     @Override
     @BeforeEach
     public void setUp(TestInfo testInfo) throws Exception {
@@ -85,12 +81,12 @@ public class JmsSessionTest extends JmsConnectionTestSupport {
         assertEquals(Session.DUPS_OK_ACKNOWLEDGE, session.getAcknowledgeMode());
         session = (JmsSession) connection.createSession(true, Session.SESSION_TRANSACTED);
         assertEquals(Session.SESSION_TRANSACTED, session.getAcknowledgeMode());
-        session = (JmsSession) connection.createSession(false, NO_ACKNOWLEDGE);
-        assertEquals(NO_ACKNOWLEDGE, session.getAcknowledgeMode());
-        session = (JmsSession) connection.createSession(false, ARTEMIS_PRE_ACKNOWLEDGE);
-        assertEquals(ARTEMIS_PRE_ACKNOWLEDGE, session.getAcknowledgeMode());
-        session = (JmsSession) connection.createSession(false, INDIVIDUAL_ACKNOWLEDGE);
-        assertEquals(INDIVIDUAL_ACKNOWLEDGE, session.getAcknowledgeMode());
+        session = (JmsSession) connection.createSession(false, JmsSession.NO_ACKNOWLEDGE);
+        assertEquals(JmsSession.NO_ACKNOWLEDGE, session.getAcknowledgeMode());
+        session = (JmsSession) connection.createSession(false, JmsSession.ARTEMIS_PRE_ACKNOWLEDGE);
+        assertEquals(JmsSession.ARTEMIS_PRE_ACKNOWLEDGE, session.getAcknowledgeMode());
+        session = (JmsSession) connection.createSession(false, JmsSession.INDIVIDUAL_ACKNOWLEDGE);
+        assertEquals(JmsSession.INDIVIDUAL_ACKNOWLEDGE, session.getAcknowledgeMode());
     }
 
     @Test
@@ -129,7 +125,7 @@ public class JmsSessionTest extends JmsConnectionTestSupport {
     @Test
     @Timeout(10)
     public void testIsNoAcknowledge() throws JMSException {
-        JmsSession session = (JmsSession) connection.createSession(false, NO_ACKNOWLEDGE);
+        JmsSession session = (JmsSession) connection.createSession(false, JmsSession.NO_ACKNOWLEDGE);
         assertFalse(session.isAutoAcknowledge());
         assertFalse(session.isClientAcknowledge());
         assertFalse(session.isDupsOkAcknowledge());
@@ -140,7 +136,7 @@ public class JmsSessionTest extends JmsConnectionTestSupport {
     @Test
     @Timeout(10)
     public void testIsNoAcknowledgeWithArtemisMode() throws JMSException {
-        JmsSession session = (JmsSession) connection.createSession(false, ARTEMIS_PRE_ACKNOWLEDGE);
+        JmsSession session = (JmsSession) connection.createSession(false, JmsSession.ARTEMIS_PRE_ACKNOWLEDGE);
         assertFalse(session.isAutoAcknowledge());
         assertFalse(session.isClientAcknowledge());
         assertFalse(session.isDupsOkAcknowledge());
@@ -160,7 +156,7 @@ public class JmsSessionTest extends JmsConnectionTestSupport {
     @Test
     @Timeout(10)
     public void testIsIndividualAcknowledge() throws JMSException {
-        JmsSession session = (JmsSession) connection.createSession(false, INDIVIDUAL_ACKNOWLEDGE);
+        JmsSession session = (JmsSession) connection.createSession(false, JmsSession.INDIVIDUAL_ACKNOWLEDGE);
         assertFalse(session.isAutoAcknowledge());
         assertFalse(session.isClientAcknowledge());
         assertFalse(session.isDupsOkAcknowledge());

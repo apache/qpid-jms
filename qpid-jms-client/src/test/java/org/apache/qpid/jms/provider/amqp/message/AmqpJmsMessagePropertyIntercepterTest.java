@@ -174,7 +174,7 @@ public class AmqpJmsMessagePropertyIntercepterTest {
     }
 
     @Test
-    public void testJmsJmsAmqpReplyToGroupIdNotInPropertyNamesWhenNotSet() throws JMSException {
+    public void testJmsAmqpReplyToGroupIdNotInPropertyNamesWhenNotSet() throws JMSException {
         AmqpJmsMessageFacade message = createAmqpMessageFacade();
         assertNull(AmqpJmsMessagePropertyIntercepter.getProperty(message, JMS_AMQP_REPLY_TO_GROUP_ID));
         assertFalse(AmqpJmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMS_AMQP_REPLY_TO_GROUP_ID));
@@ -275,21 +275,21 @@ public class AmqpJmsMessagePropertyIntercepterTest {
     }
 
     @Test
-    public void testJmsAmqpTypedEncodingPropertExistsWhenSet() throws JMSException {
+    public void testJmsAmqpTypedEncodingPropertyExistsWhenSet() throws JMSException {
         AmqpJmsObjectMessageFacade message = createAmqpObjectMessageFacade();
         Mockito.when(message.isAmqpTypedEncoding()).thenReturn(true);
         assertTrue(AmqpJmsMessagePropertyIntercepter.propertyExists(message, JMS_AMQP_TYPED_ENCODING));
     }
 
     @Test
-    public void testJmsAmqpTypedEncodingdPropertExistsWhenNotSet() throws JMSException {
+    public void testJmsAmqpTypedEncodingPropertyExistsWhenNotSet() throws JMSException {
         AmqpJmsObjectMessageFacade message = createAmqpObjectMessageFacade();
         Mockito.when(message.isAmqpTypedEncoding()).thenReturn(false);
         assertFalse(AmqpJmsMessagePropertyIntercepter.propertyExists(message, JMS_AMQP_TYPED_ENCODING));
     }
 
     @Test
-    public void testJmsAmqpTypedEncodingdPropertExistsWhenNotAnObjectMessage() throws JMSException {
+    public void testJmsAmqpTypedEncodingPropertyExistsWhenNotAnObjectMessage() throws JMSException {
         AmqpJmsMessageFacade message = createAmqpMessageFacade();
         assertFalse(AmqpJmsMessagePropertyIntercepter.propertyExists(message, JMS_AMQP_TYPED_ENCODING));
     }

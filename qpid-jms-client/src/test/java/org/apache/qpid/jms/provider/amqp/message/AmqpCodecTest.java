@@ -21,17 +21,22 @@
 package org.apache.qpid.jms.provider.amqp.message;
 
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.encodeMessage;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
+import java.io.Serializable;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -64,6 +69,8 @@ import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Data;
 import org.apache.qpid.proton.amqp.messaging.Header;
 import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
+import org.apache.qpid.proton.codec.DecodeException;
+import org.apache.qpid.proton.codec.ReadableBuffer.ByteBufferReader;
 import org.apache.qpid.proton.message.Message;
 import org.apache.qpid.proton.message.impl.MessageImpl;
 import org.junit.jupiter.api.BeforeEach;
@@ -75,6 +82,9 @@ import io.netty.buffer.ByteBuf;
 
 public class AmqpCodecTest extends QpidJmsTestCase {
 
+    private static final int MAX_DECODE_DEPTH = 32;
+    private static final int ZERO_WIDTH_ARRAY_ELEMENTS_LIMIT = 0;
+
     private AmqpConsumer mockConsumer;
     private AmqpConnection mockConnection;
 
@@ -85,8 +95,13 @@ public class AmqpCodecTest extends QpidJmsTestCase {
 
         JmsConsumerId consumerId = new JmsConsumerId("ID:MOCK:1", 1, 1);
         mockConnection = Mockito.mock(AmqpConnection.class);
+        Mockito.when(mockConnection.getMaxDecodeDepth()).thenReturn(MAX_DECODE_DEPTH);
+        Mockito.when(mockConnection.getZeroWidthArrayElementLimit()).thenReturn(ZERO_WIDTH_ARRAY_ELEMENTS_LIMIT);
         mockConsumer = Mockito.mock(AmqpConsumer.class);
         Mockito.when(mockConsumer.getResourceInfo()).thenReturn(new JmsConsumerInfo(consumerId, null));
+        Mockito.when(mockConsumer.getConnection()).thenReturn(mockConnection);
+        Mockito.when(mockConsumer.getMaxDecodeDepth()).thenReturn(MAX_DECODE_DEPTH);
+        Mockito.when(mockConsumer.getZeroWidthArrayElementLimit()).thenReturn(ZERO_WIDTH_ARRAY_ELEMENTS_LIMIT);
     }
 
     //----- AmqpHeader encode and decode -------------------------------------//
@@ -96,7 +111,7 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         Header empty = new Header();
 
         ByteBuf encoded = AmqpCodec.encode(empty);
-        Header decoded = (Header) AmqpCodec.decode(encoded);
+        Header decoded = (Header) AmqpCodec.decode(mockConnection, encoded);
 
         assertNotNull(decoded);
 
@@ -115,7 +130,7 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         header.setDurable(true);
 
         ByteBuf encoded = AmqpCodec.encode(header.getHeader());
-        AmqpHeader decoded = new AmqpHeader((Header) AmqpCodec.decode(encoded));
+        AmqpHeader decoded = new AmqpHeader((Header) AmqpCodec.decode(mockConnection, encoded));
 
         assertTrue(decoded.isDurable());
         assertEquals(4, decoded.getPriority());
@@ -130,7 +145,7 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         header.setDeliveryCount(1);
 
         ByteBuf encoded = AmqpCodec.encode(header.getHeader());
-        AmqpHeader decoded = new AmqpHeader((Header) AmqpCodec.decode(encoded));
+        AmqpHeader decoded = new AmqpHeader((Header) AmqpCodec.decode(mockConnection, encoded));
 
         assertFalse(decoded.isDurable());
         assertEquals(4, decoded.getPriority());
@@ -149,7 +164,7 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         header.setTimeToLive(32768);
 
         ByteBuf encoded = AmqpCodec.encode(header.getHeader());
-        AmqpHeader decoded = new AmqpHeader((Header) AmqpCodec.decode(encoded));
+        AmqpHeader decoded = new AmqpHeader((Header) AmqpCodec.decode(mockConnection, encoded));
 
         assertTrue(decoded.isDurable());
         assertTrue(decoded.isFirstAcquirer());
@@ -879,6 +894,100 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         assertTrue(delegate instanceof AmqpTypedObjectDelegate, "Unexpected delegate type: " + delegate);
     }
 
+    @Test
+    public void testDecodeDepthLimit() throws Exception {
+        Message message = Proton.message();
+
+        // Verify it fails if exceeding the limit.
+        List<Object> lists = prepareNestedLists(MAX_DECODE_DEPTH + 1);
+        message.setBody(new AmqpValue(lists));
+
+        try {
+            AmqpCodec.decodeMessage(mockConsumer, encodeMessage(message));
+            fail("Expected exception");
+        } catch(DecodeException de) {
+            //Expected
+        }
+
+        // Now check it works if not exceeding the limit.
+        lists = prepareNestedLists(MAX_DECODE_DEPTH);
+        message.setBody(new AmqpValue(lists));
+
+        JmsMessage jmsMessage = AmqpCodec.decodeMessage(mockConsumer, encodeMessage(message)).asJmsMessage();
+        assertNotNull(jmsMessage, "Message should not be null");
+        assertEquals(JmsObjectMessage.class, jmsMessage.getClass(), "Unexpected message class type");
+
+        JmsMessageFacade facade = jmsMessage.getFacade();
+        assertNotNull(facade, "Facade should not be null");
+        assertEquals(AmqpJmsObjectMessageFacade.class, facade.getClass(), "Unexpected facade class type");
+
+        assertEquals(lists, ((AmqpJmsObjectMessageFacade) facade).getObject());
+    }
+
+    @Test
+    public void testZeroWidthArrayElementLimit() throws Exception {
+        // Verify it fails if exceeding the limit.
+        ByteBuffer buf = prepareMessageEncodingWithZeroWidthArray(ZERO_WIDTH_ARRAY_ELEMENTS_LIMIT + 1);
+
+        try {
+            AmqpCodec.decodeMessage(mockConsumer, ByteBufferReader.wrap(buf));
+            fail("Expected exception");
+        } catch(DecodeException de) {
+            //Expected
+        }
+
+        // Now check it works if not exceeding the limit.
+        assertEquals(0, ZERO_WIDTH_ARRAY_ELEMENTS_LIMIT);
+        buf = prepareMessageEncodingWithZeroWidthArray(0);
+
+        doZeroWidthArrayElementLimitTestImpl(buf, new boolean[0]);
+
+        // Now check it works if setting a higher limit.
+        final int count = 5;
+        buf = prepareMessageEncodingWithZeroWidthArray(count);
+
+        final boolean[] expected = new boolean[count];
+        Arrays.fill(expected, true);
+
+        Mockito.when(mockConsumer.getZeroWidthArrayElementLimit()).thenReturn(count);
+
+        doZeroWidthArrayElementLimitTestImpl(buf, expected);
+    }
+
+    private void doZeroWidthArrayElementLimitTestImpl(ByteBuffer buf, final boolean[] expected)  throws Exception {
+        JmsMessage jmsMessage = AmqpCodec.decodeMessage(mockConsumer, ByteBufferReader.wrap(buf)).asJmsMessage();
+        assertNotNull(jmsMessage, "Message should not be null");
+        assertEquals(JmsObjectMessage.class, jmsMessage.getClass(), "Unexpected message class type");
+
+        JmsMessageFacade facade = jmsMessage.getFacade();
+        assertNotNull(facade, "Facade should not be null");
+        assertEquals(AmqpJmsObjectMessageFacade.class, facade.getClass(), "Unexpected facade class type");
+
+        final Serializable object = ((AmqpJmsObjectMessageFacade) facade).getObject();
+        assertTrue(object.getClass().isArray());
+        assertEquals(boolean.class, object.getClass().getComponentType());
+        assertArrayEquals(expected, (boolean[]) object);
+    }
+
+    private ByteBuffer prepareMessageEncodingWithZeroWidthArray(int elementCount) {
+        assertTrue(elementCount >= 0);
+        assertTrue(elementCount <= 255);
+
+        ByteBuffer buf = ByteBuffer.allocate(7);
+        buf.put((byte) 0x00); // DescribedType
+        buf.put((byte) 0x53); // small-ulong constructor
+        buf.put((byte) 0x77); // amqp-value ulong descriptor
+
+        buf.put((byte) 0xE0); // 'array8' type descriptor code
+        buf.put((byte) (1 + 1)); // 1 byte count + 1 byte type
+        buf.put((byte) elementCount); // count
+        buf.put((byte) 0x41); // boolean-true
+
+        buf.flip();
+
+        return buf;
+    }
+
     // --------- AmqpSequence Body Section ---------
 
     /**
@@ -1032,5 +1141,19 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         message.initialize(mockConnection);
 
         return message;
+    }
+
+    private static List<Object> prepareNestedLists(final int depth) {
+        final List<Object> body = new ArrayList<>();
+
+        List<Object> current = body;
+        for (int i = 1; i < depth; ++i) {
+            final List<Object> next = new ArrayList<>();
+
+            current.add(next);
+            current = next;
+        }
+
+        return body;
     }
 }

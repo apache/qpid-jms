@@ -36,7 +36,7 @@
 
   <properties>
     <!-- Dependency Versions for this Project -->
-    <proton-version>0.34.1</proton-version>
+    <proton-version>0.35.0</proton-version>
     <netty-version>4.1.137.Final</netty-version>
     <slf4j-version>2.0.18</slf4j-version>
     <jakarta.jms-api-version>2.0.3</jakarta.jms-api-version>

@@ -637,6 +637,14 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
         return session.getProvider().getDrainTimeout();
     }
 
+    public int getMaxDecodeDepth() {
+        return session.getProvider().getMaxDecodeDepth();
+    }
+
+    public int getZeroWidthArrayElementLimit() {
+        return session.getProvider().getZeroWidthArrayElementLimit();
+    }
+
     @Override
     public String toString() {
         return "AmqpConsumer { " + getResourceInfo().getId() + " }";

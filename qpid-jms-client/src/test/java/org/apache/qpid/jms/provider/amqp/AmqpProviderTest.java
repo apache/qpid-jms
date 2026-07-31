@@ -273,6 +273,58 @@ public class AmqpProviderTest extends QpidJmsTestCase {
 
     @Test
     @Timeout(20)
+    public void testSetMaxTransfersPerDelivery() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
+            testPeer.expectSaslAnonymous();
+
+            provider = new AmqpProviderFactory().createProvider(getPeerURI(testPeer));
+
+            TransportImpl transport = (TransportImpl) provider.getProtonTransport();
+
+            final int NEW_MAX = 500;
+
+            provider.setMaxTransfersPerDelivery(NEW_MAX);
+            provider.connect(connectionInfo);
+
+            assertEquals(NEW_MAX, transport.getMaxTransfersPerDelivery());
+
+            testPeer.expectOpen();
+            testPeer.expectClose();
+
+            provider.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test
+    @Timeout(20)
+    public void testSkipSetMaxTransfersPerDelivery() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
+            testPeer.expectSaslAnonymous();
+
+            provider = new AmqpProviderFactory().createProvider(getPeerURI(testPeer));
+
+            TransportImpl transport = (TransportImpl) provider.getProtonTransport();
+
+            final int RECORDED_MAX = transport.getMaxTransfersPerDelivery();
+
+            provider.setMaxTransfersPerDelivery(-1);
+            provider.connect(connectionInfo);
+
+            assertEquals(RECORDED_MAX, transport.getMaxTransfersPerDelivery());
+
+            testPeer.expectOpen();
+            testPeer.expectClose();
+
+            provider.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test
+    @Timeout(20)
     public void testStartThrowsIfNoListenerSet() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
             testPeer.expectSaslAnonymous();

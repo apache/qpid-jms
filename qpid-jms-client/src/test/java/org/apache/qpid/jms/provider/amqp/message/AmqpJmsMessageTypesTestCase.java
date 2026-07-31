@@ -32,6 +32,9 @@ import org.mockito.Mockito;
 
 public class AmqpJmsMessageTypesTestCase extends QpidJmsTestCase {
 
+    private static final int MAX_DECODE_DEPTH = 32;
+    private static final int ZERO_WIDTH_ARRAY_ELEMENTS_LIMIT = 0;
+
     private JmsDestination consumerDestination;
 
     @BeforeEach
@@ -133,6 +136,9 @@ public class AmqpJmsMessageTypesTestCase extends QpidJmsTestCase {
         Mockito.when(consumer.getConnection()).thenReturn(connection);
         Mockito.when(consumer.getDestination()).thenReturn(consumerDestination);
         Mockito.when(consumer.getResourceInfo()).thenReturn(new JmsConsumerInfo(consumerId, null));
+        Mockito.when(consumer.getMaxDecodeDepth()).thenReturn(MAX_DECODE_DEPTH);
+        Mockito.when(consumer.getZeroWidthArrayElementLimit()).thenReturn(ZERO_WIDTH_ARRAY_ELEMENTS_LIMIT);
+
         return consumer;
     }
 
@@ -145,6 +151,8 @@ public class AmqpJmsMessageTypesTestCase extends QpidJmsTestCase {
         AmqpConnection connection = Mockito.mock(AmqpConnection.class);
         Mockito.when(connection.getResourceInfo()).thenReturn(new JmsConnectionInfo(connectionId));
         Mockito.when(connection.isObjectMessageUsesAmqpTypes()).thenReturn(amqpTyped);
+        Mockito.when(connection.getMaxDecodeDepth()).thenReturn(MAX_DECODE_DEPTH);
+        Mockito.when(connection.getZeroWidthArrayElementLimit()).thenReturn(ZERO_WIDTH_ARRAY_ELEMENTS_LIMIT);
 
         return connection;
     }

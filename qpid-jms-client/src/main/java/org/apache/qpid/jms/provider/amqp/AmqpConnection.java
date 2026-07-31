@@ -233,6 +233,14 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
         return getProvider().getAnonymousFallbackCacheTimeout();
     }
 
+    public int getMaxDecodeDepth() {
+        return getProvider().getMaxDecodeDepth();
+    }
+
+    public int getZeroWidthArrayElementLimit() {
+        return getProvider().getZeroWidthArrayElementLimit();
+    }
+
     /**
      * @return the AMQP based JmsMessageFactory for this Connection.
      */

@@ -2783,6 +2783,16 @@ public class TestAmqpPeer implements AutoCloseable
                                                                 final String tagAsString,
                                                                 final Boolean more,
                                                                 final int sendDelay) {
+        Binary payload = prepareTransferPayload(headerDescribedType, messageAnnotationsDescribedType, propertiesDescribedType, appPropertiesDescribedType, content);
+
+        sendTransferToLastOpenedLinkOnLastOpenedSession(payload, nextIncomingDeliveryId, tagAsString, more, sendDelay);
+    }
+
+    public void sendTransferToLastOpenedLinkOnLastOpenedSession(final Binary payload,
+                                                                final int nextIncomingDeliveryId,
+                                                                final String tagAsString,
+                                                                final Boolean more,
+                                                                final int sendDelay) {
         synchronized (_handlersLock) {
             CompositeAmqpPeerRunnable comp = insertCompsiteActionForLastHandler();
 
@@ -2800,8 +2810,6 @@ public class TestAmqpPeer implements AutoCloseable
             if(more != null) {
                 transferResponse.setMore(more);
             }
-
-            Binary payload = prepareTransferPayload(headerDescribedType, messageAnnotationsDescribedType, propertiesDescribedType, appPropertiesDescribedType, content);
 
             // The response frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
             final FrameSender transferSender = new FrameSender(this, FrameType.AMQP, -1, transferResponse, payload);

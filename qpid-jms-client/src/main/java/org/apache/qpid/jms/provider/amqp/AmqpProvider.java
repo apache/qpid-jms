@@ -124,6 +124,9 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
     private static final int DEFAULT_MAX_WRITE_BYTES_BEFORE_FLUSH = 128 * 1024;
     private static final int DEFAULT_ANONYMOUS_FALLBACK_CACHE_TIMEOUT = 30000;
     private static final int DEFAULT_ANONYMOUS_FALLBACK_CACHE_SIZE = 1;
+    private static final int DEFAULT_MAX_TRANSFERS_PER_DELIVERY = 65535;
+    private static final int DEFAULT_MAX_DECODE_DEPTH = 32;
+    private static final int DEFAULT_ZERO_WIDTH_ARRAY_ELEMENT_LIMIT = 0;
 
     private volatile ProviderListener listener;
     private volatile AmqpConnection connection;
@@ -144,6 +147,9 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
     private int maxWriteBytesBeforeFlush = DEFAULT_MAX_WRITE_BYTES_BEFORE_FLUSH;
     private int anonymousFallbackCacheTimeout = DEFAULT_ANONYMOUS_FALLBACK_CACHE_TIMEOUT;
     private int anonymousFallbackCacheSize = DEFAULT_ANONYMOUS_FALLBACK_CACHE_SIZE;
+    private int maxTransfersPerDelivery = DEFAULT_MAX_TRANSFERS_PER_DELIVERY;
+    private int maxDecodeDepth = DEFAULT_MAX_DECODE_DEPTH;
+    private int zeroWidthArrayElementLimit = DEFAULT_ZERO_WIDTH_ARRAY_ELEMENT_LIMIT;
 
     private boolean allowNonSecureRedirects;
 
@@ -244,6 +250,10 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                 if (getMaxFrameSize() > 0) {
                     protonTransport.setMaxFrameSize(getMaxFrameSize());
                     protonTransport.setOutboundFrameSizeLimit(getMaxFrameSize());
+                }
+
+                if (getMaxTransfersPerDelivery() > 0) {
+                    protonTransport.setMaxTransfersPerDelivery(getMaxTransfersPerDelivery());
                 }
 
                 protonTransport.setChannelMax(getChannelMax());
@@ -1387,6 +1397,52 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
      */
     public void setMaxFrameSize(int maxFrameSize) {
         this.maxFrameSize = maxFrameSize;
+    }
+
+    public int getZeroWidthArrayElementLimit() {
+        return zeroWidthArrayElementLimit;
+    }
+
+    /**
+     * Configures the maximum number of array elements allowed while decoding arrays
+     * of zero-width elements (ulong0, uint0, list0, boolean-true, boolean-false, null)
+     * before a decode exception.
+     *
+     * Default is 0, meaning only the empty array is permitted.
+     *
+     * @param zeroWidthArrayElementLimit The configured max zero-width elements allowed.
+     */
+    public void setZeroWidthArrayElementLimit(int zeroWidthArrayElementLimit) {
+        this.zeroWidthArrayElementLimit = zeroWidthArrayElementLimit;
+    }
+
+    public int getMaxDecodeDepth() {
+        return maxDecodeDepth;
+    }
+
+    /**
+     * Configures the maximum decode depth allowed before error when decoding Maps, Lists,
+     * Arrays, and certain related DescribedTypes from an encoded payload. Default is 32.
+     *
+     * @param maxDecodeDepth The configured max decode depth allowed.
+     */
+    public void setMaxDecodeDepth(int maxDecodeDepth) {
+        this.maxDecodeDepth = maxDecodeDepth;
+    }
+
+    public int getMaxTransfersPerDelivery() {
+        return maxTransfersPerDelivery;
+    }
+
+    /**
+     * Sets the maximum number of transfer frames that can be used for an incoming delivery.
+     *
+     * A value of -1 indicates that the proton default should be used.
+     *
+     * @param maxTransfersPerDelivery the maximum number of transfer frames per incoming delivery.
+     */
+    public void setMaxTransfersPerDelivery(int maxTransfersPerDelivery) {
+        this.maxTransfersPerDelivery = maxTransfersPerDelivery;
     }
 
     public long getSessionOutgoingWindow() {

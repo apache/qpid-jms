@@ -158,4 +158,40 @@ public class AmqpProviderFactoryTest extends QpidJmsTestCase {
 
         assertEquals("v+host", amqpProvider.getVhost());
     }
+
+    @Test
+    @Timeout(20)
+    public void testCreateProviderAppliesMaxTransfersURIOption() throws IOException, Exception {
+        int transfers = 42798;
+        Provider provider = AmqpProviderFactory.create(new URI(peerURI.toString() + "?amqp.maxTransfersPerDelivery=" + transfers));
+        assertNotNull(provider);
+        assertTrue(provider instanceof AmqpProvider);
+        AmqpProvider amqpProvider = (AmqpProvider) provider;
+
+        assertEquals(transfers, amqpProvider.getMaxTransfersPerDelivery(), "maxTransfersPerDelivery option was not applied");
+    }
+
+    @Test
+    @Timeout(20)
+    public void testCreateProviderAppliesMaxDecodeDepthURIOption() throws IOException, Exception {
+        int depth = 17;
+        Provider provider = AmqpProviderFactory.create(new URI(peerURI.toString() + "?amqp.maxDecodeDepth=" + depth));
+        assertNotNull(provider);
+        assertTrue(provider instanceof AmqpProvider);
+        AmqpProvider amqpProvider = (AmqpProvider) provider;
+
+        assertEquals(depth, amqpProvider.getMaxDecodeDepth(), "maxDecodeDepth option was not applied");
+    }
+
+    @Test
+    @Timeout(20)
+    public void testCreateProviderAppliesZeroWidthArrayElementLimitURIOption() throws IOException, Exception {
+        int elements = 24;
+        Provider provider = AmqpProviderFactory.create(new URI(peerURI.toString() + "?amqp.zeroWidthArrayElementLimit=" + elements));
+        assertNotNull(provider);
+        assertTrue(provider instanceof AmqpProvider);
+        AmqpProvider amqpProvider = (AmqpProvider) provider;
+
+        assertEquals(elements, amqpProvider.getZeroWidthArrayElementLimit(), "zeroWidthArrayElementLimit option was not applied");
+    }
 }

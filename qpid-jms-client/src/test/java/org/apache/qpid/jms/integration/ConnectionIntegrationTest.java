@@ -407,22 +407,28 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
     @Timeout(20)
     public void testMaxFrameSizeOptionCommunicatedInOpen() throws Exception {
         int frameSize = 39215;
-        doMaxFrameSizeOptionTestImpl(frameSize, UnsignedInteger.valueOf(frameSize));
+        doMaxFrameSizeOptionTestImpl("&amqp.maxFrameSize=" + frameSize, UnsignedInteger.valueOf(frameSize));
     }
 
     @Test
     @Timeout(20)
-    public void testMaxFrameSizeOptionCommunicatedInOpenDefault() throws Exception {
-        doMaxFrameSizeOptionTestImpl(-1, UnsignedInteger.MAX_VALUE);
+    public void testMaxFrameSizeOptionCommunicatedInOpenProtonDefault() throws Exception {
+        doMaxFrameSizeOptionTestImpl("&amqp.maxFrameSize=-1", UnsignedInteger.valueOf(65535));
     }
 
-    private void doMaxFrameSizeOptionTestImpl(int uriOption, UnsignedInteger transmittedValue) throws JMSException, InterruptedException, Exception, IOException {
+    @Test
+    @Timeout(20)
+    public void testMaxFrameSizeCommunicatedInOpenDefault() throws Exception {
+        doMaxFrameSizeOptionTestImpl("", UnsignedInteger.valueOf(1 * 1024 * 1024));
+    }
+
+    private void doMaxFrameSizeOptionTestImpl(String uriOption, UnsignedInteger transmittedValue) throws JMSException, InterruptedException, Exception, IOException {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             testPeer.expectSaslLayerDisabledConnect(equalTo(transmittedValue));
             // Each connection creates a session for managing temporary destinations etc
             testPeer.expectBegin();
 
-            String uri = "amqp://localhost:" + testPeer.getServerPort() + "?amqp.saslLayer=false&amqp.maxFrameSize=" + uriOption;
+            String uri = "amqp://localhost:" + testPeer.getServerPort() + "?amqp.saslLayer=false" +  uriOption;
             ConnectionFactory factory = new JmsConnectionFactory(uri);
             Connection connection = factory.createConnection();
             connection.start();

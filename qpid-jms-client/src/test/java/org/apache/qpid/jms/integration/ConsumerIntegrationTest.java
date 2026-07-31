@@ -20,6 +20,7 @@ package org.apache.qpid.jms.integration;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -28,8 +29,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -44,6 +47,7 @@ import jakarta.jms.Message;
 import jakarta.jms.MessageConsumer;
 import jakarta.jms.MessageListener;
 import jakarta.jms.MessageProducer;
+import jakarta.jms.ObjectMessage;
 import jakarta.jms.Queue;
 import jakarta.jms.Session;
 import jakarta.jms.TextMessage;
@@ -55,6 +59,7 @@ import org.apache.qpid.jms.JmsDefaultConnectionListener;
 import org.apache.qpid.jms.JmsOperationTimedOutException;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;
+import org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.Wait;
 import org.apache.qpid.jms.test.testpeer.AmqpPeerRunnable;
@@ -63,6 +68,7 @@ import org.apache.qpid.jms.test.testpeer.basictypes.AmqpError;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescribedType;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.DataDescribedType;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.HeaderDescribedType;
+import org.apache.qpid.jms.test.testpeer.describedtypes.sections.MessageAnnotationsDescribedType;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.PropertiesDescribedType;
 import org.apache.qpid.jms.test.testpeer.matchers.AcceptedMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.ModifiedMatcher;
@@ -2562,5 +2568,184 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
 
             testPeer.waitForAllHandlersToComplete(2000);
         }
+    }
+
+    @Test
+    @Timeout(20)
+    public void testMessageDecodeDepthLimit() throws Exception {
+        // check it allows without option
+        doReceiveMessageWithDepthLimitTestImpl(32, null, false);
+        // check it blocks with option set
+        doReceiveMessageWithDepthLimitTestImpl(32, 10, true);
+
+        // check it blocks without option
+        doReceiveMessageWithDepthLimitTestImpl(33, null, true);
+        // check it allows with option set
+        doReceiveMessageWithDepthLimitTestImpl(33, 33, false);
+    }
+
+    private void doReceiveMessageWithDepthLimitTestImpl(final int depth, Integer depthLimitOption, boolean expectDeliveryFailure) throws Exception {
+        String optionsString = "?jms.receiveLocalOnly=true";
+        if(depthLimitOption != null) {
+            optionsString += "&amqp.maxDecodeDepth=" + depthLimitOption;
+        }
+
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer, optionsString);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            MessageAnnotationsDescribedType msgAnnotations = new MessageAnnotationsDescribedType();
+            msgAnnotations.setSymbolKeyedAnnotation(AmqpMessageSupport.JMS_MSG_TYPE.toString(), AmqpMessageSupport.JMS_OBJECT_MESSAGE);
+
+            List<Object> lists = prepareNestedLists(depth);
+            DescribedType amqpValueContent = new AmqpValueDescribedType(lists);
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, msgAnnotations, null, null, amqpValueContent);
+            if (expectDeliveryFailure) {
+                testPeer.expectDisposition(true, new ModifiedMatcher().withDeliveryFailed(equalTo(true)).withUndeliverableHere(equalTo(true)));
+            } else {
+                testPeer.expectDispositionThatIsAcceptedAndSettled();
+            }
+            testPeer.expectClose();
+
+            MessageConsumer messageConsumer = session.createConsumer(queue);
+
+            Message receivedMessage;
+            if (expectDeliveryFailure) {
+                receivedMessage = messageConsumer.receive(250);
+
+                assertNull(receivedMessage);
+            } else {
+                receivedMessage = messageConsumer.receive(3000);
+
+                assertNotNull(receivedMessage);
+                assertTrue(receivedMessage instanceof ObjectMessage, "Expected ObjectMessage instance, but got: " + receivedMessage.getClass().getName());
+                ObjectMessage objectMessage = (ObjectMessage)receivedMessage;
+
+                Object object = objectMessage.getObject();
+                assertNotNull(object, "Expected object but got null");
+                assertEquals(lists, object, "Message body object was not as expected");
+            }
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
+        }
+    }
+
+    private static List<Object> prepareNestedLists(final int depth) {
+        final List<Object> body = new ArrayList<>();
+
+        List<Object> current = body;
+        for (int i = 1; i < depth; ++i) {
+            final List<Object> next = new ArrayList<>();
+
+            current.add(next);
+            current = next;
+        }
+
+        return body;
+    }
+
+    @Test
+    @Timeout(20)
+    public void testMessageZeroWidthArrayElementLimit() throws Exception {
+        // check it allows empty without option
+        doReceiveMessageWithZeroWidthArrayElementLimitTestImpl(0, null, false);
+        // check it blocks non-empty without option
+        doReceiveMessageWithZeroWidthArrayElementLimitTestImpl(10, null, true);
+        // check it blocks non-empty with option set lower
+        doReceiveMessageWithZeroWidthArrayElementLimitTestImpl(10, 9, true);
+        // check it allows non-empty with option set
+        doReceiveMessageWithZeroWidthArrayElementLimitTestImpl(10, 10, false);
+    }
+
+    private void doReceiveMessageWithZeroWidthArrayElementLimitTestImpl(final int elements, Integer elementLmitOption, boolean expectDeliveryFailure) throws Exception {
+        String optionsString = "?jms.receiveLocalOnly=true";
+        if (elementLmitOption != null) {
+            optionsString += "&amqp.zeroWidthArrayElementLimit=" + elementLmitOption;
+        }
+
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer, optionsString);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            MessageAnnotationsDescribedType msgAnnotations = new MessageAnnotationsDescribedType();
+            msgAnnotations.setSymbolKeyedAnnotation(AmqpMessageSupport.JMS_MSG_TYPE.toString(), AmqpMessageSupport.JMS_OBJECT_MESSAGE);
+
+            Binary payload = prepareMessageEncodingWithArrayOfZeroWidthElements(elements);
+
+            testPeer.expectReceiverAttach();
+            // Expect that once receive is called, it flows credit.
+            testPeer.expectLinkFlow(false, equalTo(UnsignedInteger.valueOf(1000)));
+            // Give it an initial (ie. more=true) transfer frame with header only.
+            testPeer.sendTransferToLastOpenedLinkOnLastOpenedSession(payload, 1, "delivery1", false, 0);
+
+            if (expectDeliveryFailure) {
+                testPeer.expectDisposition(true, new ModifiedMatcher().withDeliveryFailed(equalTo(true)).withUndeliverableHere(equalTo(true)));
+            } else {
+                testPeer.expectDispositionThatIsAcceptedAndSettled();
+            }
+            testPeer.expectClose();
+
+            MessageConsumer messageConsumer = session.createConsumer(queue);
+
+            Message receivedMessage;
+            if (expectDeliveryFailure) {
+                receivedMessage = messageConsumer.receive(250);
+
+                assertNull(receivedMessage);
+            } else {
+                receivedMessage = messageConsumer.receive(3000);
+
+                assertNotNull(receivedMessage);
+                assertTrue(receivedMessage instanceof ObjectMessage, "Expected ObjectMessage instance, but got: " + receivedMessage.getClass().getName());
+                ObjectMessage objectMessage = (ObjectMessage)receivedMessage;
+
+                Object object = objectMessage.getObject();
+                assertNotNull(object, "Expected object but got null");
+
+                assertTrue(object.getClass().isArray());
+                assertEquals(boolean.class, object.getClass().getComponentType());
+                final boolean[] expected = new boolean[elements];
+                Arrays.fill(expected, true);
+
+                assertArrayEquals(expected, (boolean[]) object, "Message body object was not as expected");
+            }
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
+        }
+    }
+
+    private Binary prepareMessageEncodingWithArrayOfZeroWidthElements(int elementCount) {
+        assertTrue(elementCount >= 0);
+        assertTrue(elementCount <= 255);
+
+        ByteBuffer buf = ByteBuffer.allocate(7);
+        buf.put((byte) 0x00); // DescribedType
+        buf.put((byte) 0x53); // small-ulong constructor
+        buf.put((byte) 0x77); // amqp-value ulong descriptor
+
+        buf.put((byte) 0xE0); // 'array8' type descriptor code
+        buf.put((byte) (1 + 1)); // 1 byte count + 1 byte type
+        buf.put((byte) elementCount); // count
+        buf.put((byte) 0x41); // boolean-true
+
+        Binary payload = new Binary(buf.array());
+
+        return payload;
     }
 }

@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import org.apache.qpid.jms.provider.amqp.AmqpConnection;
 import org.apache.qpid.jms.provider.amqp.AmqpConsumer;
 import org.apache.qpid.jms.util.ContentTypeSupport;
 import org.apache.qpid.jms.util.InvalidContentTypeException;
@@ -130,18 +131,23 @@ public final class AmqpCodec {
     /**
      * Given an encoded AMQP Section, decode the value previously written there.
      *
+     * @param connection
+     *      the connection this is being done for
      * @param encoded
      *      the AMQP Section value to decode.
      *
      * @return a Section object read from its encoded form.
      */
-    public static Section decode(ByteBuf encoded) {
+    public static Section decode(AmqpConnection connection, ByteBuf encoded) {
         if (encoded == null || !encoded.isReadable()) {
             return null;
         }
 
         DecoderImpl decoder = TLS_CODEC.get().decoder;
         decoder.setByteBuffer(encoded.nioBuffer());
+        decoder.setMaxDecodeDepth(connection.getMaxDecodeDepth());
+        decoder.setZeroWidthArrayElementLimit(connection.getZeroWidthArrayElementLimit());
+
         Section result = (Section) decoder.readObject();
         decoder.setByteBuffer(null);
         encoded.resetReaderIndex();
@@ -285,6 +291,8 @@ public final class AmqpCodec {
 
         DecoderImpl decoder = getDecoder();
         decoder.setBuffer(messageBytes);
+        decoder.setMaxDecodeDepth(consumer.getMaxDecodeDepth());
+        decoder.setZeroWidthArrayElementLimit(consumer.getZeroWidthArrayElementLimit());
 
         Header header = null;
         DeliveryAnnotations deliveryAnnotations = null;

@@ -60,7 +60,7 @@ public class AmqpTypedObjectDelegate implements AmqpObjectTypeDelegate {
         Section body = null;
 
         if (encodedBody != null) {
-            body = AmqpCodec.decode(encodedBody);
+            body = AmqpCodec.decode(parent.getConnection(), encodedBody);
         }
 
         if (body == null) {
@@ -93,7 +93,7 @@ public class AmqpTypedObjectDelegate implements AmqpObjectTypeDelegate {
             // and decoding the value. Save the bytes for subsequent getObject and
             // copyInto calls to use.
             encodedBody = AmqpCodec.encode(new AmqpValue(value));
-            Section decodedBody = AmqpCodec.decode(encodedBody);
+            Section decodedBody = AmqpCodec.decode(parent.getConnection(), encodedBody);
 
             // This step requires a heavy-weight operation of both encoding and decoding the
             // incoming body value in order to create a copy such that changes to the original

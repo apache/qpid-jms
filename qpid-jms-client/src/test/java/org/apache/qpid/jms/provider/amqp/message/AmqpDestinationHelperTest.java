@@ -44,6 +44,7 @@ import org.apache.qpid.jms.JmsTemporaryQueue;
 import org.apache.qpid.jms.JmsTemporaryTopic;
 import org.apache.qpid.jms.JmsTopic;
 import org.apache.qpid.jms.provider.amqp.AmqpConnection;
+import org.apache.qpid.proton.amqp.UnsignedByte;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -684,6 +685,34 @@ public class AmqpDestinationHelperTest {
         JmsDestination destination = AmqpDestinationHelper.getJmsReplyTo(message, null);
         assertNotNull(destination);
         assertTrue(destination.isTopic());
+        assertTrue(destination.isTemporary());
+        assertEquals(testAddress, destination.getAddress());
+    }
+
+    @Test
+    public void testGetJmsReplToWithTempQueueUnsignedByteTypeAnnotation() throws Exception {
+        String testAddress = "testAddress";
+        AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
+        Mockito.when(message.getReplyToAddress()).thenReturn(testAddress);
+        Mockito.when(message.getMessageAnnotation(JMS_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL)).thenReturn(UnsignedByte.valueOf(TEMP_QUEUE_TYPE));
+
+        JmsDestination destination = AmqpDestinationHelper.getJmsReplyTo(message, null);
+        assertNotNull(destination);
+        assertTrue(destination.isQueue());
+        assertTrue(destination.isTemporary());
+        assertEquals(testAddress, destination.getAddress());
+    }
+
+    @Test
+    public void testGetJmsReplToWithTempQueueLongTypeAnnotation() throws Exception {
+        String testAddress = "testAddress";
+        AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
+        Mockito.when(message.getReplyToAddress()).thenReturn(testAddress);
+        Mockito.when(message.getMessageAnnotation(JMS_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL)).thenReturn((long) TEMP_QUEUE_TYPE);
+
+        JmsDestination destination = AmqpDestinationHelper.getJmsReplyTo(message, null);
+        assertNotNull(destination);
+        assertTrue(destination.isQueue());
         assertTrue(destination.isTemporary());
         assertEquals(testAddress, destination.getAddress());
     }

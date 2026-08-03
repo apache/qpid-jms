@@ -277,9 +277,9 @@ public class AmqpDestinationHelper {
         if (typeAnnotation == null) {
             // Doesn't exist, or null.
             return UNKNOWN_TYPE;
-        } else if (typeAnnotation instanceof Byte) {
-            // Return the value found.
-            return (Byte) typeAnnotation;
+        } else if (typeAnnotation instanceof Number) {
+            // Return the found value as a byte.
+            return ((Number)typeAnnotation).byteValue();
         } else {
             // Handle legacy strings.
             String typeString = String.valueOf(typeAnnotation);

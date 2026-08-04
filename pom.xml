@@ -76,6 +76,8 @@
     <!-- surefire forked jvm arguments -->
     <argLine>-Xmx2g -enableassertions ${jacoco-config}</argLine>
 
+    <jacoco-config />
+
     <netty-transport-native-epoll-classifier>linux-x86_64</netty-transport-native-epoll-classifier>
     <netty-transport-native-kqueue-classifier>osx-x86_64</netty-transport-native-kqueue-classifier>
   </properties>

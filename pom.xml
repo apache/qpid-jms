@@ -50,6 +50,7 @@
     <mockito-version>5.23.0</mockito-version>
     <hamcrest-version>3.0</hamcrest-version>
     <hadoop-minikdc-version>3.4.2</hadoop-minikdc-version>
+    <kerb-simplekdc-version>2.1.2</kerb-simplekdc-version>
     <commons-io-version>2.22.0</commons-io-version>
 
     <!-- Maven Plugin Versions for this Project -->
@@ -247,6 +248,18 @@
           <exclusion>
             <groupId>com.nimbusds</groupId>
             <artifactId>nimbus-jose-jwt</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.kerby</groupId>
+        <artifactId>kerb-simplekdc</artifactId>
+        <version>${kerb-simplekdc-version}</version>
+        <scope>test</scope>
+        <exclusions>
+          <exclusion>
+            <groupId>org.jline</groupId>
+            <artifactId>jline</artifactId>
           </exclusion>
         </exclusions>
       </dependency>

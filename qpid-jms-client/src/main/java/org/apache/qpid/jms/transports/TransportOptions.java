@@ -16,14 +16,13 @@
  */
 package org.apache.qpid.jms.transports;
 
+import javax.net.ssl.SSLContext;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
-
-import javax.net.ssl.SSLContext;
 
 /**
  * Encapsulates all the Transport options in one configuration object.
@@ -77,8 +76,10 @@ public class TransportOptions implements Cloneable {
     private int sharedEventLoopThreads = DEFAULT_SHARED_EVENT_LOOP_THREADS;
 
     private String keyStoreLocation;
+    private String keyStoreBase64Property;
     private String keyStorePassword;
     private String trustStoreLocation;
+    private String trustStoreBase64Property;
     private String trustStorePassword;
     private String keyStoreType;
     private String trustStoreType;
@@ -324,6 +325,23 @@ public class TransportOptions implements Cloneable {
     }
 
     /**
+     * @return the keyStoreBase64Property currently configured.
+     */
+    public String getKeyStoreBase64Property() {
+        return keyStoreBase64Property;
+    }
+
+    /**
+     * Sets the system property containing the base64 definition of the key store to use.
+     *
+     * @param keyStoreBase64Property
+     *        the keyStoreBase64Property to use to create the key manager.
+     */
+    public void setKeyStoreBase64Property(final String keyStoreBase64Property) {
+        this.keyStoreBase64Property = keyStoreBase64Property;
+    }
+
+    /**
      * @return the keyStorePassword
      */
     public String getKeyStorePassword() {
@@ -349,6 +367,23 @@ public class TransportOptions implements Cloneable {
      */
     public void setTrustStoreLocation(String trustStoreLocation) {
         this.trustStoreLocation = trustStoreLocation;
+    }
+
+    /**
+     * @return the trustStoreBase64Property
+     */
+    public String getTrustStoreBase64Property() {
+        return trustStoreBase64Property;
+    }
+
+    /**
+     * Sets the system property containing the base64 definition of the trust store to use.
+     *
+     * @param trustStoreBase64Property
+     *        the trustStoreBase64Property to set.
+     */
+    public void setTrustStoreBase64Property(final String trustStoreBase64Property) {
+        this.trustStoreBase64Property = trustStoreBase64Property;
     }
 
     /**
@@ -581,8 +616,10 @@ public class TransportOptions implements Cloneable {
         copy.setUseEpoll(isUseEpoll());
         copy.setTraceBytes(isTraceBytes());
         copy.setKeyStoreLocation(getKeyStoreLocation());
+        copy.setKeyStoreBase64Property(getKeyStoreBase64Property());
         copy.setKeyStorePassword(getKeyStorePassword());
         copy.setTrustStoreLocation(getTrustStoreLocation());
+        copy.setTrustStoreBase64Property(getTrustStoreBase64Property());
         copy.setTrustStorePassword(getTrustStorePassword());
         copy.setKeyStoreType(getKeyStoreType());
         copy.setTrustStoreType(getTrustStoreType());

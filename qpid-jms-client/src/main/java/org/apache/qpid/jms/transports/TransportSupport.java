@@ -16,16 +16,16 @@
  */
 package org.apache.qpid.jms.transports;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.net.URI;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.handler.ssl.OpenSsl;
+import io.netty.handler.ssl.OpenSslX509KeyManagerFactory;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslContextBuilder;
+import io.netty.handler.ssl.SslHandler;
+import io.netty.handler.ssl.SslProvider;
+import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -35,18 +35,17 @@ import javax.net.ssl.SSLParameters;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509ExtendedKeyManager;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.handler.ssl.OpenSsl;
-import io.netty.handler.ssl.OpenSslX509KeyManagerFactory;
-import io.netty.handler.ssl.SslContext;
-import io.netty.handler.ssl.SslContextBuilder;
-import io.netty.handler.ssl.SslHandler;
-import io.netty.handler.ssl.SslProvider;
-import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
+import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.net.URI;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.List;
 
 /**
  * Static class that provides various utility methods used by Transport implementations.
@@ -339,39 +338,39 @@ public class TransportSupport {
             return InsecureTrustManagerFactory.INSTANCE;
         }
 
-        if (options.getTrustStoreLocation() == null) {
+        String storeLocation = options.getTrustStoreLocation();
+        String storeBase64Property = options.getTrustStoreBase64Property();
+        if (storeLocation == null && storeBase64Property == null) {
             return null;
+        } else if (storeLocation != null && storeBase64Property != null) {
+            throw new IllegalArgumentException("Only one of trustStoreLocation and trustStoreBase64Property should be defined");
         }
 
         TrustManagerFactory fact = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
 
-        String storeLocation = options.getTrustStoreLocation();
         String storePassword = options.getTrustStorePassword();
         String storeType = options.getTrustStoreType();
-
-        LOG.trace("Attempt to load TrustStore from location {} of type {}", storeLocation, storeType);
-
-        KeyStore trustStore = loadStore(storeLocation, storePassword, storeType);
+        KeyStore trustStore = loadStore(storeLocation, storeBase64Property, storePassword, storeType);
         fact.init(trustStore);
 
         return fact;
     }
 
     private static KeyManager[] loadKeyManagers(TransportOptions options) throws Exception {
-        if (options.getKeyStoreLocation() == null) {
+        String storeLocation = options.getKeyStoreLocation();
+        String storeBase64Property = options.getKeyStoreBase64Property();
+        if (storeLocation == null && storeBase64Property == null) {
             return null;
+        } else if (storeLocation != null && storeBase64Property != null) {
+            throw new IllegalArgumentException("Only one of keyStoreLocation and keyStoreBase64Property should be defined");
         }
 
         KeyManagerFactory fact = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
 
-        String storeLocation = options.getKeyStoreLocation();
         String storePassword = options.getKeyStorePassword();
         String storeType = options.getKeyStoreType();
         String alias = options.getKeyAlias();
-
-        LOG.trace("Attempt to load KeyStore from location {} of type {}", storeLocation, storeType);
-
-        KeyStore keyStore = loadStore(storeLocation, storePassword, storeType);
+        KeyStore keyStore = loadStore(storeLocation, storeBase64Property, storePassword, storeType);
         fact.init(keyStore, storePassword != null ? storePassword.toCharArray() : null);
 
         if (alias == null) {
@@ -383,8 +382,12 @@ public class TransportSupport {
     }
 
     private static KeyManagerFactory loadKeyManagerFactory(TransportOptions options, SslProvider provider) throws Exception {
-        if (options.getKeyStoreLocation() == null) {
+        String storeLocation = options.getKeyStoreLocation();
+        String storeBase64Property = options.getKeyStoreBase64Property();
+        if (storeLocation == null && storeBase64Property == null) {
             return null;
+        } else if (storeLocation != null && storeBase64Property != null) {
+            throw new IllegalArgumentException("Only one of keyStoreLocation and keyStoreBase64Property should be defined");
         }
 
         final KeyManagerFactory factory;
@@ -394,13 +397,9 @@ public class TransportSupport {
             factory = new OpenSslX509KeyManagerFactory();
         }
 
-        String storeLocation = options.getKeyStoreLocation();
         String storePassword = options.getKeyStorePassword();
         String storeType = options.getKeyStoreType();
-
-        LOG.trace("Attempt to load KeyStore from location {} of type {}", storeLocation, storeType);
-
-        KeyStore keyStore = loadStore(storeLocation, storePassword, storeType);
+        KeyStore keyStore = loadStore(storeLocation, storeBase64Property, storePassword, storeType);
         factory.init(keyStore, storePassword != null ? storePassword.toCharArray() : null);
 
         return factory;
@@ -430,11 +429,32 @@ public class TransportSupport {
         }
     }
 
-    private static KeyStore loadStore(String storePath, final String password, String storeType) throws Exception {
+    private static KeyStore loadStore(final String storeLocation, final String storeBase64Property, final String password, String storeType) throws Exception {
+        KeyStore store;
+        if (storeLocation != null) {
+            LOG.trace("Attempt to load store from location {} of type {}", storeLocation, storeType);
+            store = loadStoreFromFile(storeLocation, password, storeType);
+        } else {
+            LOG.trace("Attempt to load store from system property {} of type {}", storeBase64Property, storeType);
+            store = loadStoreFromSystemProperty(storeBase64Property, password, storeType);
+        }
+        return store;
+    }
+
+    private static KeyStore loadStoreFromFile(final String storePath, final String password, final String storeType) throws Exception {
         KeyStore store = KeyStore.getInstance(storeType);
-        try (InputStream in = new FileInputStream(new File(storePath));) {
+        try (InputStream in = new FileInputStream(storePath)) {
             store.load(in, password != null ? password.toCharArray() : null);
         }
+
+        return store;
+    }
+
+    private static KeyStore loadStoreFromSystemProperty(final String property, final String password, final String storeType) throws Exception {
+        KeyStore store = KeyStore.getInstance(storeType);
+        String keyStoreBase64 = System.getProperty(property);
+        byte[] keyStoreBytes = Base64.getDecoder().decode(keyStoreBase64);
+        store.load(new ByteArrayInputStream(keyStoreBytes), password != null ? password.toCharArray() : null);
 
         return store;
     }

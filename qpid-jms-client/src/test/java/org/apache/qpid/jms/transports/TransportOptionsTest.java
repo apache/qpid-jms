@@ -16,21 +16,19 @@
  */
 package org.apache.qpid.jms.transports;
 
+import io.netty.handler.proxy.ProxyHandler;
+import org.apache.qpid.jms.test.QpidJmsTestCase;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+
+import javax.net.ssl.SSLContext;
+import java.util.function.Supplier;
+
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.fail;
-
-import java.util.function.Supplier;
-
-import javax.net.ssl.SSLContext;
-
-import org.apache.qpid.jms.test.QpidJmsTestCase;
-import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-
-import io.netty.handler.proxy.ProxyHandler;
 
 /**
  * Test for class TransportOptions
@@ -54,7 +52,9 @@ public class TransportOptionsTest extends QpidJmsTestCase {
 
     private static final String PASSWORD = "password";
     private static final String CLIENT_KEYSTORE = "src/test/resources/client-jks.keystore";
+    private static final String CLIENT_KEYSTORE_BASE64_PROPERTY = "base64.keystore.property";
     private static final String CLIENT_TRUSTSTORE = "src/test/resources/client-jks.truststore";
+    private static final String CLIENT_TRUSTSTORE_BASE64_PROPERTY = "base64.truststore.property";
     private static final String KEYSTORE_TYPE = "jks";
     private static final String KEY_ALIAS = "myTestAlias";
     private static final String CONTEXT_PROTOCOL = "TLSv1.1";
@@ -93,8 +93,10 @@ public class TransportOptionsTest extends QpidJmsTestCase {
         assertNull(options.getDisabledCipherSuites());
 
         assertNull(options.getKeyStoreLocation());
+        assertNull(options.getKeyStoreBase64Property());
         assertNull(options.getKeyStorePassword());
         assertNull(options.getTrustStoreLocation());
+        assertNull(options.getTrustStoreBase64Property());
         assertNull(options.getTrustStorePassword());
         assertNull(options.getKeyAlias());
         assertNull(options.getSslContextOverride());
@@ -136,8 +138,10 @@ public class TransportOptionsTest extends QpidJmsTestCase {
         assertEquals(TEST_USE_EPOLL_VALUE, options.isUseEpoll());
         assertEquals(TEST_TRACE_BYTES_VALUE, options.isTraceBytes());
         assertEquals(CLIENT_KEYSTORE, options.getKeyStoreLocation());
+        assertEquals(CLIENT_KEYSTORE_BASE64_PROPERTY, options.getKeyStoreBase64Property());
         assertEquals(PASSWORD, options.getKeyStorePassword());
         assertEquals(CLIENT_TRUSTSTORE, options.getTrustStoreLocation());
+        assertEquals(CLIENT_TRUSTSTORE_BASE64_PROPERTY, options.getTrustStoreBase64Property());
         assertEquals(PASSWORD, options.getTrustStorePassword());
         assertEquals(KEYSTORE_TYPE, options.getKeyStoreType());
         assertEquals(KEYSTORE_TYPE, options.getTrustStoreType());
@@ -221,8 +225,10 @@ public class TransportOptionsTest extends QpidJmsTestCase {
         assertEquals(TEST_CONNECT_TIMEOUT, options.getConnectTimeout());
 
         assertEquals(CLIENT_KEYSTORE, options.getKeyStoreLocation());
+        assertEquals(CLIENT_KEYSTORE_BASE64_PROPERTY, options.getKeyStoreBase64Property());
         assertEquals(PASSWORD, options.getKeyStorePassword());
         assertEquals(CLIENT_TRUSTSTORE, options.getTrustStoreLocation());
+        assertEquals(CLIENT_TRUSTSTORE_BASE64_PROPERTY, options.getTrustStoreBase64Property());
         assertEquals(PASSWORD, options.getTrustStorePassword());
         assertEquals(KEYSTORE_TYPE, options.getKeyStoreType());
         assertEquals(KEYSTORE_TYPE, options.getTrustStoreType());
@@ -240,7 +246,9 @@ public class TransportOptionsTest extends QpidJmsTestCase {
         TransportOptions options = new TransportOptions();
 
         options.setKeyStoreLocation(CLIENT_KEYSTORE);
+        options.setKeyStoreBase64Property(CLIENT_KEYSTORE_BASE64_PROPERTY);
         options.setTrustStoreLocation(CLIENT_TRUSTSTORE);
+        options.setTrustStoreBase64Property(CLIENT_TRUSTSTORE_BASE64_PROPERTY);
         options.setKeyStorePassword(PASSWORD);
         options.setTrustStorePassword(PASSWORD);
         options.setStoreType(KEYSTORE_TYPE);
@@ -327,8 +335,10 @@ public class TransportOptionsTest extends QpidJmsTestCase {
         options.setUseEpoll(TEST_USE_EPOLL_VALUE);
         options.setTraceBytes(TEST_TRACE_BYTES_VALUE);
         options.setKeyStoreLocation(CLIENT_KEYSTORE);
+        options.setKeyStoreBase64Property(CLIENT_KEYSTORE_BASE64_PROPERTY);
         options.setKeyStorePassword(PASSWORD);
         options.setTrustStoreLocation(CLIENT_TRUSTSTORE);
+        options.setTrustStoreBase64Property(CLIENT_TRUSTSTORE_BASE64_PROPERTY);
         options.setTrustStorePassword(PASSWORD);
         options.setKeyAlias(KEY_ALIAS);
         options.setContextProtocol(CONTEXT_PROTOCOL);

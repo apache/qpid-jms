@@ -1582,6 +1582,112 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
     @Test
     @Timeout(20)
+    public void testSyncSendToTopicMessageReleasedCompletesSuccessfully() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            testPeer.expectBegin();
+            testPeer.expectSenderAttach();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Topic topic = session.createTopic("myTopic");
+            MessageProducer producer = session.createProducer(topic);
+            Message message = session.createTextMessage("content");
+
+            testPeer.expectTransfer(new TransferPayloadCompositeMatcher(), nullValue(), new Released(), true);
+            testPeer.expectClose();
+
+            // A released outcome means the remote did not act on the transfer. For a topic that is
+            // just "no subscription took a copy of this message", which the JMS pub/sub model
+            // defines as a successful send, so no exception must escape here.
+            producer.send(message);
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(2000);
+        }
+    }
+
+    @Test
+    @Timeout(20)
+    public void testAsyncSendToTopicMessageReleasedCompletesSuccessfully() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
+
+            final CountDownLatch asyncError = new CountDownLatch(1);
+
+            connection.setForceAsyncSend(true);
+            connection.setExceptionListener(new ExceptionListener() {
+
+                @Override
+                public void onException(JMSException exception) {
+                    LOG.debug("ExceptionListener got error: {}", exception.getMessage());
+                    asyncError.countDown();
+                }
+            });
+
+            testPeer.expectBegin();
+            testPeer.expectSenderAttach();
+            testPeer.expectSenderAttach();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Topic topic = session.createTopic("myTopic");
+            MessageProducer producer = session.createProducer(topic);
+
+            // Create a second producer which allows for a safe wait for credit for the
+            // first producer without the need for a sleep.  Otherwise the first producer
+            // might not do an actual async send due to not having received credit yet.
+            session.createProducer(topic);
+
+            Message message = session.createTextMessage("content");
+
+            testPeer.expectTransfer(new TransferPayloadCompositeMatcher(), nullValue(), new Released(), true);
+
+            producer.send(message);
+
+            testPeer.waitForAllHandlersToComplete(2000);
+
+            assertFalse(asyncError.await(50, TimeUnit.MILLISECONDS),
+                "Released outcome for a topic send should not be reported as an async error");
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(2000);
+        }
+    }
+
+    @Test
+    @Timeout(20)
+    public void testAsyncCompletionSendToTopicMessageReleasedCompletesSuccessfully() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+
+            testPeer.expectBegin();
+            testPeer.expectSenderAttach();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Topic topic = session.createTopic("myTopic");
+            MessageProducer producer = session.createProducer(topic);
+            Message message = session.createTextMessage("content");
+
+            testPeer.expectTransfer(new TransferPayloadCompositeMatcher(), nullValue(), new Released(), true);
+
+            TestJmsCompletionListener listener = new TestJmsCompletionListener();
+            producer.send(message, listener);
+
+            assertTrue(listener.awaitCompletion(5, TimeUnit.SECONDS), "Did not get async callback");
+            assertNull(listener.exception, "Released outcome for a topic send should complete the send");
+            assertNotNull(listener.message);
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(2000);
+        }
+    }
+
+    @Test
+    @Timeout(20)
     public void testAsyncSendMessageRejected() throws Exception {
         doAsyncSendMessageNotAcceptedTestImpl(new Rejected());
     }

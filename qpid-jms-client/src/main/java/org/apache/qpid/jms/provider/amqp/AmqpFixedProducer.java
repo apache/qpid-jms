@@ -23,6 +23,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 
+import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
 import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.meta.JmsProducerInfo;
@@ -250,7 +251,11 @@ public class AmqpFixedProducer extends AmqpProducer {
                 break;
             case Released:
                 LOG.trace("Outcome of delivery was released: {}", delivery);
-                deliveryError = new ProviderDeliveryReleasedException("Delivery failed: released by receiver");
+                if (isReleasedOutcomeSuccessful(send)) {
+                    send.onSuccess();
+                } else {
+                    deliveryError = new ProviderDeliveryReleasedException("Delivery failed: released by receiver");
+                }
                 break;
             case Modified:
                 LOG.trace("Outcome of delivery was modified: {}", delivery);
@@ -264,6 +269,28 @@ public class AmqpFixedProducer extends AmqpProducer {
         if (deliveryError != null) {
             send.onFailure(deliveryError);
         }
+    }
+
+    /**
+     * A released outcome at the target means the transfer "was not and will not be acted upon"
+     * (AMQP 1.0 section 3.4.4). Unlike rejected or modified it carries no indication that
+     * anything went wrong, and for a topic it is the expected result of publishing when no
+     * subscription matched: Jakarta Messaging section 4.2.2 states that a subscription only
+     * receives a copy of a message sent to the topic while the subscription exists, so a
+     * message published to a topic with no matching subscription is simply discarded and the
+     * send succeeds.
+     *
+     * For a queue the same outcome means the message was not stored, so it is still reported as
+     * a send failure rather than silently losing a point-to-point message.
+     *
+     * @param send
+     *      the in-flight send whose delivery was released by the remote.
+     *
+     * @return true if the released outcome should complete the send successfully.
+     */
+    private boolean isReleasedOutcomeSuccessful(InFlightSend send) {
+        JmsDestination destination = send.getEnvelope().getDestination();
+        return destination != null && destination.isTopic();
     }
 
     public AmqpSession getSession() {

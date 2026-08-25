@@ -76,6 +76,12 @@ public final class AmqpCodec {
         Map<Integer, ReadableBuffer> messageAnnotationsCache = new HashMap<>();
     }
 
+    /**
+     * The body section written for a message whose facade carries no body, see
+     * {@link #encodeMessage(AmqpJmsMessageFacade)}.
+     */
+    private static final AmqpValue NULL_BODY_SECTION = new AmqpValue(null);
+
     private static final ThreadLocal<EncoderDecoderContext> TLS_CODEC = new ThreadLocal<EncoderDecoderContext>() {
         @Override
         protected EncoderDecoderContext initialValue() {
@@ -203,6 +209,13 @@ public final class AmqpCodec {
         }
         if (body != null) {
             encoder.writeObject(body);
+        } else {
+            // AMQP requires every message to carry a body section (AMQP 1.0 section 3.2 lists the
+            // other sections as "zero or one" but the body as one of three mandatory choices), and
+            // the JMS mapping encodes a JMS Message that has no body as "a single amqp-value
+            // section containing null" (AMQP JMS Mapping section 3.2.4.7). The facade keeps a null
+            // body to represent "this message has no body", so supply that section here.
+            encoder.writeObject(NULL_BODY_SECTION);
         }
         if (footer != null) {
             encoder.writeObject(footer);

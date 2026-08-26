@@ -65,6 +65,7 @@ public class AmqpConsumerBuilder extends AmqpResourceBuilder<AmqpConsumer, AmqpS
 
     boolean validateSharedSubsLinkCapability;
     boolean sharedSubsNotSupported;
+    boolean selectorNotSupported;
 
     public AmqpConsumerBuilder(AmqpSession parent, JmsConsumerInfo consumerInfo) {
         super(parent, consumerInfo);
@@ -156,6 +157,19 @@ public class AmqpConsumerBuilder extends AmqpResourceBuilder<AmqpConsumer, AmqpS
                 }
             }
         }
+
+        // "the sending endpoint sets the filter actually in place" (AMQP 1.0 section 3.5.3), so a
+        // requested selector that is absent from the attach response is one the remote will not
+        // apply. Carrying on would silently hand the application messages the selector excludes.
+        if (!sharedSubsNotSupported && isSelectorRequested() && !isSelectorFilterInPlace()) {
+            selectorNotSupported = true;
+
+            if (resourceInfo.isDurable()) {
+                endpoint.detach();
+            } else {
+                endpoint.close();
+            }
+        }
     }
 
     @Override
@@ -183,6 +197,11 @@ public class AmqpConsumerBuilder extends AmqpResourceBuilder<AmqpConsumer, AmqpS
             return new ProviderUnsupportedOperationException("Remote peer does not support shared subscriptions");
         }
 
+        if (selectorNotSupported) {
+            return new ProviderUnsupportedOperationException(
+                "Remote peer does not support message selectors on this destination");
+        }
+
         // Verify the attach response contained a non-null Source
         org.apache.qpid.proton.amqp.transport.Source source = endpoint.getRemoteSource();
         if (source != null) {
@@ -197,10 +216,24 @@ public class AmqpConsumerBuilder extends AmqpResourceBuilder<AmqpConsumer, AmqpS
     protected boolean isClosePending() {
         // When no link terminus was created, the peer will now detach/close us otherwise
         // we need to validate the returned remote source prior to open completion.
-        return sharedSubsNotSupported || endpoint.getRemoteSource() == null;
+        return sharedSubsNotSupported || selectorNotSupported || endpoint.getRemoteSource() == null;
     }
 
     //----- Internal implementation ------------------------------------------//
+
+    private boolean isSelectorRequested() {
+        return resourceInfo.getSelector() != null && !resourceInfo.getSelector().trim().equals("");
+    }
+
+    private boolean isSelectorFilterInPlace() {
+        org.apache.qpid.proton.amqp.transport.Source remoteSource = endpoint.getRemoteSource();
+        if (remoteSource instanceof Source) {
+            Map<Symbol, Object> filter = ((Source) remoteSource).getFilter();
+            return filter != null && filter.containsKey(JMS_SELECTOR_SYMBOL);
+        }
+
+        return false;
+    }
 
     private void configureSource(Source source) {
         Map<Symbol, DescribedType> filters = new HashMap<Symbol, DescribedType>();

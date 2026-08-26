@@ -34,7 +34,9 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -55,6 +57,7 @@ import org.apache.qpid.jms.test.testpeer.basictypes.AmqpError;
 import org.apache.qpid.jms.test.testpeer.basictypes.TerminusDurability;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Accepted;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Rejected;
+import org.apache.qpid.jms.test.testpeer.describedtypes.Source;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescribedType;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.HeaderDescribedType;
 import org.apache.qpid.jms.test.testpeer.matchers.AcceptedMatcher;
@@ -375,6 +378,60 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(3000);
+        }
+    }
+
+    @Test
+    @Timeout(20)
+    public void testCreateConsumerFailsWhenSelectorFilterNotEchoedAtAll() throws Exception {
+        // Peer answers with a source carrying no filter section.
+        doCreateConsumerFailsWhenSelectorFilterNotInPlaceTestImpl(null);
+    }
+
+    @Test
+    @Timeout(20)
+    public void testCreateConsumerFailsWhenSelectorFilterOmittedFromEchoedFilterSet() throws Exception {
+        // Peer answers with an empty filter set, which is what a broker sends when it strips a
+        // filter it will not apply from the set it echoes back.
+        doCreateConsumerFailsWhenSelectorFilterNotInPlaceTestImpl(new HashMap<Symbol, Object>());
+    }
+
+    private void doCreateConsumerFailsWhenSelectorFilterNotInPlaceTestImpl(Map<Symbol, Object> responseFilter) throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+            String selector = "myProp = 'foo'";
+
+            // "the sending endpoint sets the filter actually in place" (AMQP 1.0 section 3.5.3),
+            // so a response without the selector filter says the peer will not apply it. The
+            // consumer must fail rather than silently deliver messages the selector excludes.
+            Source responseSource = new Source();
+            responseSource.setAddress("myQueue");
+            responseSource.setFilter(responseFilter);
+
+            Matcher<?> filterMapMatcher = hasEntry(equalTo(Symbol.valueOf("jms-selector")), notNullValue());
+            SourceMatcher sourceMatcher = new SourceMatcher();
+            sourceMatcher.withFilter(filterMapMatcher);
+
+            testPeer.expectReceiverAttachWithResponseSource(notNullValue(), sourceMatcher, responseSource);
+            testPeer.expectDetach(true, true, true);
+
+            try {
+                session.createConsumer(queue, selector);
+                fail("Expected an exception to be thrown");
+            } catch (JMSException jmse) {
+                // Expected
+            }
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
         }
     }
 

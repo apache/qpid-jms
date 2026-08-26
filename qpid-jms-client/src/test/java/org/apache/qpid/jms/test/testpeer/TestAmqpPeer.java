@@ -1519,6 +1519,16 @@ public class TestAmqpPeer implements AutoCloseable
         expectReceiverAttach(linkNameMatcher, sourceMatcher, settled, refuseLink, omitDetach, deferAttachResponseWrite, errorType, errorMessage, null, null, null);
     }
 
+    /**
+     * Accepts the receiver attach but answers with the given source instead of echoing back the
+     * source that was received, so that a test can control which filters the peer reports as
+     * actually being in place.
+     */
+    public void expectReceiverAttachWithResponseSource(final Matcher<?> linkNameMatcher, final Matcher<?> sourceMatcher, final Source responseSource)
+    {
+        expectReceiverAttach(linkNameMatcher, sourceMatcher, false, false, false, false, null, null, responseSource, null, null);
+    }
+
     private void expectReceiverAttach(final Matcher<?> linkNameMatcher, final Matcher<?> sourceMatcher, final boolean settled, final boolean refuseLink,
                                      boolean omitDetach, boolean deferAttachResponseWrite, Symbol errorType, String errorMessage, final Source responseSourceOverride,
                                      Matcher<?> desiredCapabilitiesMatcher, Symbol[] offeredCapabilitiesResponse)

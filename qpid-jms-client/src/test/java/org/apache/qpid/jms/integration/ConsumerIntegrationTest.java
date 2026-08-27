@@ -99,9 +99,65 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
 
     @Test
     @Timeout(20)
+    public void testConsumerOnStoppedConnectionIsGrantedNoCreditUntilStarted() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            // Deliberately left in stopped mode.
+            Connection connection = testFixture.establishConnecton(testPeer);
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            // Attach only. Granting credit here would let the remote send to a connection that has
+            // not been started, taking messages other consumers on the queue could have had.
+            testPeer.expectReceiverAttach();
+            session.createConsumer(queue);
+            testPeer.waitForAllHandlersToComplete(1000);
+
+            // Starting the connection is what releases the credit.
+            testPeer.expectLinkFlow();
+            connection.start();
+            testPeer.waitForAllHandlersToComplete(1000);
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test
+    @Timeout(20)
+    public void testConsumerCreatedOnStartedConnectionIsGrantedCreditImmediately() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            // Connection.start() has already happened and is not repeated, so the credit has to
+            // come from consumer creation itself.
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlow();
+            session.createConsumer(queue);
+            testPeer.waitForAllHandlersToComplete(1000);
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test
+    @Timeout(20)
     public void testCloseConsumer() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
+            // Consumers only get link credit once the connection is started.
+            connection.start();
             testPeer.expectBegin();
             testPeer.expectReceiverAttach();
             testPeer.expectLinkFlow();
@@ -125,6 +181,8 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
     public void testCloseConsumerTimesOut() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
+            // Consumers only get link credit once the connection is started.
+            connection.start();
             connection.setCloseTimeout(500);
 
             testPeer.expectBegin();
@@ -160,6 +218,8 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
             CountDownLatch exceptionFired = new CountDownLatch(1);
 
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
+            // Consumers only get link credit once the connection is started.
+            connection.start();
             connection.setExceptionListener(new ExceptionListener() {
                 @Override
                 public void onException(JMSException exception) {
@@ -628,7 +688,7 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
 
     @Test
     @Timeout(20)
-    public void testNoReceivedMessagesWhenConnectionNotStarted() throws Exception {
+    public void testNoReceivedMessagesWhenConnectionStopped() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             final CountDownLatch incoming = new CountDownLatch(1);
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -642,6 +702,8 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
                 }
             });
 
+            // Started, so the consumer is granted credit and the messages reach the client.
+            connection.start();
             testPeer.expectBegin();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -655,6 +717,8 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
             // Wait for a message to arrive then try and receive it, which should not happen
             // since the connection is not started.
             assertTrue(incoming.await(10, TimeUnit.SECONDS));
+            // Pausing delivery must hide them from the application again.
+            connection.stop();
             assertNull(consumer.receive(100));
 
             testPeer.expectClose();
@@ -666,7 +730,7 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
 
     @Test
     @Timeout(20)
-    public void testNoReceivedNoWaitMessagesWhenConnectionNotStarted() throws Exception {
+    public void testNoReceivedNoWaitMessagesWhenConnectionStopped() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             final CountDownLatch incoming = new CountDownLatch(1);
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -680,6 +744,8 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
                 }
             });
 
+            // Started, so the consumer is granted credit and the messages reach the client.
+            connection.start();
             testPeer.expectBegin();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -693,6 +759,8 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
             // Wait for a message to arrive then try and receive it, which should not happen
             // since the connection is not started.
             assertTrue(incoming.await(10, TimeUnit.SECONDS));
+            // Pausing delivery must hide them from the application again.
+            connection.stop();
             assertNull(consumer.receiveNoWait());
 
             testPeer.expectClose();

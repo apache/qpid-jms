@@ -141,7 +141,16 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
     }
 
     public void init() throws JMSException {
-        if (!isPullConsumer()){
+        // Link credit is what makes the remote start sending, so it must not be granted while the
+        // connection is still in stopped mode. A consumer created before Connection.start() gets
+        // its credit from JmsSession.start() instead.
+        if (session.isStarted()) {
+            startConsumerResourceIfNeeded();
+        }
+    }
+
+    void startConsumerResourceIfNeeded() throws JMSException {
+        if (!isPullConsumer()) {
             startConsumerResource();
         }
     }

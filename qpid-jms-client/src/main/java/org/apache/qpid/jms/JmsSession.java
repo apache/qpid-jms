@@ -1179,6 +1179,9 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         if (started.compareAndSet(false, true)) {
             for (JmsMessageConsumer consumer : consumers.values()) {
                 consumer.start();
+                // Consumers created while the connection was stopped were not granted credit at
+                // the time, so grant it now that messages may be delivered to them.
+                consumer.startConsumerResourceIfNeeded();
             }
         }
     }

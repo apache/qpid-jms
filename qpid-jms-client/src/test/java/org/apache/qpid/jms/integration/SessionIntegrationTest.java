@@ -984,6 +984,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
     private void doCreateConsumerSourceContainsCapabilityTestImpl(Class<? extends Destination> destType, boolean setClientID) throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, false, null, null, null, setClientID);
+            // Consumers only get link credit once the connection is started.
+            connection.start();
             testPeer.expectBegin();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -2000,6 +2002,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             final CountDownLatch sessionClosed = new CountDownLatch(1);
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
+            // Consumers only get link credit once the connection is started.
+            connection.start();
             connection.addConnectionListener(new JmsDefaultConnectionListener() {
                 @Override
                 public void onSessionClosed(Session session, Throwable exception) {
@@ -2090,6 +2094,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
     public void testCloseSessionWithConsumerThatRemoteDetaches() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
+            // Consumers only get link credit once the connection is started.
+            connection.start();
 
             testPeer.expectBegin();
             Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);

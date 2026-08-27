@@ -1191,6 +1191,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
 
             // Establish connection
             Connection connection = testFixture.establishConnecton(testPeer, serverCapabilities);
+            // Consumers only get link credit once the connection is started.
+            connection.start();
 
             final CountDownLatch subscriberClosed = new CountDownLatch(1);
             ((JmsConnection) connection).addConnectionListener(new JmsDefaultConnectionListener() {
@@ -1452,6 +1454,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
 
             // Establish connection
             Connection connection = testFixture.establishConnecton(testPeer, serverCapabilities);
+            // Consumers only get link credit once the connection is started.
+            connection.start();
 
             final CountDownLatch sessionClosed = new CountDownLatch(1);
             ((JmsConnection) connection).addConnectionListener(new JmsDefaultConnectionListener() {
@@ -1537,6 +1541,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
 
             // Establish connection
             Connection connection = testFixture.establishConnecton(testPeer, serverCapabilities);
+            // Consumers only get link credit once the connection is started.
+            connection.start();
 
             final CountDownLatch sessionClosed = new CountDownLatch(1);
             ((JmsConnection) connection).addConnectionListener(new JmsDefaultConnectionListener() {
@@ -1694,6 +1700,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
 
             ConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + serverPort + "?jms.awaitClientID=false");
             Connection connection = factory.createConnection();
+            // Consumers only get link credit once the connection is started.
+            connection.start();
 
             // Verify that all handlers complete, i.e. the awaitClientID=false option
             // setting was effective in provoking the AMQP Open immediately even

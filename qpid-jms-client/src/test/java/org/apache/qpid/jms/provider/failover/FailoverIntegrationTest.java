@@ -2914,6 +2914,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             testPeer.expectBegin();
 
             final JmsConnection connection = establishAnonymousConnecton("failover.maxReconnectAttempts=1", testPeer);
+            // Consumers only get link credit once the connection is started.
+            connection.start();
             connection.setExceptionListener(new ExceptionListener() {
                 @Override
                 public void onException(JMSException exception) {

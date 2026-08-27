@@ -634,6 +634,8 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
 
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             final Connection connection = testFixture.establishConnecton(testPeer);
+            // Consumers only get link credit once the connection is started.
+            connection.start();
 
             testPeer.expectBegin();
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);

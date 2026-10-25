@@ -19,6 +19,8 @@ package org.apache.qpid.jms.util;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
@@ -67,7 +69,7 @@ public class FactoryFinder<T extends Object> {
 
     private static ObjectFactory objectFactory = new StandaloneObjectFactory();
 
-    private final ConcurrentHashMap<String, T> cachedFactories = new ConcurrentHashMap<String, T>();
+    public final ConcurrentHashMap<String, T> cachedFactories = new ConcurrentHashMap<String, T>();
     private final String path;
     private final Class<T> factoryType;
 
@@ -123,7 +125,7 @@ public class FactoryFinder<T extends Object> {
      * @throws NoSuchMethodException if the factory class found does not have a suitable constructor
      * @throws SecurityException if a security error occurs trying to create the factory instance.
      */
-    public T newInstance(String key) throws IllegalAccessException, InstantiationException, IOException, ClassNotFoundException, ClassCastException, ResourceNotFoundException, InvocationTargetException, NoSuchMethodException, SecurityException {
+    public T newInstance(String key) throws IllegalAccessException, InstantiationException, IOException, ClassNotFoundException, ClassCastException, FileNotFoundException, ResourceNotFoundException, InvocationTargetException, NoSuchMethodException, SecurityException {
         T factory = cachedFactories.get(key);
         if (factory == null) {
             Object found = objectFactory.create(path + key);
@@ -163,7 +165,8 @@ public class FactoryFinder<T extends Object> {
         final ConcurrentHashMap<String, Properties> propertiesMap = new ConcurrentHashMap<String, Properties>();
 
         @Override
-        public Object create(final String path) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException, ResourceNotFoundException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
+        public Object create(final String path) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException, FileNotFoundException, ResourceNotFoundException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
+			
             Class<?> clazz = classMap.get(path);
             Properties properties = propertiesMap.get(path);
 
@@ -216,14 +219,36 @@ public class FactoryFinder<T extends Object> {
 
             return clazz;
         }
-
-        static public Properties loadProperties(String uri) throws IOException, ResourceNotFoundException {
+		
+		
+		/**
+		 * Change Log : If QPID client is being run from a GRAALVM native image then its unable to the classloader and pick up resources from within /META-INF
+		 *              Added system variable to indicate that if the execution is for a native image build [ NATIVE_IMAGE]
+		 *				Poll on NATIVE_IMAGE and if true pull the location of the schema files META-INF/services/ location.
+		 *              
+		 **/
+        static public Properties loadProperties(String uri) throws IOException, ResourceNotFoundException, FileNotFoundException {
+			
+			//determine if native image is running
+			String nativeImageVar = System.getProperty("NATIVE_IMAGE");
+			
+			boolean nativeImageInd = ("Y".equals(nativeImageVar));
+			
             // lets try the thread context class loader first
             ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
             if (classLoader == null) {
                 classLoader = StandaloneObjectFactory.class.getClassLoader();
             }
-            InputStream in = classLoader.getResourceAsStream(uri);
+			
+            InputStream in = null;
+			//if native image is running them pull resources from FileInputSteam from -DQPID_RESOURCE_DIRECTORY variable.
+			if(nativeImageInd) {
+				String qpidResourceDirectory = System.getProperty("QPID_RESOURCE_DIRECTORY");
+				String  modifiedUri = qpidResourceDirectory + "/" + uri;
+				in = new FileInputStream(modifiedUri);
+			} else {
+				in = classLoader.getResourceAsStream(uri);
+			}
             if (in == null) {
                 in = FactoryFinder.class.getClassLoader().getResourceAsStream(uri);
                 if (in == null) {

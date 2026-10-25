@@ -19,6 +19,7 @@ package org.apache.qpid.jms.provider.amqp.message;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_AMQP_REPLY_TO_GROUP_ID;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_AMQP_TTL;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_AMQP_TYPED_ENCODING;
+import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_AMQP_CONTENT_ENCODING;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -301,6 +302,79 @@ public class AmqpJmsMessagePropertyIntercepterTest {
             AmqpJmsMessagePropertyIntercepter.setProperty(message, JMS_AMQP_TYPED_ENCODING, new byte[1]);
             fail("Should have thrown an exception for this call");
         } catch (JMSException e) {
+        }
+    }
+
+    //-------- JMS_AMQP_CONTENT_ENCODING -------------------------------------//
+
+    @Test
+    public void testJmsAmqpContentEncodingInGetAllPropertyNames() throws JMSException {
+        assertTrue(AmqpJmsMessagePropertyIntercepter.getAllPropertyNames().contains(JMS_AMQP_CONTENT_ENCODING));
+    }
+
+    @Test
+    public void testSetJmsAmqpContentEncoding() throws JMSException {
+        String testValue = "gzip";
+        AmqpJmsObjectMessageFacade message = createAmqpObjectMessageFacade();
+        AmqpJmsMessagePropertyIntercepter.setProperty(message, JMS_AMQP_CONTENT_ENCODING, testValue);
+        Mockito.verify(message).setContentEncoding(testValue);
+    }
+
+    @Test
+    public void testGetJmsAmqpContentEncodingWhenNotSet() throws JMSException {
+        AmqpJmsMessageFacade message = createAmqpMessageFacade();
+        assertNull(AmqpJmsMessagePropertyIntercepter.getProperty(message, JMS_AMQP_CONTENT_ENCODING));
+    }
+
+    @Test
+    public void testGetJmsAmqpContentEncodingWhenSet() throws JMSException {
+        String testValue = "gzip";
+        AmqpJmsMessageFacade message = createAmqpMessageFacade();
+        Mockito.when(message.getContentEncoding()).thenReturn(testValue);
+        assertNotNull(AmqpJmsMessagePropertyIntercepter.getProperty(message, JMS_AMQP_CONTENT_ENCODING));
+        assertEquals(testValue, AmqpJmsMessagePropertyIntercepter.getProperty(message, JMS_AMQP_CONTENT_ENCODING));
+    }
+
+    @Test
+    public void testJmsAmqpContentEncodingNotInPropertyNamesWhenNotSet() throws JMSException {
+        AmqpJmsMessageFacade message = createAmqpMessageFacade();
+        assertNull(AmqpJmsMessagePropertyIntercepter.getProperty(message, JMS_AMQP_CONTENT_ENCODING));
+        assertFalse(AmqpJmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMS_AMQP_CONTENT_ENCODING));
+    }
+
+    @Test
+    public void testJmsAmqpContentEncodingInPropertyNamesWhenSet() throws JMSException {
+        String testValue = "gzip";
+        AmqpJmsMessageFacade message = createAmqpMessageFacade();
+        Mockito.when(message.getApplicationPropertyNames(anySet())).then(new PassPropertyNames());
+        Mockito.when(message.getContentEncoding()).thenReturn(testValue);
+        assertTrue(AmqpJmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMS_AMQP_CONTENT_ENCODING));
+    }
+
+    @Test
+    public void testJmsAmqpContentEncodingPropertyExistsWhenSet() throws JMSException {
+        String testValue = "gzip";
+        AmqpJmsMessageFacade message = createAmqpMessageFacade();
+        Mockito.when(message.getContentEncoding()).thenReturn(testValue);
+        assertTrue(AmqpJmsMessagePropertyIntercepter.propertyExists(message, JMS_AMQP_CONTENT_ENCODING));
+    }
+
+    @Test
+    public void testJmsAmqpContentEncodingPropertyExistsWhenNotSet() throws JMSException {
+        AmqpJmsMessageFacade message = createAmqpMessageFacade();
+        Mockito.when(message.getContentEncoding()).thenReturn(null);
+        assertFalse(AmqpJmsMessagePropertyIntercepter.propertyExists(message, JMS_AMQP_CONTENT_ENCODING));
+        Mockito.when(message.getContentEncoding()).thenReturn("");
+        assertFalse(AmqpJmsMessagePropertyIntercepter.propertyExists(message, JMS_AMQP_CONTENT_ENCODING));
+    }
+
+    @Test
+    public void testSetJmsAmqpContentEncodingConversionChecks() throws JMSException {
+        AmqpJmsMessageFacade message = createAmqpMessageFacade();
+        try {
+            AmqpJmsMessagePropertyIntercepter.setProperty(message, JMS_AMQP_CONTENT_ENCODING, new byte[1]);
+            fail("Should have thrown an exception for this call");
+        } catch (JMSException ignored) {
         }
     }
 

@@ -1023,6 +1023,20 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         return result;
     }
 
+    public Set<Symbol> getMessageAnnotationNames() {
+        if(messageAnnotationsMap != null && !messageAnnotationsMap.isEmpty()) {
+            return messageAnnotationsMap.keySet();
+        }
+        return null;
+    }
+
+    public Set<Symbol> getDeliveryAnnotationNames() {
+        if(deliveryAnnotationsMap != null && !deliveryAnnotationsMap.isEmpty()) {
+            return deliveryAnnotationsMap.keySet();
+        }
+        return null;
+    }
+
     void setMessageAnnotations(MessageAnnotations messageAnnotations) {
         if (messageAnnotations != null) {
             this.messageAnnotationsMap = messageAnnotations.getValue();

@@ -194,7 +194,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         amqpMessageFacade.onSend(newTtl);
 
         // check value on underlying TTL field is NOT set
-        assertEquals(newTtl, amqpMessageFacade.getAmqpHeader().getTimeToLive(), "TTL has not been overriden");
+        assertEquals(newTtl, amqpMessageFacade.getAmqpHeader().getTimeToLive(), "TTL has not been overridden");
         assertEquals(UnsignedInteger.valueOf(newTtl), amqpMessageFacade.getHeader().getTtl(), "TTL field on underlying message should be set");
     }
 

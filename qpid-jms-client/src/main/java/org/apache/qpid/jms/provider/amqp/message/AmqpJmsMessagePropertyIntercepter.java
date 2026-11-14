@@ -19,6 +19,7 @@ package org.apache.qpid.jms.provider.amqp.message;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_AMQP_REPLY_TO_GROUP_ID;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_AMQP_TTL;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_AMQP_TYPED_ENCODING;
+import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_AMQP_CONTENT_ENCODING;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -187,6 +188,32 @@ public class AmqpJmsMessagePropertyIntercepter {
             @Override
             public void clearProperty(AmqpJmsMessageFacade message) throws JMSException {
                 // TODO - Should we leave encoding intact or change to the default.
+            }
+        });
+        PROPERTY_INTERCEPTERS.put(JMS_AMQP_CONTENT_ENCODING, new PropertyIntercepter() {
+            @Override
+            public Object getProperty(AmqpJmsMessageFacade message) throws JMSException {
+                return message.getContentEncoding();
+            }
+
+            @Override
+            public void setProperty(AmqpJmsMessageFacade message, Object value) throws JMSException {
+                String rc = (String) TypeConversionSupport.convert(value, String.class);
+                if (rc == null) {
+                    throw new JMSException("Property " + JMS_AMQP_CONTENT_ENCODING + " cannot be set from a " + value.getClass().getName());
+                }
+                message.setContentEncoding(rc);
+            }
+
+            @Override
+            public boolean propertyExists(AmqpJmsMessageFacade message) {
+                String contentEncoding = message.getContentEncoding();
+                return contentEncoding != null && !contentEncoding.isEmpty();
+            }
+
+            @Override
+            public void clearProperty(AmqpJmsMessageFacade message) throws JMSException {
+                message.setContentEncoding(null);
             }
         });
     }

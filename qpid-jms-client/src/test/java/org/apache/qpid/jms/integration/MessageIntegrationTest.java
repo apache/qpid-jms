@@ -2410,4 +2410,106 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             assertEquals(expectedDeliveryTime, receivedMessage.getJMSDeliveryTime(), "Unexpected delivery time");
         }
     }
+
+    /**
+     * Tests that when a message with the content-encoding field set is received,
+     * the JMS message correctly reflects this value through the JMS_AMQP_CONTENT_ENCODING property.
+     *
+     * @throws Exception if an error occurs during the test.
+     */
+    @Test
+    @Timeout(20)
+    public void testReceivedMessageWithContentEncodingPropertySet() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
+            PropertiesDescribedType props = new PropertiesDescribedType();
+
+            String expectedContentEncoding =  "gzip";
+            props.setContentEncoding(Symbol.valueOf(expectedContentEncoding));
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, props, null, amqpValueNullContent);
+            testPeer.expectDispositionThatIsAcceptedAndSettled();
+
+            MessageConsumer messageConsumer = session.createConsumer(queue);
+            Message receivedMessage = messageConsumer.receive(3000);
+            testPeer.waitForAllHandlersToComplete(3000);
+
+            assertNotNull(receivedMessage, "did not receive the message");
+
+            boolean foundContentEncoding = false;
+
+            Enumeration<?> names = receivedMessage.getPropertyNames();
+
+            while (names.hasMoreElements()) {
+                Object element = names.nextElement();
+                if (AmqpMessageSupport.JMS_AMQP_CONTENT_ENCODING.equals(element)) {
+                    foundContentEncoding = true;
+                }
+            }
+
+            assertTrue(foundContentEncoding, "JMS_AMQP_CONTENT_ENCODING not in property names");
+            assertTrue(receivedMessage.propertyExists(AmqpMessageSupport.JMS_AMQP_CONTENT_ENCODING), "JMS_AMQP_CONTENT_ENCODING does not exist");
+            assertEquals(expectedContentEncoding, receivedMessage.getStringProperty(AmqpMessageSupport.JMS_AMQP_CONTENT_ENCODING), "did not get the expected JMS_AMQP_CONTENT_ENCODING");
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    /**
+     * Test that a message with the "content-encoding" property set to "gzip" is correctly sent
+     * and that the property is encoded as an AMQP Symbol.
+     *
+     * @throws Exception if an error occurs during the test.
+     */
+    @Test
+    @Timeout(20)
+    public void testSendMessageWithContentEncodingPropertySet() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            testPeer.expectBegin();
+            testPeer.expectSenderAttach();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            String queueName = "myQueue";
+            Queue queue = session.createQueue(queueName);
+            MessageProducer producer = session.createProducer(queue);
+
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true).withDurable(equalTo(true));
+
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+
+            MessagePropertiesSectionMatcher propsMatcher = new MessagePropertiesSectionMatcher(true);
+            propsMatcher.withContentEncoding(equalTo(Symbol.valueOf("gzip")));
+
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+            messageMatcher.setPropertiesMatcher(propsMatcher);
+            messageMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(null));
+
+            testPeer.expectTransfer(messageMatcher);
+
+            Message message = session.createTextMessage();
+            message.setStringProperty(AmqpMessageSupport.JMS_AMQP_CONTENT_ENCODING, "gzip");
+
+            producer.send(message);
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
 }
